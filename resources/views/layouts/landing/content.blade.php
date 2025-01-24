@@ -73,7 +73,7 @@
 
 <!----- SPONSORS ----->
 
-<div class="container sponsor">
+<!-- <div class="container sponsor">
   <h2>Sponsors</h2>
    <section class="customer-logos slider">
       <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/aficionado.webp') }}"></div>
@@ -106,4 +106,4 @@
       <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/mrsoftly.webp') }}"></div>
 
    </section>
-</div>
+</div> -->

@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
-@extends('layouts.head')
+@extends('layouts.about.head')
 
 <body>
 
@@ -9,10 +9,10 @@
 @include('layouts.navbar');
 
 <!-- HEADER  -->
-@include('layouts.landing.header');
+@include('layouts.about.header');
 
 <!-- CONTENT SECTION -->
-@include('layouts.landing.content');
+@include('layouts.about.content');
 
 <!----- FOOTER ----->
 @extends('layouts.footer')
