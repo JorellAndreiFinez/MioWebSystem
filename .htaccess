@@ -1,0 +1,6 @@
+RewriteEngine On
+RewriteBase /
+RewriteRule ^(.*) public/$1 [L]
+RewriteBase /Mio
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d

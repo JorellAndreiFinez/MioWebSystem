@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+:root {
+    --primary-color: #9fb9f2;
+    --dark-primary-color: #7494b4;
+    --secondary-color: #3f558f;
+    --text-color: #535b63;
+    --text-color-2: #232323;
+    --background-color: #c1cad7;
+    --dark-background-color: #dad7c8;
+    --backup-color: #ecf2b2;
+    --backup-color-2: #7c746c;
+    --gray-backup-color: #b4b4b4;
+}
+
+.montserrat-font {
+    font-family: "Montserrat", serif;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    font-family: "Montserrat", serif;
+}
+
+
+/* ----- NAVBAR ----- */
+
+.mainmenu {
+    background-color: var(--dark-secondary-color);
+    border-radius: 0;
+    border: none;
+    border-bottom: 1px solid #f4f4f4;
+    margin: 0;
+    padding: 5px 0;
+    transition: all 0.5s cubic-bezier(0.645, 0.045, 0.355, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.mainmenu .navbar-nav li a:hover {
+    color: #459C97;
+}
+
+.mainmenu .navbar-nav .active a {
+    background: transparent;
+    color: #0A6C87;
+}
+
+.mainmenu .navbar-nav .active a:hover {
+    color: #459C97;
+    background: transparent;
+}
+
+.mainmenu .login-btn {
+    color: #92CCA5;
+    background: transparent;
+    border: none;
+    padding: 0 15px;
+    line-height: 50px;
+    display: inline-block;
+    width: 100%;
+}
+
+.mainmenu .login-btn:hover {
+    color: #C9F0B1;
+}
+
+.nav-wrapper {
+    height: 50px;
+    z-index: 99;
+    position: fixed;
+    width: 100%;
+}
+
+.affix {
+    top: 0;
+    width: 100%;
+    z-index: 99;
+    margin: 0;
+    padding: 0px;
+    transition: all 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+
+/* ----- CAROUSEL HEADER ----- */
