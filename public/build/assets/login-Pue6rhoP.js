@@ -1,0 +1,1 @@
+const e=document.querySelector(".container"),t=document.querySelector(".register-btn"),n=document.querySelector(".login-btn");t.addEventListener("click",()=>{e.classList.add("active")});n.addEventListener("click",()=>{e.classList.remove("active")});
