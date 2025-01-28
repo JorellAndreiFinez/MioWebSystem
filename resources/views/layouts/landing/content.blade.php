@@ -13,9 +13,9 @@
 
 <section class="features">
   <div class="ftr">
-    <h3>A tool that makes you</h3>
+    <h3>LOREM IPSUM</h3>
     <h2>A Superhero</h2>
-    <h3 style="font-weight: 300;">Stand upright, wear your cape and put on some tight<br /> superman pants.</h3>
+    <h3 style="font-weight: 300; font-size: 30px;">Stand upright, wear your cape and put on some tight<br /> superman pants.</h3>
   </div>
   <div class="worker">
     <img src="{{ asset('storage/assets/images/dummy1.jpg') }}" draggable="false" alt="">
@@ -24,9 +24,9 @@
 
 <section class="features">
   <div class="ftr">
-    <h3>Get full access to</h3>
+    <h3>LOREM IPSUM</h3>
     <h2>Photos & Patterns</h2>
-    <h3 style="font-weight: 300;">Explore photos, patterns, colors & gradients designed by the<br /> best designers or simply use yours</h3>
+    <h3 style="font-weight: 300; font-size: 30px;">Explore photos, patterns, colors & gradients designed by the best designers or simply use yours</h3>
   </div>
   <div class="worker">
     <img src="{{ asset('storage/assets/images/dummy1.jpg') }}" draggable="false" alt="">

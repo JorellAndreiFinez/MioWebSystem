@@ -40,13 +40,13 @@ body {
 }
 
 .btn.btn-default {
-    color: #0A6C87;
+    color: var(--secondary-color);
     margin: 5px 0;
 }
 
 .btn.btn-default:hover {
     border-color: #92CCA5;
-    color: #92CCA5;
+    color: var(--primary-color);
     background-color: transparent;
 }
 
@@ -56,7 +56,7 @@ body {
 }
 
 .btn.btn-primary:hover {
-    background-color: #0A6C87;
+    background-color: var(--secondary-color);
     color: #FFFFFF;
 }
 
@@ -485,12 +485,13 @@ q {
 .ftr h3 {
     color: #7a7490;
     font-weight: 500;
+    font-size: 30px;
 }
 
 .ftr h2 {
     font-size: 60px;
     margin: 15px 0 15px;
-    color: #9672fb;
+    color: var(--secondary-color);
 }
 
 .worker {

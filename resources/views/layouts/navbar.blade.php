@@ -6,7 +6,7 @@
 
   <nav class="navbar navbar-default mainmenu" data-offset-top="1" data-spy="affix">
   <div class="uppernav cd">
-    <div class="item cn">Company Name</div>
+    <div class="item cn">Philippine Institute for the Deaf</div>
     <div class="item ph">123-456-7890</div>
   </div>
     <div class="container">
@@ -23,19 +23,28 @@
             <a href="{{ route('landing') }}">Home</a>
           </li>
           <li>
-            <a href="{{ route('enroll') }}">Enroll</a>
+            <a href="{{ route('enroll') }}">Admission</a>
           </li>
           <li>
             <a href="{{ route('about') }}">About</a>
+
+          <li>
+            <a href="{{ route(name: 'program') }}">Programs</a>
           </li>
           <li>
-            <a href="#">Admission</a>
+            <a href="{{ route('campus')}}">Campus</a>
           </li>
-          <li>
-            <a href="#">Programs</a>
-          </li>
-          <li>
-            <a href="#">Contact</a>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+            PID <span class="caret"></span>
+        </a>
+          <ul class="dropdown-menu">
+                <li><a href="">News</a></li>
+                <li><a href="">Events</a></li>
+                <li><a href="">Be a Sponsor</a></li>
+                <li role="separator" class="divider"></li>
+                <li><a href="{{ route('mio.login') }}">MIO</a></li>
+            </ul>
           </li>
         </ul>
       </div>

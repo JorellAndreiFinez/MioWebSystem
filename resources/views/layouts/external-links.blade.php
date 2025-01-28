@@ -13,6 +13,8 @@
     <script src="https://code.highcharts.com/modules/organization.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/skeleton/2.0.4/skeleton.min.css">
+
 
     <!-- EXTERNAL JS -->
     <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
@@ -25,4 +27,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Swiper/4.3.5/js/swiper.min.js"></script>
+
+
 
