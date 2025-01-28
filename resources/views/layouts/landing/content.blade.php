@@ -7,7 +7,7 @@
     <img src="./images/shapes.png" alt="">
   </div>
   <div class="div sec">
-    <img style="width:100%; height: 100%;" src="{{ asset('storage/assets/images/dummy1.jpg') }}" alt="">
+    <img style="width:100%; height: 100%;" src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" alt="">
   </div>
 </section>
 
@@ -18,7 +18,7 @@
     <h3 style="font-weight: 300; font-size: 30px;">Stand upright, wear your cape and put on some tight<br /> superman pants.</h3>
   </div>
   <div class="worker">
-    <img src="{{ asset('storage/assets/images/dummy1.jpg') }}" draggable="false" alt="">
+    <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
   </div>
 </section>
 
