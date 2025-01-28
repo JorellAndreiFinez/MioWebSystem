@@ -31,4 +31,7 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    build: {
+        assetsInlineLimit: 0,
+    },
 });
