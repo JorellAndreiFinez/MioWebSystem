@@ -565,7 +565,7 @@ q {
 
 .cover {
     height: 600px;
-    background-image: url("/public/storage/assets/images/dummy1.jpg");
+    background-image: url("./resources/assets/images/dummy1.jpg");
     background-attachment: fixed;
     background-size: cover;
     position: relative;
@@ -611,6 +611,8 @@ q {
     padding: 21px 51px;
     margin-right: 10px;
     margin-left: 10px;
+    background-color: #000000;
+    height: 100%;
 }
 
 .sp1 {
@@ -642,7 +644,7 @@ q {
     margin-top: 200px;
     width: 100%;
     height: 944px;
-    background-image: url("/public/storage/assets/images/dummy1.jpg");
+    background-image: url("./resources/assets/images/dummy1.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;

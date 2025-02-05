@@ -29,7 +29,7 @@
     <h3 style="font-weight: 300; font-size: 30px;">Explore photos, patterns, colors & gradients designed by the best designers or simply use yours</h3>
   </div>
   <div class="worker">
-    <img src="{{ asset('storage/assets/images/dummy1.jpg') }}" draggable="false" alt="">
+    <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
   </div>
 </section>
 
@@ -44,13 +44,13 @@
     </div>
     <div class="dr">
       <figure class="tw">
-        <img src="{{ asset('storage/assets/images/dummy1.jpg') }}" draggable="false" alt="">
+        <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
       </figure>
     </div>
   </div>
 </section>
 
-<section class="cover">
+<section class="cover" style="background: url('{{ Vite::asset('resources/assets/images/dummy1.jpg') }}');">
   <div>
     <img title="Play" src="https://raw.githubusercontent.com/arbiprog/casecraft/main/images/play.png" alt="">
     <h4>How Oralism Works ?</h4>

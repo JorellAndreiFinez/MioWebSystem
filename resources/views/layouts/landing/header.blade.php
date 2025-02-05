@@ -7,7 +7,7 @@
       <li data-slide-to="2" data-target="#main-slider"></li>
     </ol>
     <div class="carousel-inner" role="listbox">
-    <div class="item active" style="background-image: url('{{ asset('storage/assets/images/cover1.webp') }}');">
+    <div class="item active" style="background-image: url('{{ Vite::asset('resources/assets/images/cover2.webp') }}');">
     <div class="overlay"></div>
 
     <div class="container">
@@ -30,7 +30,7 @@
           </div>
         </div>
       </div>
-      <div class="item" style="background-image: url('{{ asset('storage/assets/images/cover2.webp') }}')">
+      <div class="item" style="background-image: url('{{ Vite::asset('resources/assets/images/cover2.webp') }}')">
       <div class="overlay"></div>
       <div class="container">
           <div class="row">
@@ -53,7 +53,7 @@
           </div>
         </div>
       </div>
-      <div class="item" style="background-image: url('{{ asset('storage/assets/images/cover3.webp') }}')">
+      <div class="item" style="background-image: url('{{ Vite::asset('resources/assets/images/cover3.webp') }}')">
       <div class="overlay"></div>
       <div class="container">
           <div class="row">
