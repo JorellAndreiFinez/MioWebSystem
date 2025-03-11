@@ -4,8 +4,13 @@
     "src": "resources/css/Mio/admin/login.css",
     "isEntry": true
   },
+  "resources/css/Mio/dashboard/calendar.css": {
+    "file": "assets/calendar-CSpAQx5V.css",
+    "src": "resources/css/Mio/dashboard/calendar.css",
+    "isEntry": true
+  },
   "resources/css/Mio/dashboard/dashboard.css": {
-    "file": "assets/dashboard-D3WFYhbr.css",
+    "file": "assets/dashboard-BYsSriME.css",
     "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
@@ -14,13 +19,18 @@
     "src": "resources/css/Mio/login.css",
     "isEntry": true
   },
+  "resources/css/Mio/mio-app.css": {
+    "file": "assets/mio-app-DBfXTOaB.css",
+    "src": "resources/css/Mio/mio-app.css",
+    "isEntry": true
+  },
   "resources/css/about.css": {
     "file": "assets/about-B8QxLrIC.css",
     "src": "resources/css/about.css",
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-df7lkIzZ.css",
+    "file": "assets/app-KqwWT2hw.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
@@ -30,7 +40,7 @@
     "isEntry": true
   },
   "resources/css/landing.css": {
-    "file": "assets/landing-BowmloiP.css",
+    "file": "assets/landing-B9E8BLuL.css",
     "src": "resources/css/landing.css",
     "isEntry": true
   },
@@ -50,8 +60,14 @@
     "src": "resources/js/Mio/admin/login.js",
     "isEntry": true
   },
+  "resources/js/Mio/dashboard/calendar.js": {
+    "file": "assets/calendar-DRu0Ylp-.js",
+    "name": "calendar",
+    "src": "resources/js/Mio/dashboard/calendar.js",
+    "isEntry": true
+  },
   "resources/js/Mio/dashboard/dashboard.js": {
-    "file": "assets/dashboard-84hOEm3r.js",
+    "file": "assets/dashboard-CGjomjav.js",
     "name": "dashboard",
     "src": "resources/js/Mio/dashboard/dashboard.js",
     "isEntry": true

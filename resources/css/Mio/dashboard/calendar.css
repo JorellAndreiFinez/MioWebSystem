@@ -1,0 +1,102 @@
+#calendar {
+    width: 100%;
+}
+
+
+/* ------- Agenda View -------
+
+#agendaView>table {
+    width: 100%;
+    min-height: 500px;
+    background: #FFF;
+}
+
+#agendaView .fc-agendaView-event-start,
+#agendaView .fc-agendaView-event-end {
+    width: 20%;
+}
+
+#agendaView .fc-agendaView-event-title {
+    width: 60%;
+}
+
+#agendaView th {
+    height: 30px;
+    font-size: 14px;
+    vertical-align: text-bottom;
+    font-weight: bold;
+    padding: 10px 0 0 10px;
+}
+
+#agendaView td {
+    height: 30px;
+    padding: 10px 0 0 10px;
+    font-size: 14px;
+    vertical-align: text-bottom;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 20px 1fr 20px;
+    grid-template-areas: 'main';
+    height: 100vh;
+} */
+
+.main {
+    grid-area: main;
+}
+
+.main-cards {
+    column-count: 1;
+    column-gap: 20px;
+    margin: 20px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    background-color: #cbbcf6;
+    margin-bottom: 0px;
+    -webkit-column-break-inside: avoid;
+    padding: 4px;
+    box-sizing: border-box;
+}
+
+
+/* Force varying heights to simulate dynamic content */
+
+.card:first-child {
+    height: 480px;
+    margin-bottom: 1.5rem;
+}
+
+.card:nth-child(2) {
+    height: 200px;
+    margin-bottom: 1.5rem;
+}
+
+.card:nth-child(3) {
+    height: 256px;
+}
+
+
+/* Non-mobile styles, 750px breakpoint */
+
+@media only screen and (min-width: 46.875em) {
+    .main-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+
+/* Medium screens breakpoint (1050px) */
+
+@media only screen and (min-width: 65.625em) {
+    /* Break out main cards into two columns */
+    .main-cards {
+        column-count: 2;
+    }
+}

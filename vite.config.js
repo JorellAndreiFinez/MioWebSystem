@@ -20,10 +20,13 @@ export default defineConfig({
                 'resources/js/program.js',
                 'resources/js/campus.js',
 
+                'resources/css/Mio/mio-app.css',
                 'resources/css/Mio/login.css',
                 'resources/js/Mio/login.js',
                 'resources/css/Mio/dashboard/dashboard.css',
                 'resources/js/Mio/dashboard/dashboard.js',
+                'resources/css/Mio/dashboard/calendar.css',
+                'resources/js/Mio/dashboard/calendar.js',
 
                 'resources/css/Mio/admin/login.css',
                 'resources/js/Mio/admin/login.js',

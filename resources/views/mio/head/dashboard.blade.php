@@ -5,7 +5,7 @@
 
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/dummy1.jpg') }}">
 
-    @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/mio-app.css'])
+    @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/Mio/mio-app.css'])
 
     @include('mio.external-links')
 </head>
