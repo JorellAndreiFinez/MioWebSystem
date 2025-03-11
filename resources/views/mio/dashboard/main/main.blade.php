@@ -10,12 +10,12 @@
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
-                <h2>Welcome back, John Doe!</h2>
+                <h2>Welcome back,<br> John Doe!</h2>
                 <p>Helping deaf children develop communication skills and confidence for a brighter future.</p>
             </div>
             <div class="divider"></div>
             <div class="content">
-                <h2>School Year 2024 - 2025</h2>
+                <h2>School Year <br> 2024 - 2025</h2>
                 <p>June 2024 - March 2025<br>3rd Quarter</p>
             </div>
             </div>
@@ -23,8 +23,22 @@
         </main>
 
         <div class="dashboard-grid">
+
         <div class="card-grid">
-            <div class="card-wrap">
+        <div class="top-label">
+            <div class="label-container">
+                <span class="label">Available Subjects</span>
+                <select class="dropdown">
+                    <option value="option1">All Subjects</option>
+                    <option value="option2">Academics</option>
+                    <option value="option3">Speech</option>
+                    <option value="option3">Auditory</option>
+
+                </select>
+            </div>
+        </div>
+        <div class="card-wrap">
+            <a href="{{ route('mio.subject') }}" class="card-link">
                 <div class="card">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
                     <div>
@@ -32,7 +46,8 @@
                         <p>Lorem ipsum</p>
                     </div>
                 </div>
-            </div>
+ </a>
+        </div>
             <div class="card-wrap">
                 <div class="card">
                     <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
@@ -64,7 +79,7 @@
 
         <div class="right-side">
         <div class="announcement-card">
-            <h4>Announcements</h4>
+            <h4 >Announcements</h4>
 
             <div class="sub-card">
                 <div class="announce-header">

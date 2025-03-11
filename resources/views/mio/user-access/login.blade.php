@@ -20,7 +20,7 @@
                 <div class="forgot-link">
                     <a href="#">Forgot Password?</a>
                 </div>
-                <button type="submit" class="btn">Login</button>
+                <button type="submit" onclick="window.location.href='{{ route('mio.dashboard') }}'" class="btn">Login</button>
                 <!-- <p>or login with social platforms</p>
                 <div class="social-icons">
                     <a href="#"><i class='bx bxl-google' ></i></a>

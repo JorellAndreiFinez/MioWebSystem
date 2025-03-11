@@ -5,7 +5,7 @@
     --text-color: #1F1F1F;
     --sidebar-title-color: rgba(255, 255, 255, 0.5);
     --text-btn-color: #FFFFFF;
-    --background-color: #F1F4FF;
+    --background-color: #f1f4ffcc;
     --backup-color: #BEBEBE;
     --backup-color-2: #7c746c;
     --nav-bg-color: rgba(255, 255, 255, 0.4);
@@ -26,6 +26,10 @@
 
  ::-webkit-scrollbar-thumb:hover {
     background-color: rgba(0, 0, 0, 0.3);
+}
+
+::placeholder {
+    color: white;
 }
 
 * {
