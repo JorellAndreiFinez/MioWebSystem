@@ -3,25 +3,24 @@
 use Illuminate\Support\Facades\Route;
 
 // CMS
-Route::get('/', function () {
+Route::get('/landing', function () {
     return view('landing');
 })->name('landing');
 
 Route::get('/enroll', function () {
-    return view('enroll');
+    return view('layouts.enroll');
 })->name('enroll');
 
-
 Route::get('/about', function () {
-    return view('about');
+    return view('layouts.about');
 })->name('about');
 
 Route::get('/program', function () {
-    return view('program');
+    return view('layouts.program');
 })->name('program');
 
 Route::get('/campus', function () {
-    return view('campus');
+    return view('layouts.campus');
 })->name('campus');
 
 // DASHBOARD
@@ -47,3 +46,10 @@ Route::get('/mio/calendar', function () {
 Route::get('/mio/admin/login', function () {
     return view('mio.admin-access.login');
 })->name('mio.admin.login');
+
+// SUBJECT
+
+
+Route::get('/mio/sample/announcement', function () {
+    return view('mio.head.announcement');
+})->name('mio.subject.announcement');

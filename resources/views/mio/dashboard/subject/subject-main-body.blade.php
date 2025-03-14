@@ -23,26 +23,32 @@
   <main class="main">
     <!--Begin Main Overview-->
     <div class="main-overview">
+
+    <a href="{{ route('mio.subject.announcement') }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Announcements</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
+    </a>
+
     <div class="overviewcard">
-    <div class="overviewcard__icon"></div>
-    <div class="overviewcard__info">Announcements</div>
-    <div class="overviewcard__arrow">&rsaquo;</div>
-</div>
-<div class="overviewcard">
-    <div class="overviewcard__icon"></div>
-    <div class="overviewcard__info">Assignments</div>
-    <div class="overviewcard__arrow">&rsaquo;</div>
-</div>
-<div class="overviewcard">
-    <div class="overviewcard__icon"></div>
-    <div class="overviewcard__info">Scores</div>
-    <div class="overviewcard__arrow">&rsaquo;</div>
-</div>
-<div class="overviewcard">
-    <div class="overviewcard__icon"></div>
-    <div class="overviewcard__info">Modules</div>
-    <div class="overviewcard__arrow">&rsaquo;</div>
-</div>
+        <div class="overviewcard__icon"></div>
+        <div class="overviewcard__info">Assignments</div>
+        <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
+
+    <div class="overviewcard">
+        <div class="overviewcard__icon"></div>
+        <div class="overviewcard__info">Scores</div>
+        <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
+
+    <div class="overviewcard">
+        <div class="overviewcard__icon"></div>
+        <div class="overviewcard__info">Modules</div>
+        <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
+
     </div>
    <!--End Main Overview-->
 
