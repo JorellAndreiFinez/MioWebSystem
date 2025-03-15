@@ -73,3 +73,7 @@ Route::get('/mio/sample/scores', function () {
 Route::get('/mio/sample/module', function () {
     return view('mio.head.module');
 })->name('mio.subject.module');
+
+Route::get('/mio/sample/module/sample1', function () {
+    return view('mio.head.module-content');
+})->name('mio.subject.module-content');

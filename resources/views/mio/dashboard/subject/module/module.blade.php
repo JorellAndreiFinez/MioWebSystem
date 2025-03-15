@@ -24,7 +24,7 @@
             <!--Begin Main Overview-->
             <div class="main-overview">
 
-            <a href="{{ route('mio.subject.announcement-content') }}"><div class="overviewcard">
+            <a href="{{ route('mio.subject.module-content') }}"><div class="overviewcard">
                     <div class="overviewcard__icon"></div>
                     <div class="overviewcard__info">[Module - 1] Lorem Ipsum</div>
 
