@@ -30,7 +30,7 @@ export default defineConfig({
                 'resources/css/Mio/dashboard/subject.css',
                 'resources/js/Mio/dashboard/subject.js',
 
-                'resources/css/Mio/dashboard/subject-announcement.css',
+                'resources/css/Mio/dashboard/subject-components.css',
 
                 'resources/css/Mio/admin/login.css',
                 'resources/js/Mio/admin/login.js',

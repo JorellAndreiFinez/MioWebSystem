@@ -5,7 +5,7 @@
     --text-color: #1F1F1F;
     --sidebar-title-color: rgba(255, 255, 255, 0.5);
     --text-btn-color: #FFFFFF;
-    --background-color: #f1f4ffcc;
+    --background-color: rgba(241, 244, 255, 1);
     --backup-color: #BEBEBE;
     --backup-color-2: #7c746c;
     --nav-bg-color: rgba(255, 255, 255, 0.4);
@@ -49,6 +49,10 @@
 body {
     background: var(--background-color);
     overflow-x: hidden;
+}
+
+body a:hover {
+    text-decoration: none;
 }
 
 

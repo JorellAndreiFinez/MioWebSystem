@@ -3,7 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 // CMS
-Route::get('/landing', function () {
+Route::get('/', function () {
     return view('landing');
 })->name('landing');
 
@@ -53,3 +53,23 @@ Route::get('/mio/admin/login', function () {
 Route::get('/mio/sample/announcement', function () {
     return view('mio.head.announcement');
 })->name('mio.subject.announcement');
+
+Route::get('/mio/sample/announcement/sample1', function () {
+    return view('mio.head.announcement-content');
+})->name('mio.subject.announcement-content');
+
+Route::get('/mio/sample/assignment', function () {
+    return view('mio.head.assignment');
+})->name('mio.subject.assignment');
+
+Route::get('/mio/sample/assignment/sample1', function () {
+    return view('mio.head.assignment-content');
+})->name('mio.assignment.assignment-content');
+
+Route::get('/mio/sample/scores', function () {
+    return view('mio.head.scores');
+})->name('mio.subject.scores');
+
+Route::get('/mio/sample/module', function () {
+    return view('mio.head.module');
+})->name('mio.subject.module');

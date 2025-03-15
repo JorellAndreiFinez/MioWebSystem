@@ -1,0 +1,537 @@
+.main a:hover,
+.text a:hover,
+.main-assignment a:hover {
+    list-style: none;
+    text-decoration: none;
+}
+
+
+/* BANNER */
+
+.main-banner {
+    border-radius: 0 0 0 0;
+    margin: 2rem 3rem 2.5rem 2.5rem;
+}
+
+.welcome-banner {
+    padding: 18px 36px;
+    color: var(--text-btn-color);
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+    background: var(--primary-color);
+    padding: 20px;
+    border-radius: 15px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    overflow: hidden;
+}
+
+.content {
+    position: relative;
+    padding: 20px;
+    flex: 1;
+}
+
+.content h2 {
+    color: var(--secondary-color);
+}
+
+
+/*
+.divider {
+    width: 2px;
+    height: 80%;
+    background: rgba(255, 255, 255, 0.7);
+} */
+
+.banner {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.location_label {
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-left: rem;
+}
+
+@media (max-width: 600px) {
+    .banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    .banner-container {
+        flex-direction: column;
+    }
+    .divider {
+        width: 60%;
+        height: 2px;
+        margin: 10px 0;
+    }
+    .content:nth-child(2) {
+        border-left: none;
+        border-top: 2px solid rgba(255, 255, 255, 0.7);
+        padding-top: 10px;
+        padding-left: 0;
+    }
+}
+
+
+/* Main CARD */
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    /*Side Nav hidden */
+    grid-template-rows: 50px 1fr 50px;
+    grid-template-areas: 'main';
+    height: 100vh;
+    margin: 20px;
+}
+
+.main {
+    grid-area: main;
+}
+
+.main .main-overview {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* 2 cards per row */
+    grid-auto-rows: 94px;
+    grid-gap: 20px;
+    margin: 20px;
+}
+
+.main .overviewcard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    padding: 20px;
+    position: relative;
+    display: flex;
+    text-align: left;
+    overflow: hidden;
+    transition: .5s ease-in-out;
+}
+
+.main .overviewcard:hover {
+    background-color: var(--secondary-color);
+}
+
+.overviewcard__icon {
+    width: 6px;
+    height: 30px;
+    background-color: #000;
+    border-radius: 6px;
+    margin-right: 15px;
+}
+
+.overviewcard__info {
+    flex-grow: 1;
+    font-size: 16px;
+    color: #333;
+}
+
+.overviewcard__arrow {
+    color: #888;
+    font-size: 40px;
+}
+
+.overviewcard__date {
+    color: #888;
+    margin-right: 2rem;
+}
+
+.main-cards {
+    column-count: 1;
+    column-gap: 20px;
+    margin: 20px;
+}
+
+
+/* Medium screens breakpoint (1050px) */
+
+@media only screen and (min-width: 65.625em) {
+    /* Break out main cards into two columns */
+    .main-cards {
+        column-count: 2;
+    }
+}
+
+
+/* Announcement Content */
+
+.main-announcement {
+    border-radius: 0 0 0 0;
+    margin: 2rem 3rem 2.5rem 2.5rem;
+}
+
+.main-announcement a:hover {
+    list-style: none;
+    text-decoration: none;
+}
+
+.main-announcement .welcome-banner {
+    padding: 18px 36px;
+    color: var(--text-btn-color);
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+    background: #ecebeb;
+    padding: 20px;
+    border-radius: 15px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    overflow: hidden;
+    box-shadow: 5px #333;
+    color: #000;
+}
+
+.main-announcement .content {
+    position: relative;
+    padding: 20px;
+    flex: 1;
+}
+
+.main-announcement .content h2 {
+    color: var(--secondary-color);
+}
+
+.main-announcement .content h6 {
+    color: var(--backup-color-2);
+    font-weight: 300;
+}
+
+.main-announcement .content p {
+    margin-top: 2.5rem;
+}
+
+
+/*
+.divider {
+    width: 2px;
+    height: 80%;
+    background: rgba(255, 255, 255, 0.7);
+} */
+
+.main-announcement .banner {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.main-announcement .location_label {
+    font-size: 1.7rem;
+    font-weight: 700;
+    margin-left: rem;
+}
+
+@media (max-width: 600px) {
+    .main-announcement.banner {
+        flex-direction: column;
+        text-align: center;
+        padding: 20px;
+    }
+    .main-announcement .banner-container {
+        flex-direction: column;
+    }
+    .main-announcement.divider {
+        width: 60%;
+        height: 2px;
+        margin: 10px 0;
+    }
+    .main-announcement .content:nth-child(2) {
+        border-left: none;
+        border-top: 2px solid rgba(255, 255, 255, 0.7);
+        padding-top: 10px;
+        padding-left: 0;
+    }
+}
+
+
+/* Assignments */
+
+.main-assignment {
+    grid-area: main;
+}
+
+.main-assignment .main-overview {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    /* 2 cards per row */
+    grid-auto-rows: 94px;
+    grid-gap: 20px;
+    margin: 20px;
+}
+
+.main-assignment .overviewcard {
+    padding: 18px 36px;
+    color: var(--text-btn-color);
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+    padding: 20px;
+    border-radius: 15px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    overflow: hidden;
+    transition: .5s ease-in-out;
+}
+
+.main-assignment .overviewcard:hover {
+    background-color: var(--secondary-color);
+}
+
+.main-assignment .overviewcard__icon {
+    width: 6px;
+    height: 30px;
+    background-color: #000;
+    border-radius: 6px;
+    margin-right: 15px;
+}
+
+.main-assignment .overviewcard__info {
+    flex-grow: 1;
+    color: #333;
+    margin-left: 1rem;
+    margin-top: 1rem;
+}
+
+.main-assignment .overviewcard__info h3 {
+    font-size: 20px;
+}
+
+.main-assignment .overviewcard__info p {
+    font-size: 13px;
+    margin-top: -.5rem;
+    color: #888;
+}
+
+.main-assignment .overviewcard__arrow {
+    color: #888;
+    font-size: 40px;
+}
+
+.main-assignment .overviewcard__date {
+    color: #888;
+    margin-right: 2rem;
+}
+
+.main-assignment .main-cards {
+    column-count: 1;
+    column-gap: 20px;
+    margin: 20px;
+}
+
+
+/* --------- Assignment Content */
+
+.main-assignment-content {
+    border-radius: 10px;
+    margin: 2rem 3rem 2.5rem 2.5rem;
+}
+
+
+/* Banner Section */
+
+.main-assignment-content .assignment-card {
+    padding: 30px;
+    border-radius: 15px;
+    width: 100%;
+    margin: 20px;
+    background: whitesmoke;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+
+/* Activity Info */
+
+.main-assignment-content .activity-info {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    align-self: flex-start;
+}
+
+.main-assignment-content .activity-info h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    align-self: flex-start;
+}
+
+
+/* Details Grid (2 columns) */
+
+.main-assignment-content .details {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 1rem;
+    align-self: flex-start;
+}
+
+.main-assignment-content .details div {
+    display: flex;
+    flex-direction: column;
+    align-self: flex-start;
+}
+
+.main-assignment-content .details span {
+    font-size: .8rem;
+    color: #888;
+}
+
+.main-assignment-content .details strong {
+    font-size: .9rem;
+    color: #333;
+}
+
+
+/* Button */
+
+.main-assignment-content .take-quiz-btn {
+    background: #ffb703;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 0 4px 6px rgba(255, 183, 3, 0.2);
+    transition: background 0.3s ease;
+    align-self: flex-start;
+}
+
+.main-assignment-content .take-quiz-btn:hover {
+    background: #ffa200;
+}
+
+
+/* Responsive */
+
+@media (max-width: 768px) {
+    .main-assignment-content .activity-info {
+        flex-direction: column;
+        align-self: flex-start;
+    }
+    /* 1 item per row on small screens */
+    .main-assignment-content .details {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* SCORES */
+
+.main-scores {
+    grid-area: main;
+    cursor: pointer;
+}
+
+.main-scores .main-overview {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    grid-auto-rows: 94px;
+    grid-gap: 10px;
+}
+
+.main-scores .overviewcard {
+    padding: 18px 36px;
+    color: var(--text-btn-color);
+    border-radius: 20px;
+    width: 100%;
+    margin: auto;
+    border-radius: 15px;
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    overflow: hidden;
+    transition: none;
+}
+
+.main-scores .overviewcard__info {
+    flex-grow: 1;
+    color: #333;
+    margin-left: 1rem;
+    border-radius: 20px;
+    padding: 1rem;
+    box-shadow: 0px 5px 8px rgb(156, 156, 156);
+}
+
+
+/* Table Styles */
+
+.score-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.score-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.score-table th {
+    padding: 12px;
+    text-align: left;
+    background-color: var(--primary-color);
+    font-weight: bold;
+    color: white;
+}
+
+.score-table th:first-child {
+    border-radius: 20px 0 0 0;
+}
+
+.score-table th:last-child {
+    border-radius: 0 20px 0 0;
+}
+
+
+/* .score-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+} */
+
+.score-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+
+/* MODULE */
+
+.main-module {
+    grid-area: main;
+}
+
+.main-module .main-overview {
+    grid-template-columns: repeat(1, 1fr);
+    font-weight: 600;
+}

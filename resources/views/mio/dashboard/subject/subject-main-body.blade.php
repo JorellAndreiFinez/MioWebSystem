@@ -31,23 +31,26 @@
     </div>
     </a>
 
-    <div class="overviewcard">
-        <div class="overviewcard__icon"></div>
-        <div class="overviewcard__info">Assignments</div>
-        <div class="overviewcard__arrow">&rsaquo;</div>
+    <a href="{{ route('mio.subject.assignment') }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Assignments</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
     </div>
+    </a>
 
-    <div class="overviewcard">
-        <div class="overviewcard__icon"></div>
-        <div class="overviewcard__info">Scores</div>
-        <div class="overviewcard__arrow">&rsaquo;</div>
+    <a href="{{ route('mio.subject.scores') }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Scores</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
     </div>
+    </a>
 
-    <div class="overviewcard">
-        <div class="overviewcard__icon"></div>
-        <div class="overviewcard__info">Modules</div>
-        <div class="overviewcard__arrow">&rsaquo;</div>
+    <a href="{{ route('mio.subject.module') }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Modules</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
     </div>
+    </a>
 
     </div>
    <!--End Main Overview-->

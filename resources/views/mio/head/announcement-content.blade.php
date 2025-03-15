@@ -16,7 +16,7 @@
 <body>
 
 @include('mio.sidebar');
-@include('mio.dashboard.subject.announcement.announcement-body');
+@include('mio.dashboard.subject.announcement.announcement-content');
 
 </body>
 
