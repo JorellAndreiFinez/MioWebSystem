@@ -14,14 +14,13 @@
     "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
-  "resources/css/Mio/dashboard/subject-announcement.css": {
-    "file": "assets/subject-announcement-l0sNRNKZ.js",
-    "name": "subject-announcement",
-    "src": "resources/css/Mio/dashboard/subject-announcement.css",
+  "resources/css/Mio/dashboard/subject-components.css": {
+    "file": "assets/subject-components-D6PpfXfI.css",
+    "src": "resources/css/Mio/dashboard/subject-components.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/subject.css": {
-    "file": "assets/subject-Crxf_l3i.css",
+    "file": "assets/subject-DCxfq_lN.css",
     "src": "resources/css/Mio/dashboard/subject.css",
     "isEntry": true
   },
@@ -31,7 +30,7 @@
     "isEntry": true
   },
   "resources/css/Mio/mio-app.css": {
-    "file": "assets/mio-app-DisikAd0.css",
+    "file": "assets/mio-app-Bu7MyY8k.css",
     "src": "resources/css/Mio/mio-app.css",
     "isEntry": true
   },
@@ -41,7 +40,7 @@
     "isEntry": true
   },
   "resources/css/app.css": {
-    "file": "assets/app-CMSGbQC9.css",
+    "file": "assets/app-BnrtLhIl.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
