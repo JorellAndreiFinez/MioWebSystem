@@ -1,109 +1,177 @@
-<!-- sections -->
-<section class="about">
-  <div class="div fir">
-    <h2>We're PID</h2>
-    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aspernatur quod quae reiciendis consectetur totam recusandae expedita numquam rem labore perferendis necessitatibus eius, porro aut ea? Assumenda eligendi sint adipisci quisquam.</p>
-    <button class="btn" style="background-color: #000;"><img src="https://raw.githubusercontent.com/arbiprog/casecraft/main/images/icon1.png" class="icon1" alt=""> How it works</button>
-    <img src="./images/shapes.png" alt="">
-  </div>
-  <div class="div sec">
-    <img style="width:100%; height: 100%;" src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" alt="">
-  </div>
-</section>
 
-<section class="features">
-  <div class="ftr">
-    <h3>LOREM IPSUM</h3>
-    <h2>A Superhero</h2>
-    <h3 style="font-weight: 300; font-size: 30px;">Stand upright, wear your cape and put on some tight<br /> superman pants.</h3>
-  </div>
-  <div class="worker">
-    <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
-  </div>
-</section>
+<!-- FIRST PART -->
 
-<section class="features">
-  <div class="ftr">
-    <h3>LOREM IPSUM</h3>
-    <h2>Photos & Patterns</h2>
-    <h3 style="font-weight: 300; font-size: 30px;">Explore photos, patterns, colors & gradients designed by the best designers or simply use yours</h3>
-  </div>
-  <div class="worker">
-    <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
-  </div>
-</section>
+<div class="first-container">
+    <!-- Image Section -->
+    <div class="image-container">
+      <img src="your-image.jpg" alt="Child Image">
+    </div>
 
-<section class="why">
-  <div class="container-div-why">
-    <div class="dr">
-      <div class="tw">
-        <h3>Why PID?</h3>
-        <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Odio pariatur quidem totam maxime provident iure magni sapiente minima sed dignissimos minus inventore molestias ut, fugiat necessitatibus repellendus ex sit praesentium.</p>
-        <button class="btn" style="background-color: #000;"><img src="https://raw.githubusercontent.com/arbiprog/casecraft/main/images/icon2.png" class="icon2" alt=""> Enroll Now</button>
+    <!-- Text Section -->
+    <div class="text-container">
+      <h1>Welcome to PID,  Where Learning Begins! </h1>
+      <p>The Philippine Institute for the Deaf (PID) exists for the purpose of insuring that these unique resources are readily available to those young children who need them. With the combined support of the community, young deaf children in the Philippines continue to have the opportunity to listen, learn, and talk.</p>
+      <a href="#" class="btn">ABOUT US</a>
+    </div>
+  </div>
+
+  <!-- SECOND PART -->
+
+  <div class="second-container">
+  <h5>WHY CHOOSE US</h5>
+  <h2>Why PID is The Best Choice?</h2>
+  <div class="reasons">
+    <!-- Reason 1 -->
+    <div class="reason">
+      <div class="icon">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFntxRVC4HHB7OaUXQYlHXPY8VDy9jIYykYQ&s" alt="Specialized Education">
+      </div>
+      <h3>Specialized Education</h3>
+      <p>A proven curriculum that develops listening, speaking, and academic skills.</p>
+    </div>
+
+    <!-- Reason 2 -->
+    <div class="reason">
+      <div class="icon">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFntxRVC4HHB7OaUXQYlHXPY8VDy9jIYykYQ&s" alt="Expert & Caring Educators">
+      </div>
+      <h3>Expert & Caring Educators</h3>
+      <p>Trained teachers providing personalized guidance for every child.</p>
+    </div>
+
+    <!-- Reason 3 -->
+    <div class="reason">
+      <div class="icon">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTFntxRVC4HHB7OaUXQYlHXPY8VDy9jIYykYQ&s" alt="Inclusive Community">
+      </div>
+      <h3>Inclusive Community</h3>
+      <p>A welcoming space where students, families, and educators thrive together.</p>
+    </div>
+  </div>
+</div>
+
+<!-- THIRD PART -->
+
+<div class="third-container">
+  <div class="third-div">
+    <!-- Left Side - Image and Title -->
+    <div class="guide-left">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQljYeEklurBWnp3QJ0iNJD4fUWC8sRtHJtVg&s" alt="Classroom" class="guide-image" />
+      <div class="guide-title">
+        <span class="process-label">PROCESS</span>
+        <h2>Simple Guide to<br>Join Our School</h2>
       </div>
     </div>
-    <div class="dr">
-      <figure class="tw">
-        <img src="{{ Vite::asset('resources/assets/images/dummy1.jpg') }}" draggable="false" alt="">
-      </figure>
+
+    <!-- Right Side - Steps -->
+    <div class="guide-right">
+      <div class="step">
+        <div class="step-icon">
+          <img src="icon1.png" alt="Apply for Enrollment">
+        </div>
+        <div class="step-content">
+          <h3>Apply for Enrollment</h3>
+          <p>Submit your application and required documents.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <img src="icon2.png" alt="Student Interview">
+        </div>
+        <div class="step-content">
+          <h3>Student Interview</h3>
+          <p>Attend a physical assessment and evaluation.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <img src="icon3.png" alt="Pay Your Balance">
+        </div>
+        <div class="step-content">
+          <h3>Pay Your Balance</h3>
+          <p>Complete your payment to secure enrollment.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <img src="icon4.png" alt="Wait for First Day">
+        </div>
+        <div class="step-content">
+          <h3>Wait for First Day</h3>
+          <p>Get ready to start your learning journey!</p>
+        </div>
+      </div>
+
+      <a href="#" class="guide-btn">VIEW DETAILS</a>
+    </div>
+  </div>
+</div>
+
+<!-- FOURTH PART -->
+
+<div class="fourth-container">
+  <div class="fourth-div">
+    <!-- Left Side - Text Content -->
+    <div class="achievements-text">
+      <span class="achievements-label">COMMUNITY UPDATES</span>
+      <h2>Celebrating Our Achievements</h2>
+      <p>
+        Discover our latest milestones and successes! From student achievements to special events, we celebrate growth, dedication, and excellence in our community. Stay updated and celebrate with us!
+      </p>
+      <a href="#" class="btn">VIEW STORIES</a>
+    </div>
+
+    <!-- Right Side - Image -->
+    <div class="achievements-image">
+      <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcScUmYCyxhpq_tV6kcly0SBYIoDNn-XMh5cqA&s" alt="Students Talking" />
+    </div>
+  </div>
+</div>
+
+<!-- FIFTH PART -->
+
+<section class="fifth-container">
+  <div class="programs-header">
+    <span class="programs-label">SERVICES</span>
+    <h2>Explore Our Programs</h2>
+  </div>
+
+  <div class="programs-container">
+    <!-- Program 1 -->
+    <div class="program-card">
+      <div class="program-image">
+        <img src="k12.jpg" alt="K-12 Basic Education" />
+      </div>
+      <h3>K-12 Basic Education</h3>
+    </div>
+
+    <!-- Program 2 -->
+    <div class="program-card">
+      <div class="program-image">
+        <img src="home-ec.jpg" alt="Home Economics" />
+      </div>
+      <h3>Home Economics</h3>
+    </div>
+
+    <!-- Program 3 -->
+    <div class="program-card">
+      <div class="program-image">
+        <img src="industrial-arts.jpg" alt="Industrial Arts" />
+      </div>
+      <h3>Industrial Arts</h3>
+    </div>
+
+    <!-- Program 4 -->
+    <div class="program-card">
+      <div class="program-image">
+        <img src="culinary.jpg" alt="Culinary Skills Development" />
+      </div>
+      <h3>Culinary Skills Development</h3>
     </div>
   </div>
 </section>
 
-<section class="cover" style="background: url('{{ Vite::asset('resources/assets/images/dummy1.jpg') }}');">
-  <div>
-    <img title="Play" src="https://raw.githubusercontent.com/arbiprog/casecraft/main/images/play.png" alt="">
-    <h4>How Oralism Works ?</h4>
-  </div>
-</section>
 
-<section class="cta">
-  <div class="cont-btn">
-    <span>get started now</span>
-    </button>
-    <button class="btn"><img class="i" src="https://raw.githubusercontent.com/arbiprog/casecraft/main/images/i2.png" alt="">
-      <span class="sp1">download on the</span> <br>
-      <span class="sp2">play store</span>
-    </button>
-
-  </div>
-  <div class="cont-post">
-  </div>
-</section>
-
-<!----- SPONSORS ----->
-
-<!-- <div class="container sponsor">
-  <h2>Sponsors</h2>
-   <section class="customer-logos slider">
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/aficionado.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/armak.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/cocolife.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/dads.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/davids.webp') }}"></div>
-
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/gintung.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/jrp.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/oishi.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/pacific.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/petron.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/times.webp') }}"></div>
-
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/dbp.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/rbi.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/waffle_time.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/philsteel.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/steag.webp') }}"></div>
-
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/malayan.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/mcdo.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/belmont.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/sambokojin.webp') }}"></div>
-
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/spin.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/ulms.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/ub.webp') }}"></div>
-      <div class="slide"><img src="{{ asset('storage/assets/images/sponsors/mrsoftly.webp') }}"></div>
-
-   </section>
-</div> -->

@@ -20,7 +20,7 @@ Highcharts.chart('orgchart', {
     },
 
     title: {
-        text: 'Board of Directors'
+        text: 'Philippine Institute for the Deaf'
     },
 
     series: [{
@@ -62,8 +62,8 @@ Highcharts.chart('orgchart', {
         }],
         nodes: [{
                 id: 26,
-                title: 'Managing Partner',
-                name: 'John Bell',
+                title: 'Chairman of the Board',
+                name: 'Cesar V. Campos',
                 image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/JohnBell.jpg'
             }, {
                 id: 35,

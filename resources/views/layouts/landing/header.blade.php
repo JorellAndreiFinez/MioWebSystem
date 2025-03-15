@@ -1,84 +1,121 @@
-
 <header>
-  <div class="carousel" id="main-slider">
-    <ol class="carousel-indicators">
-      <li class="active" data-slide-to="0" data-target="#main-slider"></li>
-      <li data-slide-to="1" data-target="#main-slider"></li>
-      <li data-slide-to="2" data-target="#main-slider"></li>
-    </ol>
-    <div class="carousel-inner" role="listbox">
-    <div class="item active" style="background-image: url('{{ Vite::asset('resources/assets/images/cover2.webp') }}');">
-    <div class="overlay"></div>
-
-    <div class="container">
-          <div class="row">
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-content">
-                <h1 id="carousel-header">
-                  Teaching Deaf to Speak
-                </h1>
-                <p>
-                  Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-                </p>
-                <a class="btn btn-primary" id="about">ABOUT US</a><a class="btn btn-primary" id="register">REGISTRATION</a>
-              </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-img">
-              </div>
-            </div>
+  <div class="carousel">
+    <div class="carousel-inner">
+      <!-- Slide 1 -->
+      <div class="mySlides carousel-item active">
+        <div class="overlay"></div>
+        <div class="container">
+          <img src="https://static.wixstatic.com/media/03665b_80a95271a7b24aaabece23d296d1d51d~mv2.jpg" alt="Logo" class="logo">
+          <h1>SEGRIA ESGUERRA MEMORIAL FOUNDATION INC</h1>
+          <p class="tagline">
+            <span>Self-Reliant Exceptional People in Mainstream Society</span>
+          </p>
+          <p class="description">
+          It utilizes “ORAL” instructional methods for the purpose of developing speech and language skills for deaf children and youth.
+          </p>
+          <div class="buttons">
+            <a href="#" class="btn inquire">INQUIRE</a>
+            <a href="#" class="btn registration">REGISTRATION</a>
           </div>
         </div>
       </div>
-      <div class="item" style="background-image: url('{{ Vite::asset('resources/assets/images/cover2.webp') }}')">
-      <div class="overlay"></div>
-      <div class="container">
-          <div class="row">
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-content">
-                <h1 id="carousel-header">
-                  Special Education
-                </h1>
-                <p>
-                  Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-                </p>
-                <a class="btn btn-primary" id="about">ABOUT US</a><a class="btn btn-primary" id="register">REGISTRATION</a>
-              </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-img">
 
-              </div>
-            </div>
+      <!-- Slide 3 -->
+      <div class="mySlides carousel-item">
+        <div class="overlay"></div>
+        <div class="container">
+          <img src="https://photos.wikimapia.org/p/00/00/54/59/57_big.jpg" alt="Logo" class="logo">
+          <h1>PHILIPPINE INSTITUTE FOR THE DEAF</h1>
+          <p class="tagline">
+            <span>Where Deaf Children Learn to Speak</span>
+          </p>
+          <p class="description">
+          Compassionate donors sponsor a child who has been pre-screened and evaluated as qualified and deserving. Filipino deaf children have been taught through sign language in the public school system since 1907.          </p>
+          <div class="buttons">
+            <a href="#" class="btn inquire">INQUIRE</a>
+            <a href="#" class="btn registration">REGISTRATION</a>
           </div>
         </div>
       </div>
-      <div class="item" style="background-image: url('{{ Vite::asset('resources/assets/images/cover3.webp') }}')">
-      <div class="overlay"></div>
-      <div class="container">
-          <div class="row">
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-content">
-                <h1 id="carousel-header">
-                  Speech Development
-                </h1>
-                <p>
-                  Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.
-                </p>
-                <a class="btn btn-primary" id="about">ABOUT US</a><a class="btn btn-primary" id="register">REGISTRATION</a>
-              </div>
-            </div>
-            <div class="col-xs-12 col-sm-6">
-              <div class="slide-img">
 
-              </div>
-            </div>
+       <!-- Slide 3 -->
+       <div class="mySlides carousel-item">
+        <div class="overlay"></div>
+        <div class="container">
+          <img src="https://photos.wikimapia.org/p/00/00/54/59/57_big.jpg" alt="Logo" class="logo">
+          <h1>SpeechLAB</h1>
+          <p class="tagline">
+            <span>One-on-One Speech Clinic</span>
+          </p>
+          <p class="description">
+          Speech therapy, aural habilitation, and academic tutoring are available to current or former PID or ISP students, and also to those who are enrolled in other schools. Services are provided through our Speech and Hearing Department.
+          </p>
+          <div class="buttons">
+            <a href="#" class="btn inquire">INQUIRE</a>
+            <a href="#" class="btn registration">REGISTRATION</a>
           </div>
         </div>
       </div>
+
+      <!-- Slide 4 -->
+      <div class="mySlides carousel-item">
+        <div class="overlay"></div>
+        <div class="container">
+          <img src="https://photos.wikimapia.org/p/00/00/54/59/57_big.jpg" alt="Logo" class="logo">
+          <h1>INTEGRATED SCHOOL OF THE PHILIPPINES</h1>
+          <p class="tagline">
+            <span>Where All Learn Together, Helping One Another</span>
+          </p>
+          <p class="description">
+          A model high school where orally trained deaf graduates learn with hearing peers under specially trained SPED teachers. Special Education (SPED) training courses for teachers, parents, and concerned individuals – monthly crash courses offered year-round with certificates.
+          </p>
+          <div class="buttons">
+            <a href="#" class="btn inquire">INQUIRE</a>
+            <a href="#" class="btn registration">REGISTRATION</a>
+          </div>
+        </div>
+      </div>
+
+
+
     </div>
-    <div class="slide-control">
-      <a class="left carousel-control" data-slide="prev" href="#main-slider" role="button"><span></span><span></span></a><a class="right carousel-control" data-slide="next" href="#main-slider" role="button"><span></span><span></span></a>
+
+    <!-- Dots -->
+    <div class="carousel-dots">
+      <span class="dot active" onclick="currentSlide(1)"></span>
+      <span class="dot" onclick="currentSlide(2)"></span>
+      <span class="dot" onclick="currentSlide(3)"></span>
+      <span class="dot" onclick="currentSlide(4)"></span>
+
     </div>
   </div>
 </header>
+
+<script>
+  let slideIndex = 0;
+  let slides = document.getElementsByClassName("mySlides");
+  let dots = document.getElementsByClassName("dot");
+
+  function showSlides() {
+    for (let i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+      dots[i].classList.remove("active");
+    }
+
+    slideIndex++;
+    if (slideIndex > slides.length) { slideIndex = 1; }
+
+    slides[slideIndex - 1].style.display = "block";
+    dots[slideIndex - 1].classList.add("active");
+
+    setTimeout(showSlides, 90000); // Change slide every 5 seconds
+  }
+
+  function currentSlide(n) {
+    slideIndex = n - 1;
+    showSlides();
+  }
+
+  // Start the slideshow automatically
+  showSlides();
+</script>

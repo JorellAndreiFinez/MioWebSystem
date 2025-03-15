@@ -1,11 +1,31 @@
-
-
-
-
 <center>
+
+<!-- FIRST PART -->
+
+<div class="icon-grid">
+    <div class="icon-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Inquiry">
+        <p>Inquiry</p>
+    </div>
+    <div class="icon-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Enrollment Form">
+        <p>Enrollment Form</p>
+    </div>
+    <div class="icon-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Assessment Guide">
+        <p>Assessment Guide</p>
+    </div>
+    <div class="icon-card">
+        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Payment">
+        <p>Payment</p>
+    </div>
+</div>
+
+<!-- SECOND PART -->
+
 <div class="section-title">
-                Enroll at PID with <span class="underline-text"> 3 steps </span>
-            </div>
+    Enroll at PID with <span class="underline-text"> 3 steps </span>
+</div>
 
 <div class="steps-container">
         <div class="steps">
@@ -19,8 +39,7 @@
         <div class="content">
             <div class="content-item active" data-step="0">
                 <h2>Fill Up Form</h2>
-                <p>Lorem ipsum dolor, sit amet consectetur adipisicing elit. Neque eum blanditiis labore? Placeat enim doloremque, quas sapiente delectus obcaecati expedita quasi doloribus id quod at itaque, dolore, voluptatum ratione? Accusamus!
-                Omnis natus maiores sunt maxime ratione fuga quaerat praesentium doloribus odio adipisci pariatur hic fugiat, enim ullam esse alias, ut deleniti. Explicabo eos perspiciatis totam velit sit praesentium dolor quo.</p>
+                <p>Please fill out the form with your child's details to start the enrollment process. This will help us provide the right support and ensure a smooth experience as we guide your child on their journey to learning and speech development.</p>
             </div>
             <div class="content-item" data-step="1">
                 <h2>Register and Enroll</h2>
@@ -39,19 +58,22 @@
     </div>
 </center>
 
+<!-- THIRD PART -->
+
 <section id=timeline>
+    <h3>Enroll Now</h3>
 	<h1>Follow This Guide</h1>
-	<p class="leader">Lorem ipsum dolor sit amet consectetur adipisicing elit. Repellendus autem quod qui blanditiis sed maiores quia. Nulla quam earum ipsum ab iusto architecto aut? Animi odit repellendus magnam architecto velit?</p>
+	<p class="leader">Follow this guide for a simpler enrollment process. Each step ensures a smooth experience, from enrollment to completing the process. We are here to assist you throughout the entire process!</p>
 	<div class="demo-card-wrapper">
 		<div class="demo-card demo-card--step1">
 			<div class="head">
 				<div class="number-box">
 					<span>01</span>
 				</div>
-				<h2><span class="small">Form</span> Enrollment</h2>
+				<h2><span class="small">Easy</span> Enrollment</h2>
 			</div>
 			<div class="body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta reiciendis deserunt doloribus consequatur, laudantium odio dolorum laboriosam.</p>
+				<p>Complete the pre-registration process by filling out the enrollment form with accurate personal, academic, and health information. Ensure all required documents are uploaded for verification before assessment.</p>
 				<img src="http://placehold.it/1000x500" alt="Graphic">
 			</div>
 		</div>
@@ -61,10 +83,10 @@
 				<div class="number-box">
 					<span>02</span>
 				</div>
-				<h2><span class="small">Form</span> Assessment</h2>
+				<h2><span class="small">ASR</span> Assessment</h2>
 			</div>
 			<div class="body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta reiciendis deserunt doloribus consequatur, laudantium odio dolorum laboriosam.</p>
+				<p>After completing the enrollment process, students will undergo an assessment to evaluate their communication, auditory, and academic skills. This ensures proper placement and personalized learning support.</p>
 				<img src="http://placehold.it/1000x500" alt="Graphic">
 			</div>
 		</div>
@@ -74,10 +96,10 @@
 				<div class="number-box">
 					<span>03</span>
 				</div>
-				<h2><span class="small">Payment</span> Payment</h2>
+				<h2><span class="small">Online</span> Payment</h2>
 			</div>
 			<div class="body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta reiciendis deserunt doloribus consequatur, laudantium odio dolorum laboriosam.</p>
+				<p>Complete your enrollment by following the payment process. Ensure timely payment to confirm your slot and proceed with the next steps.</p>
 				<img src="http://placehold.it/1000x500" alt="Graphic">
 			</div>
 		</div>
@@ -87,10 +109,10 @@
 				<div class="number-box">
 					<span>04</span>
 				</div>
-				<h2><span class="small">Subtitle</span> Evaluation</h2>
+				<h2><span class="small">Teacher</span> Evaluation</h2>
 			</div>
 			<div class="body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta reiciendis deserunt doloribus consequatur, laudantium odio dolorum laboriosam.</p>
+				<p>After completing the payment, students will proceed to the evaluation stage. This step ensures proper assessment for class placement and personalized learning support.</p>
 				<img src="http://placehold.it/1000x500" alt="Graphic">
 			</div>
 		</div>
@@ -100,10 +122,10 @@
 				<div class="number-box">
 					<span>05</span>
 				</div>
-				<h2><span class="small">Subtitle</span> Welcome to PID</h2>
+				<h2><span class="small">Goodjob</span> Welcome to PID</h2>
 			</div>
 			<div class="body">
-				<p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Soluta reiciendis deserunt doloribus consequatur, laudantium odio dolorum laboriosam.</p>
+				<p>Congratulations and welcome to the Philippine Institute for the Deaf (PID)! You are now part of a supportive and inclusive learning community dedicated to empowering deaf students through quality education and specialized programs.</p>
 				<img src="http://placehold.it/1000x500" alt="Graphic">
 			</div>
 		</div>
@@ -111,7 +133,7 @@
 	</div>
 </section>
 
-<div class="accordion">
+<!-- <div class="accordion">
 <h1 >Frequently Asked Questions</h1>
 
   <div class="accordion-item">
@@ -149,7 +171,6 @@
           <li>Browser Developer Tools</li>
           <li>Web Performance</li>
           <li>SEO (Search Engine Optimization)</li>
-          <!-- <li>CSS Preprocessing</li> -->
           <li>Command Line</li>
           <li>CMS (Content Management System)</li>
         </ul>
@@ -157,6 +178,6 @@
     </div>
   </div>
 
-</div>
+</div> -->
 
 

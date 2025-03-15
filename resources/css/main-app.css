@@ -1,15 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
 :root {
-    --primary-color: #9fb9f2;
-    --dark-primary-color: #7494b4;
-    --secondary-color: #3f558f;
-    --text-color: #535b63;
+    --primary-color: #FFBF18;
+    --secondary-color: #2264DC;
     --text-color-2: #232323;
-    --background-color: #c1cad7;
-    --dark-background-color: #dad7c8;
-    --backup-color: #ecf2b2;
-    --backup-color-2: #7c746c;
     --gray-backup-color: #b4b4b4;
+    --nav-bg-color: #1F1F1F;
+    --text-white-color: #ffff;
+    --black-color: #000000;
 }
 
 .montserrat-font {
@@ -33,14 +30,11 @@ html {
 /* ----- NAVBAR ----- */
 
 .mainmenu {
-    background-color: var(--dark-secondary-color);
     border-radius: 0;
     border: none;
-    border-bottom: 1px solid #f4f4f4;
     margin: 0;
-    padding: 2px 0;
+    padding: 0;
     transition: all 0.5s cubic-bezier(0.645, 0.045, 0.355, 1);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .nav-wrapper {
@@ -48,6 +42,7 @@ html {
     z-index: 99;
     position: fixed;
     width: 100%;
+    color: var(--text-white-color);
 }
 
 .affix {
@@ -70,7 +65,7 @@ html {
     padding: 0 15%;
     max-width: 100%;
     background-color: var(--secondary-color);
-    color: var(--primary-color);
+    color: var(--text-white-color);
 }
 
 .cd {
@@ -96,8 +91,8 @@ html {
 }
 
 .navbar .dropdown-menu {
-    background-color: var(--primary-color);
-    color: var(--secondary-color);
+    background-color: var(--nav-bg-color);
+    color: var(--text-white-color);
     border: none;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
@@ -114,71 +109,49 @@ html {
 }
 
 
+/* Change the color of the icon bar to white */
+
+.navbar-toggle .icon-bar {
+    background-color: #ffffff !important;
+}
+
+.navbar a {
+    font-size: 14px;
+    color: var(--text-white-color);
+}
+
+
 /* ----- FOOTER ----- */
 
-
-/*               footer                */
-
-footer {
-    /* General footer styles */
-    padding-top: 2em;
-    background-color: var(--secondary-color);
-    min-height: 300px;
-    /* Use min-height for flexibility */
-}
-
-footer .ftr-container {
-    max-width: 90%;
-    max-width: 890%;
-    margin: auto;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
-}
-
-
-/* Center-align text for better readability */
-
-footer .ftr-container>div {
-    width: 30%;
-    height: 100%;
+.footer {
+    background-color: #2b6dd8;
+    /* Blue background color */
+    color: #ffffff;
+    /* White text color */
+    padding: 20px 10px;
     text-align: center;
+    font-size: 14px;
 }
 
-footer>footer div h2 {
-    color: var(--backup-color);
-    font-weight: 500;
-    margin-bottom: 30px;
-    text-transform: capitalize;
+.footer .container {
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-footer>div h5 {
-    text-transform: capitalize;
-    color: var(--dark-background-color);
-    font-weight: 300;
-    margin: 5px 0 5px 0;
+
+/* Responsive Styling */
+
+@media (max-width: 768px) {
+    .footer {
+        padding: 15px;
+        font-size: 12px;
+    }
 }
 
-footer .logo {
-    width: 150px;
-    margin: 20px auto 0;
-}
-
-.fdb {
-    text-align: start;
-}
-
-.logo+div {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: center;
-    margin: 10px auto;
-    width: 191px;
-}
-
-.fdb div img {
-    cursor: pointer;
+@media (max-width: 480px) {
+    .footer {
+        font-size: 10px;
+    }
 }
 
 
@@ -280,6 +253,7 @@ footer .logo {
     }
     header nav ul li a {
         display: none;
+        color: white;
     }
     .links div a {
         font-size: 20px;
@@ -317,6 +291,7 @@ footer .logo {
         width: 100%;
         max-width: 1420px;
         margin: auto;
+        color: white;
     }
     header nav {
         width: 296px;
@@ -326,6 +301,7 @@ footer .logo {
         flex-direction: row-reverse;
         justify-content: space-around;
         align-items: center;
+        color: white;
     }
     header nav ul {
         display: grid;
