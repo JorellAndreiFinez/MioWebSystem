@@ -29,6 +29,7 @@ export default defineConfig({
                 'resources/js/Mio/dashboard/calendar.js',
                 'resources/css/Mio/dashboard/subject.css',
                 'resources/js/Mio/dashboard/subject.js',
+                'resources/css/Mio/dashboard/inbox.css',
 
                 'resources/css/Mio/dashboard/subject-components.css',
 

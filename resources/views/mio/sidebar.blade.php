@@ -23,7 +23,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.inbox') }}" class="{{ request()->is('inbox') ? 'active' : '' }}">
                 <i class='bx bx-message'></i>
                 <span class="links_name">Inbox</span>
             </a>
@@ -34,7 +34,7 @@
         <h3 class="title-label">Other</h3>
 
         <li>
-            <a href="#" class="{{ request()->is('profile') ? 'active' : '' }}">
+            <a href="{{ route('mio.profile') }}" class="{{ request()->is('profile') ? 'active' : '' }}">
                 <i class='bx bx-user'></i>
                 <span class="links_name">Profile</span>
             </a>

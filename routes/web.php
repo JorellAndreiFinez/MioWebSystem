@@ -41,6 +41,14 @@ Route::get('/mio/calendar', function () {
     return view('mio.head.calendar');
 })->name('mio.calendar');
 
+Route::get('/mio/inbox', function () {
+    return view('mio.head.inbox');
+})->name('mio.inbox');
+
+Route::get('/mio/profile', function () {
+    return view('mio.head.profile');
+})->name('mio.profile');
+
 // ADMIN ACCESS
 
 Route::get('/mio/admin/login', function () {
