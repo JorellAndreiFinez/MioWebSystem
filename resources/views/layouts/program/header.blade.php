@@ -1,15 +1,12 @@
-<header class="programs">
-  <div class="header__text-box">
-  <br>
-  <br>
-  <br>
-  <h1 class="heading-primary">
-      <span class="heading-primary--main">Programs</span>
-      <span class="heading-primary--sub">Lorem ipsum dolor sit amet</span>
-    </h1>
+<div class="programs-header">
+    <div class="circle left-circle"></div>
+    <div class="circle right-circle"></div>
 
-    <a href="#section-tours" class="btn btn--white btn--animated">Discover our Services</a>
-  </div>
-
-</header>
-
+    <div class="header-content">
+        <h2>Programs & Services</h2>
+        <p>
+            We provide specialized education, speech therapy, and skill development to empower deaf students.
+            Explore our programs and build a brighter future!
+        </p>
+    </div>
+</div>

@@ -124,18 +124,21 @@ html {
 /* ----- FOOTER ----- */
 
 .footer {
+    margin-top: -25px;
     background-color: #2b6dd8;
-    /* Blue background color */
     color: #ffffff;
-    /* White text color */
     padding: 20px 10px;
     text-align: center;
     font-size: 14px;
 }
 
-.footer .container {
+.footer-container {
     max-width: 1200px;
     margin: 0 auto;
+}
+
+.footer-container p {
+    color: #ffffff;
 }
 
 

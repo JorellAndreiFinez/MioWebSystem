@@ -1,7 +1,7 @@
 
 
 <div>
-    <div class="title paralax letterbox" style="background-image:url(https://ik.imagekit.io/fliptopbox/window-shopper.jpg?tr=tr:n-landscape)">
+    <div class="title paralax letterbox" style="background-image:url(https://images.smartparenting.com.ph/smartpar/resize/medium/images/2024/04/05/image-34-1712301635.webp)">
         <h1>Postbox Reveal</h1>
     </div>
     <div class="campus">
@@ -10,13 +10,13 @@
 </div>
 
 <div>
-    <div class="title paralax letterbox" style="background-image:url(https://ik.imagekit.io/fliptopbox/turbine-engine.jpg?tr=tr:n-landscape)">
+    <div class="title paralax letterbox" style="background-image:url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg/800px-03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg)">
     </div>
-    <div class="title paralax letterbox" style="background-image:url(https://ik.imagekit.io/fliptopbox/turbine-engine.jpg?tr=w-2160,h-1080);background-size:unset;">
+    <div class="title paralax letterbox" style="background-image:url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg/800px-03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg);background-size:unset;">
     </div>
-    <div class="title paralax letterbox" style="background-image:url(https://ik.imagekit.io/fliptopbox/turbine-engine.jpg?tr=tr:n-landscape);background-size: 60%;background-repeat: repeat;">
+    <div class="title paralax letterbox" style="background-image:url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg/800px-03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg);background-size: 60%;background-repeat: repeat;">
     </div>
-    <div class="title paralax letterbox" style="background-image:url(https://ik.imagekit.io/fliptopbox/turbine-engine.jpg?tr=tr:n-landscape)">
+    <div class="title paralax letterbox" style="background-image:url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg/800px-03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg)">
     </div>
     <div class="campus">
         <h1>Lorem Ipsum</h1>
@@ -25,17 +25,17 @@
 </div>
 
 <div class="gallery">
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/underground-tunnel.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://static.wixstatic.com/media/03665b_665b0a5b57044d1d99ba28cf0de02762~mv2_d_3872_2592_s_4_2.jpg/v1/fill/w_516,h_566,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_665b0a5b57044d1d99ba28cf0de02762~mv2_d_3872_2592_s_4_2.jpg)">
     </div>
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/untitled-test-pattern.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhgPywNJaTyDzKB7euwvOjQ7oMLn-KfU4ZWpuTJTqEmUdkvISaqhzLOI43-B6y5DSvj9yp8S07SYf_i4X96F6Pa6Lj8rUG17ALLchXjmXJJ0wC_wB6VoRnkMRc9AML3wJ_NbWPXjwodFk8/s1600/HR_DSC3113.jpg)">
     </div>
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/lamb-of-god-zurbaran-agnus.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://static.wixstatic.com/media/03665b_0149ef24239e44c3bae09ea83b17717b~mv2.jpg/v1/fill/w_951,h_562,al_c,q_85,enc_avif,quality_auto/IMG_0288_JPG.jpg)">
     </div>
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/inferno.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg)">
     </div>
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/gargoyles.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://static.wixstatic.com/media/03665b_33b787139d7243569f748fd16c6fd02f~mv2_d_2048_1356_s_2.jpg/v1/fill/w_594,h_402,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_33b787139d7243569f748fd16c6fd02f~mv2_d_2048_1356_s_2.jpg)">
     </div>
-    <div class="title paralax square" style="background-image:url(https://ik.imagekit.io/fliptopbox/ancient-egypt.jpg?tr=w-500,h-500,fo-auto)">
+    <div class="title paralax square" style="background-image:url(https://static.wixstatic.com/media/03665b_7c0dab8ffee5492693a0f9428f67088a~mv2_d_2048_1536_s_2.jpg/v1/fill/w_516,h_568,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_7c0dab8ffee5492693a0f9428f67088a~mv2_d_2048_1536_s_2.jpg)">
     </div>
 </div>
 
@@ -45,7 +45,7 @@
 </div>
 
 <div>
-    <div class="title paralax" style="background-image:url(https://ik.imagekit.io/fliptopbox/origami-crane.jpg?tr=tr:n-landscape)">
+    <div class="title paralax" style="background-image:url(https://scontent.fmnl17-2.fna.fbcdn.net/v/t39.30808-6/366378847_735561461912541_2766696690621172914_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeHU6Knsn4931Vaju91rxPziwOwQSFMd5H_A7BBIUx3kf3pAL9PihsOrwegd5nkqgwMsmw0NcPg_obTrsZfhvDOQ&_nc_ohc=V4i6qxEwn2AQ7kNvgFB0-0x&_nc_oc=AdjhSa03JgPY4E7IAa30L1greMVulR5it0dW7ezH4rwGmXtHGSAL-MpHKE_JcF_nSVI&_nc_zt=23&_nc_ht=scontent.fmnl17-2.fna&_nc_gid=wH2YVBX_j3v4iIH8Y0ez8g&oh=00_AYFZc5EgXPw2J-S0XASVadQTnZXW6-Cc_ff4wKSk2LjNPQ&oe=67DC028A)">
         <h1>Lorem Ipsum</h1>
     </div>
     <div class="campus">

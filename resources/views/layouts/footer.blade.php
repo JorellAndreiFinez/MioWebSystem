@@ -1,5 +1,5 @@
 <footer class="footer">
-  <div class="container">
+  <div class="footer-container">
     <p>
       Sergia Esguerra Memorial Foundation Inc. | Nagtahan, Pandacan, Manila 1011, Philippines | Copyright 2006 - 2024 | Philippine Institute for the Deaf. All rights reserved.
     </p>

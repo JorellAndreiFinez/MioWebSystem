@@ -11,6 +11,8 @@ export default defineConfig({
                 'resources/css/about.css',
                 'resources/css/program.css',
                 'resources/css/campus.css',
+                'resources/css/news.css',
+                'resources/css/events.css',
 
                 'resources/js/landing.js',
                 'resources/js/app.js',
@@ -19,6 +21,7 @@ export default defineConfig({
                 'resources/js/about.js',
                 'resources/js/program.js',
                 'resources/js/campus.js',
+
 
                 'resources/css/Mio/mio-app.css',
                 'resources/css/Mio/login.css',

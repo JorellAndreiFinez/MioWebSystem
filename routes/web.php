@@ -23,6 +23,14 @@ Route::get('/campus', function () {
     return view('layouts.campus');
 })->name('campus');
 
+Route::get('/news', function () {
+    return view('layouts.news');
+})->name('news');
+
+Route::get('/events', function () {
+    return view('layouts.events');
+})->name('events');
+
 // DASHBOARD
 
 Route::get('/mio/login', function () {
