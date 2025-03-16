@@ -6,6 +6,11 @@ strong {
     font-weight: 900;
 }
 
+.icon-grid a:hover {
+    list-style: none;
+    text-decoration: none;
+}
+
 
 /* -----  HEADER  ----- */
 
@@ -576,60 +581,477 @@ p {
 }
 
 
-/* -----   FOURTH PART  ------ */
+/* ------ ENROLLMENT FORM ------  */
 
-
-/* .accordion {
-    width: 90%;
-    max-width: 1000px;
-    margin: 2rem auto;
+.form-container {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    max-width: 1200px;
+    width: 100%;
+    margin: 5rem auto;
 }
 
-.accordion-item {
-    background-color: #fff;
-    color: #111;
-    margin: 1rem 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.25);
-}
 
-.accordion-item-header {
-    padding: 0.5rem 3rem 0.5rem 1rem;
-    min-height: 3.5rem;
-    line-height: 1.25rem;
+/* Section */
+
+.section-header {
+    background-color: #222;
+    color: #ffffff;
+    padding: 10px 15px;
+    font-size: 16px;
     font-weight: bold;
+    border-radius: 6px 6px 0 0;
+    margin-top: 20px;
+}
+
+
+/* Section Content */
+
+.section-content {
+    background-color: #f8f8f8;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 0 0 6px 6px;
+    font-size: 16px;
+}
+
+
+/* Form Row */
+
+.form-row {
+    display: flex;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+
+/* Form Group */
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.wide {
+    flex: 2;
+}
+
+
+/* Labels */
+
+label {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+
+/* Input Fields */
+
+input[type="text"],
+input[type="date"],
+input[type="number"],
+select {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #555;
+    outline: none;
+    width: 100%;
+}
+
+
+/* Adjust the date input for consistency */
+
+input[type="date"] {
+    height: 3.8rem;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 12px;
+}
+
+
+/* Placeholder text for consistency */
+
+input::placeholder {
+    color: #aaa;
+    font-size: 14px;
+}
+
+
+/* Focus effect */
+
+input:focus {
+    border-color: #007bff;
+    background-color: #ffffff;
+}
+
+
+/* File Upload Box */
+
+.file-upload-box {
+    background: #f0f0f0;
+    border: 2px dashed #ccc;
+    padding: 20px;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-upload-box:hover {
+    background: #e0e0e0;
+}
+
+.upload-label {
+    color: #007bff;
+    cursor: pointer;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+
+/* File Preview */
+
+#file-preview {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.preview-item {
     display: flex;
     align-items: center;
-    position: relative;
+    gap: 5px;
+    padding: 8px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+
+/* File Upload Input */
+
+input[type="file"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background-color: #f0f0f0;
+}
+
+
+/* Submit Button */
+
+.form-footer {
+    text-align: center;
+    margin-top: 7rem;
+}
+
+.form-footer button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 1px 80px;
+    border: none;
+    border-radius: 6px;
+    font-size: 19px;
     cursor: pointer;
+    transition: 0.3s;
 }
 
-.accordion-item-header::after {
-    content: "\002B";
-    font-size: 2rem;
-    position: absolute;
-    right: 1rem;
+.form-footer button:hover {
+    background-color: #444;
 }
 
-.accordion-item-header.active::after {
-    content: "\2212";
-}
 
-.accordion-item-body {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.2s ease-out;
-}
+/* Responsive Design */
 
-.accordion-item-body-content {
-    padding: 1rem;
-    line-height: 1.5rem;
-    border-top: 1px solid;
-    border-image: linear-gradient(to right, transparent, #34495e, transparent) 1;
-}
-
-@media(max-width:767px) {
-    html {
-        font-size: 14px;
+@media (max-width: 768px) {
+    .form-row {
+        flex-direction: column;
     }
-} */
+    .form-group.wide {
+        flex: 1;
+    }
+    input[type="text"] {
+        font-size: 16px;
+    }
+}
+
+
+/* ------ ASSESSMENT GUIDE ------ */
+
+.assessment-section {
+    max-width: 1200px;
+    margin: 10px auto;
+    padding: 10px;
+    text-align: left;
+    margin-bottom: 10rem;
+}
+
+
+/* Small Section Title */
+
+.section-title {
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #f4b400;
+    /* Yellow */
+}
+
+
+/* Heading with Highlight */
+
+.heading {
+    font-size: 32px;
+    font-weight: bold;
+    position: relative;
+    display: inline-block;
+}
+
+.heading .highlight {
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    width: 110%;
+    height: 12px;
+    background: #f4b400;
+    z-index: -1;
+    border-radius: 10px;
+}
+
+
+/* Description Text */
+
+.description {
+    font-size: 18px;
+    line-height: 1.6;
+    color: #333;
+    max-width: 1200px;
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .assessment-section {
+        padding: 15px;
+        text-align: center;
+    }
+    .heading {
+        font-size: 28px;
+    }
+    .description {
+        font-size: 16px;
+    }
+}
+
+.assessment-guide {
+    margin-top: 30px;
+}
+
+
+/* Evaluation Header */
+
+.evaluation {
+    margin-bottom: 30px;
+}
+
+.evaluation-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.evaluation-header h2 {
+    font-weight: 600;
+    margin-top: 2rem;
+    font-size: 24px;
+}
+
+.evaluation-header p {
+    font-size: 18px;
+    margin-top: -2rem;
+}
+
+.number-box {
+    background-color: #1a73e8;
+    color: #fff;
+    font-size: 30px;
+    font-weight: bold;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+}
+
+
+/* Test Grid */
+
+.test-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+
+
+/* Test Cards */
+
+.test-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+.test-card img {
+    width: 40px;
+    margin-bottom: 10px;
+}
+
+.test-card h3 {
+    font-size: 18px;
+    margin: 10px 0;
+}
+
+.test-card p {
+    font-size: 14px;
+    color: #555;
+}
+
+.test-card a {
+    display: block;
+    margin-top: 10px;
+    font-size: 14px;
+    color: #f4b400;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+    .evaluation-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    .test-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
+/* ------ PAYMENT GUIDE ------ */
+
+.payment-section {
+    margin-top: 10rem;
+    padding: 40px 20px;
+}
+
+.subtitle {
+    color: var(--primary-color);
+    font-size: 15px;
+    text-transform: uppercase;
+    font-weight: 600;
+    text-align: center;
+}
+
+.title {
+    font-size: 40px;
+    font-weight: 700;
+    margin: 10px 0;
+    text-align: center;
+}
+
+.description {
+    font-size: 18px;
+    color: #555;
+    max-width: 900px;
+    margin: 0 auto 30px;
+}
+
+.payment-container {
+    margin-top: 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+.payment-box {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 900px;
+    position: relative;
+    text-align: left;
+}
+
+.icon {
+    font-size: 24px;
+    color: var(--primary-color);
+    margin-right: 15px;
+}
+
+.bank-logo {
+    width: 150px;
+    height: 150px;
+}
+
+.payment-info {
+    flex: 1;
+}
+
+.payment-box .paragraphs p {
+    margin: 0;
+    font-size: 1.6rem;
+}
+
+@media (max-width: 768px) {
+    .payment-box {
+        flex-direction: column;
+        text-align: center;
+        align-items: center;
+        padding: 20px;
+    }
+    .bank-logo {
+        margin: 15px 0 0;
+    }
+}
+
+.submission-box {
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 900px;
+    margin: 30px auto;
+    text-align: center;
+    font-size: 16px;
+}
+
+.submission-box a {
+    color: #007BFF;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.submission-box a:hover {
+    text-decoration: underline;
+}

@@ -3,22 +3,25 @@
 <!-- FIRST PART -->
 
 <div class="icon-grid">
-    <div class="icon-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Inquiry">
-        <p>Inquiry</p>
-    </div>
+
+    <a href="{{ route('admission.enrollment') }}">
     <div class="icon-card">
         <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Enrollment Form">
         <p>Enrollment Form</p>
     </div>
-    <div class="icon-card">
+    </a>
+   <a href="{{ route('admission.assess-guide') }}">
+   <div class="icon-card">
         <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Assessment Guide">
         <p>Assessment Guide</p>
     </div>
+   </a>
+    <a href="{{ route('admission.payment-guide') }}">
     <div class="icon-card">
         <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Payment">
         <p>Payment</p>
     </div>
+    </a>
 </div>
 
 <!-- SECOND PART -->

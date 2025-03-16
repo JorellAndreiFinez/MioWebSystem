@@ -7,7 +7,7 @@ Route::get('/', function () {
     return view('landing');
 })->name('landing');
 
-Route::get('/enroll', function () {
+Route::get('/admission', function () {
     return view('layouts.enroll');
 })->name('enroll');
 
@@ -93,3 +93,16 @@ Route::get('/mio/sample/module', function () {
 Route::get('/mio/sample/module/sample1', function () {
     return view('mio.head.module-content');
 })->name('mio.subject.module-content');
+
+// ADMISSION - CMS
+Route::get('/admission/enrollment', function () {
+    return view('layouts.enrollment');
+})->name('admission.enrollment');
+
+Route::get('/admission/assessment-guide', function () {
+    return view('layouts.assessment-guide');
+})->name('admission.assess-guide');
+
+Route::get('/admission/payment-guide', function () {
+    return view('layouts.payment-guide');
+})->name('admission.payment-guide');
