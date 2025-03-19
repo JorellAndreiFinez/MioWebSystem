@@ -7,28 +7,21 @@
 
 <div class="container">
         <div class="form-box login">
-            <form action="#">
-                <h1>Login</h1>
-                <div class="input-box">
-                    <input type="text" placeholder="Username" required>
-                    <i class='bx bxs-user'></i>
-                </div>
-                <div class="input-box">
-                    <input type="password" placeholder="Password" required>
-                    <i class='bx bxs-lock-alt' ></i>
-                </div>
-                <div class="forgot-link">
-                    <a href="#">Forgot Password?</a>
-                </div>
-                <button type="submit" onclick="window.location.href='{{ route('mio.dashboard') }}'" class="btn">Login</button>
-                <!-- <p>or login with social platforms</p>
-                <div class="social-icons">
-                    <a href="#"><i class='bx bxl-google' ></i></a>
-                    <a href="#"><i class='bx bxl-facebook' ></i></a>
-                    <a href="#"><i class='bx bxl-github' ></i></a>
-                    <a href="#"><i class='bx bxl-linkedin' ></i></a>
-                </div> -->
-            </form>
+        <form onsubmit="return validateLogin(event)">
+    <h1>Login</h1>
+    <div class="input-box">
+        <input type="text" id="email" placeholder="Email" required>
+        <i class='bx bxs-user'></i>
+    </div>
+    <div class="input-box">
+        <input type="password" id="password" placeholder="Password" required>
+        <i class='bx bxs-lock-alt'></i>
+    </div>
+    <div class="forgot-link">
+        <a href="#">Forgot Password?</a>
+    </div>
+    <button type="submit" class="btn">Login</button>
+</form>
 
 
         </div>
@@ -74,6 +67,22 @@
             </div>
         </div>
     </div>
+
+    <script>
+    function validateLogin(event) {
+        event.preventDefault();
+
+        let email = document.getElementById("email").value;
+
+        if (email.includes("student")) {
+            window.location.href = "{{ route('mio.dashboard') }}";
+        } else if (email.includes("admin")) {
+            window.location.href = "{{ route('mio.admin-panel') }}";
+        } else {
+            alert("Invalid login. Use 'student' or 'admin' in email.");
+        }
+    }
+</script>
 
 </body>
 </html>

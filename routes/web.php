@@ -63,6 +63,10 @@ Route::get('/mio/admin/login', function () {
     return view('mio.admin-access.login');
 })->name('mio.admin.login');
 
+Route::get('/mio/admin', function () {
+    return view('mio.head.admin-panel');
+})->name('mio.admin-panel');
+
 // SUBJECT
 
 

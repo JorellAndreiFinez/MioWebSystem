@@ -5,7 +5,7 @@
 
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/dummy1.jpg') }}">
 
-    @vite(['resources/css/landing.css', 'resources/js/landing.js', 'resources/css/main-app.css'])
+    @vite(['resources/css/cms/landing.css', 'resources/js/cms/landing.js', 'resources/css/cms/main-app.css'])
 
     @include('layouts.external-links')
 </head>

@@ -1,7 +1,7 @@
 {
-  "resources/css/Mio/admin/login.css": {
-    "file": "assets/login-B0X-N2Xk.css",
-    "src": "resources/css/Mio/admin/login.css",
+  "resources/css/Mio/admin/panel.css": {
+    "file": "assets/dashboard-CM_nEaCh.css",
+    "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/calendar.css": {
@@ -14,8 +14,13 @@
     "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
+  "resources/css/Mio/dashboard/inbox.css": {
+    "file": "assets/inbox-DBdt0duY.css",
+    "src": "resources/css/Mio/dashboard/inbox.css",
+    "isEntry": true
+  },
   "resources/css/Mio/dashboard/subject-components.css": {
-    "file": "assets/subject-components-D6PpfXfI.css",
+    "file": "assets/subject-components-LVeuJvlL.css",
     "src": "resources/css/Mio/dashboard/subject-components.css",
     "isEntry": true
   },
@@ -34,40 +39,50 @@
     "src": "resources/css/Mio/mio-app.css",
     "isEntry": true
   },
-  "resources/css/about.css": {
-    "file": "assets/about-B8QxLrIC.css",
-    "src": "resources/css/about.css",
+  "resources/css/cms/about.css": {
+    "file": "assets/about-BFDxMNOX.css",
+    "src": "resources/css/cms/about.css",
     "isEntry": true
   },
-  "resources/css/app.css": {
-    "file": "assets/app-BnrtLhIl.css",
-    "src": "resources/css/app.css",
+  "resources/css/cms/app.css": {
+    "file": "assets/app-OoFUITG7.css",
+    "src": "resources/css/cms/app.css",
     "isEntry": true
   },
-  "resources/css/campus.css": {
-    "file": "assets/campus-XDDpo5qG.css",
-    "src": "resources/css/campus.css",
+  "resources/css/cms/campus.css": {
+    "file": "assets/campus-BfmeR--1.css",
+    "src": "resources/css/cms/campus.css",
     "isEntry": true
   },
-  "resources/css/landing.css": {
-    "file": "assets/landing-B9E8BLuL.css",
-    "src": "resources/css/landing.css",
+  "resources/css/cms/events.css": {
+    "file": "assets/events-CymrpnUf.css",
+    "src": "resources/css/cms/events.css",
     "isEntry": true
   },
-  "resources/css/main-app.css": {
-    "file": "assets/main-app-CFpowxZE.css",
-    "src": "resources/css/main-app.css",
+  "resources/css/cms/landing.css": {
+    "file": "assets/landing-58c-g_Ar.css",
+    "src": "resources/css/cms/landing.css",
     "isEntry": true
   },
-  "resources/css/program.css": {
-    "file": "assets/program-DAxYZK0O.css",
-    "src": "resources/css/program.css",
+  "resources/css/cms/main-app.css": {
+    "file": "assets/main-app-BlVX8T7W.css",
+    "src": "resources/css/cms/main-app.css",
     "isEntry": true
   },
-  "resources/js/Mio/admin/login.js": {
-    "file": "assets/login-w7Lb178i.js",
-    "name": "login",
-    "src": "resources/js/Mio/admin/login.js",
+  "resources/css/cms/news.css": {
+    "file": "assets/news-DbCHYRvk.css",
+    "src": "resources/css/cms/news.css",
+    "isEntry": true
+  },
+  "resources/css/cms/program.css": {
+    "file": "assets/program-Pimf5l8n.css",
+    "src": "resources/css/cms/program.css",
+    "isEntry": true
+  },
+  "resources/js/Mio/admin/panel.js": {
+    "file": "assets/panel-l0sNRNKZ.js",
+    "name": "panel",
+    "src": "resources/js/Mio/admin/panel.js",
     "isEntry": true
   },
   "resources/js/Mio/dashboard/calendar.js": {
@@ -94,40 +109,40 @@
     "src": "resources/js/Mio/login.js",
     "isEntry": true
   },
-  "resources/js/about.js": {
-    "file": "assets/about-DDpMQaAd.js",
+  "resources/js/cms/about.js": {
+    "file": "assets/about-D96aHVTv.js",
     "name": "about",
-    "src": "resources/js/about.js",
+    "src": "resources/js/cms/about.js",
     "isEntry": true
   },
-  "resources/js/app.js": {
+  "resources/js/cms/app.js": {
     "file": "assets/app-Xaw6OIO1.js",
     "name": "app",
-    "src": "resources/js/app.js",
+    "src": "resources/js/cms/app.js",
     "isEntry": true
   },
-  "resources/js/campus.js": {
+  "resources/js/cms/campus.js": {
     "file": "assets/campus-l0sNRNKZ.js",
     "name": "campus",
-    "src": "resources/js/campus.js",
+    "src": "resources/js/cms/campus.js",
     "isEntry": true
   },
-  "resources/js/enroll.js": {
+  "resources/js/cms/enroll.js": {
     "file": "assets/enroll-DDNNI2Iy.js",
     "name": "enroll",
-    "src": "resources/js/enroll.js",
+    "src": "resources/js/cms/enroll.js",
     "isEntry": true
   },
-  "resources/js/landing.js": {
-    "file": "assets/landing-ChNE_jq5.js",
+  "resources/js/cms/landing.js": {
+    "file": "assets/landing-l0sNRNKZ.js",
     "name": "landing",
-    "src": "resources/js/landing.js",
+    "src": "resources/js/cms/landing.js",
     "isEntry": true
   },
-  "resources/js/program.js": {
+  "resources/js/cms/program.js": {
     "file": "assets/program-l0sNRNKZ.js",
     "name": "program",
-    "src": "resources/js/program.js",
+    "src": "resources/js/cms/program.js",
     "isEntry": true
   }
 }

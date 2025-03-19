@@ -5,22 +5,22 @@ export default defineConfig({
     plugins: [
         laravel({
             input: [
-                'resources/css/app.css',
-                'resources/css/landing.css',
-                'resources/css/main-app.css',
-                'resources/css/about.css',
-                'resources/css/program.css',
-                'resources/css/campus.css',
-                'resources/css/news.css',
-                'resources/css/events.css',
+                'resources/css/cms/app.css',
+                'resources/css/cms/landing.css',
+                'resources/css/cms/main-app.css',
+                'resources/css/cms/about.css',
+                'resources/css/cms/program.css',
+                'resources/css/cms/campus.css',
+                'resources/css/cms/news.css',
+                'resources/css/cms/events.css',
 
-                'resources/js/landing.js',
-                'resources/js/app.js',
-                'resources/js/landing.js',
-                'resources/js/enroll.js',
-                'resources/js/about.js',
-                'resources/js/program.js',
-                'resources/js/campus.js',
+                'resources/js/cms/landing.js',
+                'resources/js/cms/app.js',
+                'resources/js/cms/landing.js',
+                'resources/js/cms/enroll.js',
+                'resources/js/cms/about.js',
+                'resources/js/cms/program.js',
+                'resources/js/cms/campus.js',
 
 
                 'resources/css/Mio/mio-app.css',
@@ -36,8 +36,8 @@ export default defineConfig({
 
                 'resources/css/Mio/dashboard/subject-components.css',
 
-                'resources/css/Mio/admin/login.css',
-                'resources/js/Mio/admin/login.js',
+                'resources/css/Mio/admin/panel.css',
+                'resources/js/Mio/admin/panel.js',
             ],
             refresh: true,
         }),
