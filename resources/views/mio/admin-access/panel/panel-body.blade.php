@@ -20,8 +20,7 @@
         </main>
 
         <!-- FIRST ROW - GRID -->
-        <main class="main">
-            <!--Begin Main Overview-->
+        <div class="grid-row">
             <div class="main-overview">
 
             <a href="#"><div class="overviewcard">
@@ -58,101 +57,147 @@
             </div>
             </a>
 
+            <a href="#"><div class="overviewcard">
+                    <div class="overviewcard__icon">
+                        <i class="bx bx-book"></i>
+                    </div>
+                    <div class="overviewcard__info">
 
+                        <div class="info-num">
+                            32
+                        </div>
+                        <div class="info-label">
+                            Total Courses
+                        </div>
+                    </div>
+                    <div class="overviewcard__arrow">&rsaquo;</div>
+            </div>
+            </a>
 
             </div>
         <!--End Main Overview-->
 
 
-        </main>
+        </div>
 
         <!-- SECOND ROW - GRID -->
-        <div class="dashboard-grid">
+        <div class="grid-row">
+        <div class="second-row">
+                <div class="analytics-card">
+                    <div class="card">
+                        <h2>Students</h2>
+                        <div class="content">
+                            <div class="legend">
+                                <div class="legend-item"><span class="box blue"></span> Deaf</div>
+                                <div class="legend-item"><span class="box light-blue"></span> Speech delay</div>
+                                <div class="legend-item"><span class="box yellow"></span> SPED</div>
+                                <div class="legend-item"><span class="box light-yellow"></span> Others</div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="studentsChart1"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             <div class="analytics-card">
-                <h4 >Cards</h4>
-
                 <div class="card">
-                <h2>Students</h2>
-                <div class="content">
-                    <div class="legend">
-                        <div class="legend-item"><span class="box blue"></span> Deaf</div>
-                        <div class="legend-item"><span class="box light-blue"></span> Speech delay</div>
-                        <div class="legend-item"><span class="box yellow"></span> SPED</div>
-                        <div class="legend-item"><span class="box light-yellow"></span> Others</div>
-                    </div>
-                    <div class="chart-container">
-                        <canvas id="studentsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            </div>
-
-            <div class="right-side">
-                <div class="announcement-card">
-                    <h4 >Announcements</h4>
-
-                    <div class="sub-card">
-                        <div class="announce-header">
-                            <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                            <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                            <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                    <h2>Students</h2>
+                    <div class="content">
+                        <div class="legend">
+                            <div class="legend-item"><span class="box blue"></span> Deaf</div>
+                            <div class="legend-item"><span class="box light-blue"></span> Speech delay</div>
+                            <div class="legend-item"><span class="box yellow"></span> SPED</div>
+                            <div class="legend-item"><span class="box light-yellow"></span> Others</div>
                         </div>
-                    </div>
-
-                    <div class="sub-card">
-                        <div class="announce-header">
-                            <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                            <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                            <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
-                        </div>
-                    </div>
-
-                    <div class="sub-card">
-                        <div class="announce-header">
-                            <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                            <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                            <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
-                        </div>
-                    </div>
-
-                    <div class="sub-card">
-                        <div class="announce-header">
-                            <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                            <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                            <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                        <div class="chart-container">
+                            <canvas id="studentsChart2"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
+                </div>
         </div>
+
 
         <!-- THIRD ROW - GRID -->
 
-        <main class="main">
-            <!--Begin Main Overview-->
-            <div class="main-overview">
-
-            <a href="#"><div class="overviewcard">
-                    <div class="overviewcard__icon"></div>
-                    <div class="overviewcard__info">Announcements</div>
-                    <div class="overviewcard__arrow">&rsaquo;</div>
+        <div class="grid-row">
+        <div class="third-row">
+            <!-- DEPARTMENT LIST -->
+            <div class="list-card">
+            <div class="card">
+                <div class="card-header">
+                    <span>Department List</span>
+                    <span>➡</span>
+                </div>
+                <div class="list-item">
+                    <span>Language Development</span>
+                    <div class="profile-group">
+                        <img src="https://i.pravatar.cc/40?img=1" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=2" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=3" alt="Profile">
+                    </div>
+                </div>
+                <div class="list-item">
+                    <span>Counseling</span>
+                    <div class="profile-group">
+                        <img src="https://i.pravatar.cc/40?img=4" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=5" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=6" alt="Profile">
+                    </div>
+                </div>
+                <div class="list-item">
+                    <span>General Education</span>
+                    <div class="profile-group">
+                        <img src="https://i.pravatar.cc/40?img=7" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=8" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=9" alt="Profile">
+                    </div>
+                </div>
             </div>
-            </a>
-
-            <a href="#"><div class="overviewcard">
-                    <div class="overviewcard__icon"></div>
-                    <div class="overviewcard__info">Assignments</div>
-                    <div class="overviewcard__arrow">&rsaquo;</div>
             </div>
-            </a>
 
-
+            <!-- CLASSES LIST -->
+            <div class="list-card">
+            <div class="card">
+                <div class="card-header">
+                    <span>Classes</span>
+                    <span>➡</span>
+                </div>
+                <div class="list-item">
+                    <span>SEC-7A</span>
+                    <span>8 Teachers | 48 Students</span>
+                    <div class="profile-group">
+                    <img src="https://i.pravatar.cc/40?img=10" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=12" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=13" alt="Profile">
+                    </div>
+                </div>
+                <div class="list-item">
+                    <span>SEC-7B</span>
+                    <span>8 Teachers | 40 Students</span>
+                    <div class="profile-group">
+                    <img src="https://i.pravatar.cc/40?img=14" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=15" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=16" alt="Profile">
+                    </div>
+                </div>
+                <div class="list-item">
+                    <span>SEC-7C</span>
+                    <span>8 Teachers | 38 Students</span>
+                    <div class="profile-group">
+                    <img src="https://i.pravatar.cc/40?img=17" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=18" alt="Profile">
+                        <img src="https://i.pravatar.cc/40?img=19" alt="Profile">
+                    </div>
+                </div>
             </div>
-        <!--End Main Overview-->
+            </div>
+        </div>
+        </div>
 
 
-        </main>
 
   </section>
 
@@ -172,4 +217,53 @@
                 }
             });
         }
+
+        const ctx1 = document.getElementById('studentsChart1').getContext('2d');
+        const ctx2 = document.getElementById('studentsChart2').getContext('2d');
+
+
+        const studentsChart1 = new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: ['Deaf', 'Speech delay', 'SPED', 'Others'],
+                datasets: [{
+                    data: [30, 20, 25, 25],
+                    backgroundColor: ['#3b82f6', '#93c5fd', '#facc15', '#fde68a'],
+                    borderWidth: 2,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        const studentsChart2 = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Deaf', 'Speech delay', 'SPED', 'Others'],
+                datasets: [{
+                    data: [30, 20, 25, 25],
+                    backgroundColor: ['#3b82f6', '#93c5fd', '#facc15', '#fde68a'],
+                    borderWidth: 2,
+                    hoverOffset: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
     </script>

@@ -1,7 +1,7 @@
 {
   "resources/css/Mio/admin/panel.css": {
-    "file": "assets/dashboard-CM_nEaCh.css",
-    "src": "resources/css/Mio/dashboard/dashboard.css",
+    "file": "assets/panel-DKEMFc0B.css",
+    "src": "resources/css/Mio/admin/panel.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/calendar.css": {
@@ -45,7 +45,7 @@
     "isEntry": true
   },
   "resources/css/cms/app.css": {
-    "file": "assets/app-OoFUITG7.css",
+    "file": "assets/app-BlaLkleH.css",
     "src": "resources/css/cms/app.css",
     "isEntry": true
   },

@@ -7,7 +7,7 @@
         <h3 class="title-label">Menu</h3>
 
         <li>
-            <a href="#" class="{{ request()->routeIs('mio.admin-panel') ? 'active' : '' }}">
+            <a href="{{ route('mio.admin-panel') }}" class="{{ request()->routeIs('mio.admin-panel') ? 'active' : '' }}">
                 <i class='bx bx-grid-alt'></i>
                 <span class="links_name">Dashboard</span>
             </a>
@@ -15,7 +15,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->routeIs('mio.calendar') ? 'active' : '' }}">
+            <a href="{{ route('mio.teachers') }}" class="{{ request()->routeIs('mio.teachers') ? 'active' : '' }}">
                 <i class='bx bxs-graduation'></i>
                 <span class="links_name">Teachers</span>
             </a>
@@ -23,7 +23,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.students') }}" class="{{ request()->routeIs('mio.students') ? 'active' : '' }}">
                 <i class='bx bx-user-voice'></i>
                 <span class="links_name">Students</span>
             </a>
@@ -31,7 +31,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.accounts') }}" class="{{ request()->routeIs('mio.accounts') ? 'active' : '' }}">
                 <i class='bx bxs-user-detail'></i>
                 <span class="links_name">Accounts</span>
             </a>

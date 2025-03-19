@@ -16,7 +16,15 @@
 <body>
 
 @include('mio.admin-access.panel.admin-sidebar');
-@include('mio.admin-access.panel.panel-body');
+@if ($page === 'dashboard')
+        @include('mio.admin-access.panel.panel-body')
+    @elseif ($page === 'teachers')
+        @include('mio.admin-access.teachers')
+    @elseif ($page === 'students')
+        @include('mio.admin-access.students')
+    @elseif ($page === 'accounts')
+        @include('mio.admin-access.accounts')
+    @endif
 
 </body>
 
