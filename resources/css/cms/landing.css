@@ -398,9 +398,9 @@ header {
 /* Guide Section Styling */
 
 .third-container {
-    padding: 40px;
-    margin-top: 10rem;
+    padding: 40px 20px;
     background-color: #ffffff;
+    margin: 10rem 10rem 5rem 15rem;
 }
 
 .third-div {
@@ -599,6 +599,7 @@ header {
 
 .fifth-container {
     margin-top: 10rem;
+    margin-bottom: 10rem;
     padding: 40px 20px;
     background-color: #ffffff;
     text-align: center;

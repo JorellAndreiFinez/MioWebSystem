@@ -93,9 +93,9 @@ strong {
 
 .icon-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
-    padding: 20px;
+    padding: 30px;
     justify-items: center;
 }
 
@@ -103,9 +103,9 @@ strong {
 /* Individual Cards */
 
 .icon-card {
-    margin-top: 10rem;
-    width: 250px;
-    height: 150px;
+    margin-top: 5rem;
+    width: 350px;
+    height: 250px;
     background-color: #fff;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -117,8 +117,8 @@ strong {
 }
 
 .icon-card img {
-    width: 68px;
-    height: 68px;
+    width: 98px;
+    height: 98px;
     margin-bottom: 10px;
 }
 
@@ -390,7 +390,7 @@ p {
 #timeline h3 {
     text-align: center;
     font-size: 2rem;
-    font-weight: 200;
+    font-weight: 600;
     margin-bottom: 10px;
     color: var(--primary-color);
 }

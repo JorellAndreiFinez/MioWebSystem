@@ -8,7 +8,7 @@
 
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/dummy1.jpg') }}">
 
-    @vite(['resources/css/enroll.css', 'resources/js/enroll.js', 'resources/css/main-app.css'])
+    @vite(['resources/css/cms/enroll.css', 'resources/js/cms/enroll.js', 'resources/css/cms/main-app.css'])
 
     @include('layouts.external-links')
 </head>
