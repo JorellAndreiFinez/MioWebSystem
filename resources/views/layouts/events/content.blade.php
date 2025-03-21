@@ -40,7 +40,7 @@
 <div class="second-container">
 <div class="video-card">
         <div class="video-wrapper">
-            <iframe src="https://www.youtube.com/embed/YOUR_VIDEO_ID" frameborder="0" allowfullscreen></iframe>
+        <iframe width="560" height="315" src="https://www.youtube.com/embed/W2HEz9ObCJs?si=M1S1gIYatyRj9eil" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="video-title">Fun Run 2017</div>
         <a href="#" class="video-button">LEARN MORE</a>

@@ -6,19 +6,19 @@
 
     <a href="{{ route('admission.enrollment') }}">
     <div class="icon-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Enrollment Form">
+        <img src="{{ asset('storage/assets/images/icons/enrollment-2.png') }}" alt="Enrollment Form">
         <p>Enrollment Form</p>
     </div>
     </a>
    <a href="{{ route('admission.assess-guide') }}">
    <div class="icon-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Assessment Guide">
+        <img src="{{ asset('storage/assets/images/icons/assessment-1.png') }}" alt="Assessment Guide">
         <p>Assessment Guide</p>
     </div>
    </a>
     <a href="{{ route('admission.payment-guide') }}">
     <div class="icon-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="Payment">
+        <img src="{{ asset('storage/assets/images/icons/payment-2.png') }}" alt="Payment">
         <p>Payment</p>
     </div>
     </a>
@@ -77,7 +77,7 @@
 			</div>
 			<div class="body">
 				<p>Complete the pre-registration process by filling out the enrollment form with accurate personal, academic, and health information. Ensure all required documents are uploaded for verification before assessment.</p>
-				<img src="http://placehold.it/1000x500" alt="Graphic">
+				<img src="{{ asset('storage/assets/images/icons/enrollment-3.png') }}" alt="Graphic">
 			</div>
 		</div>
 
@@ -90,7 +90,7 @@
 			</div>
 			<div class="body">
 				<p>After completing the enrollment process, students will undergo an assessment to evaluate their communication, auditory, and academic skills. This ensures proper placement and personalized learning support.</p>
-				<img src="http://placehold.it/1000x500" alt="Graphic">
+				<img src="{{ asset('storage/assets/images/icons/assessment-2.png') }}" alt="Graphic">
 			</div>
 		</div>
 
@@ -103,7 +103,7 @@
 			</div>
 			<div class="body">
 				<p>Complete your enrollment by following the payment process. Ensure timely payment to confirm your slot and proceed with the next steps.</p>
-				<img src="http://placehold.it/1000x500" alt="Graphic">
+				<img src="{{ asset('storage/assets/images/icons/payment-3.png') }}" alt="Graphic">
 			</div>
 		</div>
 
@@ -116,7 +116,7 @@
 			</div>
 			<div class="body">
 				<p>After completing the payment, students will proceed to the evaluation stage. This step ensures proper assessment for class placement and personalized learning support.</p>
-				<img src="http://placehold.it/1000x500" alt="Graphic">
+				<img src="{{ asset('storage/assets/images/icons/evaluation-1.png') }}" alt="Graphic">
 			</div>
 		</div>
 
@@ -129,7 +129,7 @@
 			</div>
 			<div class="body">
 				<p>Congratulations and welcome to the Philippine Institute for the Deaf (PID)! You are now part of a supportive and inclusive learning community dedicated to empowering deaf students through quality education and specialized programs.</p>
-				<img src="http://placehold.it/1000x500" alt="Graphic">
+				<img src="{{ asset('storage/assets/images/icons/student-1.png') }}" alt="Graphic">
 			</div>
 		</div>
 

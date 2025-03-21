@@ -79,6 +79,22 @@ Route::get('/mio/admin/accounts', function () {
     return view('mio.head.admin-panel', ['page' => 'accounts']);
 })->name('mio.accounts');
 
+Route::get('/mio/admin/subjects', function () {
+    return view('mio.head.admin-panel', ['page' => 'subjects']);
+})->name('mio.subjects');
+
+Route::get('/mio/admin/schedules', function () {
+    return view('mio.head.admin-panel', ['page' => 'schedules']);
+})->name('mio.schedules');
+
+Route::get('/mio/admin/school', function () {
+    return view('mio.head.admin-panel', ['page' => 'school']);
+})->name('mio.school');
+
+Route::get('/mio/admin/emergency', function () {
+    return view('mio.head.admin-panel', ['page' => 'emergency']);
+})->name('mio.emergency');
+
 // SUBJECT
 
 

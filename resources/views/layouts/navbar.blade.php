@@ -45,7 +45,6 @@
           <ul class="dropdown-menu">
                 <li><a href="{{ route('news')}}">News</a></li>
                 <li><a href="{{ route('events')}}">Events</a></li>
-                <li><a href="">Be a Sponsor</a></li>
                 <li role="separator" class="divider"></li>
                 <li><a href="{{ route('mio.login') }}">MIO</a></li>
             </ul>

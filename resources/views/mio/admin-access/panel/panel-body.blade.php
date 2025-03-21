@@ -102,7 +102,7 @@
 
             <div class="analytics-card">
                 <div class="card">
-                    <h2>Students</h2>
+                    <h2>Scores</h2>
                     <div class="content">
                         <div class="legend">
                             <div class="legend-item"><span class="box blue"></span> Deaf</div>

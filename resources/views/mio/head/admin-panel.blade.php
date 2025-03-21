@@ -24,6 +24,14 @@
         @include('mio.admin-access.students')
     @elseif ($page === 'accounts')
         @include('mio.admin-access.accounts')
+    @elseif ($page === 'subjects')
+        @include('mio.admin-access.subjects')
+    @elseif ($page === 'schedules')
+        @include('mio.admin-access.schedules')
+    @elseif ($page === 'school')
+        @include('mio.admin-access.school')
+    @elseif ($page === 'emergency')
+        @include('mio.admin-access.emergency')
     @endif
 
 </body>

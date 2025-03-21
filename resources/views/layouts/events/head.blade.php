@@ -9,3 +9,9 @@
 
     @include('layouts.external-links')
 </head>
+
+<style>
+    .fourth-container {
+        background-image: url("{{ asset('storage/assets/images/6.3 events-posters') }}");
+    }
+</style>

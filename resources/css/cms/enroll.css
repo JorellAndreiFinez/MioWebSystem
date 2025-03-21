@@ -16,7 +16,6 @@ strong {
 
 .header {
     position: relative;
-    background: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQd2fm5oyoacppB6pN-ouQY7pAb-aEqUBIdJg&s') center/cover no-repeat;
     height: 50vh;
     color: #fff;
     display: flex;
@@ -375,9 +374,6 @@ p {
 
 #timeline {
     padding: 100px 0;
-    background: #f7f7f7;
-    border-top: 1px solid rgba(191, 191, 191, 0.4);
-    border-bottom: 1px solid rgba(191, 191, 191, 0.4);
 }
 
 #timeline h1 {
@@ -561,7 +557,7 @@ p {
 
 #timeline .demo-card .body img {
     display: block;
-    width: 100%;
+    width: 65%;
 }
 
 #timeline .demo-card--step1,
@@ -917,7 +913,7 @@ input[type="file"] {
 }
 
 .test-card img {
-    width: 40px;
+    width: 90px;
     margin-bottom: 10px;
 }
 

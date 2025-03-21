@@ -9,3 +9,9 @@
 
     @include('layouts.external-links')
 </head>
+
+<style>
+    .header {
+        background: url('{{ asset('storage/assets/images/2 admission-banner.png') }}') center/cover no-repeat;
+    }
+</style>

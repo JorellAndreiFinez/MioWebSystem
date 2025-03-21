@@ -39,33 +39,17 @@ header {
 
 .carousel-item {
     position: relative;
-    width: 100%;
-    height: 100vh;
-    flex: 1 0 100%;
-    background-size: cover;
-    background-position: center;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 25rem 0 0 0;
-    min-width: 100%;
-    background: gray;
-    transition: opacity 1s ease-in-out;
+    width: 100vw;
+    height: 100vh;
+    text-align: center;
+    padding: 5vw;
+    background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.carousel-item:nth-child(1) {
-    background-image: url('https://lh3.googleusercontent.com/p/AF1QipM1E85wuOhdaVAwz43a3vnnavYuqPlAX5pnUp4M=s1360-w1360-h1020');
-}
-
-.carousel-item:nth-child(2) {
-    background-image: url('https://lh3.googleusercontent.com/gps-cs-s/AB5caB9zCN0eHLnC238cwrCbRy_QlcKqQijppPyx3MUWFyls7bzDSGU8KTicwROfrqvvhjNwx-2tQZ00O9gxGHW9SmKVpj_xkZL56rGkpW3-vj7boa9s4lnUHJqR-fkuAOMgJYzEbcbgiw=s1360-w1360-h1020');
-}
-
-.carousel-item:nth-child(3) {
-    background-image: url('https://lh3.googleusercontent.com/gps-cs-s/AB5caB9zCN0eHLnC238cwrCbRy_QlcKqQijppPyx3MUWFyls7bzDSGU8KTicwROfrqvvhjNwx-2tQZ00O9gxGHW9SmKVpj_xkZL56rGkpW3-vj7boa9s4lnUHJqR-fkuAOMgJYzEbcbgiw=s1360-w1360-h1020');
 }
 
 
@@ -77,7 +61,7 @@ header {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.781);
+    background: rgba(0, 0, 0, 0.7);
 }
 
 
@@ -85,34 +69,35 @@ header {
 
 .container {
     position: relative;
-    text-align: center;
     color: white;
-    z-index: 10;
-    padding: 20px;
+    text-align: center;
+    padding: 10px;
+    max-width: 90%;
 }
 
 .logo {
     width: 100px;
-    margin-bottom: 10px;
+    margin-bottom: 2rem;
+    margin-top: 10rem;
 }
 
 .carousel h1 {
-    font-size: 3.5rem;
-    font-weight: 500;
-    margin-bottom: 15px;
+    font-size: clamp(3rem, 5vw, 4rem);
+    font-weight: bold;
+    margin-bottom: 10px;
 }
 
 .tagline span {
-    font-size: 2rem;
     font-style: italic;
+    font-size: clamp(1.9rem, 3vw, 2rem);
     color: #ffd700;
     font-weight: 700;
 }
 
 .description {
-    font-size: 1.7rem;
-    font-weight: 300;
-    margin: 2rem 15rem 5rem 15rem;
+    font-size: clamp(1.5rem, 2vw, 1.5rem);
+    max-width: 90%;
+    margin: auto;
 }
 
 
@@ -121,11 +106,15 @@ header {
 .buttons {
     display: flex;
     justify-content: center;
+    align-items: center;
+    /* Center buttons */
     gap: 10px;
+    margin-top: 3rem;
 }
 
 .btn {
     padding: 10px 20px;
+    font-size: clamp(1rem, 1.5vw, 1.2rem);
     border-radius: 5px;
     text-decoration: none;
     color: white;
@@ -134,11 +123,11 @@ header {
 }
 
 .inquire {
-    background-color: #1e90ff;
+    background-color: var(--secondary-color);
 }
 
 .registration {
-    background-color: #007bff;
+    background-color: white;
 }
 
 .btn:hover {
@@ -220,11 +209,11 @@ header {
 .dot {
     height: 12px;
     width: 12px;
+    margin: 0 5px;
     background-color: #bbb;
     border-radius: 50%;
-    margin: 0 5px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+    display: inline-block;
+    transition: background-color 0.6s ease;
 }
 
 .dot.active {
@@ -232,14 +221,21 @@ header {
 }
 
 
-/* RESPONSIVE */
+/* Mobile-Friendly */
 
 @media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
     h1 {
         font-size: 2rem;
     }
     .description {
-        font-size: 0.9rem;
+        max-width: 95%;
+    }
+    .buttons {
+        flex-direction: column;
+        gap: 5px;
     }
     .btn {
         padding: 8px 16px;
@@ -252,11 +248,12 @@ header {
 .first-container {
     display: flex;
     align-items: center;
+    justify-content: center;
     max-width: 1200px;
     padding: 40px;
     border-radius: 10px;
     gap: 20px;
-    margin-top: 10rem;
+    margin: 10rem auto 0;
 }
 
 .image-container {
@@ -271,9 +268,7 @@ header {
 .image-container img {
     width: 80%;
     max-width: 300px;
-    border-radius: 50%;
-    border: 5px solid white;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    height: auto;
 }
 
 .text-container {
@@ -307,20 +302,61 @@ header {
     width: 15rem;
 }
 
-
-/* Responsive Design */
-
-@media (max-width: 768px) {
-    .container {
+@media (max-width: 992px) {
+    .first-container {
         flex-direction: column;
         text-align: center;
+        padding: 20px;
+        margin-top: 5rem;
     }
-    .image-container,
+    .image-container {
+        max-width: 80%;
+    }
+    .image-container img {
+        width: 100%;
+        max-width: 250px;
+    }
+    .text-container {
+        max-width: 90%;
+    }
+    .text-container h1 {
+        font-size: 28px;
+    }
+    .text-container p {
+        font-size: 16px;
+    }
+    .btn {
+        width: 12rem;
+        padding: 8px 20px;
+    }
+}
+
+
+/* Mobile View */
+
+@media (max-width: 576px) {
+    .first-container {
+        text-align: center;
+        padding: 15px;
+    }
+    .image-container {
+        max-width: 90%;
+    }
+    .image-container img {
+        max-width: 200px;
+    }
     .text-container {
         max-width: 100%;
     }
-    .image-container img {
-        width: 60%;
+    .text-container h1 {
+        font-size: 24px;
+    }
+    .text-container p {
+        font-size: 14px;
+    }
+    .btn {
+        width: 10rem;
+        padding: 8px 15px;
     }
 }
 
@@ -339,12 +375,13 @@ header {
     font-size: 16px;
     margin-bottom: 10px;
     text-transform: uppercase;
+    font-weight: 600;
 }
 
 .second-container h2 {
     color: #000;
     font-size: 28px;
-    font-weight: bold;
+    font-weight: 800;
     margin-bottom: 40px;
 }
 
@@ -362,10 +399,9 @@ header {
 }
 
 .reason .icon img {
-    width: 60px;
-    height: 60px;
+    width: 85px;
+    height: 80px;
     padding: 10px;
-    border-radius: 50%;
     margin-bottom: 15px;
 }
 
@@ -457,8 +493,8 @@ header {
 }
 
 .step-icon img {
-    width: 30px;
-    height: 30px;
+    width: 65px;
+    height: 65px;
     background-color: #f4f4f4;
     padding: 10px;
     border-radius: 8px;
@@ -467,6 +503,7 @@ header {
 
 .step-content h3 {
     font-size: 18px;
+    font-weight: 600;
     color: #000;
     margin-bottom: 5px;
 }

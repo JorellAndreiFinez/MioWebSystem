@@ -4,8 +4,8 @@
 <div class="info-section">
     <div class="info-content">
         <div class="info-image">
-            <img src="https://images.unsplash.com/photo-1579353977828-2a4eab540b9a?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8c2FtcGxlfGVufDB8fDB8fHww" alt="Students">
-            <div class="blue-overlay"></div>
+            <img src="{{ asset('storage/assets/images/3.1 about-know-more -about-pid.png') }}" alt="Students">
+            <!-- <div class="blue-overlay"></div> -->
         </div>
         <div class="info-text">
             <span class="tagline">KNOW MORE ABOUT PID</span>
@@ -13,7 +13,7 @@
             <p>
                 The Philippine Institute for the Deaf (PID) exists for the purpose of ensuring that these unique resources are readily available to those young children who need them. With the combined support of the community, young deaf children in the Philippines continue to have the opportunity to listen, learn, and talk.
             </p>
-            <a href="#" class="btn">GET STARTED</a>
+
         </div>
     </div>
 </div>
@@ -34,8 +34,8 @@
                     <span class="dot"></span>
                     <span class="dot small"></span>
                 </div>
-                <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="PID Logo">
-                <h3>The Philippine Institute for the Deaf - PID</h3>
+                <img src="{{ asset('storage/assets/images/1.2.2 home-pid.png') }}" alt="PID Logo">
+                <h3>The Philippine Institute for the Deaf <div>PID</div> </h3>
                 <p>
                     Established in 1988, it empowers deaf children to
                     <i>"listen, learn, and talk."</i>
@@ -47,8 +47,8 @@
                     <span class="dot"></span>
                     <span class="dot small"></span>
                 </div>
-                <img src="https://cdn-icons-png.flaticon.com/512/9908/9908191.png" alt="ISP Logo">
-                <h3>The Integrated School of the Philippines - ISP</h3>
+                <img src="{{ asset('storage/assets/images/1.2.4 home-isp.png')}}" alt="ISP Logo">
+                <h3>The Integrated School of the Philippines <div>ISP</div> </h3>
                 <p>
                     Established in 2007, it integrates
                     <i>"speaking"</i> deaf graduates with hearing peers.
@@ -147,3 +147,4 @@
 <div id="orgchart">
 
 </div>
+

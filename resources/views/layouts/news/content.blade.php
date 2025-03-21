@@ -37,27 +37,27 @@
         </div>
 
         <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
+            <p class="date">Posted November 22, 2017</p>
+            <h3>29th Foundation Day</h3>
             <hr>
-            <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
+            <img src="https://static.wixstatic.com/media/03665b_33b787139d7243569f748fd16c6fd02f~mv2_d_2048_1356_s_2.jpg/v1/fill/w_402,h_273,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_33b787139d7243569f748fd16c6fd02f~mv2_d_2048_1356_s_2.jpg" alt="Christmas Tree Lighting">
+            <p>The Institution celebrated it's 29th Foundation Day that was held last September 6-8, 2017 at the Malacañang Grandstand</p>
+        </div>
+
+        <div class="event">
+            <p class="date">Posted October 9, 2017</p>
+            <h3>Annual Fun Run</h3>
+            <hr>
+            <img src="https://static.wixstatic.com/media/03665b_7c0dab8ffee5492693a0f9428f67088a~mv2_d_2048_1536_s_2.jpg/v1/fill/w_350,h_385,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_7c0dab8ffee5492693a0f9428f67088a~mv2_d_2048_1536_s_2.jpg" alt="Christmas Tree Lighting">
             <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
         </div>
 
         <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
+            <p class="date">Posted November 22, 2017</p>
+            <h3>High School Camping</h3>
             <hr>
-            <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
-            <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
-        </div>
-
-        <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
-            <hr>
-            <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
-            <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
+            <img src="https://static.wixstatic.com/media/03665b_75543371cb0549129508c1be9e4cafb8~mv2.jpg/v1/fill/w_555,h_278,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_75543371cb0549129508c1be9e4cafb8~mv2.jpg" alt="Christmas Tree Lighting">
+            <p>PID High School students, together with their respective advisers and some PTA officers, went to La Mesa Eco Park to have their very first camping held last October 29, 2017. </p>
         </div>
 
 
@@ -87,26 +87,26 @@
 
 <div class="fourth-container">
         <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
+            <p class="date">Posted October 22, 2018</p>
+            <h3>Spirit Inc. Scholarship</h3>
             <hr>
-            <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
-            <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
+            <img src="https://static.wixstatic.com/media/03665b_5e85f249b29e4990ba48cc2e062dc9aa~mv2.jpg/v1/fill/w_401,h_405,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/IMG_3624_JPG.jpg" alt="Christmas Tree Lighting">
+            <p>The Filipino-American Spirit Inc (FAS) awarded one of our students Irhyl Lydovice full scholarship amounting to $2,000. Ihryl is a Grade 1 student and dreams to be a chef someday</p>
         </div>
 
         <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
+            <p class="date">Posted September 14, 2019</p>
+            <h3>Conrad Hotel Partnership</h3>
             <hr>
-            <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
-            <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
+            <img src="https://static.wixstatic.com/media/03665b_789019e79bdc433bafbd39f7e888bc91~mv2_d_2048_1536_s_2.jpg/v1/fill/w_456,h_337,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/60440905_2654776474537325_73009426994802.jpg" alt="Christmas Tree Lighting">
+            <p>Last May 14, 2019, The Philippine Institute for the Deaf, signed a partnership with Conrad Hotel. It will benefit PID Alumni and Graduates who dreams to work in a Hotel.</p>
         </div>
 
         <div class="event">
-            <p class="date">Posted November 9, 2017</p>
-            <h3>Diamond Hotel’s Christmas Tree Lighting</h3>
+            <p class="date">Posted December 10, 2018</p>
+            <h3>Rotary Club of Makati</h3>
             <hr>
             <img src="https://static.wixstatic.com/media/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg/v1/fill/w_584,h_386,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/03665b_e2b098a057364f9a9de5ab2e8fbcc186~mv2_d_1632_1354_s_2.jpg" alt="Christmas Tree Lighting">
-            <p>The Philippine Institute for the Deaf (PID) students performed at the Diamond Hotel for their Christmas Tree Lighting Celebration...</p>
+            <p>The Rotary Club of Makati went to PID last December 7, 2018 for their Gift Giving Project. PID students performed their U.N. dance presentation in which the guests really enjoyed.</p>
         </div>
     </div>

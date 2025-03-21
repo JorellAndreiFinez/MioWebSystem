@@ -12,131 +12,192 @@ var swiper = new Swiper('.blog-slider', {
     }
 });
 
-Highcharts.chart('orgchart', {
+document.addEventListener('DOMContentLoaded', function() {
+    let imageElement = document.createElement('img');
+    imageElement.src = "{{ asset('storage/assets/images/staffs/3.4.1 about-honorary-chairman.png') }}";
 
-    chart: {
-        height: 600,
-        inverted: true
-    },
 
-    title: {
-        text: 'Philippine Institute for the Deaf'
-    },
+    Highcharts.chart('orgchart', {
 
-    series: [{
-        type: 'organization',
-        name: 'Philippine Institute for the Deaf',
-        keys: ['from', 'to'],
-        data: [
-            [26, 35],
-            [26, 48],
-            [26, 11],
-            [26, 50],
-            [48, 'Product'],
-            [48, 'Web'],
-            [11, 'Sales'],
-            [11, 'vor'],
-            [50, 'Market'],
-            ['Web', 49]
-        ],
-        levels: [{
-            level: 0,
-            color: 'silver',
-            dataLabels: {
-                color: 'black'
-            },
-            height: 25
-        }, {
-            level: 1,
-            color: 'silver',
-            dataLabels: {
-                color: 'black'
-            },
-            height: 25
-        }, {
-            level: 2,
-            color: '#980104'
-        }, {
-            level: 4,
-            color: '#359154'
-        }],
-        nodes: [{
+        chart: {
+            height: 700,
+            inverted: true
+        },
+
+        title: {
+            text: 'Philippine Institute for the Deaf'
+        },
+
+        series: [{
+            type: 'organization',
+            name: 'Philippine Institute for the Deaf',
+            keys: ['from', 'to'],
+            data: [
+                [26, 35],
+                [26, 48],
+                [26, 11],
+                [48, 50],
+                [48, 50],
+                [48, 51],
+                [48, 52],
+                [51, 60],
+                [51, 61],
+                [51, 62],
+                [61, 70],
+                [61, 71],
+                [61, 72],
+                [71, 80],
+                [71, 81]
+            ],
+            levels: [{
+                level: 0,
+                color: '#FFBF18',
+                dataLabels: {
+                    color: 'white'
+                },
+                height: 25
+            }, {
+                level: 1,
+                color: '#2264DC',
+                dataLabels: {
+                    color: 'white'
+                },
+                height: 25
+            }, {
+                level: 2,
+                color: 'silver',
+                dataLabels: {
+                    color: 'black'
+                },
+                height: 25
+            }, {
+                level: 3,
+                color: 'silver',
+                dataLabels: {
+                    color: 'black'
+                },
+                height: 25
+            }, {
+                level: 4,
+                color: 'silver',
+                dataLabels: {
+                    color: 'black'
+                },
+                height: 25
+            }, {
+                level: 5,
+                color: 'silver',
+                dataLabels: {
+                    color: 'white'
+                },
+                height: 25
+            }],
+            nodes: [{
                 id: 26,
                 title: 'Chairman of the Board',
-                name: 'Cesar V. Campos',
-                image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/JohnBell.jpg'
+                name: 'Cesar V. Campos'
             }, {
                 id: 35,
-                title: 'Partner - Sales',
-                name: 'Mike Forno',
+                title: 'Honorary Chairman',
+                name: 'Dr. Cynthia Romero Mamon',
                 column: 1,
-                image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/MichaelForno.jpg',
                 layout: 'hanging'
             }, {
                 id: 48,
-                title: 'Partner - Solution Services',
-                name: 'Tim Weeks',
+                title: 'Corporate Secretary',
+                name: 'Ramon E. Rodrigo',
                 column: 1,
-                image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/TimWeeks.jpg',
                 layout: 'hanging'
             }, {
                 id: 11,
-                title: 'Technology Director',
-                name: 'Chuck Beck',
+                title: 'Post Chairman',
+                name: 'Ignacio R. Bunye',
                 column: 1,
-                image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/ChuckBeck.jpg',
                 layout: 'hanging'
             }, {
                 id: 50,
-                title: 'Operations Manager',
-                name: 'Wendy Cutler',
-                column: 1,
-                image: 'http://www.frgrisk.com/wp-content/uploads/2017/12/WendyCutler-1.jpg',
+                title: 'Public Relations',
+                name: 'Cynthia Dela Cruz',
+                column: 2,
                 layout: 'hanging'
             }, {
-                id: 'Product',
-                name: 'Data Team',
-                column: 2
+                id: 51,
+                title: 'Auditor',
+                name: 'Orly Tugob',
+                column: 2,
+                layout: 'hanging'
             }, {
-                id: 'Web',
-                name: 'Solution Services',
-                column: 2
+                id: 52,
+                title: 'President & Exec. Director',
+                name: 'Julie G. Esguerra',
+                column: 2,
+                layout: 'hanging'
             }, {
-                id: 'Sales',
-                name: 'IT Department',
-                column: 2
-            }, {
-                id: 'vor',
-                name: 'VoR Platform',
-                column: 2
-            },
-            {
-                id: 'Market',
-                name: 'Operations Team',
-                column: 2
-            },
-            {
-                id: 49,
-                name: 'Valerie Cooper',
+                id: 60,
+                title: 'Treasurer',
+                name: 'Maricor Akol',
                 column: 3,
                 layout: 'hanging'
-            }
-        ],
-        colorByPoint: false,
-        color: '#007ad0',
-        dataLabels: {
-            color: 'white'
+            }, {
+                id: 61,
+                title: 'Speech Therapist',
+                name: 'Manette Inocencio',
+                column: 3,
+                layout: 'hanging'
+            }, {
+                id: 62,
+                title: 'Congressman',
+                name: 'Benny Abante',
+                column: 3,
+                layout: 'hanging'
+            }, {
+                id: 70,
+                title: 'ENT, UST',
+                name: 'Dr. Norby Martinez',
+                column: 4,
+                layout: 'hanging'
+            }, {
+                id: 71,
+                title: 'Global Advocay',
+                name: 'Betty Pomar-Burgos Bael',
+                column: 4,
+                layout: 'hanging'
+            }, {
+                id: 72,
+                title: 'International Relations',
+                name: 'Lynette Melcher',
+                column: 4,
+                layout: 'hanging'
+            }, {
+                id: 80,
+                title: 'PTPA President',
+                name: 'Gina Rivera',
+                column: 5,
+                layout: 'hanging'
+            }, {
+                id: 81,
+                title: 'Alumni President',
+                name: 'Josh Raymundo',
+                column: 5,
+                layout: 'hanging'
+            }],
+            colorByPoint: false,
+            color: '#007ad0',
+            dataLabels: {
+                color: 'white'
+            },
+            borderColor: 'white',
+            nodeWidth: 65
+        }],
+        tooltip: {
+            outside: true
         },
-        borderColor: 'white',
-        nodeWidth: 65
-    }],
-    tooltip: {
-        outside: true
-    },
-    exporting: {
-        allowHTML: true,
-        sourceWidth: 800,
-        sourceHeight: 600
-    }
+        exporting: {
+            allowHTML: true,
+            sourceWidth: 800,
+            sourceHeight: 900
+        }
+
+    });
 
 });

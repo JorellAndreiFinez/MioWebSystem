@@ -39,7 +39,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.subjects') }}" class="{{ request()->routeIs('mio.subjects') ? 'active' : '' }}">
                 <i class='bx bx-book-open'></i>
                 <span class="links_name">Subjects</span>
             </a>
@@ -47,7 +47,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.schedules') }}" class="{{ request()->routeIs('mio.schedules') ? 'active' : '' }}">
                 <i class='bx bx-calendar'></i>
                 <span class="links_name">Schedule</span>
             </a>
@@ -55,7 +55,7 @@
         </li>
 
         <li>
-            <a href="#" class="{{ request()->is('inbox') ? 'active' : '' }}">
+            <a href="{{ route('mio.school') }}" class="{{ request()->routeIs('mio.school') ? 'active' : '' }}">
                 <i class='bx bx-building'></i>
                 <span class="links_name">School</span>
             </a>
@@ -68,11 +68,11 @@
         <h3 class="title-label">Other</h3>
 
         <li>
-            <a href="#" class="{{ request()->is('profile') ? 'active' : '' }}">
+            <a href="{{ route('mio.emergency') }}" class="{{ request()->routeIs('mio.emergency') ? 'active' : '' }}">
                 <i class='bx bxs-error'></i>
                 <span class="links_name">Emergency Alert</span>
             </a>
-            <span class="tooltip">Profile</span>
+            <span class="tooltip">Emergency Alert</span>
         </li>
 
         <li>

@@ -32,19 +32,19 @@
             </div>
             <div class="test-grid">
                 <div class="test-card">
-                    <img src="icon1.png" alt="Speech Icon">
+                    <img src="{{ asset('storage/assets/images/icons/speech-1.png') }}" alt="Speech Icon">
                     <h3>Speech & Auditory Test</h3>
                     <p>Identifying images and video demonstrations.</p>
                     <a href="#">See Tutorial</a>
                 </div>
                 <div class="test-card">
-                    <img src="icon2.png" alt="Reading Icon">
+                    <img src="{{ asset('storage/assets/images/icons/reading-1.png') }}" alt="Reading Icon">
                     <h3>Reading & Pronunciation Test</h3>
                     <p>Evaluating reading skills, pronunciation, and articulation.</p>
                     <a href="#">See Tutorial</a>
                 </div>
                 <div class="test-card">
-                    <img src="icon3.png" alt="Sentence Icon">
+                    <img src="{{ asset('storage/assets/images/icons/sentence-1.png') }}" alt="Sentence Icon">
                     <h3>Sentence Structure Test</h3>
                     <p>Assessing the ability to construct proper sentences.</p>
                     <a href="#">See Tutorial</a>
@@ -63,12 +63,12 @@
             </div>
             <div class="test-grid">
                 <div class="test-card">
-                    <img src="icon4.png" alt="Grammar Icon">
+                    <img src="{{ asset('storage/assets/images/icons/grammar-1.png') }}" alt="Grammar Icon">
                     <h3>Grammar & Sentence Structure</h3>
                     <p>Checking grammar, sentence building, and communication clarity.</p>
                 </div>
                 <div class="test-card">
-                    <img src="icon5.png" alt="Fill Blanks Icon">
+                    <img src="{{ asset('storage/assets/images/icons/fill-1.png') }}" alt="Fill Blanks Icon">
                     <h3>Fill in the Blanks</h3>
                     <p>Completing sentences to assess comprehension and vocabulary.</p>
                 </div>
@@ -85,7 +85,7 @@
             </div>
             <div class="test-grid">
                 <div class="test-card">
-                    <img src="icon1.png" alt="Speech Icon">
+                    <img src="{{ asset('storage/assets/images/icons/test-1.png') }}" alt="Speech Icon">
                     <h3>Speech & Auditory Test</h3>
                     <p>Identifying images and video demonstrations.</p>
                     <a href="#">See Tutorial</a>
