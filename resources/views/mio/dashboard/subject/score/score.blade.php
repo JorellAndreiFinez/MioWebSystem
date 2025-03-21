@@ -25,28 +25,28 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td>Mathematics</td>
+                            <td>Quiz</td>
                             <td>Lorem Ipsum</td>
-                            <td>da</td>
-                            <td>Pass</td>
+                            <td>Submitted</td>
+                            <td>10/10</td>
                         </tr>
                         <tr>
-                            <td>Science</td>
+                            <td>Quiz</td>
                             <td>Lorem Ipsum</td>
-                            <td>A+</td>
-                            <td>Pass</td>
+                            <td>-</td>
+                            <td>-/10</td>
                         </tr>
                         <tr>
-                            <td>English</td>
+                            <td>Assignment</td>
                             <td>Lorem Ipsum</td>
-                            <td>B</td>
-                            <td>Pass</td>
+                            <td>-</td>
+                            <td>-/10</td>
                         </tr>
                         <tr>
-                            <td>History</td>
+                            <td>Speech Activity 1</td>
                             <td>Lorem Ipsum</td>
-                            <td>A</td>
-                            <td>Pass</td>
+                            <td>-</td>
+                            <td>-/10</td>
                         </tr>
                     </tbody>
                 </table>

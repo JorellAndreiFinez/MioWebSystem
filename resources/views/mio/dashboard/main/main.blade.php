@@ -31,8 +31,8 @@
                 <select class="dropdown">
                     <option value="option1">All Subjects</option>
                     <option value="option2">Academics</option>
-                    <option value="option3">Speech</option>
-                    <option value="option3">Auditory</option>
+                    <option value="option3">Speech and Auditory</option>
+                    
 
                 </select>
             </div>
@@ -40,41 +40,33 @@
         <div class="card-wrap">
             <a href="{{ route('mio.subject') }}" class="card-link">
                 <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
+                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
                     <div>
-                        <h4>This is an example</h4>
-                        <p>Lorem ipsum</p>
+                        <h4>SPD701 Speech Development</h4>
+                        <p>SEC-7A</p>
                     </div>
                 </div>
  </a>
         </div>
             <div class="card-wrap">
                 <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
+                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
                     <div>
-                        <h4>This is an example</h4>
-                        <p>Lorem ipsum</p>
+                        <h4>SPD702 Speech Development</h4>
+                        <p>SEC-7B</p>
                     </div>
                 </div>
             </div>
             <div class="card-wrap">
                 <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
+                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfbEYWJwIfyiqseSNKVHkCPlsoSC8ToVHO8Ws3ThnMNpNA42_ScCo0CrT2t5zNM1cFqKc&usqp=CAU" class="card-img" />
                     <div>
-                        <h4>This is an example</h4>
-                        <p>Lorem ipsum</p>
+                        <h4>ENG704 English Language</h4>
+                        <p>SEC-7D</p>
                     </div>
                 </div>
             </div>
-            <div class="card-wrap">
-                <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHZqj-XReJ2R76nji51cZl4ETk6-eHRmZBRw&s" class="card-img" />
-                    <div>
-                        <h4>This is an example</h4>
-                        <p>Lorem ipsum</p>
-                    </div>
-                </div>
-            </div>
+   
         </div>
 
         <div class="right-side">
@@ -83,33 +75,33 @@
 
             <div class="sub-card">
                 <div class="announce-header">
-                    <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                    <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                    <p class="announce-date">March 30, 2025</p> <!-- italic small gray -->
+                    <h2 class="announce-subject">General</h2> <!-- small bold -->
+                    <h3 class="announce-title">All Grade Homeroom Meeting</h3> <!-- slightly bigger bold -->
                 </div>
             </div>
 
             <div class="sub-card">
                 <div class="announce-header">
                     <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                    <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                    <h2 class="announce-subject">General</h2> <!-- small bold -->
+                    <h3 class="announce-title">Grade 10 Seminar</h3> <!-- slightly bigger bold -->
                 </div>
             </div>
 
             <div class="sub-card">
                 <div class="announce-header">
-                    <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                    <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                    <p class="announce-date">April 10 2025</p> <!-- italic small gray -->
+                    <h2 class="announce-subject">English</h2> <!-- small bold -->
+                    <h3 class="announce-title">Missing Assignments</h3> <!-- slightly bigger bold -->
                 </div>
             </div>
 
             <div class="sub-card">
                 <div class="announce-header">
-                    <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General or Specified Subject</h2> <!-- small bold -->
-                    <h3 class="announce-title">Announcement Title</h3> <!-- slightly bigger bold -->
+                    <p class="announce-date">Apr 1 2025</p> <!-- italic small gray -->
+                    <h2 class="announce-subject">General</h2> <!-- small bold -->
+                    <h3 class="announce-title">No Classes</h3> <!-- slightly bigger bold -->
                 </div>
             </div>
         </div>
@@ -118,28 +110,28 @@
                 <h4>Assigned Tasks</h4>
                 <div class="sub-card">
                     <div class="task-header">
-                        <h3>Title</h3>
+                        <h3>Activity 1</h3>
                         <p class="task-date">Jan 10 2025</p>
                     </div>
                 </div>
 
                 <div class="sub-card">
                     <div class="task-header">
-                        <h3>Title</h3>
+                        <h3>Speech Activity 2</h3>
                         <p class="task-date">Jan 10 2025</p>
                     </div>
                 </div>
 
                 <div class="sub-card">
                     <div class="task-header">
-                        <h3>Title</h3>
+                        <h3>Quiz 1</h3>
                         <p class="task-date">Jan 10 2025</p>
                     </div>
                 </div>
 
                 <div class="sub-card">
                     <div class="task-header">
-                        <h3>Title</h3>
+                        <h3>Undertaking</h3>
                         <p class="task-date">Jan 10 2025</p>
                     </div>
                 </div>

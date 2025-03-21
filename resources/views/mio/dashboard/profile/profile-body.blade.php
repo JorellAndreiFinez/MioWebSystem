@@ -6,7 +6,7 @@
         <!-- Begin Main-->
         <main class="main">
 
-            <div class="container">
+            <div class="profile-container">
 
                 <!-- Main Content -->
                 <div class="main-content">
