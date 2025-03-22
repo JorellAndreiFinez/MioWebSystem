@@ -1,7 +1,7 @@
 
 
 <div>
-    <div class="title paralax letterbox" style="background-image:url(https://images.smartparenting.com.ph/smartpar/resize/medium/images/2024/04/05/image-34-1712301635.webp)">
+    <div class="title paralax letterbox" style="background-image:url('{{ asset('storage/assets/images/1.1.1 home-slider.png') }}')">
         <h1>Postbox Reveal</h1>
     </div>
     <div class="campus">
@@ -46,7 +46,7 @@
 
 <div>
     <div class="title paralax" style="background-image:url(https://scontent.fmnl17-2.fna.fbcdn.net/v/t39.30808-6/366378847_735561461912541_2766696690621172914_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=f727a1&_nc_eui2=AeHU6Knsn4931Vaju91rxPziwOwQSFMd5H_A7BBIUx3kf3pAL9PihsOrwegd5nkqgwMsmw0NcPg_obTrsZfhvDOQ&_nc_ohc=V4i6qxEwn2AQ7kNvgFB0-0x&_nc_oc=AdjhSa03JgPY4E7IAa30L1greMVulR5it0dW7ezH4rwGmXtHGSAL-MpHKE_JcF_nSVI&_nc_zt=23&_nc_ht=scontent.fmnl17-2.fna&_nc_gid=wH2YVBX_j3v4iIH8Y0ez8g&oh=00_AYFZc5EgXPw2J-S0XASVadQTnZXW6-Cc_ff4wKSk2LjNPQ&oe=67DC028A)">
-        <h1>Lorem Ipsum</h1>
+        <h1>Oralism-Based Campus</h1>
     </div>
     <div class="campus">
         <p>Curabitur commodo in eros a varius. Morbi mi eros, mollis eget neque vitae, mattis cursus dui. Vestibulum eget ex eget ex efficitur tempor. Duis non ante interdum, volutpat justo pellentesque, finibus odio. Duis vestibulum rutrum accumsan. Nullam in semper tellus. Curabitur elementum elit nibh.</p>
