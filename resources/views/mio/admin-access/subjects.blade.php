@@ -3,11 +3,13 @@
     <section class="grade-section">
     <div class="grade-header">Grade Levels</div>
     <div class="grade-grid">
-        <div class="grade-card">
+       <a href="{{ route('mio.view-subject') }}">
+       <div class="grade-card">
             <span class="icon"></span>
             <p>Grade 7</p>
             <span class="arrow">&rsaquo;</span>
         </div>
+       </a>
         <div class="grade-card">
             <span class="icon"></span>
             <p>Grade 8</p>

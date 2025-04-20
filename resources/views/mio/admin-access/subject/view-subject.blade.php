@@ -1,11 +1,12 @@
+
 <!-- Modal overlay -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box">
     <div class="modal-header">
-      <span class="modal-title">Delete Student</span>
+      <span class="modal-title">Delete Subject</span>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to remove this student?</p>
+      <p>Are you sure you want to remove this subject?</p>
     </div>
     <div class="modal-footer">
       <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
@@ -15,7 +16,7 @@
 </div>
 
 <section class="home-section">
-<div class="text">Students</div>
+<div class="text">Grade 7 > All Schedule</div>
 <div class="teacher-container">
     <!-- HEADER CONTROLS -->
     <div class="table-header">
@@ -25,7 +26,7 @@
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <button class="btn add-btn"><a href="{{ route('mio.add-student') }}">+ New Student</a></button>
+            <button class="btn add-btn"><a href="{{ route('mio.add-subject') }}">+ New Subject</a></button>
         </div>
     </div>
 
@@ -34,74 +35,69 @@
    <table>
         <thead>
             <tr>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Downloadable Files</th>
+                <th>Subject ID</th>
+                <th>Subject Code</th>
+                <th>Title</th>
+                <th>Teacher ID</th>
+                <th>Section ID</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
+                <td>C10001</td>
+                <td>SPD701</td>
                 <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
+                    Speech Development
                 </td>
-
+                <td>
+                    T10001
+                </td>
+                <td>
+                    SEC701
+                </td>
                 <td class="action-icons">
-                <a href="{{ route('mio.edit-student') }}"><i class="fa fa-pencil"></i></a>
+                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
 
                 <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>
 
             <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
+                <td>C10001</td>
+                <td>SPD701</td>
                 <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
+                    Speech Development
+                </td>
+                <td>
+                    T10001
+                </td>
+                <td>
+                    SEC701
                 </td>
                 <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
+                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
+
+                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>
+
             <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
+                <td>C10001</td>
+                <td>SPD701</td>
                 <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
+                    Speech Development
+                </td>
+                <td>
+                    T10001
+                </td>
+                <td>
+                    SEC701
                 </td>
                 <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
-            <tr>
-                <td>T10002</td>
-                <td>Tatiana Donin</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
-            <tr>
-                <td>T10003</td>
-                <td>Tiana Dorwart</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
+                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
+
+                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
                 </td>
             </tr>
         </tbody>

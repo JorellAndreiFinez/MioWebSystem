@@ -1,11 +1,12 @@
+
 <!-- Modal overlay -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box">
     <div class="modal-header">
-      <span class="modal-title">Delete Student</span>
+      <span class="modal-title">Delete Parent</span>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to remove this student?</p>
+      <p>Are you sure you want to remove this parent?</p>
     </div>
     <div class="modal-footer">
       <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
@@ -15,7 +16,7 @@
 </div>
 
 <section class="home-section">
-<div class="text">Students</div>
+<div class="text">Parents</div>
 <div class="teacher-container">
     <!-- HEADER CONTROLS -->
     <div class="table-header">
@@ -25,7 +26,7 @@
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <button class="btn add-btn"><a href="{{ route('mio.add-student') }}">+ New Student</a></button>
+            <button class="btn add-btn"><a href="{{ route('mio.add-parent') }}">+ New Parent</a></button>
         </div>
     </div>
 
@@ -34,7 +35,7 @@
    <table>
         <thead>
             <tr>
-                <th>Student ID</th>
+                <th>Parent ID</th>
                 <th>Name</th>
                 <th>Downloadable Files</th>
                 <th>Action</th>
@@ -48,9 +49,9 @@
                     <button class="download-btn pdf-btn">PDF</button>
                     <button class="download-btn csv-btn">CSV</button>
                 </td>
-
                 <td class="action-icons">
-                <a href="{{ route('mio.edit-student') }}"><i class="fa fa-pencil"></i></a>
+
+                <a href="{{ route('mio.edit-parent') }}"><i class="fa fa-pencil"></i></a>
 
                 <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
                 </td>
