@@ -2,60 +2,37 @@
 
 use Illuminate\Support\Facades\Route;
 
-// CMS
-Route::get('/', function () {
-    return view('landing');
-})->name('landing');
+// CMS PUBLIC ROUTES
+Route::prefix('')->group(function () {
 
-Route::get('/admission', function () {
-    return view('layouts.enroll');
-})->name('enroll');
+    Route::get('/', function () {
+        return view('landing');
+    })->name('landing');
 
-Route::get('/about', function () {
-    return view('layouts.about');
-})->name('about');
+    Route::get('/admission', function () {
+        return view('layouts.enroll');
+    })->name('enroll');
 
-Route::get('/program', function () {
-    return view('layouts.program');
-})->name('program');
+    Route::get('/about', function () {
+        return view('layouts.about');
+    })->name('about');
 
-Route::get('/campus', function () {
-    return view('layouts.campus');
-})->name('campus');
+    Route::get('/program', function () {
+        return view('layouts.program');
+    })->name('program');
 
-Route::get('/news', function () {
-    return view('layouts.news');
-})->name('news');
+    Route::get('/campus', function () {
+        return view('layouts.campus');
+    })->name('campus');
 
-Route::get('/events', function () {
-    return view('layouts.events');
-})->name('events');
+    Route::get('/news', function () {
+        return view('layouts.news');
+    })->name('news');
 
-// DASHBOARD
-
-Route::get('/mio/login', function () {
-    return view('mio.user-access.login');
-})->name('mio.login');
-
-Route::get('/mio/dashboard', function () {
-    return view('mio.head.dashboard');
-})->name('mio.dashboard');
-
-Route::get('/mio/sample', function () {
-    return view('mio.head.subject');
-})->name('mio.subject');
-
-Route::get('/mio/calendar', function () {
-    return view('mio.head.calendar');
-})->name('mio.calendar');
-
-Route::get('/mio/inbox', function () {
-    return view('mio.head.inbox');
-})->name('mio.inbox');
-
-Route::get('/mio/profile', function () {
-    return view('mio.head.profile');
-})->name('mio.profile');
+    Route::get('/events', function () {
+        return view('layouts.events');
+    })->name('events');
+});
 
 // ADMIN ACCESS
 
@@ -63,200 +40,113 @@ Route::get('/mio/admin/login', function () {
     return view('mio.admin-access.login');
 })->name('mio.admin.login');
 
-Route::get('/mio/admin/dashboard', function () {
-    return view('mio.head.admin-panel', ['page' => 'dashboard']);
-})->name('mio.admin-panel');
 
-// TEACHERS
 
-Route::get('/mio/admin/teachers', function () {
-    return view('mio.head.admin-panel', ['page' => 'teachers']);
-})->name('mio.teachers');
+// MIO ADMIN PANEL ROUTES
+Route::prefix('mio/admin')->name('mio.')->group(function () {
 
-Route::get('/mio/admin/AddTeacher', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-teacher']);
-})->name('mio.add-teacher');
+    Route::view('/dashboard', 'mio.head.admin-panel', ['page' => 'dashboard'])->name('admin-panel');
 
-Route::get('/mio/admin/EditTeacher', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-teacher']);
-})->name('mio.edit-teacher');
+    // TEACHERS
+    Route::view('/teachers', 'mio.head.admin-panel', ['page' => 'teachers'])->name('teachers');
+    Route::view('/AddTeacher', 'mio.head.admin-panel', ['page' => 'add-teacher'])->name('add-teacher');
+    Route::view('/EditTeacher', 'mio.head.admin-panel', ['page' => 'edit-teacher'])->name('edit-teacher');
 
-// STUDENTS
+    // STUDENTS
+    Route::view('/students', 'mio.head.admin-panel', ['page' => 'students'])->name('students');
+    Route::view('/AddStudent', 'mio.head.admin-panel', ['page' => 'add-student'])->name('add-student');
+    Route::view('/EditStudent', 'mio.head.admin-panel', ['page' => 'edit-student'])->name('edit-student');
 
-Route::get('/mio/admin/students', function () {
-    return view('mio.head.admin-panel', ['page' => 'students']);
-})->name('mio.students');
+    // ACCOUNTS
+    Route::view('/accounts', 'mio.head.admin-panel', ['page' => 'accounts'])->name('accounts');
 
-Route::get('/mio/admin/AddStudent', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-student']);
-})->name('mio.add-student');
+    // ADMINS
+    Route::view('/admins', 'mio.head.admin-panel', ['page' => 'admin'])->name('admin');
+    Route::view('/AddAdmin', 'mio.head.admin-panel', ['page' => 'add-admin'])->name('add-admin');
+    Route::view('/EditAdmin', 'mio.head.admin-panel', ['page' => 'edit-admin'])->name('edit-admin');
 
-Route::get('/mio/admin/EditStudent', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-student']);
-})->name('mio.edit-student');
+    // PARENTS
+    Route::view('/parents', 'mio.head.admin-panel', ['page' => 'parent'])->name('parent');
+    Route::view('/AddParent', 'mio.head.admin-panel', ['page' => 'add-parent'])->name('add-parent');
+    Route::view('/EditParent', 'mio.head.admin-panel', ['page' => 'edit-parent'])->name('edit-parent');
 
-// ACCOUNT
+    // SUBJECTS
+    Route::view('/subjects', 'mio.head.admin-panel', ['page' => 'subjects'])->name('subjects');
+    Route::view('/AllSubjects', 'mio.head.admin-panel', ['page' => 'view-subject'])->name('view-subject');
+    Route::view('/AddSubjects', 'mio.head.admin-panel', ['page' => 'add-subject'])->name('add-subject');
+    Route::view('/EditSubjects', 'mio.head.admin-panel', ['page' => 'edit-subject'])->name('edit-subject');
 
-Route::get('/mio/admin/accounts', function () {
-    return view('mio.head.admin-panel', ['page' => 'accounts']);
-})->name('mio.accounts');
+    // SCHEDULES
+    Route::view('/schedules', 'mio.head.admin-panel', ['page' => 'schedules'])->name('schedules');
+    Route::view('/AllSchedules', 'mio.head.admin-panel', ['page' => 'view-schedule'])->name('view-schedule');
+    Route::view('/AddSchedule', 'mio.head.admin-panel', ['page' => 'add-schedule'])->name('add-schedule');
+    Route::view('/EditSchedule', 'mio.head.admin-panel', ['page' => 'edit-schedule'])->name('edit-schedule');
 
-// ADMINS
+    // SCHOOL
+    Route::view('/school', 'mio.head.admin-panel', ['page' => 'school'])->name('school');
+    Route::view('/AllCalendar', 'mio.head.admin-panel', ['page' => 'view-calendar'])->name('view-calendar');
+    Route::view('/AddCalendar', 'mio.head.admin-panel', ['page' => 'add-calendar'])->name('add-calendar');
+    Route::view('/EditCalendar', 'mio.head.admin-panel', ['page' => 'edit-calendar'])->name('edit-calendar');
 
-Route::get('/mio/admin/admins', function () {
-    return view('mio.head.admin-panel', ['page' => 'admin']);
-})->name('mio.admin');
+    Route::view('/AllDepartment', 'mio.head.admin-panel', ['page' => 'view-department'])->name('view-department');
+    Route::view('/AddDepartment', 'mio.head.admin-panel', ['page' => 'add-department'])->name('add-department');
+    Route::view('/EditDepartment', 'mio.head.admin-panel', ['page' => 'edit-department'])->name('edit-department');
 
-Route::get('/mio/admin/AddAdmin', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-admin']);
-})->name('mio.add-admin');
+    Route::view('/ViewAnnouncement', 'mio.head.admin-panel', ['page' => 'view-announcement'])->name('view-announcement');
+    Route::view('/AddAnnouncement', 'mio.head.admin-panel', ['page' => 'add-announcement'])->name('add-announcement');
+    Route::view('/EditAnnouncement', 'mio.head.admin-panel', ['page' => 'edit-announcement'])->name('edit-announcement');
 
-Route::get('/mio/admin/EditAdmin', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-admin']);
-})->name('mio.edit-admin');
+    // Emergency
+    Route::view('/emergency', 'mio.head.admin-panel', ['page' => 'emergency'])->name('emergency');
+});
 
-// PARENTS
 
-Route::get('/mio/admin/parents', function () {
-    return view('mio.head.admin-panel', ['page' => 'parent']);
-})->name('mio.parent');
+Route::prefix('mio')->group(function () {
 
-Route::get('/mio/admin/AddParent', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-parent']);
-})->name('mio.add-parent');
+    Route::get('/dashboard', function () {
+        return view('mio.head.student-panel', ['page' => 'dashboard']);
+    })->name('mio.dashboard');
 
-Route::get('/mio/admin/EditParent', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-parent']);
-})->name('mio.edit-parent');
+    Route::get('/calendar', function () {
+        return view('mio.head.student-panel', ['page' => 'calendar']);
+    })->name('mio.calendar');
 
-// SUBJECTS
+    Route::get('/inbox', function () {
+        return view('mio.head.student-panel', ['page' => 'inbox']);
+    })->name('mio.inbox');
 
-Route::get('/mio/admin/subjects', function () {
-    return view('mio.head.admin-panel', ['page' => 'subjects']);
-})->name('mio.subjects');
+    Route::get('/profile', function () {
+        return view('mio.head.student-panel', ['page' => 'profile']);
+    })->name('mio.profile');
 
-Route::get('/mio/admin/AllSubjects', function () {
-    return view('mio.head.admin-panel', ['page' => 'view-subject']);
-})->name('mio.view-subject');
+    Route::get('/subject', function () {
+        return view('mio.head.student-panel', ['page' => 'subject']);
+    })->name('mio.subject');
 
-Route::get('/mio/admin/AddSubjects', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-subject']);
-})->name('mio.add-subject');
-
-Route::get('/mio/admin/EditSubjects', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-subject']);
-})->name('mio.edit-subject');
-
-// SCHEDULES
-
-Route::get('/mio/admin/schedules', function () {
-    return view('mio.head.admin-panel', ['page' => 'schedules']);
-})->name('mio.schedules');
-
-Route::get('/mio/admin/AllSchedules', function () {
-    return view('mio.head.admin-panel', ['page' => 'view-schedule']);
-})->name('mio.view-schedule');
-
-Route::get('/mio/admin/AddSchedule', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-schedule']);
-})->name('mio.add-schedule');
-
-Route::get('/mio/admin/EditSchedule', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-schedule']);
-})->name('mio.edit-schedule');
-
-// SCHOOL
-
-Route::get('/mio/admin/school', function () {
-    return view('mio.head.admin-panel', ['page' => 'school']);
-})->name('mio.school');
-
-//
-Route::get('/mio/admin/AllCalendar', function () {
-    return view('mio.head.admin-panel', ['page' => 'view-calendar']);
-})->name('mio.view-calendar');
-
-Route::get('/mio/admin/AddCalendar', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-calendar']);
-})->name('mio.add-calendar');
-
-Route::get('/mio/admin/EditCalendar', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-calendar']);
-})->name('mio.edit-calendar');
-
-//
-
-Route::get('/mio/admin/AllDepartment', function () {
-    return view('mio.head.admin-panel', ['page' => 'view-department']);
-})->name('mio.view-department');
-
-Route::get('/mio/admin/AddDepartment', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-department']);
-})->name('mio.add-department');
-
-Route::get('/mio/admin/EditDepartment', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-department']);
-})->name('mio.edit-department');
-
-//
-
-Route::get('/mio/admin/ViewAnnouncement', function () {
-    return view('mio.head.admin-panel', ['page' => 'view-announcement']);
-})->name('mio.view-announcement');
-
-Route::get('/mio/admin/AddAnnouncement', function () {
-    return view('mio.head.admin-panel', ['page' => 'add-announcement']);
-})->name('mio.add-announcement');
-
-Route::get('/mio/admin/EditAnnouncement', function () {
-    return view('mio.head.admin-panel', ['page' => 'edit-announcement']);
-})->name('mio.edit-announcement');
-
-// Emergency
-
-Route::get('/mio/admin/emergency', function () {
-    return view('mio.head.admin-panel', ['page' => 'emergency']);
-})->name('mio.emergency');
+    Route::get('/login', function () {
+        return view('mio.user-access.login');
+    })->name('mio.login');
+});
 
 // SUBJECT
 
-Route::get('/mio/sample/announcement', function () {
-    return view('mio.head.announcement');
-})->name('mio.subject.announcement');
+Route::prefix('mio/sample')->name('mio.subject.')->group(function () {
 
-Route::get('/mio/sample/announcement/sample1', function () {
-    return view('mio.head.announcement-content');
-})->name('mio.subject.announcement-content');
+    Route::view('/announcement', 'mio.head.student-panel', ['page' => 'announcement'])->name('announcement');
+    Route::view('/announcement/sample1', 'mio.head.student-panel', ['page' => 'announcement-body'])->name('announcement-body');
 
-Route::get('/mio/sample/assignment', function () {
-    return view('mio.head.assignment');
-})->name('mio.subject.assignment');
+    Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
 
-Route::get('/mio/sample/assignment/sample1', function () {
-    return view('mio.head.assignment-content');
-})->name('mio.assignment.assignment-content');
+    Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
 
-Route::get('/mio/sample/scores', function () {
-    return view('mio.head.scores');
-})->name('mio.subject.scores');
+    Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
 
-Route::get('/mio/sample/module', function () {
-    return view('mio.head.module');
-})->name('mio.subject.module');
+    Route::view('/module', 'mio.head.student-panel', ['page' => 'module'])->name('module');
 
-Route::get('/mio/sample/module/sample1', function () {
-    return view('mio.head.module-content');
-})->name('mio.subject.module-content');
+    Route::view('/module/sample1', 'mio.head.student-panel', ['page' => 'module-body'])->name('module-body');
+});
 
-// ADMISSION - CMS
-Route::get('/admission/enrollment', function () {
-    return view('layouts.enrollment');
-})->name('admission.enrollment');
 
-Route::get('/admission/assessment-guide', function () {
-    return view('layouts.assessment-guide');
-})->name('admission.assess-guide');
+// PARENTS DASHBOARD
 
-Route::get('/admission/payment-guide', function () {
-    return view('layouts.payment-guide');
-})->name('admission.payment-guide');
+

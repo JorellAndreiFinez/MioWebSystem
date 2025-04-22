@@ -4,130 +4,114 @@
         <i class='bx bx-menu' id="btn"></i>
     </div>
     <ul class="nav-list">
-        <h3 class="title-label">Menu</h3>
+    @php
+    $menuSections = [
+        'Menu' => [
+            ['route' => 'mio.admin-panel', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
+            ['route' => 'mio.teachers', 'icon' => 'bx bxs-graduation', 'label' => 'Teachers'],
+            ['route' => 'mio.students', 'icon' => 'bx bx-user-voice', 'label' => 'Students'],
+            ['route' => 'mio.accounts', 'icon' => 'bx bxs-user-detail', 'label' => 'Accounts'],
+            ['route' => 'mio.subjects', 'icon' => 'bx bx-book-open', 'label' => 'Subjects'],
+            ['route' => 'mio.schedules', 'icon' => 'bx bx-calendar', 'label' => 'Schedule'],
+            ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
+        ],
+        'Other' => [
+            ['route' => 'mio.emergency', 'icon' => 'bx bxs-error', 'label' => 'Emergency Alert'],
+            ['url' => '#', 'icon' => 'bx bxs-chart', 'label' => 'Data Analytics', 'custom_active' => request()->is('help')],
+            ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
+        ]
+    ];
+    @endphp
 
-        <li>
-            <a href="{{ route('mio.admin-panel') }}" class="{{ request()->routeIs('mio.admin-panel') ? 'active' : '' }}">
-                <i class='bx bx-grid-alt'></i>
-                <span class="links_name">Dashboard</span>
-            </a>
-            <span class="tooltip">Dashboard</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.teachers') }}" class="{{ request()->routeIs('mio.teachers') ? 'active' : '' }}">
-                <i class='bx bxs-graduation'></i>
-                <span class="links_name">Teachers</span>
-            </a>
-            <span class="tooltip">Teachers</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.students') }}" class="{{ request()->routeIs('mio.students') ? 'active' : '' }}">
-                <i class='bx bx-user-voice'></i>
-                <span class="links_name">Students</span>
-            </a>
-            <span class="tooltip">Students</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.accounts') }}" class="{{ request()->routeIs('mio.accounts') ? 'active' : '' }}">
-                <i class='bx bxs-user-detail'></i>
-                <span class="links_name">Accounts</span>
-            </a>
-            <span class="tooltip">Accounts</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.subjects') }}" class="{{ request()->routeIs('mio.subjects') ? 'active' : '' }}">
-                <i class='bx bx-book-open'></i>
-                <span class="links_name">Subjects</span>
-            </a>
-            <span class="tooltip">Subjects</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.schedules') }}" class="{{ request()->routeIs('mio.schedules') ? 'active' : '' }}">
-                <i class='bx bx-calendar'></i>
-                <span class="links_name">Schedule</span>
-            </a>
-            <span class="tooltip">Schedule</span>
-        </li>
-
-        <li>
-            <a href="{{ route('mio.school') }}" class="{{ request()->routeIs('mio.school') ? 'active' : '' }}">
-                <i class='bx bx-building'></i>
-                <span class="links_name">School</span>
-            </a>
-            <span class="tooltip">School</span>
-        </li>
-
-
-
+    @foreach($menuSections as $section => $items)
+        <h3 class="title-label">{{ $section }}</h3>
+        @foreach($items as $item)
+            @php
+                $isActive = isset($item['route'])
+                    ? request()->routeIs($item['route'])
+                    : (!empty($item['custom_active']) && $item['custom_active']);
+                $href = isset($item['route']) ? route($item['route']) : $item['url'];
+            @endphp
+            <li>
+                <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
+                    <i class="{{ $item['icon'] }}"></i>
+                    <span class="links_name">{{ $item['label'] }}</span>
+                </a>
+                <span class="tooltip">{{ $item['label'] }}</span>
+            </li>
+        @endforeach
         <br>
-        <h3 class="title-label">Other</h3>
+    @endforeach
 
-        <li>
-            <a href="{{ route('mio.emergency') }}" class="{{ request()->routeIs('mio.emergency') ? 'active' : '' }}">
-                <i class='bx bxs-error'></i>
-                <span class="links_name">Emergency Alert</span>
-            </a>
-            <span class="tooltip">Emergency Alert</span>
-        </li>
-
-        <li>
-            <a href="#" class="{{ request()->is('help') ? 'active' : '' }}">
-                <i class='bx bxs-chart'></i>
-                <span class="links_name">Data Analytics</span>
-            </a>
-            <span class="tooltip">Help & Report</span>
-        </li>
-
-        <li>
-            <a href="#" class="{{ request()->is('settings') ? 'active' : '' }}">
-                <i class='bx bx-cog'></i>
-                <span class="links_name">Setting</span>
-            </a>
-            <span class="tooltip">Setting</span>
-        </li>
-
-        <li class="profile">
+    <!-- Profile + Logout -->
+    <li class="profile">
             <div class="profile-details">
                 <div class="name_job">
-                    <div class="name">John Doe</div>
-                    <div class="job">Role</div>
+                    <div class="name">{{ Auth::user()->name ?? 'John Doe' }}</div>
+                    <div class="job">{{ Auth::user()->role ?? 'Role' }}</div>
                 </div>
             </div>
             <a href="{{ route('mio.login') }}">
                 <i class='bx bx-log-out' id="log_out"></i>
             </a>
         </li>
-    </ul>
+</ul>
+
 </div>
 
+<script>
+  const sidebar = document.querySelector(".sidebar");
+  const closeBtn = document.querySelector("#btn");
+  const searchBtn = document.querySelector(".bx-search");
 
-
-  <script>
-  let sidebar = document.querySelector(".sidebar");
-  let closeBtn = document.querySelector("#btn");
-  let searchBtn = document.querySelector(".bx-search");
-
-  closeBtn.addEventListener("click", ()=>{
+  // Toggle sidebar
+  function toggleSidebar() {
     sidebar.classList.toggle("open");
-    menuBtnChange();//calling the function(optional)
-  });
-
-  searchBtn.addEventListener("click", ()=>{ // Sidebar open when you click on the search iocn
-    sidebar.classList.toggle("open");
-    menuBtnChange(); //calling the function(optional)
-  });
-
-  // following are the code to change sidebar button(optional)
-  function menuBtnChange() {
-   if(sidebar.classList.contains("open")){
-     closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");//replacing the iocns class
-   }else {
-     closeBtn.classList.replace("bx-menu-alt-right","bx-menu");//replacing the iocns class
-   }
+    menuBtnChange();
   }
-  </script>
+
+  // Update sidebar button icon
+  function menuBtnChange() {
+    if (sidebar.classList.contains("open")) {
+      closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");
+    } else {
+      closeBtn.classList.replace("bx-menu-alt-right", "bx-menu");
+    }
+  }
+
+  // Show/hide tooltips on hover when sidebar is closed
+  document.querySelectorAll(".nav-list li").forEach((item) => {
+    item.addEventListener("mouseenter", () => {
+      if (!sidebar.classList.contains("open")) {
+        const tooltip = item.querySelector(".tooltip");
+        if (tooltip) {
+          tooltip.style.opacity = "1";
+          tooltip.style.pointerEvents = "auto";
+        }
+      }
+    });
+
+    item.addEventListener("mouseleave", () => {
+      const tooltip = item.querySelector(".tooltip");
+      if (tooltip) {
+        tooltip.style.opacity = "0";
+        tooltip.style.pointerEvents = "none";
+      }
+    });
+  });
+
+  // Event listeners
+  if (closeBtn) closeBtn.addEventListener("click", toggleSidebar);
+  if (searchBtn) searchBtn.addEventListener("click", toggleSidebar);
+
+  // Optional: Close sidebar on outside click
+  document.addEventListener("click", (event) => {
+    if (!sidebar.contains(event.target) && !closeBtn.contains(event.target)) {
+      sidebar.classList.remove("open");
+      menuBtnChange();
+    }
+  });
+
+</script>
+
+

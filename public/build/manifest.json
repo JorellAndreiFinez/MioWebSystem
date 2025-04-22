@@ -1,6 +1,6 @@
 {
   "resources/css/Mio/admin/panel.css": {
-    "file": "assets/panel-BmFoN4Tq.css",
+    "file": "assets/panel-C1o7LSJU.css",
     "src": "resources/css/Mio/admin/panel.css",
     "isEntry": true
   },
@@ -10,12 +10,12 @@
     "isEntry": true
   },
   "resources/css/Mio/dashboard/dashboard.css": {
-    "file": "assets/dashboard-CM_nEaCh.css",
+    "file": "assets/dashboard-BSG_7oM0.css",
     "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/inbox.css": {
-    "file": "assets/inbox-DBdt0duY.css",
+    "file": "assets/inbox-BGxwkOrW.css",
     "src": "resources/css/Mio/dashboard/inbox.css",
     "isEntry": true
   },
@@ -35,7 +35,7 @@
     "isEntry": true
   },
   "resources/css/Mio/mio-app.css": {
-    "file": "assets/mio-app-Bu7MyY8k.css",
+    "file": "assets/mio-app-DhBZxTHj.css",
     "src": "resources/css/Mio/mio-app.css",
     "isEntry": true
   },
@@ -80,7 +80,7 @@
     "isEntry": true
   },
   "resources/js/Mio/admin/panel.js": {
-    "file": "assets/panel-l0sNRNKZ.js",
+    "file": "assets/panel-Lm1MU4r1.js",
     "name": "panel",
     "src": "resources/js/Mio/admin/panel.js",
     "isEntry": true

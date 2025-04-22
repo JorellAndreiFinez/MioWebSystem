@@ -1,67 +1,58 @@
+
+<div class="mobile-toggle" id="btn">
+    <i class='bx bx-menu'></i>
+</div>
+
 <div class="sidebar">
     <div class="logo-details">
         <div class="logo_name">MIO</div>
-        <i class='bx bx-menu' id="btn"></i>
+        <i class='bx bx-menu' id="btn2"></i>
     </div>
+
+    @php
+        $menuSections = [
+            'Menu' => [
+                ['route' => 'mio.dashboard', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
+                ['route' => 'mio.calendar', 'icon' => 'bx bx-calendar', 'label' => 'Calendar'],
+                ['route' => 'mio.inbox', 'icon' => 'bx bx-message', 'label' => 'Inbox'],
+            ],
+            'Other' => [
+                ['route' => 'mio.profile', 'icon' => 'bx bx-user', 'label' => 'Profile'],
+                ['url' => '#', 'icon' => 'bx bx-info-circle', 'label' => 'Help & Report', 'custom_active' => request()->is('help')],
+                ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
+            ],
+        ];
+    @endphp
+
     <ul class="nav-list">
-        <h3 class="title-label">Menu</h3>
+        @foreach ($menuSections as $section => $items)
+            <h3 class="title-label">{{ $section }}</h3>
+            @foreach ($items as $item)
+                @php
+                    $isActive = isset($item['route'])
+                        ? request()->routeIs($item['route'])
+                        : (!empty($item['custom_active']) && $item['custom_active']);
 
-        <li>
-            <a href="{{ route('mio.dashboard') }}" class="{{ request()->routeIs('mio.dashboard') ? 'active' : '' }}">
-                <i class='bx bx-grid-alt'></i>
-                <span class="links_name">Dashboard</span>
-            </a>
-            <span class="tooltip">Dashboard</span>
-        </li>
+                    $href = isset($item['route']) ? route($item['route']) : $item['url'];
+                @endphp
 
-        <li>
-            <a href="{{ route('mio.calendar') }}" class="{{ request()->routeIs('mio.calendar') ? 'active' : '' }}">
-                <i class='bx bx-calendar'></i>
-                <span class="links_name">Calendar</span>
-            </a>
-            <span class="tooltip">Calendar</span>
-        </li>
+                <li>
+                    <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
+                        <i class="{{ $item['icon'] }}"></i>
+                        <span class="links_name">{{ $item['label'] }}</span>
+                    </a>
+                    <!-- <span class="tooltip">{{ $item['label'] }}</span> -->
+                </li>
+            @endforeach
+            <br>
+        @endforeach
 
-        <li>
-            <a href="{{ route('mio.inbox') }}" class="{{ request()->is('inbox') ? 'active' : '' }}">
-                <i class='bx bx-message'></i>
-                <span class="links_name">Inbox</span>
-            </a>
-            <span class="tooltip">Inbox</span>
-        </li>
-
-        <br>
-        <h3 class="title-label">Other</h3>
-
-        <li>
-            <a href="{{ route('mio.profile') }}" class="{{ request()->is('profile') ? 'active' : '' }}">
-                <i class='bx bx-user'></i>
-                <span class="links_name">Profile</span>
-            </a>
-            <span class="tooltip">Profile</span>
-        </li>
-
-        <li>
-            <a href="#" class="{{ request()->is('help') ? 'active' : '' }}">
-                <i class='bx bx-info-circle'></i>
-                <span class="links_name">Help & Report</span>
-            </a>
-            <span class="tooltip">Help & Report</span>
-        </li>
-
-        <li>
-            <a href="#" class="{{ request()->is('settings') ? 'active' : '' }}">
-                <i class='bx bx-cog'></i>
-                <span class="links_name">Setting</span>
-            </a>
-            <span class="tooltip">Setting</span>
-        </li>
-
+        <!-- Profile + Logout -->
         <li class="profile">
             <div class="profile-details">
                 <div class="name_job">
-                    <div class="name">John Doe</div>
-                    <div class="job">Role</div>
+                    <div class="name">{{ Auth::user()->name ?? 'John Doe' }}</div>
+                    <div class="job">{{ Auth::user()->role ?? 'Role' }}</div>
                 </div>
             </div>
             <a href="{{ route('mio.login') }}">
@@ -73,27 +64,61 @@
 
 
 
-  <script>
-  let sidebar = document.querySelector(".sidebar");
-  let closeBtn = document.querySelector("#btn");
-  let searchBtn = document.querySelector(".bx-search");
 
-  closeBtn.addEventListener("click", ()=>{
-    sidebar.classList.toggle("open");
-    menuBtnChange();//calling the function(optional)
-  });
+<script>
+    const sidebar = document.querySelector(".sidebar");
+    const toggleBtn = document.querySelector("#btn");
+    const toggleBtn2 = document.querySelector("#btn2");
 
-  searchBtn.addEventListener("click", ()=>{ // Sidebar open when you click on the search iocn
-    sidebar.classList.toggle("open");
-    menuBtnChange(); //calling the function(optional)
-  });
 
-  // following are the code to change sidebar button(optional)
-  function menuBtnChange() {
-   if(sidebar.classList.contains("open")){
-     closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");//replacing the iocns class
-   }else {
-     closeBtn.classList.replace("bx-menu-alt-right","bx-menu");//replacing the iocns class
-   }
-  }
-  </script>
+    function toggleSidebar() {
+        sidebar.classList.toggle("open");
+
+        // Toggle menu icon
+        const icon = toggleBtn.querySelector("i");
+        icon.classList.toggle("bx-menu");
+        icon.classList.toggle("bx-menu-alt-right");
+    }
+
+     // Toggle sidebar on button click
+     toggleBtn.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent triggering outside click
+        toggleSidebar();
+        toggleBtn.style.display = "none";
+    });
+    // Toggle sidebar on button click
+    toggleBtn2.addEventListener("click", (event) => {
+        event.stopPropagation(); // Prevent triggering outside click
+        toggleSidebar();
+        toggleBtn.style.display = "none";
+
+    });
+
+    // Close sidebar if clicked outside (on smaller screens)
+    document.addEventListener("click", (event) => {
+        if (
+            window.innerWidth <= 768 &&
+            sidebar.classList.contains("open") &&
+            !sidebar.contains(event.target) &&
+            !toggleBtn.contains(event.target)
+        ) {
+            sidebar.classList.remove("open");
+
+            // Reset icon back to hamburger
+            const icon = toggleBtn.querySelector("i");
+            icon.classList.remove("bx-menu-alt-right");
+            icon.classList.add("bx-menu");
+        }
+    });
+
+    // Optional: Automatically close sidebar on window resize if screen becomes small
+    window.addEventListener("resize", () => {
+        if (window.innerWidth > 768 && sidebar.classList.contains("open")) {
+            sidebar.classList.remove("open");
+            const icon = toggleBtn.querySelector("i");
+            icon.classList.remove("bx-menu-alt-right");
+            icon.classList.add("bx-menu");
+        }
+    });
+</script>
+
