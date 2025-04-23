@@ -1,16 +1,18 @@
-/* Main CARD */
+/* ---------- INBOX CARD ---------- */
 
 .grid-container {
     display: grid;
     grid-template-columns: 1fr;
     /*Side Nav hidden */
-    grid-template-rows: 50px 1fr 50px;
+    grid-template-rows: 20px 1fr 50px;
     grid-template-areas: 'main';
     height: 100vh;
     margin: 20px;
+    width: 100%;
 }
 
 .main {
+    margin: 0;
     grid-area: main;
 }
 
@@ -44,7 +46,7 @@
 .container {
     display: flex;
     height: 100vh;
-    box-shadow: 0px 2px 4px #e7e7e7;
+    box-shadow: 0px 2px 2px 2px #a8a6a6;
 }
 
 
@@ -61,45 +63,9 @@
 
 .chat-list {
     width: 30%;
-    padding: 15px;
+    padding: 12px;
     border-right: 1px solid #ddd;
     overflow-y: auto;
-}
-
-
-/* SEARCH BAR */
-
-.search-container {
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    width: 100%;
-    max-width: 280px;
-    background-color: var(--background-color);
-    border-radius: 30px;
-    padding: 10px;
-    margin: 20px 0;
-    position: relative;
-    color: var(--backup-color-2);
-}
-
-.search-container i {
-    color: var(--backup-color-2);
-    font-size: 18px;
-    padding: 2px 10px;
-}
-
-#searchBar {
-    width: 100%;
-    border: none;
-    font-size: 16px;
-    outline: none;
-    padding: 1px;
-    background-color: var(--background-color);
-}
-
-#searchBar::placeholder {
-    color: var(--backup-color-2);
 }
 
 
@@ -112,11 +78,12 @@
 .contact {
     display: flex;
     align-items: center;
-    padding: 12px;
+    padding: 22px;
     border-radius: 8px;
     cursor: pointer;
     transition: background 0.3s ease;
     margin-bottom: 10px;
+    box-shadow: 0px 2px 4px #d6d6d6;
 }
 
 .contact:hover {
@@ -275,3 +242,5 @@
         width: 100%;
     }
 }
+
+@media (max-width: 420px) {}

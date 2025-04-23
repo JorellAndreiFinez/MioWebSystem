@@ -25,6 +25,8 @@
     position: absolute;
     background-color: #ffcc4d;
     border: none;
+    top: 18%;
+    right: 22%;
     padding: 10px 20px;
     border-radius: 20px;
     cursor: pointer;
@@ -42,7 +44,7 @@
 }
 
 
-/* Responsive: Hide text and resize button */
+/* Responsive: Small screens (≤600px) */
 
 @media (max-width: 600px) {
     .new-message-btn {
@@ -50,8 +52,33 @@
         font-size: 18px;
         border-radius: 50%;
         width: 40px;
+        top: 18%;
+        right: 12%;
         height: 40px;
         justify-content: center;
+        align-items: center;
+        display: flex;
+    }
+    .new-message-btn .btn-text {
+        display: none;
+    }
+}
+
+
+/* Responsive: Medium-small screens (601px–768px) */
+
+@media (min-width: 601px) and (max-width: 768px) {
+    .new-message-btn {
+        padding: 14px;
+        font-size: 20px;
+        border-radius: 50%;
+        top: 18%;
+        right: 10%;
+        width: 50px;
+        height: 50px;
+        justify-content: center;
+        align-items: center;
+        display: flex;
     }
     .new-message-btn .btn-text {
         display: none;

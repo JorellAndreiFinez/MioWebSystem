@@ -75,10 +75,15 @@
         let email = document.getElementById("email").value;
 
         if (email.includes("student")) {
-            window.location.href = "{{ route('mio.dashboard') }}";
+            window.location.href = "{{ route('mio.student-panel') }}";
         } else if (email.includes("admin")) {
             window.location.href = "{{ route('mio.admin-panel') }}";
-        } else {
+        } else if (email.includes("parent")) {
+            window.location.href = "{{ route('mio.parent-panel') }}";
+        } else if (email.includes("teacher")) {
+            window.location.href = "{{ route('mio.teacher-panel') }}";
+        }
+        else {
             alert("Invalid login. Use 'student' or 'admin' in email.");
         }
     }

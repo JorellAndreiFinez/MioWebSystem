@@ -2,7 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-// CMS PUBLIC ROUTES
+// CMS
 Route::prefix('')->group(function () {
 
     Route::get('/', function () {
@@ -34,16 +34,16 @@ Route::prefix('')->group(function () {
     })->name('events');
 });
 
-// ADMIN ACCESS
+// ADMIN LOGIN
 
-Route::get('/mio/admin/login', function () {
-    return view('mio.admin-access.login');
-})->name('mio.admin.login');
+// Route::get('/mio/admin/login', function () {
+//     return view('mio.admin-access.login');
+// })->name('mio.admin.login');
 
 
 
-// MIO ADMIN PANEL ROUTES
-Route::prefix('mio/admin')->name('mio.')->group(function () {
+// MIO - ADMIN PANEL
+Route::prefix('mio/admin1')->name('mio.')->group(function () {
 
     Route::view('/dashboard', 'mio.head.admin-panel', ['page' => 'dashboard'])->name('admin-panel');
 
@@ -100,12 +100,12 @@ Route::prefix('mio/admin')->name('mio.')->group(function () {
     Route::view('/emergency', 'mio.head.admin-panel', ['page' => 'emergency'])->name('emergency');
 });
 
-
-Route::prefix('mio')->group(function () {
+// MIO - STUDENT PANEL
+Route::prefix('mio/student1')->group(function () {
 
     Route::get('/dashboard', function () {
         return view('mio.head.student-panel', ['page' => 'dashboard']);
-    })->name('mio.dashboard');
+    })->name('mio.student-panel');
 
     Route::get('/calendar', function () {
         return view('mio.head.student-panel', ['page' => 'calendar']);
@@ -128,9 +128,13 @@ Route::prefix('mio')->group(function () {
     })->name('mio.login');
 });
 
+Route::get('mio/login', function () {
+    return view('mio.user-access.login');
+})->name('mio.login');
+
 // SUBJECT
 
-Route::prefix('mio/sample')->name('mio.subject.')->group(function () {
+Route::prefix('mio/sample1')->name('mio.subject.')->group(function () {
 
     Route::view('/announcement', 'mio.head.student-panel', ['page' => 'announcement'])->name('announcement');
     Route::view('/announcement/sample1', 'mio.head.student-panel', ['page' => 'announcement-body'])->name('announcement-body');
@@ -147,6 +151,53 @@ Route::prefix('mio/sample')->name('mio.subject.')->group(function () {
 });
 
 
-// PARENTS DASHBOARD
+// MIO - PARENT PANEL
+Route::prefix('mio/parent1')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('mio.head.parent-panel', ['page' => 'parent-dashboard']);
+    })->name('mio.parent-panel');
+
+    Route::get('/calendar', function () {
+        return view('mio.head.parent-panel', ['page' => 'parent-calendar']);
+    })->name('mio.parent-calendar');
+
+    Route::get('/inbox', function () {
+        return view('mio.head.parent-panel', ['page' => 'parent-inbox']);
+    })->name('mio.parent-inbox');
+
+    Route::get('/profile', function () {
+        return view('mio.head.parent-panel', ['page' => 'parent-profile']);
+    })->name('mio.parent-profile');
+
+    // Route::get('/subject', function () {
+    //     return view('mio.head.student-panel', ['page' => 'subject']);
+    // })->name('mio.subject');
+
+});
 
 
+// MIO - TEACHER PANEL
+Route::prefix('mio/teacher1')->group(function () {
+
+    Route::get('/dashboard', function () {
+        return view('mio.head.teacher-panel', ['page' => 'teacher-dashboard']);
+    })->name('mio.teacher-panel');
+
+    Route::get('/calendar', function () {
+        return view('mio.head.teacher-panel', ['page' => 'calendar']);
+    })->name('mio.teacher-calendar');
+
+    Route::get('/inbox', function () {
+        return view('mio.head.teacher-panel', ['page' => 'inbox']);
+    })->name('mio.teacher-inbox');
+
+    Route::get('/profile', function () {
+        return view('mio.head.teacher-panel', ['page' => 'profile']);
+    })->name('mio.teacher-profile');
+
+    Route::get('/subject', function () {
+        return view('mio.head.teacher-panel', ['page' => 'subject']);
+    })->name('mio.subject');
+
+});
