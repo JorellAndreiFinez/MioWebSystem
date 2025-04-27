@@ -146,7 +146,6 @@
 
                     </div>
 
-                   <!-- Schedule Section -->
                 <!-- Schedule Section -->
                 <div class="section-header">Schedule</div>
                 <div class="section-content" id="schedule-section">

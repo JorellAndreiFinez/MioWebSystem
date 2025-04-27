@@ -9,9 +9,22 @@ Route::prefix('')->group(function () {
         return view('landing');
     })->name('landing');
 
+    // ADMISSION
     Route::get('/admission', function () {
         return view('layouts.enroll');
     })->name('enroll');
+
+    Route::get('/admission/guide', function () {
+        return view('layouts.assessment-guide');
+    })->name('admission.assess-guide');
+
+    Route::get('/admission/enroll', function () {
+        return view('layouts.enrollment');
+    })->name('admission.enrollment');
+
+    Route::get('/admission/payment', function () {
+        return view('layouts.payment-guide');
+    })->name('admission.payment-guide');
 
     Route::get('/about', function () {
         return view('layouts.about');

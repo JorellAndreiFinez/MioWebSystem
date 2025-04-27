@@ -106,23 +106,24 @@
                 </div>
 
                 <!-- Academic Information Section -->
-                <div class="section-header">Academic Information
-
-                </div>
+                <div class="section-header">Academic Information</div>
                 <div class="section-content">
-                    <div class="form-row">
-                        <div class="form-group wide">
-                            <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-                            <input type="text" value="Blah blah High school"  />
-                        </div>
-                        <div class="form-group">
-                            <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-                            <input type="number" value="10"  />
-                        </div>
-
+                <div class="form-row">
+                    <div class="form-group wide">
+                        <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" value="Blah blah High school" />
                     </div>
-
+                    <div class="form-group">
+                        <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
+                        <input type="number" value="10" />
+                    </div>
+                    <div class="form-group">
+                        <label>Up to Which Level <span style="color: red; font-weight:700">*</span></label>
+                        <input type="number" placeholder="Enter final level completed" />
+                    </div>
                 </div>
+            </div>
+
 
                 <!-- Health Information Section -->
                 <div class="section-header">Health Information
@@ -147,28 +148,20 @@
 
                 </div>
 
-                 <!-- Health Information Section -->
-                 <div class="section-header">File Upload
-
-                </div>
-                <div class="section-content">
+                 <!-- Payment Section -->
+                 <div class="section-header">Proof of Payment Upload</div>
+                    <div class="section-content">
                     <div class="form-row">
-                        <div class="form-group">
-                            <label>Medical History <span style="color: red; font-weight:700">*</span></label>
-                            <input type="text" value="Cuteness"  />
+                        <div class="form-group wide">
+                            <label>Screenshot of Payment <span style="color: red; font-weight:700">*</span></label>
+                            <div class="file-upload-box" id="drop-area">
+                                <input type="file" id="fileInput" multiple hidden>
+                            </div>
+                            <div id="file-preview"></div>
                         </div>
-                        <div class="form-group">
-                            <label>Type of Disability <span style="color: red; font-weight:700">*</span></label>
-                            <input type="text" value="Cuteness Overload"  />
-                        </div>
-                        <div class="form-group">
-                            <label>Type of Hearing Loss (If Applicable)</label>
-                            <input type="text" placeholder="Type Here"  />
-                        </div>
-
                     </div>
 
-                </div>
+                    </div>
 
                 <!-- File Upload Section -->
                 <div class="section-header">File Upload</div>
@@ -222,10 +215,11 @@
  </form>
 
  <script>
-    document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", function () {
     const dropArea = document.getElementById("drop-area");
     const fileInput = document.getElementById("fileInput");
     const filePreview = document.getElementById("file-preview");
+    let uploadedFiles = []; // Store selected files
 
     dropArea.addEventListener("dragover", (e) => {
         e.preventDefault();
@@ -242,20 +236,41 @@
         handleFiles(e.dataTransfer.files);
     });
 
+    dropArea.addEventListener("click", () => {
+        fileInput.click();
+    });
+
     fileInput.addEventListener("change", (e) => {
         handleFiles(e.target.files);
     });
 
     function handleFiles(files) {
-        filePreview.innerHTML = ""; // Clear previous previews
-        Array.from(files).forEach(file => {
+        uploadedFiles = [...uploadedFiles, ...files]; // Add new files
+        updatePreview();
+    }
+
+    function updatePreview() {
+        filePreview.innerHTML = "";
+        uploadedFiles.forEach((file, index) => {
             const fileItem = document.createElement("div");
             fileItem.classList.add("preview-item");
-            fileItem.innerHTML = `<span>📄 ${file.name}</span>`;
+            fileItem.innerHTML = `
+                <span>📄 ${file.name}</span>
+                <button class="remove-btn" data-index="${index}">❌</button>
+            `;
             filePreview.appendChild(fileItem);
+        });
+
+        // Add event listeners to remove buttons
+        document.querySelectorAll(".remove-btn").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const index = this.getAttribute("data-index");
+                uploadedFiles.splice(index, 1); // Remove from array
+                updatePreview(); // Refresh the preview
+            });
         });
     }
 });
- </script>
+</script>
 
 

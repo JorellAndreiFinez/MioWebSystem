@@ -2,10 +2,10 @@
 
 <div>
     <div class="title paralax letterbox" style="background-image:url('{{ asset('storage/assets/images/1.1.1 home-slider.png') }}')">
-        <h1>Postbox Reveal</h1>
+        <h1>Philippine Institute for the Deaf</h1>
     </div>
     <div class="campus">
-        <p>Nulla vitae scelerisque risus, finibus tincidunt ipsum. Sed ipsum orci, bibendum a ante a, blandit feugiat ligula. Integer eget turpis vehicula, vehicula lacus et, sollicitudin nibh. Integer vulputate sem velit, id sollicitudin lacus porttitor eget. Donec fringilla dictum aliquam. Ut dignissim lacus tellus, quis sodales nisi elementum non. Mauris faucibus bibendum risus vitae varius. Nulla egestas accumsan dictum. Etiam vel ex ut ante finibus sodales eu et sapien. Fusce euismod leo sit amet posuere posuere. Fusce dictum mi id gravida maximus. Integer blandit urna est, ac euismod justo lobortis sed. Nulla ultricies nisl eros. Nunc imperdiet sed lectus ac feugiat. Fusce tincidunt tempor sapien.</p>
+        <p>In the case of hearing-impaired children, additional resources are required in order to provide a solid educational foundation and an equal opportunity to succeed.  The Philippine Institute for the Deaf (PID) exists for the purpose of insuring that these unique resources are readily available to those young children who need them. With the combined support of the community, young deaf children in the Philippines continue to have the opportunity to listen, learn, and talk.</p>
     </div>
 </div>
 
@@ -19,8 +19,8 @@
     <div class="title paralax letterbox" style="background-image:url(https://upload.wikimedia.org/wikipedia/commons/thumb/9/90/03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg/800px-03866jfMabini_Bridge_Pandacan_Manila_Streetsfvf_03.jpg)">
     </div>
     <div class="campus">
-        <h1>Lorem Ipsum</h1>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed suscipit quam non orci aliquam imperdiet. Sed vel ipsum ac massa hendrerit bibendum. In commodo sit amet mi a dapibus. Nullam vestibulum congue eros, posuere fringilla felis condimentum semper. Maecenas porttitor dignissim scelerisque. Curabitur ac viverra quam, ut auctor metus. Suspendisse varius, sapien eu cursus vulputate, ante lacus lacinia arcu, ut convallis est erat ut nulla. Cras tempus vel dolor a auctor. Vestibulum aliquet purus felis, et ullamcorper risus placerat et.</p>
+        <h1>Our Mission</h1>
+        <p>The mission of the SERGIA ESGUERRA MEMORIAL FOUNDATION, Inc. [SEMFI] through its two successful school projects – The Philippine Institute for the Deaf (since 1988), Empowering Deaf Children to Listen, Learn, and Talk, and The Integrated School of the Philippines [ISP] (since 2007), Integrating “Speaking” Deaf Graduates with Hearing Peers.. Our whole history, educational philosophy, and programs revolve around this simple, yet powerful, statement.</p>
     </div>
 </div>
 
@@ -40,8 +40,10 @@
 </div>
 
 <div class="campus">
-    <h1>Lorem Ipsum</h1>
-    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed suscipit quam non orci aliquam imperdiet. Sed vel ipsum ac massa hendrerit bibendum. In commodo sit amet mi a dapibus. Nullam vestibulum congue eros, posuere fringilla felis condimentum semper. Maecenas porttitor dignissim scelerisque. Curabitur ac viverra quam, ut auctor metus. Suspendisse varius, sapien eu cursus vulputate, ante lacus lacinia arcu, ut convallis est erat ut nulla. Cras tempus vel dolor a auctor. Vestibulum aliquet purus felis, et ullamcorper risus placerat et.</p>
+    <h1>Our History</h1>
+    <p>The primary focus for the deaf children is on learning to listen, talk, read and succeed in mainstream society.
+    <br><br>
+    Once listening skills are developed a deaf child can begin to develop speech and language skills that will allow them to communicate in the mainstream.</p>
 </div>
 
 <div>
@@ -49,8 +51,12 @@
         <h1>Oralism-Based Campus</h1>
     </div>
     <div class="campus">
-        <p>Curabitur commodo in eros a varius. Morbi mi eros, mollis eget neque vitae, mattis cursus dui. Vestibulum eget ex eget ex efficitur tempor. Duis non ante interdum, volutpat justo pellentesque, finibus odio. Duis vestibulum rutrum accumsan. Nullam in semper tellus. Curabitur elementum elit nibh.</p>
-        <p>Nulla vitae scelerisque risus, finibus tincidunt ipsum. Sed ipsum orci, bibendum a ante a, blandit feugiat ligula. Integer eget turpis vehicula, vehicula lacus et, sollicitudin nibh. Integer vulputate sem velit, id sollicitudin lacus porttitor eget. Donec fringilla dictum aliquam. Ut dignissim lacus tellus, quis sodales nisi elementum non. Mauris faucibus bibendum risus vitae varius. Nulla egestas accumsan dictum. Etiam vel ex ut ante finibus sodales eu et sapien. Fusce euismod leo sit amet posuere posuere. Fusce dictum mi id gravida maximus. Integer blandit urna est, ac euismod justo lobortis sed. Nulla ultricies nisl eros. Nunc imperdiet sed lectus ac feugiat. Fusce tincidunt tempor sapien.</p>
+        <p>
+
+        Some people believe that deaf children can do everything BUT hear, but with proper amplification (hearing aids or cochlear implants) PID and ISP and those committed to the auditory/oral approach believe that deaf children can do everything AND hear! This is particularly true today with the advent of powerful hearing aids, cochlear implants and comprehensive One-on-One Speech Therapy in an inclusion setting.
+        <br><br>
+
+        PID was founded in 1988 by an outstanding Special Education Teacher, inspired by her mother’s half a century work for the deaf at the Philippine Department of Education, the late Dr. Sergia G. Esguerra, with the help of the 15-Man Board of Directors. It was originally the Julie Esguerra Speech Center [JESC]. Though the dissolution of JESC in 1988 and all its assets donated to the Sergia Esguerra Memorial Foundation, Inc.[SEMFI], with the high cost of One-on-One Speech Therapy and the many indigent qualified deaf children accepted in the programs, it became increasingly difficult to meet the financial needs of the school. </p>
         <p>
         </p>
     </div>

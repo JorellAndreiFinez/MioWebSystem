@@ -46,16 +46,16 @@
             </div>
             <div class="content-item" data-step="1">
                 <h2>Register and Enroll</h2>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas, est. Quo omnis sed dolorem dicta, odit rem doloribus magnam minima, facilis ex sit laudantium impedit, ratione voluptatem nam nisi sunt?
-                Repudiandae, rerum ea modi neque beatae accusamus, ducimus quaerat mollitia nihil quod dolorum, corrupti quasi sequi autem ullam! Nemo et quae vel eveniet, itaque culpa repellendus commodi. Magni, rem dicta!</p>
+                <p>After completing the form, register your child by submitting the necessary documents and uploading proof of payment. Our team will review the information and officially confirm your child's enrollment into our learning community.</p>
             </div>
             <div class="content-item" data-step="2">
                 <h2>Take Speech Assessment</h2>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur placeat labore, tenetur quo minima totam neque, nihil maxime dolor dolores eum accusamus doloremque! Soluta saepe sed dolore cupiditate quia. Temporibus!</p>
+                <p>Once registered, your child will be scheduled for a speech and language assessment. This evaluation helps us understand their current abilities and design a personalized learning plan that fosters growth and development in speech and communication skills.</p>
             </div>
+
             <div class="content-item" data-step="3">
                 <h2>You are Done!</h2>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Consequuntur placeat labore, tenetur quo minima totam neque, nihil maxime dolor dolores eum accusamus doloremque! Soluta saepe sed dolore cupiditate quia. Temporibus!</p>
+                <p>Congratulations! Your enrollment process is complete. We look forward to working with you and your child on this exciting journey toward improved speech, confidence, and lifelong learning. Welcome to our community!</p>
             </div>
         </div>
     </div>
