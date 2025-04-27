@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\FirebaseConnectionController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/test', [FirebaseConnectionController::class, 'index']);
 
 // CMS
 Route::prefix('')->group(function () {
