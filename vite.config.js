@@ -38,6 +38,8 @@ export default defineConfig({
 
                 'resources/css/Mio/admin/panel.css',
                 'resources/js/Mio/admin/panel.js',
+
+                'resources/css/EnrollPanel/enrollment-panel.css',
             ],
             refresh: true,
         }),

@@ -6,22 +6,35 @@
 <body>
 
 <div class="container">
+
         <div class="form-box login">
-        <form onsubmit="return validateLogin(event)">
-    <h1>Login</h1>
-    <div class="input-box">
-        <input type="text" id="email" placeholder="Email" required>
-        <i class='bx bxs-user'></i>
-    </div>
-    <div class="input-box">
-        <input type="password" id="password" placeholder="Password" required>
-        <i class='bx bxs-lock-alt'></i>
-    </div>
-    <div class="forgot-link">
-        <a href="#">Forgot Password?</a>
-    </div>
-    <button type="submit" class="btn">Login</button>
-</form>
+            @if (Session::has('success'))
+                <div class="alert alert-success" id="alert-message">
+                    {{ Session::get('success') }}
+                </div>
+            @endif
+
+            @if (Session::has('error'))
+                <div class="alert alert-danger" id="alert-message">
+                    {{ Session::get('error') }}
+                </div>
+            @endif
+            <form method="POST" action="{{ URL('/user-login') }}">
+                @csrf
+                <h1>Login</h1>
+                <div class="input-box">
+                    <input type="text" id="email" placeholder="Email" name="email" required>
+                    <i class='bx bxs-user'></i>
+                </div>
+                <div class="input-box">
+                    <input type="password" id="password" name="password" placeholder="Password" required>
+                    <i class='bx bxs-lock-alt'></i>
+                </div>
+                <div class="forgot-link">
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn">Login</button>
+            </form>
 
 
         </div>
@@ -87,6 +100,18 @@
             alert("Invalid login. Use 'student' or 'admin' in email.");
         }
     }
+
+     // Auto-hide alerts after 3 seconds (3000ms)
+     setTimeout(function() {
+        let alert = document.getElementById('alert-message');
+        if (alert) {
+            alert.style.transition = "opacity 0.5s ease";
+            alert.style.opacity = '0';
+            setTimeout(function(){
+                alert.remove();
+            }, 500); // Wait until fadeout is complete
+        }
+    }, 3000);
 </script>
 
 </body>

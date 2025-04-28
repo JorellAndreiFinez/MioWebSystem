@@ -1,7 +1,9 @@
 <section class="home-section">
 <div class="text">Edit Student</div>
 <div class="teacher-container">
- <form action="#" method="POST" enctype="multipart/form-data">
+ <form action="{{ url('mio/admin1/UpdateStudent/'.$editdata['studentid']) }}" method="post" enctype="multipart/form-data">
+    @csrf
+    @method('PUT')
     <!-- HEADER CONTROLS -->
     <div class="table-header">
             <div class="search-container" style="background: transparent;">
@@ -16,151 +18,145 @@
             </div>
 
         </div>
-    <div class="form-container">
-         <!-- Personal Information Section -->
-         <div class="section-header">Student Category</div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                            <label><input type="radio" name="category" value="new"> New</label>
-                            </div>
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="full-time" checked> Full-time</label>
-                            </div>
-
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="part-time"> Part-time</label>
-                            </div>
-
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="intern"> Intern</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Personal Information Section -->
-                    <div class="section-header">Personal Information</div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>First Name <span style="color: red; font-weight:700">*</span> </label>
-                                <input type="text" value="Jorell Andrei"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Finez"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Gender <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Female"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Age <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="17"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-                                <input type="date" placeholder="MM/DD/YYYY"  />
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Street Name, Building, House No.  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="13 Blk Lot 8, Camella Homes, Valenzuela City"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Barangay <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Brgy. Lapuk"  />
-                            </div>
-
-                            <div class="form-group wide">
-                            <label for="region">Region *</label>
-                            <select id="region" name="region" required>
-                                <option value="" disabled selected>Select a Region</option>
-                                <option value="NCR">National Capital Region (NCR)</option>
-                                <option value="CAR">Cordillera Administrative Region (CAR)</option>
-                                <option value="Region I">Ilocos Region (Region I)</option>
-                                <option value="Region II">Cagayan Valley (Region II)</option>
-                                <option value="Region III">Central Luzon (Region III)</option>
-                                <option value="Region IV-A">CALABARZON (Region IV-A)</option>
-                                <option value="MIMAROPA">MIMAROPA Region</option>
-                                <option value="Region V">Bicol Region (Region V)</option>
-                                <option value="Region VI">Western Visayas (Region VI)</option>
-                                <option value="Region VII">Central Visayas (Region VII)</option>
-                                <option value="Region VIII">Eastern Visayas (Region VIII)</option>
-                                <option value="Region IX">Zamboanga Peninsula (Region IX)</option>
-                                <option value="Region X">Northern Mindanao (Region X)</option>
-                                <option value="Region XI">Davao Region (Region XI)</option>
-                                <option value="Region XII">SOCCSKSARGEN (Region XII)</option>
-                                <option value="Region XIII">Caraga (Region XIII)</option>
-                                <option value="BARMM">Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)</option>
-                            </select>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Province  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="13 Blk Lot 8, Camella Homes, Valenzuela City"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>City <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Brgy. Lapuk"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-                                <input type="number"minlength="4" maxlength="4"  value="3333"  />
-                            </div>
-
-                        </div>
-
-                        <div class="form-row">
-                        <div class="form-group">
-                                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="09053622382"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Emergency Contact Number  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="09053622382"  />
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Academic Information Section -->
-                    <div class="section-header">Academic Information
-
-                    </div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Blah blah High school"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-                                <input type="number" value="10"  />
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                   <!-- Schedule Section -->
-                <!-- Schedule Section -->
-                <div class="section-header">Schedule</div>
-                <div class="section-content" id="schedule-section">
-                <!-- Container for all form rows -->
-                <div class="form-row" id="schedule-container">
+        <div class="form-container">
+        <!-- Student Information Section -->
+        <div class="section-header">Student Information</div>
+        <div class="section-content">
+            <div class="form-row">
                 <div class="form-group">
-                    <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-                    <input type="text" name="schedule[]" placeholder="Schedule ID" />
-                    </div>
+                    <label><input type="radio" name="category" value="new"
+                        @if (isset($editdata['category']) && $editdata['category'] == 'new') checked @endif> New</label>
                 </div>
-                <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
+                <div class="form-group teacher-category">
+                    <label><input type="radio" name="category" value="transfer"
+                        @if (isset($editdata['category']) && $editdata['category'] == 'transfer') checked @endif> Transfer</label>
                 </div>
+                <div class="form-group teacher-category">
+                    <label><input type="radio" name="category" value="returning"
+                        @if (isset($editdata['category']) && $editdata['category'] == 'returning') checked @endif> Returning</label>
+                </div>
+                <div class="form-group teacher-category">
+                    <label><input type="radio" name="category" value="international"
+                        @if (isset($editdata['category']) && $editdata['category'] == 'international') checked @endif> International</label>
+                </div>
+            </div>
+            <div class="form-group wide">
+                <label>Student ID <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="studentid" id="studentID" value="{{ $editdata['studentid'] }}" required />
+            </div>
+        </div>
 
-    </div>
+
+        <!-- Personal Information Section -->
+        <div class="section-header">Personal Information</div>
+        <div class="section-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label>First Name <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="first_name" value="{{ $editdata['fname'] }}" required />
+            </div>
+            <div class="form-group">
+              <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="last_name" value="{{ $editdata['lname'] }}" required />
+            </div>
+            <div class="form-group">
+              <label>Gender <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="gender" value="{{ $editdata['gender'] }}" required />
+            </div>
+            <div class="form-group">
+              <label>Age <span style="color: red; font-weight:700">*</span></label>
+              <input type="number" name="age" value="{{ $editdata['age'] }}" required />
+            </div>
+            <div class="form-group">
+              <label>Birthday <span style="color: red; font-weight:700">*</span></label>
+              <input type="date" name="birthday" value="{{ $editdata['bday'] }}" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group wide">
+              <label>Street Name, Building, House No. <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="address" value="13 Blk Lot 8, Camella Homes, Valenzuela City" required />
+            </div>
+            <div class="form-group wide">
+              <label>Barangay <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="barangay" value="{{ $editdata['barangay'] }}" required />
+            </div>
+            <div class="form-group wide">
+            <label for="region">Region *</label>
+            <select id="region" name="region" required>
+                <option value="" disabled selected>Select a Region</option>
+                <option value="NCR" @if (isset($editdata['region']) && $editdata['region'] == 'NCR') selected @endif>
+                    National Capital Region (NCR)
+                </option>
+                <option value="CAR" @if (isset($editdata['region']) && $editdata['region'] == 'CAR') selected @endif>
+                    Cordillera Administrative Region (CAR)
+                </option>
+                <!-- Add more options as needed -->
+            </select>
+        </div>
+
+          </div>
+
+          <div class="form-row">
+            <div class="form-group wide">
+              <label>Province <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="province" value="Metro Manila" required />
+            </div>
+            <div class="form-group wide">
+              <label>City <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="city" value="Valenzuela City" required />
+            </div>
+            <div class="form-group wide">
+              <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
+              <input type="number" name="zip_code" value="3333" minlength="4" maxlength="4" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="contact_number" value="09053622382" required />
+            </div>
+            <div class="form-group wide">
+              <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="emergency_contact" value="09053622382" required />
+            </div>
+            <div class="form-group">
+              <label>Email <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="email" value="jorellandrei23@gmail.com" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- Academic Information Section -->
+        <div class="section-header">Academic Information</div>
+        <div class="section-content">
+          <div class="form-row">
+            <div class="form-group wide">
+              <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="previous_school" value="Blah blah High school" required />
+            </div>
+            <div class="form-group">
+              <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
+              <input type="number" name="grade_level" value="10" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Section -->
+        <div class="section-header">Schedule</div>
+        <div class="section-content" id="schedule-section">
+          <div class="form-row" id="schedule-container">
+            <div class="form-group">
+              <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="schedule[]" placeholder="Schedule ID" required />
+            </div>
+          </div>
+          <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
+        </div>
+
+      </div>
  </form>
 </div>
 

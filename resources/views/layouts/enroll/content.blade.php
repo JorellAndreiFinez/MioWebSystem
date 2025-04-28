@@ -4,12 +4,6 @@
 
 <div class="icon-grid">
 
-    <a href="{{ route('admission.enrollment') }}">
-    <div class="icon-card">
-        <img src="{{ asset('storage/assets/images/icons/enrollment-2.png') }}" alt="Enrollment Form">
-        <p>Enrollment Form</p>
-    </div>
-    </a>
    <a href="{{ route('admission.assess-guide') }}">
    <div class="icon-card">
         <img src="{{ asset('storage/assets/images/icons/assessment-1.png') }}" alt="Assessment Guide">

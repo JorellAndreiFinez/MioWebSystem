@@ -24,7 +24,7 @@ class FirebaseConnectionController extends Controller
                 ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com');
 
             $database = $factory->createDatabase();
-            $reference = $database->getReference('users');
+            $reference = $database->getReference('contacts');
             $reference->set(['connection' => true]);
             $snapshot = $reference->getSnapshot();
             $value = $snapshot->getValue();

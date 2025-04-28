@@ -1,13 +1,14 @@
 <?php
 
+use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\FirebaseConnectionController;
 use Illuminate\Support\Facades\Route;
+use Kreait\Laravel\Firebase\Facades\Firebase;
 
 Route::get('/test', [FirebaseConnectionController::class, 'index']);
 
 // CMS
 Route::prefix('')->group(function () {
-
     Route::get('/', function () {
         return view('landing');
     })->name('landing');
@@ -21,9 +22,6 @@ Route::prefix('')->group(function () {
         return view('layouts.assessment-guide');
     })->name('admission.assess-guide');
 
-    Route::get('/admission/enroll', function () {
-        return view('layouts.enrollment');
-    })->name('admission.enrollment');
 
     Route::get('/admission/payment', function () {
         return view('layouts.payment-guide');
@@ -50,6 +48,12 @@ Route::prefix('')->group(function () {
     })->name('events');
 });
 
+Route::prefix('enrollment')->group(function () {
+    Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
+
+    Route::view('/dashboard', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-dashboard'])->name('enroll-dashboard');
+});
+
 // ADMIN LOGIN
 
 // Route::get('/mio/admin/login', function () {
@@ -69,9 +73,16 @@ Route::prefix('mio/admin1')->name('mio.')->group(function () {
     Route::view('/EditTeacher', 'mio.head.admin-panel', ['page' => 'edit-teacher'])->name('edit-teacher');
 
     // STUDENTS
-    Route::view('/students', 'mio.head.admin-panel', ['page' => 'students'])->name('students');
-    Route::view('/AddStudent', 'mio.head.admin-panel', ['page' => 'add-student'])->name('add-student');
-    Route::view('/EditStudent', 'mio.head.admin-panel', ['page' => 'edit-student'])->name('edit-student');
+    Route::get('/students', [FirebaseAuthController::class, 'students'])->name('students');
+
+    // -- ADD STUDENT
+    Route::get('/AddStudent', [FirebaseAuthController::class, 'showAddStudent'])->name('AddStudent');
+    Route::post('/AddStudent', [FirebaseAuthController::class, 'addStudent'])->name('AddStudent');
+
+    // -- EDIT STUDENT
+    Route::get('/EditStudent/{id}', [FirebaseAuthController::class, 'showEditStudent'])->name('EditStudent');
+    Route::put('/UpdateStudent/{id}', [FirebaseAuthController::class, 'editStudent'])->name('EditStudent');
+
 
     // ACCOUNTS
     Route::view('/accounts', 'mio.head.admin-panel', ['page' => 'accounts'])->name('accounts');
@@ -139,14 +150,10 @@ Route::prefix('mio/student1')->group(function () {
         return view('mio.head.student-panel', ['page' => 'subject']);
     })->name('mio.subject');
 
-    Route::get('/login', function () {
-        return view('mio.user-access.login');
-    })->name('mio.login');
 });
-
-Route::get('mio/login', function () {
-    return view('mio.user-access.login');
-})->name('mio.login');
+    // LOGIN
+    Route::get('mio/login', [FirebaseAuthController::class, 'loginForm'])->name('mio.login');
+    Route::post('/user-login', [FirebaseAuthController::class, 'login']);
 
 // SUBJECT
 
