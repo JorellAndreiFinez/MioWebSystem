@@ -1,6 +1,8 @@
 <section class="home-section">
 <div class="text">Edit Student</div>
 <div class="teacher-container">
+@include('mio.dashboard.status-message')
+
  <form action="{{ url('mio/admin1/UpdateStudent/'.$editdata['studentid']) }}" method="post" enctype="multipart/form-data">
     @csrf
     @method('PUT')
@@ -116,15 +118,15 @@
           <div class="form-row">
             <div class="form-group">
               <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="contact_number" value="09053622382" required />
+              <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
             </div>
             <div class="form-group wide">
               <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="emergency_contact" value="09053622382" required />
+              <input type="text" name="emergency_contact" value="{{ $editdata['emergency_contact'] }}" required />
             </div>
             <div class="form-group">
               <label>Email <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="email" value="jorellandrei23@gmail.com" required />
+            <input type="text" name="email" value="{{ $editdata['email'] }}" required />
             </div>
           </div>
         </div>

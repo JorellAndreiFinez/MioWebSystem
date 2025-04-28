@@ -1,130 +1,96 @@
-
 <!-- Modal overlay -->
-<div class="modal-overlay" id="confirmModal">
+<div class="modal-overlay" id="confirmModal" style="display: none;">
   <div class="modal-box">
     <div class="modal-header">
       <span class="modal-title">Delete Teacher</span>
     </div>
     <div class="modal-body">
-      <p>Are you sure you want to remove this teacher?</p>
+      <p id="confirmMessage">Are you sure you want to remove this teacher?</p>
     </div>
     <div class="modal-footer">
       <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
-      <button class="btn confirm-btn">Confirm</button>
+
+      <form id="deleteTeacherForm" method="POST">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn confirm-btn">Confirm</button>
+      </form>
+
     </div>
   </div>
 </div>
 
 <section class="home-section">
 <div class="text">Teachers</div>
+
 <div class="teacher-container">
     <!-- HEADER CONTROLS -->
     <div class="table-header">
-    <div class="search-container">
+        <div class="search-container">
             <i class="fas fa-search"></i>
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <button class="btn add-btn"><a href="{{ route('mio.add-teacher') }}">+ New Teacher</a></button>
+            <a href="{{ route('mio.AddTeacher') }}" class="btn add-btn">+ New Teacher</a>
         </div>
     </div>
 
-    <!-- TEACHER TABLE -->
-   <div class="table-container">
-   <table>
-        <thead>
-            <tr>
-                <th>Teacher ID</th>
-                <th>Name</th>
-                <th>Downloadable Files</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
+    <!-- STUDENT TABLE -->
+    <div class="table-container">
+        @include('mio.dashboard.status-message')
 
-                <a href="{{ route('mio.edit-student') }}"><i class="fa fa-pencil"></i></a>
+        <table>
+            <thead>
+                <tr>
+                    <th>Teacher ID</th>
+                    <th>Name</th>
+                    <th>Downloadable Files</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            @forelse ($teachers as $key => $item)
+                @if (isset($item['role']) && $item['role'] === 'teacher')
+                    <tr>
+                        <td>{{ $item['teacherid'] }}</td>
+                        <td>{{ $item['fname'] }} {{ $item['lname'] }}</td>
+                        <td>
+                            <button class="download-btn pdf-btn">PDF</button>
+                            <button class="download-btn csv-btn">CSV</button>
+                        </td>
+                        <td class="action-icons">
+                            <a href="{{ url('mio/admin1/EditTeacher/'.$item['teacherid']) }}">
+                                <i class="fa fa-pencil"></i>
+                            </a>
 
-                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
-
-            <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
-            <tr>
-                <td>T10001</td>
-                <td>Marcus Levin</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
-            <tr>
-                <td>T10002</td>
-                <td>Tatiana Donin</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
-            <tr>
-                <td>T10003</td>
-                <td>Tiana Dorwart</td>
-                <td>
-                    <button class="download-btn pdf-btn">PDF</button>
-                    <button class="download-btn csv-btn">CSV</button>
-                </td>
-                <td class="action-icons">
-                    <i class="fa fa-pencil"></i>
-                    <i class="fa fa-trash"></i>
-                </td>
-            </tr>
+                            <button onclick="openModal('{{ url('mio/admin1/DeleteTeacher/'.$item['teacherid']) }}', '{{ $item['fname'] }} {{ $item['lname'] }}')" class="open-btn">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                @endif
+            @empty
+                <tr>
+                    <td colspan="4" class="no-data">No teachers found.</td>
+                </tr>
+            @endforelse
         </tbody>
-    </table>
-   </div>
 
-    <!-- PAGINATION -->
-    <div class="pagination">
-        <a href="#">1</a>
-        <a href="#">2</a>
-        <a href="#">3</a>
-        <a href="#">4</a>
-        <a href="#">...</a>
-        <a href="#">12</a>
+        </table>
     </div>
 </div>
-
 </section>
 
 <script>
-    function openModal() {
+function openModal(deleteUrl, studentName) {
     document.getElementById("confirmModal").style.display = "flex";
+
+    // Dynamically set form action
+    document.getElementById("deleteTeacherForm").action = deleteUrl;
+
+    // (Optional UX) Customize the confirmation message
+    document.getElementById("confirmMessage").textContent = `Are you sure you want to remove "${studentName}"?`;
 }
 
 function closeModal() {

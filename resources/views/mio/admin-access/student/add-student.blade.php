@@ -1,6 +1,8 @@
 <section class="home-section">
   <div class="text">Add New Student</div>
+
   <div class="teacher-container">
+    @include('mio.dashboard.status-message')
     <form action="{{ route('mio.AddStudent') }}" method="POST" enctype="multipart/form-data">
       @csrf
 
@@ -21,7 +23,7 @@
         <div class="section-content">
           <div class="form-row">
             <div class="form-group">
-              <label><input type="radio" name="category" value="new"> New</label>
+              <label><input type="radio" name="category" value="new" required checked> New</label>
             </div>
             <div class="form-group teacher-category">
               <label><input type="radio" name="category" value="transfer"> Transfer</label>
@@ -190,6 +192,7 @@
     lastRow.appendChild(formGroup);
   }
 </script>
+
 <script>
 // Get the current date
 const currentDate = new Date();
@@ -209,30 +212,17 @@ const currentWeek = getWeekNumber(currentDate);
 const currentDay = currentDate.getDay();
 
 // Assume this is fetched from the database
-// Fetch the most recent student ID (Example: 'ST2025171')
-let lastStudentID = "ST2025171"; // This should be fetched from your database
+let lastStudentID = "ST2025171"; // Example, but won't matter since random
 
-// Extract the last 3 digits from the most recent student ID
-let lastIncrementedNumber = parseInt(lastStudentID.slice(-3));
+// Randomize last 3 digits (000–999)
+const randomLastThreeDigits = Math.floor(Math.random() * 1000);
 
-// Logic to handle the last 3 digits (auto-increment for users but not for admins)
-const isAdmin = false; // Set this flag based on user role (true for admin, false for others)
+// Format the last 3 digits to always be 3 digits long (e.g., 001, 087, 999)
+const lastThreeDigits = String(randomLastThreeDigits).padStart(3, '0');
 
-if (!isAdmin) {
-  // Increment the last number for new students
-  lastIncrementedNumber++;
-} else {
-  // Admin can reset or maintain the current number
-  lastIncrementedNumber = lastIncrementedNumber; // Keep the current number (or reset if needed)
-}
-
-// Format the last 3 digits to be 3 digits long (e.g., 001, 002, 010, etc.)
-const lastThreeDigits = String(lastIncrementedNumber).padStart(3, '0');
-
-// Generate the student ID with the current year, week, day, and the incremented number
-const studentID = `ST${currentYear}${String(currentWeek).padStart(2, '0')}${String(currentDay).padStart(1, '0')}${lastThreeDigits}`;
+// Generate the student ID with the current year, week, day, and random last 3 digits
+const studentID = `ST${currentYear}${String(currentWeek).padStart(2, '0')}${String(currentDay)}${lastThreeDigits}`;
 
 // Set the value in the input field
 document.getElementById('studentID').value = studentID;
 </script>
-

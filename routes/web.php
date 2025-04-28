@@ -67,12 +67,22 @@ Route::prefix('mio/admin1')->name('mio.')->group(function () {
 
     Route::view('/dashboard', 'mio.head.admin-panel', ['page' => 'dashboard'])->name('admin-panel');
 
-    // TEACHERS
-    Route::view('/teachers', 'mio.head.admin-panel', ['page' => 'teachers'])->name('teachers');
-    Route::view('/AddTeacher', 'mio.head.admin-panel', ['page' => 'add-teacher'])->name('add-teacher');
-    Route::view('/EditTeacher', 'mio.head.admin-panel', ['page' => 'edit-teacher'])->name('edit-teacher');
 
-    // STUDENTS
+    //  ---------------  TEACHERS
+    Route::get('/teachers', [FirebaseAuthController::class, 'teachers'])->name('teachers');
+
+    // -- ADD TEACHER
+    Route::get('/AddTeacher', [FirebaseAuthController::class, 'showAddTeacher'])->name('AddTeacher');
+    Route::post('/AddTeacher', [FirebaseAuthController::class, 'addTeacher'])->name('AddTeacher');
+
+    // -- EDIT TEACHER
+    Route::get('/EditTeacher/{id}', [FirebaseAuthController::class, 'showEditTeacher'])->name('EditTeacher');
+    Route::put('/UpdateTeacher/{id}', [FirebaseAuthController::class, 'editTeacher'])->name('EditTeacher');
+
+    // -- DELETE TEACHER
+    Route::delete('/DeleteTeacher/{id}', [FirebaseAuthController::class, 'deleteTeacher'])->name('DeleteTeacher');
+
+    // --------------- STUDENTS
     Route::get('/students', [FirebaseAuthController::class, 'students'])->name('students');
 
     // -- ADD STUDENT
@@ -82,6 +92,9 @@ Route::prefix('mio/admin1')->name('mio.')->group(function () {
     // -- EDIT STUDENT
     Route::get('/EditStudent/{id}', [FirebaseAuthController::class, 'showEditStudent'])->name('EditStudent');
     Route::put('/UpdateStudent/{id}', [FirebaseAuthController::class, 'editStudent'])->name('EditStudent');
+
+    // -- DELETE STUDENT
+    Route::delete('/DeleteStudent/{id}', [FirebaseAuthController::class, 'deleteStudent'])->name('DeleteStudent');
 
 
     // ACCOUNTS

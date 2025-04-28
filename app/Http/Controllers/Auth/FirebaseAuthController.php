@@ -80,22 +80,106 @@ class FirebaseAuthController extends Controller
         }
 
         // STUDENT - PAGE
+        public function students() {
+            // Fetch all users
+            $users = $this->database->getReference($this->tablename)->getValue();
+            $users = $users ?? [];
 
-        public function students(){
-            // Fetch students from Firebase
-            $students = $this->database->getReference($this->tablename)->getValue();
+            // Filter only students
+            $students = array_filter($users, function($user) {
+                return isset($user['role']) && $user['role'] === 'student';
+            });
 
-            // Ensure $students is not null (convert null to an empty array)
-            $students = $students ?? [];
-
-            // Pass the students variable to the view
             return view('mio.head.admin-panel', ['page' => 'students'], compact('students'));
         }
 
+
+        // DISPLAY ADD STUDENT
         public function showAddStudent(){
             return view('mio.head.admin-panel', ['page' => 'add-student']);
         }
 
+        // ADD STUDENT
+        public function addStudent(Request $request)
+            {
+                // Validate basic field formats first
+                $validatedData = $request->validate([
+                    'first_name' => 'required|string|max:255',
+                    'last_name' => 'required|string|max:255',
+                    'gender' => 'required|string|max:10',
+                    'age' => 'required|integer|min:1',
+                    'birthday' => 'required|date',
+                    'address' => 'required|string|max:255',
+                    'barangay' => 'required|string|max:255',
+                    'region' => 'required|string|max:100',
+                    'province' => 'required|string|max:100',
+                    'city' => 'required|string|max:100',
+                    'zip_code' => 'required|digits:4',
+                    'contact_number' => 'required|string|max:15',
+                    'emergency_contact' => 'required|string|max:15',
+                    'email' => 'required|email|max:255',
+                    'previous_school' => 'required|string|max:255',
+                    'grade_level' => 'required|integer|min:1',
+                    'schedule' => 'required|array',
+                    'studentid' => 'required|string|max:12',
+                    'category' => 'required|string',
+                ]);
+
+                $studentIdKey = $request->studentid;
+                $emailInput = $request->email;
+
+                // Fetch all students
+                $studentsRef = $this->database->getReference($this->tablename)->getValue();
+
+                // Check if studentid already exists
+                if (!empty($studentsRef) && array_key_exists($studentIdKey, $studentsRef)) {
+                    return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
+                }
+
+                // Check if email already exists
+                if (!empty($studentsRef)) {
+                    foreach ($studentsRef as $student) {
+                        if (isset($student['email']) && $student['email'] === $emailInput) {
+                            return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                        }
+                    }
+                }
+
+                // Prepare the data for saving
+                $postData = [
+                    'fname' => $request->first_name,
+                    'lname' => $request->last_name,
+                    'gender' => $request->gender,
+                    'age' => $request->age,
+                    'bday' => $request->birthday,
+                    'address' => $request->address,
+                    'barangay' => $request->barangay,
+                    'region' => $request->region,
+                    'province' => $request->province,
+                    'city' => $request->city,
+                    'zip_code' => $request->zip_code,
+                    'contact_number' => $request->contact_number,
+                    'emergency_contact' => $request->emergency_contact,
+                    'email' => $request->email,
+                    'previous_school' => $request->previous_school,
+                    'grade_level' => $request->grade_level,
+                    'category' => $request->category,
+                    'schedule' => $request->schedule,
+                    'studentid' => $studentIdKey,
+                    'role' => 'student',
+                ];
+
+                // Save the data under studentid key
+                $postRef = $this->database->getReference($this->tablename.'/'.$studentIdKey)->set($postData);
+
+                if ($postRef) {
+                    return redirect('mio/admin1/students')->with('status', 'Student Added Successfully');
+                } else {
+                    return redirect('mio/admin1/students')->with('status', 'Student Not Added');
+                }
+        }
+
+        // DISPLAY EDIT STUDENT
         public function showEditStudent($id)
         {
             // Get all students
@@ -124,44 +208,13 @@ class FirebaseAuthController extends Controller
             }
         }
 
+        // EDIT STUDENT
         public function editStudent(Request $request, $id)
         {
-            $key = $id;
-            $updateData = [
-                'fname' => $request->first_name,
-                'lname' => $request->last_name,
-                'gender' => $request->gender,
-                'age' => $request->age,
-                'bday' => $request->birthday,
-                'address' => $request->address,
-                'barangay' => $request->barangay,
-                'region' => $request->region,
-                'province' => $request->province,
-                'city' => $request->city,
-                'zip_code' => $request->zip_code,
-                'contact_number' => $request->contact_number,
-                'emergency_contact' => $request->emergency_contact,
-                'email' => $request->email,
-                'previous_school' => $request->previous_school,
-                'grade_level' => $request->grade_level,
-                'category' => $request->category,  // Assuming category field exists
-                'schedule' => $request->schedule, // Assuming schedule is an array of schedule IDs
-                'studentid' => $request->studentid,
-                'role' => 'student', // Set the default role as 'student'
-            ];
+            $oldKey = $id;
+            $newKey = $request->studentid;
 
-            $res_updated = $this->database->getReference($this->tablename.'/'.$key)->update($updateData);
-
-            if($res_updated) {
-                return redirect('mio/admin1/students')->with('status', 'Student Updated Successfully');
-            } else {
-                return redirect('mio/admin1/students')->with('status', 'Student Not Updated');
-            }
-        }
-
-
-        public function addStudent(Request $request){
-            // Validate incoming data
+            // Validate the basic field formats first
             $validatedData = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
@@ -181,10 +234,31 @@ class FirebaseAuthController extends Controller
                 'grade_level' => 'required|integer|min:1',
                 'schedule' => 'required|array',
                 'studentid' => 'required|string|max:12',
+                'category' => 'required|string',
             ]);
 
-            // Prepare the data for saving to the database, including 'role'
-            $postData = [
+            $studentIdKey = $request->studentid;
+            $emailInput = $request->email;
+
+            // Fetch all students
+            $studentsRef = $this->database->getReference($this->tablename)->getValue();
+
+            // Check if the new studentid already exists (and it's not the same as the old key)
+            if (!empty($studentsRef) && array_key_exists($studentIdKey, $studentsRef) && $studentIdKey !== $oldKey) {
+                return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
+            }
+
+            // Check if the new email already exists for a different student
+            if (!empty($studentsRef)) {
+                foreach ($studentsRef as $key => $student) {
+                    if ($key !== $oldKey && isset($student['email']) && $student['email'] === $emailInput) {
+                        return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                    }
+                }
+            }
+
+            // Prepare updated data
+            $updateData = [
                 'fname' => $request->first_name,
                 'lname' => $request->last_name,
                 'gender' => $request->gender,
@@ -201,23 +275,261 @@ class FirebaseAuthController extends Controller
                 'email' => $request->email,
                 'previous_school' => $request->previous_school,
                 'grade_level' => $request->grade_level,
-                'category' => $request->category,  // Assuming category field exists
-                'schedule' => $request->schedule, // Assuming schedule is an array of schedule IDs
-                'studentid' => $request->studentid,
-                'role' => 'student', // Set the default role as 'student'
+                'category' => $request->category,
+                'schedule' => $request->schedule,
+                'studentid' => $studentIdKey,
+                'role' => 'student',
             ];
 
-            // Push the data to Firebase or another database
-            $postRef = $this->database->getReference($this->tablename)->push($postData);
-
-            // Check if the data was saved successfully
-            if($postRef) {
-                return redirect('mio/admin1/students')->with('status', 'Student Added Successfully');
+            if ($oldKey === $newKey) {
+                // No change in ID, just update the existing record
+                $this->database->getReference($this->tablename.'/'.$oldKey)->update($updateData);
             } else {
-                return redirect('mio/admin1/students')->with('status', 'Student Not Added');
+                // ID changed: move data to new key, delete old key
+                $this->database->getReference($this->tablename.'/'.$newKey)->set($updateData);
+                $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
+
+            return redirect('mio/admin1/students')->with('status', 'Student Updated Successfully');
         }
 
 
+        // DELETE STUDENT
+        public function deleteStudent($id)
+            {
+                $key = $id;
+                $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+
+                if ($del_data) {
+                    return redirect('mio/admin1/students')->with('status', 'Student Deleted Successfully');
+                } else {
+                    return redirect('mio/admin1/students')->with('status', 'Student Not Deleted');
+                }
+        }
+
+        // ------ TEACHER - PAGE
+        public function teachers() {
+            // Fetch all users
+            $users = $this->database->getReference($this->tablename)->getValue();
+            $users = $users ?? [];
+
+            // Filter only teachers
+            $teachers = array_filter($users, function($user) {
+                return isset($user['role']) && $user['role'] === 'teacher';
+            });
+
+            return view('mio.head.admin-panel', ['page' => 'teachers'], compact('teachers'));
+        }
+
+        public function showAddTeacher(){
+            return view('mio.head.admin-panel', ['page' => 'add-teacher']);
+        }
+
+        // ADD Teacher
+        public function addTeacher(Request $request)
+            {
+                // Validate basic field formats first
+                $validatedData = $request->validate([
+                    'first_name' => 'required|string|max:255',
+                    'last_name' => 'required|string|max:255',
+                    'gender' => 'required|string|max:10',
+                    'age' => 'required|integer|min:1',
+                    'birthday' => 'required|date',
+                    'address' => 'required|string|max:255',
+                    'barangay' => 'required|string|max:255',
+                    'region' => 'required|string|max:100',
+                    'province' => 'required|string|max:100',
+                    'city' => 'required|string|max:100',
+                    'zip_code' => 'required|digits:4',
+                    'contact_number' => 'required|string|max:15',
+                    'emergency_contact' => 'required|string|max:15',
+                    'email' => 'required|email|max:255',
+                    'previous_school' => 'required|string|max:255',
+                    'grade_level' => 'required|integer|min:1',
+                    'schedule' => 'required|array',
+                    'teacherid' => 'required|string|max:12',
+                    'category' => 'required|string',
+                ]);
+
+                $teacherIdKey = $request->teacherid;
+                $emailInput = $request->email;
+
+                // Fetch all students
+                $teachersRef = $this->database->getReference($this->tablename)->getValue();
+
+                // Check if studentid already exists
+                if (!empty($teachersRef) && array_key_exists($teacherIdKey, $teachersRef)) {
+                    return redirect()->back()->with('status', 'Teacher ID already exists!')->withInput();
+                }
+
+                // Check if email already exists
+                if (!empty($teachersRef)) {
+                    foreach ($teachersRef as $teacher) {
+                        if (isset($teacher['email']) && $teacher['email'] === $emailInput) {
+                            return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                        }
+                    }
+                }
+
+                // Prepare the data for saving
+                $postData = [
+                    'fname' => $request->first_name,
+                    'lname' => $request->last_name,
+                    'gender' => $request->gender,
+                    'age' => $request->age,
+                    'bday' => $request->birthday,
+                    'address' => $request->address,
+                    'barangay' => $request->barangay,
+                    'region' => $request->region,
+                    'province' => $request->province,
+                    'city' => $request->city,
+                    'zip_code' => $request->zip_code,
+                    'contact_number' => $request->contact_number,
+                    'emergency_contact' => $request->emergency_contact,
+                    'email' => $request->email,
+                    'previous_school' => $request->previous_school,
+                    'grade_level' => $request->grade_level,
+                    'category' => $request->category,
+                    'schedule' => $request->schedule,
+                    'teacherid' => $teacherIdKey,
+                    'role' => 'teacher',
+                ];
+
+                // Save the data under studentid key
+                $postRef = $this->database->getReference($this->tablename.'/'.$teacherIdKey)->set($postData);
+
+                if ($postRef) {
+                    return redirect('mio/admin1/teachers')->with('status', 'Student Added Successfully');
+                } else {
+                    return redirect('mio/admin1/teachers')->with('status', 'Student Not Added');
+                }
+        }
+
+        // DISPLAY EDIT TEACHER
+        public function showEditTeacher($id)
+        {
+            // Get all teachers
+            $teachers = $this->database->getReference($this->tablename)->getValue();
+            $editdata = null;
+
+            // Find the student by studentid
+            if ($teachers) {
+                foreach ($teachers as $key => $teacher) {
+                    if (isset($teacher['teacherid']) && $teacher['teacherid'] == $id) {
+                        $editdata = $teacher;
+                        $editdata['firebase_key'] = $key;  // Store Firebase key
+                        break;
+                    }
+                }
+            }
+
+            // If student data is found, return the view with the data
+            if ($editdata) {
+                return view('mio.head.admin-panel', [
+                    'page' => 'edit-teacher',
+                    'editdata' => $editdata,  // Pass the student data including category
+                ]);
+            } else {
+                return redirect('mio/admin1/teachers')->with('status', 'Teacher ID Not Found');
+            }
+        }
+
+        // EDIT STUDENT
+        public function editTeacher(Request $request, $id)
+        {
+            $oldKey = $id;
+            $newKey = $request->teacherid;
+
+            // Validate the basic field formats first
+            $validatedData = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'gender' => 'required|string|max:10',
+                'age' => 'required|integer|min:1',
+                'birthday' => 'required|date',
+                'address' => 'required|string|max:255',
+                'barangay' => 'required|string|max:255',
+                'region' => 'required|string|max:100',
+                'province' => 'required|string|max:100',
+                'city' => 'required|string|max:100',
+                'zip_code' => 'required|digits:4',
+                'contact_number' => 'required|string|max:15',
+                'emergency_contact' => 'required|string|max:15',
+                'email' => 'required|email|max:255',
+                'previous_school' => 'required|string|max:255',
+                'grade_level' => 'required|integer|min:1',
+                'schedule' => 'required|array',
+                'teacherid' => 'required|string|max:12',
+                'category' => 'required|string',
+            ]);
+
+            $teacherIdKey = $request->teacherid;
+            $emailInput = $request->email;
+
+            // Fetch all teachers
+            $teachersRef = $this->database->getReference($this->tablename)->getValue();
+
+            // Check if the new teacherid already exists (and it's not the same as the old key)
+            if (!empty($teachersRef) && array_key_exists($teacherIdKey, $teachersRef) && $teacherIdKey !== $oldKey) {
+                return redirect()->back()->with('status', 'Teacher ID already exists!')->withInput();
+            }
+
+            // Check if the new email already exists for a different student
+            if (!empty($teachersRef)) {
+                foreach ($teachersRef as $key => $teacher) {
+                    if ($key !== $oldKey && isset($teacher['email']) && $teacher['email'] === $emailInput) {
+                        return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                    }
+                }
+            }
+
+            // Prepare updated data
+            $updateData = [
+                'fname' => $request->first_name,
+                'lname' => $request->last_name,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'bday' => $request->birthday,
+                'address' => $request->address,
+                'barangay' => $request->barangay,
+                'region' => $request->region,
+                'province' => $request->province,
+                'city' => $request->city,
+                'zip_code' => $request->zip_code,
+                'contact_number' => $request->contact_number,
+                'emergency_contact' => $request->emergency_contact,
+                'email' => $request->email,
+                'previous_school' => $request->previous_school,
+                'grade_level' => $request->grade_level,
+                'category' => $request->category,
+                'schedule' => $request->schedule,
+                'teacherid' => $teacherIdKey,
+                'role' => 'teacher',
+            ];
+
+            if ($oldKey === $newKey) {
+                // No change in ID, just update the existing record
+                $this->database->getReference($this->tablename.'/'.$oldKey)->update($updateData);
+            } else {
+                // ID changed: move data to new key, delete old key
+                $this->database->getReference($this->tablename.'/'.$newKey)->set($updateData);
+                $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
+            }
+
+            return redirect('mio/admin1/teachers')->with('status', 'Teacher Updated Successfully');
+        }
+
+        // DELETE TEACHER
+        public function deleteTeacher($id)
+            {
+                $key = $id;
+                $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+
+                if ($del_data) {
+                    return redirect('mio/admin1/teachers')->with('status', 'Teacher Deleted Successfully');
+                } else {
+                    return redirect('mio/admin1/teachers')->with('status', 'Teacher Not Deleted');
+                }
+        }
 
 }
