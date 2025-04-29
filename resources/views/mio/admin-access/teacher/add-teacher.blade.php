@@ -3,6 +3,7 @@
 
   <div class="teacher-container">
     @include('mio.dashboard.status-message')
+
     <form action="{{ route('mio.AddTeacher') }}" method="POST" enctype="multipart/form-data">
       @csrf
 
@@ -18,7 +19,7 @@
       </div>
 
       <div class="form-container">
-        <!-- Student Information Section -->
+        <!-- Teacher Information Section -->
         <div class="section-header">Teacher Information</div>
         <div class="section-content">
           <div class="form-row" >
@@ -54,8 +55,13 @@
               <input type="text" name="last_name" value="Finez" required />
             </div>
             <div class="form-group">
-              <label>Gender <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="gender" value="Female" required />
+            <label>Gender <span style="color: red; font-weight:700">*</span></label>
+            <select name="gender" required>
+                <option value="" disabled selected>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
             </div>
             <div class="form-group">
               <label>Age <span style="color: red; font-weight:700">*</span></label>
@@ -132,6 +138,31 @@
             </div>
           </div>
         </div>
+
+        <!-- Account Information Section -->
+        <div class="section-header">Account Information</div>
+        <div class="section-content">
+        <div class="form-row">
+            <div class="form-group">
+            <label>Username <span style="color: red; font-weight:700">*</span></label>
+            <input type="text" name="username" id="account_username" required />
+            </div>
+            <div class="form-group">
+            <label>Password <span style="color: red; font-weight:700">*</span></label>
+            <input type="text" name="account_password" id="account_password" required />
+            </div>
+
+            <div class="form-group">
+            <label>Account Status <span style="color: red; font-weight:700">*</span></label>
+            <select name="account_status" required>
+                <option value="active" selected>Active</option>
+                <option value="inactive">Inactive</option>
+            </select>
+            </div>
+        </div>
+        </div>
+
+
 
         <!-- Schedule Section -->
         <div class="section-header">Schedule</div>
@@ -225,4 +256,22 @@ const studentID = `TE${currentYear}${String(currentWeek).padStart(2, '0')}${Stri
 
 // Set the value in the input field
 document.getElementById('teacherID').value = studentID;
+</script>
+
+<script>
+// Function to update account username and password fields
+function updateAccountInfo() {
+    const personalEmail = document.querySelector('input[name="email"]').value;
+    const personalBirthday = document.querySelector('input[name="birthday"]').value;
+
+    document.getElementById('account_username').value = personalEmail;  // use email as username
+    document.getElementById('account_password').value = personalBirthday; // birthday as password
+}
+
+// Update fields when the page loads
+window.addEventListener('load', updateAccountInfo);
+
+// Also update fields whenever email or birthday inputs are changed
+document.querySelector('input[name="email"]').addEventListener('input', updateAccountInfo);
+document.querySelector('input[name="birthday"]').addEventListener('input', updateAccountInfo);
 </script>

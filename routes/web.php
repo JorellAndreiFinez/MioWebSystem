@@ -101,9 +101,19 @@ Route::prefix('mio/admin1')->name('mio.')->group(function () {
     Route::view('/accounts', 'mio.head.admin-panel', ['page' => 'accounts'])->name('accounts');
 
     // ADMINS
-    Route::view('/admins', 'mio.head.admin-panel', ['page' => 'admin'])->name('admin');
-    Route::view('/AddAdmin', 'mio.head.admin-panel', ['page' => 'add-admin'])->name('add-admin');
-    Route::view('/EditAdmin', 'mio.head.admin-panel', ['page' => 'edit-admin'])->name('edit-admin');
+    Route::get('/admins', [FirebaseAuthController::class, 'admins'])->name('admins');
+
+    // -- ADD ADMIN
+    Route::get('/AddAdmin', [FirebaseAuthController::class, 'showAddAdmin'])->name('AddAdmin');
+    Route::post('/AddAdmin', [FirebaseAuthController::class, 'addAdmin'])->name('AddAdmin');
+    Route::get('/get-teacher/{id}', [FirebaseAuthController::class, 'getTeacherData'])->name('get.teacher');
+
+    // -- EDIT ADMIN
+    Route::get('/EditAdmin/{id}', [FirebaseAuthController::class, 'showEditAdmin'])->name('EditAdmin');
+    Route::put('/UpdateAdmin/{id}', [FirebaseAuthController::class, 'editAdmin'])->name('EditAdmin');
+
+    // -- DELETE ADMIN
+    Route::delete('/DeleteAdmin/{id}', [FirebaseAuthController::class, 'deleteAdmin'])->name(name: 'DeleteAdmin');
 
     // PARENTS
     Route::view('/parents', 'mio.head.admin-panel', ['page' => 'parent'])->name('parent');

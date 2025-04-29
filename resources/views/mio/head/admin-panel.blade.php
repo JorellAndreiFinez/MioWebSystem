@@ -35,7 +35,7 @@
     @elseif ($page === 'accounts')
         @include('mio.admin-access.accounts')
 
-    @elseif ($page === 'admins')
+    @elseif ($page === 'admin')
         @include('mio.admin-access.admin')
     @elseif ($page === 'add-admin')
         @include('mio.admin-access.admin.add-admin')

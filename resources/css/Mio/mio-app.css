@@ -77,7 +77,7 @@ textarea {
 }
 
 input::placeholder {
-    color: white;
+    color: rgb(163, 163, 163);
 }
 
 

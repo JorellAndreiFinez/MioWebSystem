@@ -62,9 +62,15 @@
               <input type="text" name="last_name" value="{{ $editdata['lname'] }}" required />
             </div>
             <div class="form-group">
-              <label>Gender <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="gender" value="{{ $editdata['gender'] }}" required />
-            </div>
+            <label>Gender <span style="color: red; font-weight:700">*</span></label>
+            <select name="gender" required>
+                <option value="" disabled {{ !isset($editdata['gender']) ? 'selected' : '' }}>Select Gender</option>
+                <option value="Male" {{ isset($editdata['gender']) && $editdata['gender'] == 'Male' ? 'selected' : '' }}>Male</option>
+                <option value="Female" {{ isset($editdata['gender']) && $editdata['gender'] == 'Female' ? 'selected' : '' }}>Female</option>
+                <option value="Other" {{ isset($editdata['gender']) && $editdata['gender'] == 'Other' ? 'selected' : '' }}>Other</option>
+            </select>
+        </div>
+
             <div class="form-group">
               <label>Age <span style="color: red; font-weight:700">*</span></label>
               <input type="number" name="age" value="{{ $editdata['age'] }}" required />
@@ -146,6 +152,45 @@
           </div>
         </div>
 
+        <!-- Account Information Section -->
+        <div class="section-header">Account Information</div>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Username <span style="color: red; font-weight:700">*</span></label>
+                    <input type="text" name="username" id="account_username" value="{{ $editdata['username'] ?? '' }}" required readonly/>
+                </div>
+                <div class="form-group">
+                <label for="account_password">
+                    Password
+                </label>
+                <div style="position: relative;">
+                    <input
+                        type="password"
+                        name="account_password"
+                        id="account_password"
+                        placeholder="Enter new password if changing"
+                        class="form-control"
+                    />
+                    <button
+                        type="button"
+                        onclick="togglePasswordVisibility()"
+                        style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: transparent; border: none;"
+                    >
+                        <i class="fa fa-eye" id="eye-icon"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                    <label>Account Status <span style="color: red; font-weight:700">*</span></label>
+                    <select name="account_status" required>
+                        <option value="active" @if (isset($editdata['account_status']) && $editdata['account_status'] == 'active') selected @endif>Active</option>
+                        <option value="inactive" @if (isset($editdata['account_status']) && $editdata['account_status'] == 'inactive') selected @endif>Inactive</option>
+                    </select>
+                </div>
+        </div>
+
+
         <!-- Schedule Section -->
         <div class="section-header">Schedule</div>
         <div class="section-content" id="schedule-section">
@@ -206,5 +251,37 @@ function addScheduleField() {
   lastRow.appendChild(formGroup);
 }
 
+</script>
 
+<script>
+function togglePasswordVisibility() {
+    const input = document.getElementById('account_password');
+    const icon = document.getElementById('eye-icon');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+</script>
+
+<script>
+// Function to update account username and password fields
+function updateAccountInfo() {
+    const personalEmail = document.querySelector('input[name="email"]').value;
+    const personalBirthday = document.querySelector('input[name="birthday"]').value;
+
+    document.getElementById('account_username').value = personalEmail;  // use email as username
+}
+
+// Update fields when the page loads
+window.addEventListener('load', updateAccountInfo);
+
+// Also update fields whenever email or birthday inputs are changed
+document.querySelector('input[name="email"]').addEventListener('input', updateAccountInfo);
 </script>
