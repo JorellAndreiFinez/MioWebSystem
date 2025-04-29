@@ -72,7 +72,7 @@
                     @endif
                 @empty
                     <tr>
-                        <td colspan="4" class="no-data">No students found.</td>
+                        <td colspan="4" class="no-data">No admins found.</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -19,24 +19,24 @@ class FirebaseAuthController extends Controller
     protected $database;
     protected $tablename;
 
-    public function __construct()
-    {
-        $path = base_path('storage/firebase/firebase.json');
+        public function __construct()
+        {
+            $path = base_path('storage/firebase/firebase.json');
 
-        if(!file_exists($path)) {
-            die("This File Path .{$path}. is not exists.");
-        }
+            if(!file_exists($path)) {
+                die("This File Path .{$path}. is not exists.");
+            }
 
-        $this->auth = (new Factory)
-                ->withServiceAccount($path)
-                ->createAuth();
+            $this->auth = (new Factory)
+                    ->withServiceAccount($path)
+                    ->createAuth();
 
-        $this->database = (new Factory)
-                ->withServiceAccount($path)
-                ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
-                ->createDatabase();
+            $this->database = (new Factory)
+                    ->withServiceAccount($path)
+                    ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
+                    ->createDatabase();
 
-        $this->tablename = 'users';
+            $this->tablename = 'users';
         }
 
         public function registerForm(){
@@ -80,7 +80,7 @@ class FirebaseAuthController extends Controller
 
         }
 
-        // STUDENT - PAGE
+    // STUDENT - PAGE
         public function students() {
             // Fetch all users
             $users = $this->database->getReference($this->tablename)->getValue();
@@ -95,12 +95,12 @@ class FirebaseAuthController extends Controller
         }
 
 
-        // DISPLAY ADD STUDENT
+    // DISPLAY ADD STUDENT
         public function showAddStudent(){
             return view('mio.head.admin-panel', ['page' => 'add-student']);
         }
 
-        // ADD STUDENT
+    // ADD STUDENT
         public function addStudent(Request $request)
         {
             // Validate all fields including account info
@@ -195,7 +195,7 @@ class FirebaseAuthController extends Controller
             }
         }
 
-        // DISPLAY EDIT STUDENT
+    // DISPLAY EDIT STUDENT
         public function showEditStudent($id)
         {
             // Get all students
@@ -224,7 +224,7 @@ class FirebaseAuthController extends Controller
             }
         }
 
-        // EDIT STUDENT
+    // EDIT STUDENT
         public function editStudent(Request $request, $id)
         {
             $oldKey = $id;
@@ -338,7 +338,7 @@ class FirebaseAuthController extends Controller
             return redirect('mio/admin1/students')->with('status', 'Student Updated Successfully');
         }
 
-        // DELETE STUDENT
+    // DELETE STUDENT
         public function deleteStudent($id)
             {
                 $key = $id;
@@ -351,7 +351,7 @@ class FirebaseAuthController extends Controller
                 }
         }
 
-        // ------ TEACHER - PAGE
+    // ------ TEACHER - PAGE
         public function teachers() {
             // Fetch all users
             $users = $this->database->getReference($this->tablename)->getValue();
@@ -369,7 +369,7 @@ class FirebaseAuthController extends Controller
             return view('mio.head.admin-panel', ['page' => 'add-teacher']);
         }
 
-        // ADD Teacher
+    // ADD Teacher
         public function addTeacher(Request $request)
         {
             // Validate basic fields first
@@ -461,7 +461,7 @@ class FirebaseAuthController extends Controller
             }
         }
 
-        // DISPLAY EDIT TEACHER
+    // DISPLAY EDIT TEACHER
         public function showEditTeacher($id)
         {
             // Get all teachers
@@ -490,7 +490,7 @@ class FirebaseAuthController extends Controller
             }
         }
 
-        // EDIT TEACHER
+    // EDIT TEACHER
         public function editTeacher(Request $request, $id)
         {
             $oldKey = $id;
@@ -593,7 +593,7 @@ class FirebaseAuthController extends Controller
             return redirect('mio/admin1/teachers')->with('status', 'Teacher Updated Successfully');
         }
 
-        // DELETE TEACHER
+    // DELETE TEACHER
         public function deleteTeacher($id)
             {
                 $key = $id;
@@ -606,7 +606,7 @@ class FirebaseAuthController extends Controller
                 }
         }
 
-        // STUDENT - PAGE
+    // ADMIN - PAGE
         public function admins() {
             // Fetch all users
             $users = $this->database->getReference($this->tablename)->getValue();
@@ -621,12 +621,12 @@ class FirebaseAuthController extends Controller
         }
 
 
-        // DISPLAY ADD ADMIN
+    // DISPLAY ADD ADMIN
         public function showAddAdmin(){
             return view('mio.head.admin-panel', ['page' => 'add-admin']);
         }
 
-        // ADD ADMIN
+    // ADD ADMIN
         public function addAdmin(Request $request)
             {
                 // Validate all fields including account info
@@ -774,7 +774,7 @@ class FirebaseAuthController extends Controller
                 ]);
         }
 
-        // DISPLAY EDIT TEACHER
+    // DISPLAY EDIT TEACHER
         public function showEditAdmin($id)
         {
             // Get all teachers
@@ -803,7 +803,7 @@ class FirebaseAuthController extends Controller
             }
         }
 
-        // EDIT ADMIN
+    // EDIT ADMIN
         public function editAdmin(Request $request, $id)
         {
             $oldKey = $id;
@@ -936,7 +936,7 @@ class FirebaseAuthController extends Controller
         }
 
 
-         // DELETE ADMIN
+    // DELETE ADMIN
          public function deleteAdmin($id)
          {
              $key = $id;
@@ -947,9 +947,314 @@ class FirebaseAuthController extends Controller
              } else {
                  return redirect('mio/admin1/admins')->with('status', 'Admin Not Deleted');
              }
-     }
+        }
+
+     // ADMIN - PAGE
+        public function parents() {
+        // Fetch all users
+        $users = $this->database->getReference($this->tablename)->getValue();
+        $users = $users ?? [];
+
+        // Filter only parents
+        $parents = array_filter($users, function($user) {
+            return isset($user['role']) && $user['role'] === 'parent';
+        });
+
+        return view('mio.head.admin-panel', ['page' => 'parent'], compact('parents'));
+        }
 
 
+    // DISPLAY ADD ADMIN
+        public function showAddParent(){
+            return view('mio.head.admin-panel', ['page' => 'add-parent']);
+        }
+
+        // ADD PARENT
+        public function addParent(Request $request)
+        {
+            // Validate all fields including account info
+            $validatedData = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'gender' => 'required|string|max:10',
+                'age' => 'required|integer|min:1',
+                'birthday' => 'required|date',
+                'address' => 'required|string|max:255',
+                'barangay' => 'required|string|max:255',
+                'region' => 'required|string|max:100',
+                'province' => 'required|string|max:100',
+                'city' => 'required|string|max:100',
+                'zip_code' => 'required|digits:4',
+                'contact_number' => 'required|string|max:15',
+                'emergency_contact' => 'required|string|max:15',
+                'email' => 'required|email|max:255',
+                'parentid' => 'required|string|max:12',
+                'category' => 'required|string',
+                'username' => 'required|string|max:255',
+                'account_password' => 'required|string|min:6',
+                'account_status' => 'required|in:active,inactive',
+                'studentid' => 'nullable|string|max:12'
+            ]);
+
+            $parentIdKey = $request->parentid;
+            $emailInput = $request->email;
+            $usernameInput = $request->username;
+            $studentId = $request->studentid;
+
+            // Fetch all users
+            $usersRef = $this->database->getReference($this->tablename)->getValue();
+
+            // Check if parent ID already exists
+            if (!empty($usersRef) && array_key_exists($parentIdKey, $usersRef)) {
+                return redirect()->back()->with('status', 'Parent ID already exists!')->withInput();
+            }
+
+            // Check if email or username already exists
+            if (!empty($usersRef)) {
+                foreach ($usersRef as $user) {
+                    if (
+                        isset($user['email']) && $user['email'] === $emailInput &&
+                        (!isset($user['role']) || $user['role'] !== 'parent' || $studentId !== array_search($user, $usersRef))
+                    ) {
+                        return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                    }
+
+                    if (isset($user['username']) && $user['username'] === $usernameInput) {
+                        return redirect()->back()->with('status', 'Username already exists!')->withInput();
+                    }
+                }
+            }
+
+            // If student ID is provided, fetch student info and autofill address
+            if (!empty($studentId) && isset($usersRef[$studentId]) && $usersRef[$studentId]['role'] === 'student') {
+                $studentData = $usersRef[$studentId];
+                $validatedData['address'] = $studentData['address'] ?? $validatedData['address'];
+                $validatedData['barangay'] = $studentData['barangay'] ?? $validatedData['barangay'];
+                $validatedData['region'] = $studentData['region'] ?? $validatedData['region'];
+                $validatedData['province'] = $studentData['province'] ?? $validatedData['province'];
+                $validatedData['city'] = $studentData['city'] ?? $validatedData['city'];
+                $validatedData['zip_code'] = $studentData['zip_code'] ?? $validatedData['zip_code'];
+            }
+
+            // Prepare parent data for Firebase
+            $postData = [
+                'fname' => $request->first_name,
+                'lname' => $request->last_name,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'bday' => $request->birthday,
+                'address' => $validatedData['address'],
+                'barangay' => $validatedData['barangay'],
+                'region' => $validatedData['region'],
+                'province' => $validatedData['province'],
+                'city' => $validatedData['city'],
+                'zip_code' => $validatedData['zip_code'],
+                'contact_number' => $request->contact_number,
+                'emergency_contact' => $request->emergency_contact,
+                'email' => $request->email,
+                'category' => $request->category,
+                'parentid' => $parentIdKey,
+                'studentid' => $studentId ?? null, // Save student ID if provided
+                'role' => 'parent',
+                'username' => $request->username,
+                'password' => bcrypt($request->account_password),
+                'account_status' => $request->account_status,
+                'date_created' => Carbon::now()->toDateTimeString(),
+                'date_updated' => Carbon::now()->toDateTimeString(),
+                'last_login' => null
+            ];
+
+            // Save parent data to Firebase
+            $postRef = $this->database->getReference($this->tablename . '/' . $parentIdKey)->set($postData);
+
+            if ($postRef) {
+                return redirect('mio/admin1/parents')->with('status', 'Parent Added Successfully');
+            } else {
+                return redirect('mio/admin1/parents')->with('status', 'Parent Not Added');
+            }
+        }
+
+
+        public function getStudentData($id)
+        {
+            $usersRef = $this->database->getReference($this->tablename)->getValue();
+
+            if (!isset($usersRef[$id]) || $usersRef[$id]['role'] !== 'student') {
+                return response()->json(['error' => 'Student not found'], 404);
+            }
+
+            $student = $usersRef[$id];
+
+            return response()->json([
+                'first_name' => $student['fname'] ?? '',
+                'last_name' => $student['lname'] ?? '',
+                'grade_level' => $student['grade_level'] ?? 'N/A',
+                'address' => $student['address'] ?? '',
+                'barangay' => $student['barangay'] ?? '',
+                'region' => $student['region'] ?? '',
+                'province' => $student['province'] ?? '',
+                'city' => $student['city'] ?? '',
+                'zip_code' => $student['zip_code'] ?? '',
+            ]);
+        }
+
+    // DISPLAY EDIT PARENT
+        public function showEditParent($id)
+        {
+            // Get all parents
+            $parents = $this->database->getReference($this->tablename)->getValue();
+            $editdata = null;
+
+            // Find the student by studentid
+            if ($parents) {
+                foreach ($parents as $key => $parent) {
+                    if (isset($parent['parentid']) && $parent['parentid'] == $id) {
+                        $editdata = $parent;
+                        $editdata['firebase_key'] = $key;  // Store Firebase key
+                        break;
+                    }
+                }
+            }
+
+            // If student data is found, return the view with the data
+            if ($editdata) {
+                return view('mio.head.admin-panel', [
+                    'page' => 'edit-parent',
+                    'editdata' => $editdata,  // Pass the student data including category
+                ]);
+            } else {
+                return redirect('mio/admin1/parents')->with('status', 'Parent ID Not Found');
+            }
+        }
+
+    // EDIT PARENT
+        public function editParent(Request $request, $id)
+        {
+            $oldKey = $id;
+            $newKey = $request->parentid;
+
+            $validatedData = $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'gender' => 'required|string|max:10',
+                'age' => 'required|integer|min:1',
+                'birthday' => 'required|date',
+                'address' => 'required|string|max:255',
+                'barangay' => 'required|string|max:255',
+                'region' => 'required|string|max:100',
+                'province' => 'required|string|max:100',
+                'city' => 'required|string|max:100',
+                'zip_code' => 'required|digits:4',
+                'contact_number' => 'required|string|max:15',
+                'emergency_contact' => 'required|string|max:15',
+                'email' => 'required|email|max:255',
+                'parentid' => 'required|string|max:12',
+                'category' => 'required|string',
+                'username' => 'required|string|max:255',
+                'account_status' => 'required|string|in:active,inactive',
+                'account_password' => 'nullable|string|min:6',
+                'studentid' => 'nullable|string|max:12'
+            ]);
+
+            $parentIdKey = $request->parentid;
+            $emailInput = $request->email;
+            $usernameInput = $request->username;
+            $studentId = $request->studentid;
+
+            $parentsRef = $this->database->getReference($this->tablename)->getValue();
+
+            if (!empty($parentsRef)) {
+                foreach ($parentsRef as $key => $parent) {
+                    if ($key !== $oldKey) {
+                        if (isset($parent['parentid']) && $parent['parentid'] == $parentIdKey) {
+                            return redirect()->back()->with('status', 'Parent ID already exists!')->withInput();
+                        }
+                        if (isset($parent['email']) && $parent['email'] == $emailInput) {
+
+                            return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                        }
+
+                        if (isset($parent['username']) && $parent['username'] == $usernameInput) {
+                            return redirect()->back()->with('status', 'Username already exists!')->withInput();
+                        }
+                    }
+                }
+            }
+
+            // If teacherid is provided and valid, merge teacher data into updateData
+            if (!empty($request->studentid) && isset($parentsRef[$request->studentid]) && $parentsRef[$request->studentid]['role'] === 'teacher') {
+                $parentData = $parentsRef[$request->studentid];
+
+                // Overwrite values from teacher data if they exist
+                $validatedData['address'] = $parentData['address'] ?? $validatedData['address'];
+                $validatedData['barangay'] = $parentData['barangay'] ?? $validatedData['barangay'];
+                $validatedData['region'] = $parentData['region'] ?? $validatedData['region'];
+                $validatedData['province'] = $parentData['province'] ?? $validatedData['province'];
+                $validatedData['city'] = $parentData['city'] ?? $validatedData['city'];
+                $validatedData['zip_code'] = $parentData['zip_code'] ?? $validatedData['zip_code'];
+            }
+
+
+            // Get existing data to preserve date_created and last_login
+            $existingData = $this->database->getReference($this->tablename.'/'.$oldKey)->getValue();
+
+            $updateData = [
+                'fname' => $request->first_name,
+                'lname' => $request->last_name,
+                'gender' => $request->gender,
+                'age' => $request->age,
+                'bday' => $request->birthday,
+                'address' => $validatedData['address'],
+                'barangay' => $validatedData['barangay'],
+                'region' => $validatedData['region'],
+                'province' => $validatedData['province'],
+                'city' => $validatedData['city'],
+                'zip_code' => $validatedData['zip_code'],
+                'contact_number' => $request->contact_number,
+                'emergency_contact' => $request->emergency_contact,
+                'email' => $request->email,
+                'category' => $request->category,
+                'studentid' => $studentId ?? null,
+                'role' => 'parent',
+                'username' => $usernameInput,
+                'account_status' => $request->account_status,
+                'date_updated' => Carbon::now()->toDateTimeString(),
+                'parentid' => $parentIdKey,
+            ];
+
+
+            // Only update password if user entered a new one
+            if ($request->filled('account_password')) {
+                $updateData['password'] = bcrypt($request->account_password);
+            } else {
+                // Retain existing password if not updated
+                if (isset($existingData['password'])) {
+                    $updateData['password'] = $existingData['password'];
+                }
+            }
+
+            if ($oldKey === $newKey) {
+                $this->database->getReference($this->tablename.'/'.$oldKey)->update($updateData);
+            } else {
+                $this->database->getReference($this->tablename.'/'.$newKey)->set($updateData);
+                $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
+            }
+
+            return redirect('mio/admin1/parents')->with('status', 'Parent Updated Successfully');
+        }
+
+    // DELETE PARENT
+         public function deleteParent($id)
+         {
+             $key = $id;
+             $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+
+             if ($del_data) {
+                 return redirect('mio/admin1/parents')->with('status', 'Parent Deleted Successfully');
+             } else {
+                 return redirect('mio/admin1/parents')->with('status', 'Parent Not Deleted');
+             }
+        }
 
 
 
