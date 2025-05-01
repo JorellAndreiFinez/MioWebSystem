@@ -30,11 +30,27 @@ class LoginController extends Controller
     }
 
     public function loginForm()
-    {
-        return view('mio.user-access.login');
+{
+    // Check if the user is already authenticated
+    if (session()->has('firebase_user')) {
+        $role = session('firebase_user')['role'];
+
+        // Redirect to the appropriate dashboard based on the user's role
+        return match ($role) {
+            'admin'   => redirect()->route('mio.admin-panel'),
+            'teacher' => redirect()->route('mio.teacher-panel'),
+            'parent'  => redirect()->route('mio.parent-panel'),
+            'student' => redirect()->route('mio.student-panel'),
+            default   => redirect()->route('mio.login')->with('error', 'Unrecognized role.'),
+        };
     }
 
-    public function login(Request $request)
+    // If the user is not logged in, show the login form
+    return view('mio.user-access.login');
+}
+
+
+public function login(Request $request)
 {
     $email = $request->input('email');
     $password = $request->input('password');
@@ -50,12 +66,17 @@ class LoginController extends Controller
             return redirect()->back()->with('error', 'User or role not found.');
         }
 
+        // Retrieve name safely (set default if not found)
+        $name = $userData['fname'] ?? 'User'; // Default to 'User' if name is not set
         $role = strtolower($userData['role']);
 
-        // Set session
-        Session::put('uid', $uid);
-        Session::put('email', $email);
-        Session::put('role', $role);
+        // Set the entire firebase_user in session with name, role, etc.
+        Session::put('firebase_user', [
+            'uid' => $uid,
+            'email' => $email,
+            'role' => $role,
+            'name' => $name, // Store name in session
+        ]);
 
         // Update login timestamp
         $this->database->getReference('users/' . $uid)->update([
@@ -81,9 +102,19 @@ class LoginController extends Controller
 }
 
 
-    public function logout()
-    {
-        Session::flush();
-        return redirect()->route('login.form')->with('status', 'Logged out successfully.');
-    }
+
+
+
+public function logout()
+{
+    // Clear the entire session
+    Session::flush();
+
+    // Optionally regenerate the session ID
+    Session::regenerate();
+
+    // Redirect back to login page with a success message
+    return redirect()->route('mio.login')->with('status', 'Logged out successfully.');
+}
+
 }

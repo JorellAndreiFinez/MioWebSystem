@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\FirebaseConnectionController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
 use Illuminate\Support\Facades\Route;
@@ -71,7 +72,7 @@ Route::prefix('mio/admin/')->middleware(
     [AuthMiddleware::class, RoleBasedAccess::class . ':admin']
 )->name('mio.')->group(function () {
 
-    Route::view('/dashboard', 'mio.head.admin-panel', ['page' => 'dashboard'])->name('admin-panel');
+    Route::get('/dashboard', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
 
 //  ---------------  TEACHERS
     Route::get('/teachers', [FirebaseAuthController::class, 'teachers'])->name('teachers');
@@ -136,7 +137,8 @@ Route::prefix('mio/admin/')->middleware(
     Route::delete('/DeleteParent/{id}', [FirebaseAuthController::class, 'deleteParent'])->name(name: 'DeleteParent');
 
 // SUBJECTS
-    Route::view('/subjects', 'mio.head.admin-panel', ['page' => 'subjects'])->name('subjects');
+    Route::get('/subjects', [SubjectController::class, 'showGradeLevels'])->name('subjects');
+
     Route::view('/AllSubjects', 'mio.head.admin-panel', ['page' => 'view-subject'])->name('view-subject');
     Route::view('/AddSubjects', 'mio.head.admin-panel', ['page' => 'add-subject'])->name('add-subject');
     Route::view('/EditSubjects', 'mio.head.admin-panel', ['page' => 'edit-subject'])->name('edit-subject');
@@ -196,6 +198,9 @@ Route::prefix('mio/student')->middleware(
     Route::get('mio/login', [LoginController::class, 'loginForm'])->name('mio.login');
     Route::post('/user-login', [LoginController::class, 'login']);
 
+    Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+
+
 // SUBJECT
 
 Route::prefix('mio/sample1')->name('mio.subject.')->group(function () {
@@ -216,7 +221,9 @@ Route::prefix('mio/sample1')->name('mio.subject.')->group(function () {
 
 
 // MIO - PARENT PANEL
-Route::prefix('mio/parent1')->group(function () {
+Route::prefix('mio/parent')->middleware(
+    [AuthMiddleware::class, RoleBasedAccess::class . ':parent']
+)->group(function () {
 
     Route::get('/dashboard', function () {
         return view('mio.head.parent-panel', ['page' => 'parent-dashboard']);
@@ -242,7 +249,9 @@ Route::prefix('mio/parent1')->group(function () {
 
 
 // MIO - TEACHER PANEL
-Route::prefix('mio/teacher1')->group(function () {
+Route::prefix('mio/teacher')->middleware(
+    [AuthMiddleware::class, RoleBasedAccess::class . ':teacher']
+)->group(function () {
 
     Route::get('/dashboard', function () {
         return view('mio.head.teacher-panel', ['page' => 'teacher-dashboard']);

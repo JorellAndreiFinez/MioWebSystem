@@ -263,7 +263,7 @@ document.getElementById('studentID').addEventListener('input', function () {
   if (studentID && studentID.length > 0) {
     checkboxContainer.style.display = 'block';
 
-    fetch(`/mio/admin1/get-student/${studentID}`)
+    fetch(`/mio/admin/get-student/${studentID}`)
       .then(response => response.json())
       .then(data => {
         if (data) {

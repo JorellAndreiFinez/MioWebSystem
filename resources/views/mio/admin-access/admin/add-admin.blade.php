@@ -291,7 +291,7 @@ document.getElementById('teacherID').addEventListener('blur', function () {
     const teacherID = this.value.trim();
     if (teacherID === '') return;
 
-    fetch(`/mio/admin1/get-teacher/${teacherID}`)
+    fetch(`/mio/admin/get-teacher/${teacherID}`)
         .then(response => {
             if (!response.ok) {
                 throw new Error('Teacher not found');

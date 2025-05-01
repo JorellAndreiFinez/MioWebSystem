@@ -10,7 +10,7 @@
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
-                <h2>Welcome back,<br> John Doe!</h2>
+                <h2>Welcome back,<br>  {{ session('firebase_user.name') }}</h2>
                 <p>Helping deaf children develop communication skills and confidence for a brighter future.</p>
             </div>
             <div class="divider"></div>
@@ -21,6 +21,7 @@
             </div>
             </div>
         </main>
+
 
         <div class="dashboard-grid">
 

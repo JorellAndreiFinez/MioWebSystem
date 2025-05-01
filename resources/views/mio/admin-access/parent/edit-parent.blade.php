@@ -3,7 +3,7 @@
   <div class="teacher-container">
     @include('mio.dashboard.status-message')
 
-    <form action="{{ url('mio/admin1/UpdateParent/'.$editdata['parentid']) }}"  method="POST" enctype="multipart/form-data">
+    <form action="{{ url('mio/admin/UpdateParent/'.$editdata['parentid']) }}"  method="POST" enctype="multipart/form-data">
       @csrf
       @method('PUT')
       <!-- HEADER CONTROLS -->
@@ -278,7 +278,7 @@ function fetchStudentData(studentID) {
     checkboxContainer.style.display = 'block';
 
     // Fetch student data immediately when a valid student ID is typed or already exists
-    fetch(`/mio/admin1/get-student/${studentID}`)
+    fetch(`/mio/admin/get-student/${studentID}`)
       .then(response => response.json())
       .then(data => {
         if (data) {

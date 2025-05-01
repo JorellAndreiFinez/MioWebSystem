@@ -53,11 +53,11 @@
         <li class="profile">
             <div class="profile-details">
                 <div class="name_job">
-                    <div class="name">{{ Auth::user()->name ?? 'John Doe' }}</div>
-                    <div class="job">{{ Auth::user()->role ?? 'Role' }}</div>
+                    <div class="name">{{ session('firebase_user.name') ?? 'User' }}</div>
+                    <div class="job">{{ session('firebase_user.role') ?? 'Role' }}</div>
                 </div>
             </div>
-            <a href="{{ route('mio.login') }}">
+           <a href="{{ route('logout') }}">
                 <i class='bx bx-log-out' id="log_out"></i>
             </a>
         </li>

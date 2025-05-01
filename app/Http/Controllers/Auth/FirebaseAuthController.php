@@ -39,6 +39,22 @@ class FirebaseAuthController extends Controller
             $this->tablename = 'users';
         }
 
+        public function showAdminPanel()
+        {
+            // Get the total number of users per role
+            $studentsCount = $this->database->getReference('users')->orderByChild('role')->equalTo('student')->getSnapshot()->numChildren();
+            $teachersCount = $this->database->getReference('users')->orderByChild('role')->equalTo('teacher')->getSnapshot()->numChildren();
+            $coursesCount = $this->database->getReference('courses')->getSnapshot()->numChildren(); // Example for courses
+
+            // Pass data to the view
+            return view('mio.head.admin-panel', [
+                'page' => 'dashboard',
+                'studentsCount' => $studentsCount,
+                'teachersCount' => $teachersCount,
+                'coursesCount' => $coursesCount
+            ]);
+        }
+
 
 
     // STUDENT - PAGE
@@ -1279,6 +1295,7 @@ class FirebaseAuthController extends Controller
                  return redirect('mio/admin/parents')->with('status', 'Parent Not Deleted');
              }
         }
+
 
 
 
