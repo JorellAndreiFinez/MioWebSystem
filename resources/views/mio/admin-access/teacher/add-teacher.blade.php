@@ -4,7 +4,7 @@
   <div class="teacher-container">
     @include('mio.dashboard.status-message')
 
-    <form action="{{ route('mio.AddTeacher') }}" method="POST" enctype="multipart/form-data">
+    <form action="{{ route('mio.AddTeacher', ['uid' => session('uid')]) }}" method="POST" enctype="multipart/form-data">
       @csrf
 
       <!-- HEADER CONTROLS -->

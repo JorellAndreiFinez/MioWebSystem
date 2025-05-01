@@ -3,7 +3,7 @@
 <div class="teacher-container">
 @include('mio.dashboard.status-message')
 
- <form action="{{ url('mio/admin1/UpdateStudent/'.$editdata['studentid']) }}" method="post" enctype="multipart/form-data">
+ <form action="{{ url('mio/admin/UpdateStudent/'.$editdata['studentid']) }}" method="post" enctype="multipart/form-data">
     @csrf
     @method('PUT')
     <!-- HEADER CONTROLS -->

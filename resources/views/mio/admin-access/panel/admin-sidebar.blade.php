@@ -1,50 +1,56 @@
+
 <div class="sidebar">
     <div class="logo-details">
         <div class="logo_name">MIO - Admin</div>
         <i class='bx bx-menu' id="btn"></i>
     </div>
     <ul class="nav-list">
-    @php
-    $menuSections = [
-        'Menu' => [
-            ['route' => 'mio.admin-panel', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
-            ['route' => 'mio.teachers', 'icon' => 'bx bxs-graduation', 'label' => 'Teachers'],
-            ['route' => 'mio.students', 'icon' => 'bx bx-user-voice', 'label' => 'Students'],
-            ['route' => 'mio.accounts', 'icon' => 'bx bxs-user-detail', 'label' => 'Accounts'],
-            ['route' => 'mio.subjects', 'icon' => 'bx bx-book-open', 'label' => 'Subjects'],
-            ['route' => 'mio.schedules', 'icon' => 'bx bx-calendar', 'label' => 'Schedule'],
-            ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
-        ],
-        'Other' => [
-            ['route' => 'mio.emergency', 'icon' => 'bx bxs-error', 'label' => 'Emergency Alert'],
-            ['url' => '#', 'icon' => 'bx bxs-chart', 'label' => 'Data Analytics', 'custom_active' => request()->is('help')],
-            ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
-        ]
-    ];
-    @endphp
+        @php
+        $menuSections = [
+            'Menu' => [
+                ['route' => 'mio.admin-panel', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
+                ['route' => 'mio.teachers', 'icon' => 'bx bxs-graduation', 'label' => 'Teachers'],
+                ['route' => 'mio.students', 'icon' => 'bx bx-user-voice', 'label' => 'Students'],
+                ['route' => 'mio.accounts', 'icon' => 'bx bxs-user-detail', 'label' => 'Accounts'],
+                ['route' => 'mio.subjects', 'icon' => 'bx bx-book-open', 'label' => 'Subjects'],
+                ['route' => 'mio.schedules', 'icon' => 'bx bx-calendar', 'label' => 'Schedule'],
+                ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
+            ],
+            'Other' => [
+                ['route' => 'mio.emergency', 'icon' => 'bx bxs-error', 'label' => 'Emergency Alert'],
+                ['url' => '#', 'icon' => 'bx bxs-chart', 'label' => 'Data Analytics', 'custom_active' => request()->is('help')],
+                ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
+            ]
+        ];
+        @endphp
 
-    @foreach($menuSections as $section => $items)
-        <h3 class="title-label">{{ $section }}</h3>
-        @foreach($items as $item)
-            @php
-                $isActive = isset($item['route'])
-                    ? request()->routeIs($item['route'])
-                    : (!empty($item['custom_active']) && $item['custom_active']);
-                $href = isset($item['route']) ? route($item['route']) : $item['url'];
-            @endphp
-            <li>
-                <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
-                    <i class="{{ $item['icon'] }}"></i>
-                    <span class="links_name">{{ $item['label'] }}</span>
-                </a>
-                <span class="tooltip">{{ $item['label'] }}</span>
-            </li>
+        @foreach($menuSections as $section => $items)
+            <h3 class="title-label">{{ $section }}</h3>
+            @foreach($items as $item)
+                @php
+                    $isActive = isset($item['route'])
+                        ? request()->routeIs($item['route'])
+                        : (!empty($item['custom_active']) && $item['custom_active']);
+                    // Pass uid as a parameter for the dashboard or teachers route
+                    $href = isset($item['route'])
+                        ? (str_contains($item['route'], 'mio.admin-panel') || str_contains($item['route'], 'mio.teachers') || str_contains($item['route'], 'mio.students') || str_contains($item['route'], 'mio.accounts') || str_contains($item['route'], 'mio.subjects') || str_contains($item['route'], 'mio.schedules') || str_contains($item['route'], 'mio.school') || str_contains($item['route'], 'mio.emergency') || str_contains($item['route'], 'mio.settings') || str_contains($item['route'], 'mio.AddTeacher')
+                            ? route($item['route'], ['uid' => session('uid')]) // Pass the uid for these routes
+                            : route($item['route']))
+                        : $item['url'];
+                @endphp
+                <li>
+                    <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
+                        <i class="{{ $item['icon'] }}"></i>
+                        <span class="links_name">{{ $item['label'] }}</span>
+                    </a>
+                    <span class="tooltip">{{ $item['label'] }}</span>
+                </li>
+            @endforeach
+            <br>
         @endforeach
-        <br>
-    @endforeach
 
-    <!-- Profile + Logout -->
-    <li class="profile">
+        <!-- Profile + Logout -->
+        <li class="profile">
             <div class="profile-details">
                 <div class="name_job">
                     <div class="name">{{ Auth::user()->name ?? 'John Doe' }}</div>
@@ -55,9 +61,9 @@
                 <i class='bx bx-log-out' id="log_out"></i>
             </a>
         </li>
-</ul>
-
+    </ul>
 </div>
+
 
 <script>
   const sidebar = document.querySelector(".sidebar");

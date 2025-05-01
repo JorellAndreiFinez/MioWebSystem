@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\Auth\FirebaseAuthController;
+use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\FirebaseConnectionController;
+use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\RoleBasedAccess;
 use Illuminate\Support\Facades\Route;
 use Kreait\Laravel\Firebase\Facades\Firebase;
+
 
 Route::get('/test', [FirebaseConnectionController::class, 'index']);
 
@@ -63,7 +67,9 @@ Route::prefix('enrollment')->group(function () {
 
 
 // MIO - ADMIN PANEL
-Route::prefix('mio/admin1')->name('mio.')->group(function () {
+Route::prefix('mio/admin/')->middleware(
+    [AuthMiddleware::class, RoleBasedAccess::class . ':admin']
+)->name('mio.')->group(function () {
 
     Route::view('/dashboard', 'mio.head.admin-panel', ['page' => 'dashboard'])->name('admin-panel');
 
@@ -160,7 +166,9 @@ Route::prefix('mio/admin1')->name('mio.')->group(function () {
 });
 
 // MIO - STUDENT PANEL
-Route::prefix('mio/student1')->group(function () {
+Route::prefix('mio/student')->middleware(
+    [AuthMiddleware::class, RoleBasedAccess::class . ':student']
+)->group(function () {
 
     Route::get('/dashboard', function () {
         return view('mio.head.student-panel', ['page' => 'dashboard']);
@@ -183,9 +191,10 @@ Route::prefix('mio/student1')->group(function () {
     })->name('mio.subject');
 
 });
-    // LOGIN
-    Route::get('mio/login', [FirebaseAuthController::class, 'loginForm'])->name('mio.login');
-    Route::post('/user-login', [FirebaseAuthController::class, 'login']);
+
+// LOGIN ROUTES
+    Route::get('mio/login', [LoginController::class, 'loginForm'])->name('mio.login');
+    Route::post('/user-login', [LoginController::class, 'login']);
 
 // SUBJECT
 

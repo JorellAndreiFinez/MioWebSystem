@@ -82,37 +82,19 @@
     </div>
 
     <script>
-    function validateLogin(event) {
-        event.preventDefault();
-
-        let email = document.getElementById("email").value;
-
-        if (email.includes("student")) {
-            window.location.href = "{{ route('mio.student-panel') }}";
-        } else if (email.includes("admin")) {
-            window.location.href = "{{ route('mio.admin-panel') }}";
-        } else if (email.includes("parent")) {
-            window.location.href = "{{ route('mio.parent-panel') }}";
-        } else if (email.includes("teacher")) {
-            window.location.href = "{{ route('mio.teacher-panel') }}";
-        }
-        else {
-            alert("Invalid login. Use 'student' or 'admin' in email.");
-        }
-    }
-
-     // Auto-hide alerts after 3 seconds (3000ms)
-     setTimeout(function() {
+    // Auto-hide alerts after 3 seconds
+    setTimeout(function() {
         let alert = document.getElementById('alert-message');
         if (alert) {
             alert.style.transition = "opacity 0.5s ease";
             alert.style.opacity = '0';
             setTimeout(function(){
                 alert.remove();
-            }, 500); // Wait until fadeout is complete
+            }, 500);
         }
     }, 3000);
 </script>
+
 
 </body>
 </html>

@@ -3,9 +3,11 @@
 <div class="teacher-container">
 @include('mio.dashboard.status-message')
 
- <form action="{{ url('mio/admin1/UpdateAdmin/'.$editdata['adminid']) }}" method="post" enctype="multipart/form-data">
-    @csrf
-    @method('PUT')
+<form action="{{ route('mio.UpdateTeacher', ['uid' => $uid, 'id' => $editdata['teacherid']]) }}"
+      method="post"
+      enctype="multipart/form-data">
+  @csrf
+  @method('PUT')
     <!-- HEADER CONTROLS -->
     <div class="table-header">
             <div class="search-container" style="background: transparent;">
@@ -212,7 +214,7 @@
           <div class="form-row" id="schedule-container">
             <div class="form-group">
               <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" required />
+              <input type="text" name="schedule[]" placeholder="Schedule ID" />
             </div>
           </div>
           <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>

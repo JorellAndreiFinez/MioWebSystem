@@ -39,46 +39,7 @@ class FirebaseAuthController extends Controller
             $this->tablename = 'users';
         }
 
-        public function registerForm(){
 
-        }
-
-        public function loginForm(){
-            return view('mio.user-access.login');
-        }
-
-        public function login(Request $request){
-            $validator = Validator::make($request->all(), [
-                'email' => 'required|email',
-                'password' => 'required|max:100'
-            ]);
-
-            if ($validator) {
-                return redirect()->back()->withErrors($validator)->withInput($request->all())->with('error', 'Invalid credentials');
-            } else {
-                try{
-                    $email = $request->input('email');
-                    $password = $request->input('password');
-
-                    $user = $this->auth->signInWithEmailAndPassword($email, $password);
-
-                    if($user) {
-                        return redirect()->route('mio.student-panel')->with('success', 'Login Successful');
-                    } else {
-                        return redirect()->back()->with('error', 'Invalid credentials');
-                    }
-
-
-                } catch(InvalidPassword $e) {
-                    return redirect()->back()->with('error', 'Invalid Password');
-                } catch(UserNotFound $e) {
-                    return redirect()->back()->with('error', 'User not found');
-                } catch(Exception $e) {
-                    return redirect()->back()->with('error', 'Please Try Again');
-                }
-            }
-
-        }
 
     // STUDENT - PAGE
         public function students() {
@@ -185,13 +146,30 @@ class FirebaseAuthController extends Controller
                 'last_login' => null // Leave empty on creation
             ];
 
+            try {
+                // Create Firebase Auth user with student_id as UID
+                $this->auth->createUser([
+                    'uid' => $request->studentid,
+                    'email' => $request->email,
+                    'password' => $request->account_password,
+                    'displayName' => $request->first_name . ' ' . $request->last_name,
+                    'disabled' => $request->account_status === 'inactive',
+                ]);
+            } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
+                return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
+            }
+
+            // Proceed to save to Realtime Database as before
+
+
+
             // Save to Firebase
             $postRef = $this->database->getReference($this->tablename.'/'.$studentIdKey)->set($postData);
 
             if ($postRef) {
-                return redirect('mio/admin1/students')->with('status', 'Student Added Successfully');
+                return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
             } else {
-                return redirect('mio/admin1/students')->with('status', 'Student Not Added');
+                return redirect('mio/admin/students')->with('status', 'Student Not Added');
             }
         }
 
@@ -220,7 +198,7 @@ class FirebaseAuthController extends Controller
                     'editdata' => $editdata,  // Pass the student data including category
                 ]);
             } else {
-                return redirect('mio/admin1/students')->with('status', 'Student ID Not Found');
+                return redirect('mio/admin/students')->with('status', 'Student ID Not Found');
             }
         }
 
@@ -335,7 +313,7 @@ class FirebaseAuthController extends Controller
                 $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
 
-            return redirect('mio/admin1/students')->with('status', 'Student Updated Successfully');
+            return redirect('mio/admin/students')->with('status', 'Student Updated Successfully');
         }
 
     // DELETE STUDENT
@@ -345,9 +323,9 @@ class FirebaseAuthController extends Controller
                 $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
 
                 if ($del_data) {
-                    return redirect('mio/admin1/students')->with('status', 'Student Deleted Successfully');
+                    return redirect('mio/admin/students')->with('status', 'Student Deleted Successfully');
                 } else {
-                    return redirect('mio/admin1/students')->with('status', 'Student Not Deleted');
+                    return redirect('mio/admin/students')->with('status', 'Student Not Deleted');
                 }
         }
 
@@ -451,13 +429,27 @@ class FirebaseAuthController extends Controller
                 'last_login' => null // Leave empty on creation
             ];
 
+            try {
+                // Create Firebase Auth user with student_id as UID
+                $this->auth->createUser([
+                    'uid' => $request->teacherid,
+                    'email' => $request->email,
+                    'password' => $request->account_password,
+                    'displayName' => $request->first_name . ' ' . $request->last_name,
+                    'disabled' => $request->account_status === 'inactive',
+                ]);
+            } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
+                return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
+            }
+
+            // Proceed to save to Realtime Database as before
 
             $postRef = $this->database->getReference($this->tablename.'/'.$teacherIdKey)->set($postData);
 
             if ($postRef) {
-                return redirect('mio/admin1/teachers')->with('status', 'Teacher Added Successfully');
+                return redirect('mio/admin/teachers')->with('status', 'Teacher Added Successfully');
             } else {
-                return redirect('mio/admin1/teachers')->with('status', 'Teacher Not Added');
+                return redirect('mio/admin/teachers')->with('status', 'Teacher Not Added');
             }
         }
 
@@ -486,7 +478,7 @@ class FirebaseAuthController extends Controller
                     'editdata' => $editdata,  // Pass the student data including category
                 ]);
             } else {
-                return redirect('mio/admin1/teachers')->with('status', 'Teacher ID Not Found');
+                return redirect('mio/admin/teachers')->with('status', 'Teacher ID Not Found');
             }
         }
 
@@ -590,7 +582,7 @@ class FirebaseAuthController extends Controller
                 $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
 
-            return redirect('mio/admin1/teachers')->with('status', 'Teacher Updated Successfully');
+            return redirect('mio/admin/teachers')->with('status', 'Teacher Updated Successfully');
         }
 
     // DELETE TEACHER
@@ -600,9 +592,9 @@ class FirebaseAuthController extends Controller
                 $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
 
                 if ($del_data) {
-                    return redirect('mio/admin1/teachers')->with('status', 'Teacher Deleted Successfully');
+                    return redirect('mio/admin/teachers')->with('status', 'Teacher Deleted Successfully');
                 } else {
-                    return redirect('mio/admin1/teachers')->with('status', 'Teacher Not Deleted');
+                    return redirect('mio/admin/teachers')->with('status', 'Teacher Not Deleted');
                 }
         }
 
@@ -737,13 +729,29 @@ class FirebaseAuthController extends Controller
                     'last_login' => null
                 ];
 
+                try {
+                    // Create Firebase Auth user with student_id as UID
+                    $this->auth->createUser([
+                        'uid' => $request->adminid,
+                        'email' => $request->email,
+                        'password' => $request->account_password,
+                        'displayName' => $request->first_name . ' ' . $request->last_name,
+                        'disabled' => $request->account_status === 'inactive',
+                    ]);
+                } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
+                    return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
+                }
+
+                // Proceed to save to Realtime Database as before
+
+
                 // Save to Firebase
                 $postRef = $this->database->getReference($this->tablename . '/' . $adminIdKey)->set($postData);
 
                 if ($postRef) {
-                    return redirect('mio/admin1/admins')->with('status', 'Admin Added Successfully');
+                    return redirect('mio/admin/admins')->with('status', 'Admin Added Successfully');
                 } else {
-                    return redirect('mio/admin1/admins')->with('status', 'Admin Not Added');
+                    return redirect('mio/admin/admins')->with('status', 'Admin Not Added');
                 }
         }
 
@@ -799,7 +807,7 @@ class FirebaseAuthController extends Controller
                     'editdata' => $editdata,  // Pass the student data including category
                 ]);
             } else {
-                return redirect('mio/admin1/admins')->with('status', 'Admin ID Not Found');
+                return redirect('mio/admin/admins')->with('status', 'Admin ID Not Found');
             }
         }
 
@@ -932,7 +940,7 @@ class FirebaseAuthController extends Controller
                 $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
 
-            return redirect('mio/admin1/teachers')->with('status', 'Admin Updated Successfully');
+            return redirect('mio/admin/teachers')->with('status', 'Admin Updated Successfully');
         }
 
 
@@ -943,9 +951,9 @@ class FirebaseAuthController extends Controller
              $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
 
              if ($del_data) {
-                 return redirect('mio/admin1/admins')->with('status', 'Admin Deleted Successfully');
+                 return redirect('mio/admin/admins')->with('status', 'Admin Deleted Successfully');
              } else {
-                 return redirect('mio/admin1/admins')->with('status', 'Admin Not Deleted');
+                 return redirect('mio/admin/admins')->with('status', 'Admin Not Deleted');
              }
         }
 
@@ -1064,13 +1072,29 @@ class FirebaseAuthController extends Controller
                 'last_login' => null
             ];
 
+            try {
+                // Create Firebase Auth user with student_id as UID
+                $this->auth->createUser([
+                    'uid' => $request->parentid,
+                    'email' => $request->email,
+                    'password' => $request->account_password,
+                    'displayName' => $request->first_name . ' ' . $request->last_name,
+                    'disabled' => $request->account_status === 'inactive',
+                ]);
+            } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
+                return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
+            }
+
+            // Proceed to save to Realtime Database as before
+
+
             // Save parent data to Firebase
             $postRef = $this->database->getReference($this->tablename . '/' . $parentIdKey)->set($postData);
 
             if ($postRef) {
-                return redirect('mio/admin1/parents')->with('status', 'Parent Added Successfully');
+                return redirect('mio/admin/parents')->with('status', 'Parent Added Successfully');
             } else {
-                return redirect('mio/admin1/parents')->with('status', 'Parent Not Added');
+                return redirect('mio/admin/parents')->with('status', 'Parent Not Added');
             }
         }
 
@@ -1123,7 +1147,7 @@ class FirebaseAuthController extends Controller
                     'editdata' => $editdata,  // Pass the student data including category
                 ]);
             } else {
-                return redirect('mio/admin1/parents')->with('status', 'Parent ID Not Found');
+                return redirect('mio/admin/parents')->with('status', 'Parent ID Not Found');
             }
         }
 
@@ -1240,7 +1264,7 @@ class FirebaseAuthController extends Controller
                 $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
 
-            return redirect('mio/admin1/parents')->with('status', 'Parent Updated Successfully');
+            return redirect('mio/admin/parents')->with('status', 'Parent Updated Successfully');
         }
 
     // DELETE PARENT
@@ -1250,9 +1274,9 @@ class FirebaseAuthController extends Controller
              $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
 
              if ($del_data) {
-                 return redirect('mio/admin1/parents')->with('status', 'Parent Deleted Successfully');
+                 return redirect('mio/admin/parents')->with('status', 'Parent Deleted Successfully');
              } else {
-                 return redirect('mio/admin1/parents')->with('status', 'Parent Not Deleted');
+                 return redirect('mio/admin/parents')->with('status', 'Parent Not Deleted');
              }
         }
 

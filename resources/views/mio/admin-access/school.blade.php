@@ -34,6 +34,14 @@
         </div>
        </a>
 
+       <a href="{{ route('mio.view-calendar') }}">
+        <div class="grade-card">
+            <span class="icon"></span>
+            <p>Section</p>
+            <span class="arrow">&rsaquo;</span>
+        </div>
+        </a>
+
     </div>
 </section>
 
@@ -84,16 +92,6 @@
         </tbody>
     </table>
    </div>
-
-    <!-- PAGINATION -->
-    <div class="pagination">
-        <a href="#">1</a>
-        <a href="#">2</a>
-        <a href="#">3</a>
-        <a href="#">4</a>
-        <a href="#">...</a>
-        <a href="#">12</a>
-    </div>
 
 </section>
 
