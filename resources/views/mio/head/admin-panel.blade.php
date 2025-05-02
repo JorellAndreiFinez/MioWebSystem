@@ -103,58 +103,58 @@
     @endif
 
     <script>
-  let sidebar = document.querySelector(".sidebar");
-  let closeBtn = document.querySelector("#btn");
-  let tooltips = document.querySelectorAll(".sidebar .tooltip");
+    let sidebar = document.querySelector(".sidebar");
+    let closeBtn = document.querySelector("#btn");
+    let tooltips = document.querySelectorAll(".sidebar .tooltip");
 
-  closeBtn.addEventListener("click", () => {
-    sidebar.classList.toggle("open");
-    menuBtnChange();
-  });
-
-  // Optional: close/open using search icon if used
-  let searchBtn = document.querySelector(".bx-search");
-  if (searchBtn) {
-    searchBtn.addEventListener("click", () => {
-      sidebar.classList.toggle("open");
-      menuBtnChange();
-    });
-  }
-
-  function menuBtnChange() {
-    if (sidebar.classList.contains("open")) {
-      closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");
-    } else {
-      closeBtn.classList.replace("bx-menu-alt-right", "bx-menu");
-    }
-  }
-
-  document.querySelectorAll(".nav-list li").forEach((item) => {
-  item.addEventListener("mouseenter", () => {
-    if (!sidebar.classList.contains("open")) {
-      let tooltip = item.querySelector(".tooltip");
-      if (tooltip) {
-        tooltip.style.opacity = "1";
-        tooltip.style.pointerEvents = "auto";
-      }
-    }
-  });
-
-  item.addEventListener("mouseleave", () => {
-    let tooltip = item.querySelector(".tooltip");
-    if (tooltip) {
-      tooltip.style.opacity = "0";
-      tooltip.style.pointerEvents = "none";
-    }
-  });
-});
-    // Optional: Close sidebar on clicking outside
-    document.addEventListener("click", (event) => {
-        if (!sidebar.contains(event.target) && !closeBtn.contains(event.target)) {
-        sidebar.classList.remove("open");
+    closeBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
         menuBtnChange();
+    });
+
+    // Optional: close/open using search icon if used
+    let searchBtn = document.querySelector(".bx-search");
+    if (searchBtn) {
+        searchBtn.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        menuBtnChange();
+        });
+    }
+
+    function menuBtnChange() {
+        if (sidebar.classList.contains("open")) {
+        closeBtn.classList.replace("bx-menu", "bx-menu-alt-right");
+        } else {
+        closeBtn.classList.replace("bx-menu-alt-right", "bx-menu");
+        }
+    }
+
+    document.querySelectorAll(".nav-list li").forEach((item) => {
+    item.addEventListener("mouseenter", () => {
+        if (!sidebar.classList.contains("open")) {
+        let tooltip = item.querySelector(".tooltip");
+        if (tooltip) {
+            tooltip.style.opacity = "1";
+            tooltip.style.pointerEvents = "auto";
+        }
         }
     });
+
+    item.addEventListener("mouseleave", () => {
+        let tooltip = item.querySelector(".tooltip");
+        if (tooltip) {
+        tooltip.style.opacity = "0";
+        tooltip.style.pointerEvents = "none";
+        }
+    });
+    });
+        // Optional: Close sidebar on clicking outside
+        document.addEventListener("click", (event) => {
+            if (!sidebar.contains(event.target) && !closeBtn.contains(event.target)) {
+            sidebar.classList.remove("open");
+            menuBtnChange();
+            }
+        });
 </script>
 </body>
 

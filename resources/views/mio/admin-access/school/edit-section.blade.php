@@ -58,15 +58,20 @@
           </div>
 
           <div class="form-row">
-        <div class="form-group" style="flex: 1;">
-            <label>Teacher ID</label>
-            <input type="text" name="teacherid" id="teacherID" value="{{ $editdata['teacherid'] }}" />
+          <div class="form-group" style="flex: 1;">
+            <label>Teacher <span style="color: red; font-weight:700">*</span></label>
+            <select name="teacherid">
+                <option value="" disabled {{ empty($editdata['teacherid']) ? 'selected' : '' }}>Select a Teacher</option>
+                @foreach($teachers as $teacher)
+                    <option value="{{ $teacher['teacherid'] }}"
+                        {{ (isset($editdata['teacherid']) && $editdata['teacherid'] === $teacher['teacherid']) ? 'selected' : '' }}>
+                        {{ $teacher['name'] }}
+                    </option>
+                @endforeach
+            </select>
         </div>
-        <div class="form-group" style="flex: 1;">
-            <label>Teacher Name</label>
-            <input type="text" id="teacherNameDisplay" disabled placeholder="Teacher's name will appear here" />
         </div>
-        </div>
+
         </div>
       </div>
  </form>

@@ -9,7 +9,11 @@
     </div>
     <div class="modal-footer">
       <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
-      <button class="btn confirm-btn">Confirm</button>
+      <form id="deleteStudentForm" method="POST">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn confirm-btn">Confirm</button>
+      </form>
     </div>
   </div>
 </div>
@@ -18,7 +22,6 @@
     <div class="text">School</div>
     <section class="grade-section">
     <div class="grade-grid">
-
         <a href="{{ route('mio.view-calendar') }}">
         <div class="grade-card">
             <span class="icon"></span>
@@ -26,7 +29,7 @@
             <span class="arrow">&rsaquo;</span>
         </div>
         </a>
-       <a href="{{ route('mio.view-department') }}">
+       <a href="{{ route('mio.ViewDepartment') }}">
        <div class="grade-card">
             <span class="icon"></span>
             <p>Departments</p>
@@ -43,12 +46,14 @@
         </a>
 
     </div>
-</section>
+    </section>
 
 <section class="announcements-section">
-    <div class="header">
-        <h2>Announcements</h2>
-        <a href="{{ route('mio.add-announcement') }}">
+@include('mio.dashboard.status-message')
+
+    <div class="header" style="margin-top: 1.2rem">
+        <h2 style="font-size: 2rem; margin-left: 1rem;">Announcements</h2>
+        <a href="{{ route('mio.AddAnnouncement') }}">
         <button class="new-announcement">+ New Announcement</button>
         </a>
     </div>
@@ -63,32 +68,29 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>Jan 30, 2025</td>
-                <td>
-                    <a href="{{ route('mio.view-announcement') }}">
-                    Walang Pasok
-                    </a>
-                </td>
-                <td>12</td>
-                <td class="action-icons">
-                    <a href="{{ route('mio.edit-announcement') }}"><i class="fa fa-pencil"></i></a>
-
-                    <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
-
-            <tr>
-                <td>Jan 30, 2025</td>
-                <td>Walang Pasok</td>
-                <td>12</td>
-                <td class="action-icons">
-                    <a href="{{ route('mio.edit-announcement') }}"><i class="fa fa-pencil"></i></a>
-
-                    <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
-
+            @forelse($announcements as $announcement)
+                <tr>
+                    <td>{{ $announcement['date'] }}</td>
+                    <td>
+                        <a href="{{ route('mio.view-announcement', ['id' => $announcement['id']]) }}">
+                            {{ $announcement['title'] }}
+                        </a>
+                    </td>
+                    <td>{{ \Illuminate\Support\Str::limit($announcement['description'], 50) }}</td>
+                    <td class="action-icons">
+                        <a href="{{ route('mio.EditAnnouncement', ['id' => $announcement['id']]) }}">
+                            <i class="fa fa-pencil"></i>
+                        </a>
+                        <button onclick="openModal('{{ url('mio/admin/DeleteAnnouncement/'.$announcement['id']) }}', '{{ $announcement['title'] }}')">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4">No announcements found.</td>
+                </tr>
+            @endforelse
         </tbody>
     </table>
    </div>
@@ -99,8 +101,14 @@
 </section>
 
 <script>
-    function openModal() {
+function openModal(deleteUrl, studentName) {
     document.getElementById("confirmModal").style.display = "flex";
+
+    // Dynamically set form action
+    document.getElementById("deleteStudentForm").action = deleteUrl;
+
+    // (Optional UX) Customize the confirmation message
+    document.getElementById("confirmMessage").textContent = `Are you sure you want to remove "${studentName}"?`;
 }
 
 function closeModal() {

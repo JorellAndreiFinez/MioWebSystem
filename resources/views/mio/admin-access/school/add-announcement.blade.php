@@ -1,7 +1,9 @@
 <section class="home-section">
 <div class="text">Create New Announcement</div>
 <div class="teacher-container">
- <form action="#" method="POST" enctype="multipart/form-data">
+@include('mio.dashboard.status-message')
+ <form  action="{{ route('mio.StoreAnnouncement') }}" method="POST" enctype="multipart/form-data">
+    @csrf
     <!-- HEADER CONTROLS -->
     <div class="table-header">
             <div class="search-container" style="background: transparent;">
@@ -18,17 +20,17 @@
         </div>
         <div class="form-container">
            <!-- Personal Information Section -->
-           <div class="section-header">Personal Information</div>
+           <div class="section-header">Announcement Information</div>
                     <div class="section-content">
                         <!--  -->
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Event Title</label>
-                                <input type="text" placeholder="Title..."/>
+                                <input type="text" placeholder="Title..." name="announce_title" required/>
                             </div>
                             <div class="form-group">
                                 <label for="people">People</label>
-                                <select id="people" name="people">
+                                <select id="people" name="announce_people" required>
                                     <option value="all">All</option>
                                     <option value="students">Students</option>
                                     <option value="teachers">Teachers</option>
@@ -37,14 +39,13 @@
                                 </select>
                             </div>
 
-
-
                         </div>
                         <!--  -->
                         <div class="form-row">
                         <div class="form-group wide">
                             <label>Date</label>
-                            <input type="date" placeholder="January 23, 2025" />
+                            <input type="date" name="announce_date" required min="{{ \Carbon\Carbon::today()->format('Y-m-d') }}"/>
+
                             </div>
 
                         </div>
@@ -52,14 +53,14 @@
                         <div class="form-row">
                         <div class="form-group wide">
                                 <label>Event Description</label>
-                                <textarea style="resize: none; " placeholder="Description..."></textarea>
+                                <textarea style="resize: none; " placeholder="Description..." name="announce_description" required></textarea>
                             </div>
 
                         </div>
                         <!--  -->
                     </div>
 
-    </div>
+        </div>
  </form>
 </div>
 

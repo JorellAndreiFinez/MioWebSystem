@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\FirebaseConnectionController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubjectController;
@@ -92,11 +94,11 @@ Route::prefix('mio/admin/')->middleware(
 // --------------- STUDENTS
     Route::get('/students', [FirebaseAuthController::class, 'students'])->name('students');
 
-// -- ADD STUDENT
+    // -- ADD STUDENT
     Route::get('/AddStudent', [FirebaseAuthController::class, 'showAddStudent'])->name('AddStudent');
     Route::post('/AddStudent', [FirebaseAuthController::class, 'addStudent'])->name('AddStudent');
 
-// -- EDIT STUDENT
+    // -- EDIT STUDENT
     Route::get('/EditStudent/{id}', [FirebaseAuthController::class, 'showEditStudent'])->name('EditStudent');
     Route::put('/UpdateStudent/{id}', [FirebaseAuthController::class, 'editStudent'])->name('EditStudent');
 
@@ -104,40 +106,40 @@ Route::prefix('mio/admin/')->middleware(
     Route::delete('/DeleteStudent/{id}', [FirebaseAuthController::class, 'deleteStudent'])->name('DeleteStudent');
 
 
-// ACCOUNTS
+// ---------------  ACCOUNTS
     Route::view('/accounts', 'mio.head.admin-panel', ['page' => 'accounts'])->name('accounts');
 
-// ADMINS
+// ---------------  ADMINS
     Route::get('/admins', [FirebaseAuthController::class, 'admins'])->name('admins');
 
-// -- ADD ADMIN
+    // -- ADD ADMIN
     Route::get('/AddAdmin', [FirebaseAuthController::class, 'showAddAdmin'])->name('AddAdmin');
     Route::post('/AddAdmin', [FirebaseAuthController::class, 'addAdmin'])->name('AddAdmin');
     Route::get('/get-teacher/{id}', [FirebaseAuthController::class, 'getTeacherData'])->name('get.teacher');
 
-// -- EDIT ADMIN
+    // -- EDIT ADMIN
     Route::get('/EditAdmin/{id}', [FirebaseAuthController::class, 'showEditAdmin'])->name('EditAdmin');
     Route::put('/UpdateAdmin/{id}', [FirebaseAuthController::class, 'editAdmin'])->name('UpdateAdmin');
 
-// -- DELETE ADMIN
+    // -- DELETE ADMIN
     Route::delete('/DeleteAdmin/{id}', [FirebaseAuthController::class, 'deleteAdmin'])->name(name: 'DeleteAdmin');
 
-// PARENTS
+// ---------------  PARENTS
      Route::get('/parents', [FirebaseAuthController::class, 'parents'])->name('parents');
 
-// -- ADD PARENT
+    // -- ADD PARENT
      Route::get('/AddParent', [FirebaseAuthController::class, 'showAddParent'])->name('AddParent');
      Route::post('/AddParent', [FirebaseAuthController::class, 'addParent'])->name('AddParent');
      Route::get('/get-student/{id}', [FirebaseAuthController::class, 'getStudentData'])->name('get.student');
 
-// -- EDIT ADMIN
+    // -- EDIT ADMIN
     Route::get('/EditParent/{id}', [FirebaseAuthController::class, 'showEditParent'])->name('EditParent');
     Route::put('/UpdateParent/{id}', [FirebaseAuthController::class, 'editParent'])->name('EditParent');
 
-// -- DELETE PARENT
+    // -- DELETE PARENT
     Route::delete('/DeleteParent/{id}', [FirebaseAuthController::class, 'deleteParent'])->name(name: 'DeleteParent');
 
-// SUBJECTS
+// ---------------  SUBJECTS
     Route::get('/subjects', [SubjectController::class, 'showGradeLevels'])->name('subjects');
 
     Route::get('/subjects/{grade}', [SubjectController::class, 'viewSubjects'])->name('ViewSubject');
@@ -153,28 +155,42 @@ Route::prefix('mio/admin/')->middleware(
     Route::delete('/subjects/{grade}/DeleteSubject/{subjectId}', [SubjectController::class, 'deleteSubject'])->name('DeleteSubject');
 
 
-// SCHEDULES
+// ---------------  SCHEDULES
     Route::view('/schedules', 'mio.head.admin-panel', ['page' => 'schedules'])->name('schedules');
     Route::view('/AllSchedules', 'mio.head.admin-panel', ['page' => 'view-schedule'])->name('view-schedule');
     Route::view('/AddSchedule', 'mio.head.admin-panel', ['page' => 'add-schedule'])->name('add-schedule');
     Route::view('/EditSchedule', 'mio.head.admin-panel', ['page' => 'edit-schedule'])->name('edit-schedule');
 
-// SCHOOL
-    Route::view('/School', 'mio.head.admin-panel', ['page' => 'school'])->name('school');
+// ---------------  SCHOOL
+    Route::get('/school', [AnnouncementController::class, 'school'])->name('school');
 
     Route::view('/Calendar', 'mio.head.admin-panel', ['page' => 'view-calendar'])->name('view-calendar');
     Route::view('/AddCalendar', 'mio.head.admin-panel', ['page' => 'add-calendar'])->name('add-calendar');
     Route::view('/EditCalendar', 'mio.head.admin-panel', ['page' => 'edit-calendar'])->name('edit-calendar');
 
-    Route::view('/Department', 'mio.head.admin-panel', ['page' => 'view-department'])->name('view-department');
-    Route::view('/AddDepartment', 'mio.head.admin-panel', ['page' => 'add-department'])->name('add-department');
-    Route::view('/EditDepartment', 'mio.head.admin-panel', ['page' => 'edit-department'])->name('edit-department');
+// -- DEPARTMENT
+    Route::get('/department', [DepartmentController::class, 'departments'])->name('ViewDepartment');
 
-    Route::view('/Announcement', 'mio.head.admin-panel', ['page' => 'view-announcement'])->name('view-announcement');
-    Route::view('/AddAnnouncement', 'mio.head.admin-panel', ['page' => 'add-announcement'])->name('add-announcement');
-    Route::view('/EditAnnouncement', 'mio.head.admin-panel', ['page' => 'edit-announcement'])->name('edit-announcement');
+    Route::get('/AddDepartment', [DepartmentController::class, 'showAddDepartment'])->name('AddDepartment');
+    Route::post('/AddDepartment', [DepartmentController::class, 'addDepartment'])->name('StoreDepartment');
 
-// SECTIONS
+    Route::get('/EditDepartment/{id}', [DepartmentController::class, 'showEditDepartment'])->name('EditDepartment');
+    Route::put('/UpdateDepartment/{id}', [DepartmentController::class, 'editDepartment'])->name('UpdateDepartment');
+
+    Route::delete('/DeleteDepartment/{id}', [DepartmentController::class, 'deleteDepartment'])->name('DeleteDepartment');
+
+// -- SCHOOL ANNOUNCEMENTS
+    Route::get('/announcement/{id}', [AnnouncementController::class, 'viewAnnouncement'])->name('view-announcement');
+
+    Route::get('/AddAnnouncement', [AnnouncementController::class, 'showAddAnnouncement'])->name('AddAnnouncement');
+    Route::post('/AddAnnouncement', [AnnouncementController::class, 'addAnnouncement'])->name('StoreAnnouncement');
+
+    Route::get('/EditAnnouncement/{id}', [AnnouncementController::class, 'showEditAnnouncement'])->name('EditAnnouncement');
+    Route::put('/UpdateAnnouncement/{id}', [AnnouncementController::class, 'editAnnouncement'])->name('UpdateAnnouncement');
+
+    Route::delete('/DeleteAnnouncement/{id}', [AnnouncementController::class, 'deleteAnnouncement'])->name('DeleteAnnouncement');
+
+// ---------------  SECTIONS
     Route::get('/section', [SectionController::class, 'sections'])->name('ViewSection');
 
     Route::get('/AddSection', [SectionController::class, 'showAddSection'])->name('AddSection');
