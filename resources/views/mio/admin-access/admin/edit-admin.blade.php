@@ -3,7 +3,7 @@
 <div class="teacher-container">
 @include('mio.dashboard.status-message')
 
-<form action="{{ route('mio.UpdateTeacher', ['uid' => $uid, 'id' => $editdata['teacherid']]) }}"
+<form action="{{ route('mio.UpdateAdmin', ['id' => $editdata['adminid']]) }}"
       method="post"
       enctype="multipart/form-data">
   @csrf
@@ -59,11 +59,24 @@
                 <input type="text" name="adminid" id="studentID" value="{{ $editdata['adminid'] }}" required />
             </div>
 
+
+
             <!-- If the admin is also a teacher, put teacher id to get the teacher info and reflect in the inputs -->
-           <div class="form-group wide">
-              <label>Teacher ID </label>
-              <input type="text" name="teacherid" id="teacherID" />
-           </div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                <select name="teacherid">
+                    <option value="" disabled {{ !isset($section['teacherid']) ? 'selected' : '' }}>Select a Teacher</option>
+                    @foreach($teachers as $teacher)
+                        <option value="{{ $teacher['teacherid'] }}"
+                            {{ (isset($section['teacherid']) && $section['teacherid'] === $teacher['teacherid']) ? 'selected' : '' }}>
+                            {{ $teacher['name'] }}
+                        </option>
+                    @endforeach
+                </select>
+
+                </div>
+
+            </div>
         </div>
 
 
@@ -82,11 +95,12 @@
             <div class="form-group">
             <label>Gender <span style="color: red; font-weight:700">*</span></label>
             <select name="gender" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
+                <option value="" disabled {{ !isset($editdata['gender']) ? 'selected' : '' }}>Select Gender</option>
+                <option value="Male" {{ isset($editdata['gender']) && $editdata['gender'] == 'Male' ? 'selected' : '' }}>Male</option>
+                <option value="Female" {{ isset($editdata['gender']) && $editdata['gender'] == 'Female' ? 'selected' : '' }}>Female</option>
+                <option value="Other" {{ isset($editdata['gender']) && $editdata['gender'] == 'Other' ? 'selected' : '' }}>Other</option>
             </select>
+
             </div>
             <div class="form-group">
               <label>Age <span style="color: red; font-weight:700">*</span></label>
@@ -101,7 +115,7 @@
           <div class="form-row">
             <div class="form-group wide">
               <label>Street Name, Building, House No. <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="address" value="13 Blk Lot 8, Camella Homes, Valenzuela City" required />
+              <input type="text" name="address" value="{{ $editdata['address'] }}" required />
             </div>
             <div class="form-group wide">
               <label>Barangay <span style="color: red; font-weight:700">*</span></label>
@@ -126,15 +140,15 @@
           <div class="form-row">
             <div class="form-group wide">
               <label>Province <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="province" value="Metro Manila" required />
+              <input type="text" name="province" value="{{ $editdata['province'] }}" required />
             </div>
             <div class="form-group wide">
               <label>City <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="city" value="Valenzuela City" required />
+              <input type="text" name="city" value="{{ $editdata['city'] }}" required />
             </div>
             <div class="form-group wide">
               <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="zip_code" value="3333" minlength="4" maxlength="4" required />
+              <input type="number" name="zip_code" value="{{ $editdata['zip_code'] }}" minlength="4" maxlength="4" required />
             </div>
           </div>
 
@@ -337,5 +351,41 @@ document.getElementById('teacherID').addEventListener('blur', function () {
         .catch(error => {
             alert(error.message);
         });
+});
+</script>
+
+<script>
+function fetchTeacherName(teacherID) {
+    if (!teacherID) {
+        document.getElementById('teacherNameDisplay').value = '';
+        return;
+    }
+
+    fetch(`/mio/admin/get-teacher/${teacherID}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Teacher not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const fullName = (data.first_name || '') + ' ' + (data.last_name || '');
+            document.getElementById('teacherNameDisplay').value = fullName.trim() || 'No name available';
+        })
+        .catch(error => {
+            document.getElementById('teacherNameDisplay').value = 'Not found';
+            console.error(error);
+        });
+}
+
+// On blur
+document.getElementById('teacherID').addEventListener('blur', function () {
+    fetchTeacherName(this.value.trim());
+});
+
+// Auto-fetch on page load
+window.addEventListener('DOMContentLoaded', function () {
+    const teacherID = document.getElementById('teacherID').value.trim();
+    fetchTeacherName(teacherID);
 });
 </script>

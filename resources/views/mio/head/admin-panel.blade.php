@@ -69,24 +69,34 @@
 
     @elseif ($page === 'school')
         @include('mio.admin-access.school')
+
     @elseif ($page === 'view-calendar')
         @include('mio.admin-access.school.view-calendar')
     @elseif ($page === 'add-calendar')
         @include('mio.admin-access.school.add-calendar')
     @elseif ($page === 'edit-calendar')
         @include('mio.admin-access.school.edit-calendar')
+
     @elseif ($page === 'view-department')
         @include('mio.admin-access.school.view-department')
     @elseif ($page === 'add-department')
         @include('mio.admin-access.school.add-department')
     @elseif ($page === 'edit-department')
         @include('mio.admin-access.school.edit-department')
+
     @elseif ($page === 'view-announcement')
         @include('mio.admin-access.school.view-announcement')
     @elseif ($page === 'add-announcement')
         @include('mio.admin-access.school.add-announcement')
     @elseif ($page === 'edit-announcement')
         @include('mio.admin-access.school.edit-announcement')
+
+    @elseif ($page === 'view-section')
+        @include('mio.admin-access.school.view-section')
+    @elseif ($page === 'add-section')
+        @include('mio.admin-access.school.add-section', ['teachers' => $teachers])
+    @elseif ($page === 'edit-section')
+        @include('mio.admin-access.school.edit-section')
 
     @elseif ($page === 'emergency')
         @include('mio.admin-access.emergency')

@@ -55,8 +55,6 @@ class FirebaseAuthController extends Controller
             ]);
         }
 
-
-
     // STUDENT - PAGE
         public function students() {
             // Fetch all users
@@ -176,8 +174,6 @@ class FirebaseAuthController extends Controller
             }
 
             // Proceed to save to Realtime Database as before
-
-
 
             // Save to Firebase
             $postRef = $this->database->getReference($this->tablename.'/'.$studentIdKey)->set($postData);
@@ -631,7 +627,22 @@ class FirebaseAuthController extends Controller
 
     // DISPLAY ADD ADMIN
         public function showAddAdmin(){
-            return view('mio.head.admin-panel', ['page' => 'add-admin']);
+            // Get teachers from Firebase
+            $teachersRaw = $this->database->getReference('users')->getValue() ?? [];
+
+            $teachers = [];
+            foreach ($teachersRaw as $key => $teacher) {
+                if (isset($teacher['role']) && $teacher['role'] === 'teacher') {
+                    $teachers[] = [
+                        'teacherid' => $key,
+                        'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '')
+                    ];
+                }
+            }
+                return view('mio.head.admin-panel', [
+                    'page' => 'add-admin',
+                    'teachers' => $teachers
+                ]);
         }
 
     // ADD ADMIN
@@ -798,41 +809,59 @@ class FirebaseAuthController extends Controller
                 ]);
         }
 
-    // DISPLAY EDIT TEACHER
+    // DISPLAY EDIT ADMIN
         public function showEditAdmin($id)
         {
-            // Get all teachers
+            // Get all admins from the database
             $admins = $this->database->getReference($this->tablename)->getValue();
             $editdata = null;
+            $teachersRaw = $this->database->getReference('users')->getValue() ?? [];
 
-            // Find the student by studentid
+            $teachers = [];
+            foreach ($teachersRaw as $key => $teacher) {
+                if (isset($teacher['role']) && $teacher['role'] === 'teacher') {
+                    $teachers[] = [
+                        'teacherid' => $key,
+                        'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '')
+                    ];
+                }
+            }
+
+            // Find the admin by adminid
             if ($admins) {
                 foreach ($admins as $key => $admin) {
-                    if (isset($admin['teacherid']) && $admin['adminid'] == $id) {
+                    if (isset($admin['adminid']) && $admin['adminid'] == $id) {
+                        // Check if teacherid exists, otherwise set it to null
+                        $admin['teacherid'] = isset($admin['teacherid']) ? $admin['teacherid'] : null;
+
                         $editdata = $admin;
-                        $editdata['firebase_key'] = $key;  // Store Firebase key
+                        $editdata['firebase_key'] = $key;  // Store Firebase key for reference
                         break;
                     }
                 }
             }
 
-            // If student data is found, return the view with the data
+            // If admin data is found, return the view with the data
             if ($editdata) {
                 return view('mio.head.admin-panel', [
                     'page' => 'edit-admin',
-                    'editdata' => $editdata,  // Pass the student data including category
+                    'editdata' => $editdata,
+                    'teachers' => $teachers
+                      // Pass the admin data
                 ]);
             } else {
                 return redirect('mio/admin/admins')->with('status', 'Admin ID Not Found');
             }
         }
 
-    // EDIT ADMIN
+
+        // EDIT ADMIN
         public function editAdmin(Request $request, $id)
         {
             $oldKey = $id;
-            $newKey = $request->adminid;
+            $newKey = $request->adminid;  // Ensure this matches the data structure
 
+            // Validate incoming data
             $validatedData = $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
@@ -870,14 +899,9 @@ class FirebaseAuthController extends Controller
                 foreach ($adminsRef as $key => $admin) {
                     if ($key !== $oldKey) {
                         if (isset($admin['adminid']) && $admin['adminid'] == $adminIdKey) {
-                            return redirect()->back()->with('status', 'Teacher ID already exists!')->withInput();
+                            return redirect()->back()->with('status', 'Admin ID already exists!')->withInput();
                         }
                         if (isset($admin['email']) && $admin['email'] == $emailInput) {
-                            // Allow same email only if this record is the linked teacher
-                            if (!empty($teacherId) && $key === $teacherId && $admin['role'] === 'teacher') {
-                                // allowed: same email as linked teacher
-                                continue;
-                            }
                             return redirect()->back()->with('status', 'Email already exists!')->withInput();
                         }
 
@@ -888,31 +912,11 @@ class FirebaseAuthController extends Controller
                 }
             }
 
-            // If teacherid is provided and valid, merge teacher data into updateData
-            if (!empty($request->teacherid) && isset($adminsRef[$request->teacherid]) && $adminsRef[$request->teacherid]['role'] === 'teacher') {
-                $teacherData = $adminsRef[$request->teacherid];
+            // Get existing data to preserve date_created and last_login
+            $existingData = $this->database->getReference($this->tablename.'/'.$oldKey)->getValue();
 
-                // Overwrite values from teacher data if they exist
-                $validatedData['first_name'] = $teacherData['fname'] ?? $validatedData['first_name'];
-                $validatedData['last_name'] = $teacherData['lname'] ?? $validatedData['last_name'];
-                $validatedData['gender'] = $teacherData['gender'] ?? $validatedData['gender'];
-                $validatedData['birthday'] = $teacherData['bday'] ?? $validatedData['birthday'];
-                $validatedData['age'] = $teacherData['age'] ?? $validatedData['age'];
-                $validatedData['address'] = $teacherData['address'] ?? $validatedData['address'];
-                $validatedData['barangay'] = $teacherData['barangay'] ?? $validatedData['barangay'];
-                $validatedData['region'] = $teacherData['region'] ?? $validatedData['region'];
-                $validatedData['province'] = $teacherData['province'] ?? $validatedData['province'];
-                $validatedData['city'] = $teacherData['city'] ?? $validatedData['city'];
-                $validatedData['zip_code'] = $teacherData['zip_code'] ?? $validatedData['zip_code'];
-                $validatedData['contact_number'] = $teacherData['contact_number'] ?? $validatedData['contact_number'];
-                $validatedData['email'] = $teacherData['email'] ?? $validatedData['email'];
-            }
-
-
-             // Get existing data to preserve date_created and last_login
-             $existingData = $this->database->getReference($this->tablename.'/'.$oldKey)->getValue();
-
-             $updateData = [
+            // Prepare the data to update
+            $updateData = [
                 'fname' => $validatedData['first_name'],
                 'lname' => $validatedData['last_name'],
                 'gender' => $validatedData['gender'],
@@ -938,7 +942,6 @@ class FirebaseAuthController extends Controller
                 'date_updated' => Carbon::now()->toDateTimeString(),
             ];
 
-
             // Only update password if user entered a new one
             if ($request->filled('account_password')) {
                 $updateData['password'] = bcrypt($request->account_password);
@@ -956,8 +959,9 @@ class FirebaseAuthController extends Controller
                 $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
             }
 
-            return redirect('mio/admin/teachers')->with('status', 'Admin Updated Successfully');
+            return redirect('mio/admin/admins')->with('status', 'Admin Updated Successfully');
         }
+
 
 
     // DELETE ADMIN

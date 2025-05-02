@@ -34,7 +34,7 @@
         </div>
        </a>
 
-       <a href="{{ route('mio.view-calendar') }}">
+       <a href="{{ route('mio.ViewSection') }}">
         <div class="grade-card">
             <span class="icon"></span>
             <p>Section</p>

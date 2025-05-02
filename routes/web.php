@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\FirebaseConnectionController;
+use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
@@ -116,7 +117,7 @@ Route::prefix('mio/admin/')->middleware(
 
 // -- EDIT ADMIN
     Route::get('/EditAdmin/{id}', [FirebaseAuthController::class, 'showEditAdmin'])->name('EditAdmin');
-    Route::put('/UpdateAdmin/{id}', [FirebaseAuthController::class, 'editAdmin'])->name('EditAdmin');
+    Route::put('/UpdateAdmin/{id}', [FirebaseAuthController::class, 'editAdmin'])->name('UpdateAdmin');
 
 // -- DELETE ADMIN
     Route::delete('/DeleteAdmin/{id}', [FirebaseAuthController::class, 'deleteAdmin'])->name(name: 'DeleteAdmin');
@@ -139,9 +140,18 @@ Route::prefix('mio/admin/')->middleware(
 // SUBJECTS
     Route::get('/subjects', [SubjectController::class, 'showGradeLevels'])->name('subjects');
 
-    Route::view('/AllSubjects', 'mio.head.admin-panel', ['page' => 'view-subject'])->name('view-subject');
-    Route::view('/AddSubjects', 'mio.head.admin-panel', ['page' => 'add-subject'])->name('add-subject');
-    Route::view('/EditSubjects', 'mio.head.admin-panel', ['page' => 'edit-subject'])->name('edit-subject');
+    Route::get('/subjects/{grade}', [SubjectController::class, 'viewSubjects'])->name('ViewSubject');
+
+    Route::get('/subjects/{grade}/AddSubject', [SubjectController::class, 'showAddSubjectForm'])->name('AddSubject');
+
+    Route::post('/subjects/{grade}/AddSubject', [SubjectController::class, 'addSubject'])->name('StoreSubject');
+
+    Route::get('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'editSubject'])->name('EditSubject');
+
+    Route::post('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'updateSubject'])->name('UpdateSubject');
+
+    Route::delete('/subjects/{grade}/DeleteSubject/{subjectId}', [SubjectController::class, 'deleteSubject'])->name('DeleteSubject');
+
 
 // SCHEDULES
     Route::view('/schedules', 'mio.head.admin-panel', ['page' => 'schedules'])->name('schedules');
@@ -150,20 +160,32 @@ Route::prefix('mio/admin/')->middleware(
     Route::view('/EditSchedule', 'mio.head.admin-panel', ['page' => 'edit-schedule'])->name('edit-schedule');
 
 // SCHOOL
-    Route::view('/school', 'mio.head.admin-panel', ['page' => 'school'])->name('school');
-    Route::view('/AllCalendar', 'mio.head.admin-panel', ['page' => 'view-calendar'])->name('view-calendar');
+    Route::view('/School', 'mio.head.admin-panel', ['page' => 'school'])->name('school');
+
+    Route::view('/Calendar', 'mio.head.admin-panel', ['page' => 'view-calendar'])->name('view-calendar');
     Route::view('/AddCalendar', 'mio.head.admin-panel', ['page' => 'add-calendar'])->name('add-calendar');
     Route::view('/EditCalendar', 'mio.head.admin-panel', ['page' => 'edit-calendar'])->name('edit-calendar');
 
-    Route::view('/AllDepartment', 'mio.head.admin-panel', ['page' => 'view-department'])->name('view-department');
+    Route::view('/Department', 'mio.head.admin-panel', ['page' => 'view-department'])->name('view-department');
     Route::view('/AddDepartment', 'mio.head.admin-panel', ['page' => 'add-department'])->name('add-department');
     Route::view('/EditDepartment', 'mio.head.admin-panel', ['page' => 'edit-department'])->name('edit-department');
 
-    Route::view('/ViewAnnouncement', 'mio.head.admin-panel', ['page' => 'view-announcement'])->name('view-announcement');
+    Route::view('/Announcement', 'mio.head.admin-panel', ['page' => 'view-announcement'])->name('view-announcement');
     Route::view('/AddAnnouncement', 'mio.head.admin-panel', ['page' => 'add-announcement'])->name('add-announcement');
     Route::view('/EditAnnouncement', 'mio.head.admin-panel', ['page' => 'edit-announcement'])->name('edit-announcement');
 
-    // Emergency
+// SECTIONS
+    Route::get('/section', [SectionController::class, 'sections'])->name('ViewSection');
+
+    Route::get('/AddSection', [SectionController::class, 'showAddSection'])->name('AddSection');
+    Route::post('/AddSection', [SectionController::class, 'addSection'])->name('StoreSection');
+
+    Route::get('/EditSection/{id}', [SectionController::class, 'showEditSection'])->name('EditSection');
+    Route::put('/UpdateSection/{id}', [SectionController::class, 'editSection'])->name('UpdateSection');
+
+    Route::delete('/DeleteSection/{id}', [SectionController::class, 'deleteSection'])->name('DeleteSection');
+
+// Emergency
     Route::view('/emergency', 'mio.head.admin-panel', ['page' => 'emergency'])->name('emergency');
 });
 

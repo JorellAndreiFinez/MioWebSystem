@@ -38,12 +38,55 @@ class SubjectController extends Controller
          return view('mio.head.admin-panel', ['page' => 'subjects'],compact('gradeLevels'));
      }
 
-     public function viewSubject($grade)
-{
-    // Fetch the subjects for the specific grade from Firebase
-    $subjects = $this->database->getReference('subjects/' . $grade)->getSnapshot()->getValue();
+     // View subjects under a grade
+    public function viewSubjects($grade)
+    {
+        $subjects = $this->database->getReference("subjects/{$grade}")->getSnapshot()->getValue() ?? [];
 
-    return view('mio.head.admin-panel', ['page' => 'view-subject'], compact('subjects'));
-}
+        return view('mio.head.admin-panel', ['page' => 'view-subject'], compact('subjects', 'grade'));
+    }
+
+    // Show add subject form
+    public function showAddSubjectForm($grade)
+    {
+        return view('mio.head.admin-panel',['page' => 'add-subjects'], compact('grade'));
+    }
+
+    // Handle form submission
+    public function addSubject(Request $request, $grade)
+    {
+        $data = $request->only(['subject_id', 'code', 'title', 'teacher_id', 'section_id']);
+
+        $this->database->getReference("subjects/{$grade}/{$data['subject_id']}")->set($data);
+
+        return redirect()->route('mio.ViewSubject', ['grade' => $grade])->with('success', 'Subject added successfully.');
+
+    }
+
+    // Edit subject form
+    public function editSubject($grade, $subjectId)
+    {
+        $subject = $this->database->getReference("subjects/{$grade}/{$subjectId}")->getSnapshot()->getValue();
+
+        return view('mio.head.subjects.edit-subject', compact('subject', 'grade', 'subjectId'));
+    }
+
+    // Update subject
+    public function updateSubject(Request $request, $grade, $subjectId)
+    {
+        $data = $request->only(['code', 'title', 'teacher_id', 'section_id']);
+
+        $this->database->getReference("subjects/{$grade}/{$subjectId}")->update($data);
+
+        return redirect()->route('mio.view-subject', ['grade' => $grade])->with('success', 'Subject updated.');
+    }
+
+    // Delete subject
+    public function deleteSubject($grade, $subjectId)
+    {
+        $this->database->getReference("subjects/{$grade}/{$subjectId}")->remove();
+
+        return response()->json(['message' => 'Subject deleted successfully']);
+    }
 
 }

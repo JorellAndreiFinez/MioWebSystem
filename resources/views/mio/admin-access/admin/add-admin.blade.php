@@ -48,8 +48,13 @@
 
            <!-- If the admin is also a teacher, put teacher id to get the teacher info and reflect in the inputs -->
            <div class="form-group wide">
-              <label>Teacher ID </label>
-              <input type="text" name="teacherid" id="teacherID" />
+              <label>Teacher ID <small>(If the admin is also a teacher)</small> </label>
+              <select name="teacherid" id="teacherID">
+                    <option value="" selected>Select a Teacher</option>
+                    @foreach($teachers as $teacher)
+                    <option value="{{ $teacher['teacherid'] }}">{{ $teacher['name'] }}</option>
+                    @endforeach
+                </select>
            </div>
 
         </div>

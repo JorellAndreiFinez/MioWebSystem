@@ -4,7 +4,7 @@
     <div class="grade-header">Grade Levels</div>
     <div class="grade-grid">
                 @foreach($gradeLevels as $key => $gradeLevel)
-                    <a href="{{ route('mio.view-subject', ['grade' => $key]) }}">
+                    <a href="{{ route('mio.ViewSubject', ['grade' => $key]) }}">
                         <div class="grade-card">
                             <span class="icon"></span>
                             <p>{{ $gradeLevel['name'] }}</p>

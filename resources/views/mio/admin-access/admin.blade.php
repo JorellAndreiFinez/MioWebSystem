@@ -60,11 +60,11 @@
                                 <button class="download-btn csv-btn">CSV</button>
                             </td>
                             <td class="action-icons">
-                                <a href="{{ url('mio/admin1/EditAdmin/'.$item['adminid']) }}">
+                                <a href="{{ url('mio/admin/EditAdmin/'.$item['adminid']) }}">
                                     <i class="fa fa-pencil"></i>
                                 </a>
 
-                                <button onclick="openModal('{{ url('mio/admin1/DeleteAdmin/'.$item['adminid']) }}', '{{ $item['fname'] }} {{ $item['lname'] }}')" class="open-btn">
+                                <button onclick="openModal('{{ url('mio/admin/DeleteAdmin/'.$item['adminid']) }}', '{{ $item['fname'] }} {{ $item['lname'] }}')" class="open-btn">
                                     <i class="fa fa-trash"></i>
                                 </button>
                             </td>

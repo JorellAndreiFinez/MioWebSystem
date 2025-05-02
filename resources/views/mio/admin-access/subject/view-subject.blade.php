@@ -26,7 +26,7 @@
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <button class="btn add-btn"><a href="{{ route('mio.add-subject') }}">+ New Subject</a></button>
+            <button class="btn add-btn"><a href="{{ route('mio.AddSubject', ['grade' => $grade]) }}">+ New Subject</a></button>
         </div>
     </div>
 
@@ -44,62 +44,26 @@
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td>C10001</td>
-                <td>SPD701</td>
-                <td>
-                    Speech Development
-                </td>
-                <td>
-                    T10001
-                </td>
-                <td>
-                    SEC701
-                </td>
-                <td class="action-icons">
-                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
+        @foreach($subjects as $subjectId => $subject)
+        <tr>
+            <td>{{ $subjectId }}</td>
+            <td>{{ $subject['code'] }}</td>
+            <td>{{ $subject['title'] }}</td>
+            <td>{{ $subject['teacher_id'] }}</td>
+            <td>{{ $subject['section_id'] }}</td>
+            <td class="action-icons">
+                <a href="{{ route('mio.EditSubject', ['grade' => $grade, 'subjectId' => $subjectId]) }}">
+                    <i class="fa fa-pencil"></i>
+                </a>
+                <form method="POST" action="{{ route('mio.DeleteSubject', ['grade' => $grade, 'subjectId' => $subjectId]) }}" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" onclick="return confirm('Are you sure?')"><i class="fa fa-trash"></i></button>
+                </form>
+            </td>
+        </tr>
+        @endforeach
 
-                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
-
-            <tr>
-                <td>C10001</td>
-                <td>SPD701</td>
-                <td>
-                    Speech Development
-                </td>
-                <td>
-                    T10001
-                </td>
-                <td>
-                    SEC701
-                </td>
-                <td class="action-icons">
-                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
-
-                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
-
-            <tr>
-                <td>C10001</td>
-                <td>SPD701</td>
-                <td>
-                    Speech Development
-                </td>
-                <td>
-                    T10001
-                </td>
-                <td>
-                    SEC701
-                </td>
-                <td class="action-icons">
-                <a href="{{ route('mio.edit-subject') }}"><i class="fa fa-pencil"></i></a>
-
-                <button onclick="openModal()" class="open-btn"><i class="fa fa-trash"></i></button>
-                </td>
-            </tr>
         </tbody>
     </table>
    </div>
