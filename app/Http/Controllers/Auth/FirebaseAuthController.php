@@ -782,6 +782,7 @@ class FirebaseAuthController extends Controller
                 }
         }
 
+        // GET TEACHER
         public function getTeacherData($id)
             {
                 $usersRef = $this->database->getReference($this->tablename)->getValue();
@@ -808,6 +809,33 @@ class FirebaseAuthController extends Controller
                     'email' => $teacher['email'] ?? ''
                 ]);
         }
+
+        // GET SECTION
+        public function getSectionData($id)
+        {
+            // Fetch all sections from Firebase
+            $sectionsRef = $this->database->getReference('sections')->getValue();
+
+            // Check if the section with the given ID exists
+            if (!isset($sectionsRef[$id])) {
+                return response()->json(['error' => 'Section not found'], 404);
+            }
+
+            $section = $sectionsRef[$id];
+
+            // Return the section data
+            return response()->json([
+                'section_id' => $section['sectionid'] ?? '',
+                'section_name' => $section['section_name'] ?? '',
+                'section_status' => $section['section_status'] ?? '',
+                'max_students' => $section['max_students'] ?? '',
+                'teacher_id' => $section['teacherid'] ?? '',
+                'status' => $section['status'] ?? '',
+                'created_at' => $section['created_at'] ?? '',
+                'updated_at' => $section['updated_at'] ?? '',
+            ]);
+        }
+
 
     // DISPLAY EDIT ADMIN
         public function showEditAdmin($id)

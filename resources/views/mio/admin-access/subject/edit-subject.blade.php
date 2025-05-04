@@ -1,7 +1,11 @@
 <section class="home-section">
 <div class="text">Edit Subject</div>
 <div class="teacher-container">
- <form action="#" method="POST" enctype="multipart/form-data">
+<form action="{{ route('mio.UpdateSubject', ['grade' => $grade, 'subjectId' => $subject_id]) }}"
+      method="post"
+      enctype="multipart/form-data">
+  @csrf
+  @method('PUT')
     <!-- HEADER CONTROLS -->
     <div class="table-header">
             <div class="search-container" style="background: transparent;">
@@ -16,197 +20,201 @@
             </div>
 
         </div>
-    <div class="form-container">
-         <!-- Personal Information Section -->
-         <div class="section-header">Subject Category</div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                            <label><input type="radio" name="category" value="new"> New</label>
-                            </div>
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="full-time" checked> Full-time</label>
-                            </div>
-
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="part-time"> Part-time</label>
-                            </div>
-
-                            <div class="form-group teacher-category">
-                            <label><input type="radio" name="category" value="intern"> Intern</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Personal Information Section -->
-                    <div class="section-header">Personal Information</div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>First Name <span style="color: red; font-weight:700">*</span> </label>
-                                <input type="text" value="Jorell Andrei"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Finez"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Gender <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Female"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Age <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="17"  />
-                            </div>
-                            <div class="form-group">
-                                <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-                                <input type="date" placeholder="MM/DD/YYYY"  />
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Street Name, Building, House No.  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="13 Blk Lot 8, Camella Homes, Valenzuela City"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Barangay <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Brgy. Lapuk"  />
-                            </div>
-
-                            <div class="form-group wide">
-                            <label for="region">Region *</label>
-                            <select id="region" name="region" required>
-                                <option value="" disabled selected>Select a Region</option>
-                                <option value="NCR">National Capital Region (NCR)</option>
-                                <option value="CAR">Cordillera Administrative Region (CAR)</option>
-                                <option value="Region I">Ilocos Region (Region I)</option>
-                                <option value="Region II">Cagayan Valley (Region II)</option>
-                                <option value="Region III">Central Luzon (Region III)</option>
-                                <option value="Region IV-A">CALABARZON (Region IV-A)</option>
-                                <option value="MIMAROPA">MIMAROPA Region</option>
-                                <option value="Region V">Bicol Region (Region V)</option>
-                                <option value="Region VI">Western Visayas (Region VI)</option>
-                                <option value="Region VII">Central Visayas (Region VII)</option>
-                                <option value="Region VIII">Eastern Visayas (Region VIII)</option>
-                                <option value="Region IX">Zamboanga Peninsula (Region IX)</option>
-                                <option value="Region X">Northern Mindanao (Region X)</option>
-                                <option value="Region XI">Davao Region (Region XI)</option>
-                                <option value="Region XII">SOCCSKSARGEN (Region XII)</option>
-                                <option value="Region XIII">Caraga (Region XIII)</option>
-                                <option value="BARMM">Bangsamoro Autonomous Region in Muslim Mindanao (BARMM)</option>
-                            </select>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Province  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="13 Blk Lot 8, Camella Homes, Valenzuela City"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>City <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Brgy. Lapuk"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-                                <input type="number"minlength="4" maxlength="4"  value="3333"  />
-                            </div>
-
-                        </div>
-
-                        <div class="form-row">
+        <div class="form-container">
+                <!-- Subject Information -->
+                <div class="section-header">Subject Details</div>
+                <div class="section-content">
+                    <div class="form-row">
                         <div class="form-group">
-                                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="09053622382"  />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Emergency Contact Number  <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="09053622382"  />
-                            </div>
+                            <label>Subject ID <span style="color: red">*</span></label>
+                            <input type="text" name="subject_id" id="subjectID" value="{{ $editdata['subject_id'] }}" placeholder="Enter Subject ID" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Subject Code <span style="color: red">*</span></label>
+                            <input type="text" name="code" value="{{ $editdata['code'] }}" placeholder="Enter Subject Code" required />
+                        </div>
+                        <div class="form-group">
+                            <label>Subject Title <span style="color: red">*</span></label>
+                            <input type="text" name="title" value="{{ $editdata['title'] }}" placeholder="Enter Subject Title" required />
                         </div>
                     </div>
 
-                    <!-- Academic Information Section -->
-                    <div class="section-header">Academic Information
-
+                    <div class="form-row">
+                    <div class="form-group wide">
+                        <label>Teacher ID</label>
+                        <select name="teacher_id" id="teacherID">
+                                <<option value="" selected>Select a Teacher</option>
+                                @foreach($teachers as $teacher)
+                                    <option value="{{ $teacher['teacherid'] }}"
+                                        {{ ($editdata['teacher_id'] ?? '') == $teacher['teacherid'] ? 'selected' : '' }}>
+                                        {{ $teacher['name'] }}
+                                    </option>
+                                    </option>
+                                    </option>
+                                @endforeach
+                            </select>
                     </div>
-                    <div class="section-content">
-                        <div class="form-row">
-                            <div class="form-group wide">
-                                <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" value="Blah blah High school"  />
+
+                        <div class="form-group">
+                            <label>Section ID <span style="color: red">*</span></label>
+
+                            <select name="section_id" id="sectionID">
+                                <option value="">Select a Section</option>
+                                @foreach ($sections as $section)
+                                    <option value="{{ $section['sectionid'] }}"
+                                        {{ ($editdata['section_id'] ?? '') == $section['sectionid'] ? 'selected' : '' }}>
+                                        {{ $section['name'] }} ({{ $section['status'] }})
+                                        @if(isset($section['date_created']))
+                                            - {{ \Carbon\Carbon::parse($section['date_created'])->format('M d, Y') }}
+                                        @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Module Section -->
+                <div class="section-header">Modules</div>
+                <div class="section-content" id="module-section">
+                    @php $moduleIndex = 0; @endphp
+
+                    @foreach ($editdata['modules'] ?? [] as $module)
+                        <div class="form-row module-row" data-index="{{ $moduleIndex }}">
+                            <div class="form-group">
+                                <label>Module Title <span style="color: red">*</span></label>
+                                <input type="text" name="modules[{{ $moduleIndex }}][title]" value="{{ $module['title'] ?? '' }}" placeholder="e.g. Module {{ $moduleIndex + 1 }}" required />
                             </div>
                             <div class="form-group">
-                                <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-                                <input type="number" value="10"  />
+                                <label>Description</label>
+                                <textarea name="modules[{{ $moduleIndex }}][description]" placeholder="Optional module description">{{ $module['description'] ?? '' }}</textarea>
                             </div>
-
                         </div>
 
-                    </div>
+                        @if ($moduleIndex > 0)
+                        <div class="form-row remove-row" data-index="{{ $moduleIndex }}">
+                            <div class="form-group" style="align-self: end;">
+                                <button type="button" class="btn cancel-btn" onclick="removeModuleField(this)">Remove</button>
+                            </div>
+                        </div>
+                        @endif
 
-                   <!-- Schedule Section -->
-                <!-- Schedule Section -->
-                <div class="section-header">Schedule</div>
-                <div class="section-content" id="schedule-section">
-                <!-- Container for all form rows -->
-                <div class="form-row" id="schedule-container">
-                <div class="form-group">
-                    <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-                    <input type="text" name="schedule[]" placeholder="Schedule ID" />
-                    </div>
-                </div>
-                <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
-                </div>
+                        @php $moduleIndex++; @endphp
+                        @endforeach
 
-    </div>
+
+                    <!-- Add Module Button -->
+                    <button type="button" class="btn add-btn" onclick="addModuleField()">+ Add Module</button>
+                </div>
+            </div>
+
  </form>
 </div>
 
 </section>
 
+
+<!-- ADD MODULE SECTION -->
 <script>
-    let scheduleCount = 0;
+let moduleCount = {{ count($editdata['modules'] ?? []) }};
 
-function addScheduleField() {
-  const section = document.getElementById("schedule-section");
-  const inputsPerRow = 4;
 
-  // Find all current rows
-  let currentRows = section.getElementsByClassName("form-row");
+function addModuleField() {
+    const section = document.getElementById("module-section");
 
-  // Check the last row
-  let lastRow = currentRows[currentRows.length - 1];
+    // Create module input row
+    const moduleRow = document.createElement("div");
+    moduleRow.className = "form-row module-row";
+    moduleRow.dataset.index = moduleCount;
 
-  // If no row exists or last row has 4 children, create a new row
-  if (!lastRow || lastRow.children.length >= inputsPerRow) {
-    lastRow = document.createElement("div");
-    lastRow.className = "form-row";
-    section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
-  }
+    moduleRow.innerHTML = `
+        <div class="form-group">
+            <label>Module Title <span style="color: red">*</span></label>
+            <input type="text" name="modules[${moduleCount}][title]" placeholder="e.g. Module ${moduleCount + 1}" required />
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="modules[${moduleCount}][description]" placeholder="Optional module description"></textarea>
+        </div>
+    `;
 
-  // Create the form-group
-  const formGroup = document.createElement("div");
-  formGroup.className = "form-group";
-  formGroup.style.flex = "1"; // Responsive width
+    // Create separate remove button row
+    const removeRow = document.createElement("div");
+    removeRow.className = "form-row remove-row";
+    removeRow.dataset.index = moduleCount;
 
-  // Create label and input
-  const label = document.createElement("label");
-  label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
+    removeRow.innerHTML = `
+        <div class="form-group" style="align-self: end;">
+            <button type="button" class="btn cancel-btn" onclick="removeModuleField(this)">Remove</button>
+        </div>
+    `;
 
-  const input = document.createElement("input");
-  input.type = "text";
-  input.name = "schedule[]";
-  input.placeholder = "Schedule ID";
+    // Insert before the "Add Module" button
+    section.insertBefore(moduleRow, section.querySelector(".add-btn"));
+    section.insertBefore(removeRow, section.querySelector(".add-btn"));
 
-  // Append label and input to formGroup
-  formGroup.appendChild(label);
-  formGroup.appendChild(input);
-
-  // Append formGroup to the lastRow
-  lastRow.appendChild(formGroup);
+    moduleCount++;
 }
 
+function removeModuleField(button) {
+    const removeRow = button.closest('.remove-row');
+    const index = removeRow.dataset.index;
 
+    const inputRow = document.querySelector(`.module-row[data-index="${index}"]`);
+    if (inputRow) inputRow.remove();
+    if (removeRow) removeRow.remove();
+
+    moduleCount--;
+}
+</script>
+
+
+<!-- TEACHER ID -->
+<script>
+document.getElementById('teacherID').addEventListener('blur', function () {
+    const teacherID = this.value.trim();
+    if (teacherID === '') {
+        document.getElementById('teacherNameDisplay').value = '';
+        return;
+    }
+
+    fetch(`/mio/admin/get-teacher/${teacherID}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Teacher not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const fullName = (data.first_name || '') + ' ' + (data.last_name || '');
+            document.getElementById('teacherNameDisplay').value = fullName.trim() || 'No name available';
+        })
+        .catch(error => {
+            document.getElementById('teacherNameDisplay').value = 'Not found';
+            console.error(error);
+        });
+});
+</script>
+
+<!-- TEACHER ID -->
+<script>
+document.getElementById('sectionID').addEventListener('blur', function () {
+    const teacherID = this.value.trim();
+
+    fetch(`/mio/admin/get-section/${sectionID}`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Section not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const fullName = (data.section_name || '');
+            document.getElementById('teacherNameDisplay').value = fullName.trim() || 'No name available';
+        })
+        .catch(error => {
+            document.getElementById('teacherNameDisplay').value = 'Not found';
+            console.error(error);
+        });
+});
 </script>

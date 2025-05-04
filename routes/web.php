@@ -115,7 +115,10 @@ Route::prefix('mio/admin/')->middleware(
     // -- ADD ADMIN
     Route::get('/AddAdmin', [FirebaseAuthController::class, 'showAddAdmin'])->name('AddAdmin');
     Route::post('/AddAdmin', [FirebaseAuthController::class, 'addAdmin'])->name('AddAdmin');
+
     Route::get('/get-teacher/{id}', [FirebaseAuthController::class, 'getTeacherData'])->name('get.teacher');
+
+    Route::get('/get-section/{id}', [FirebaseAuthController::class, 'getSectionData'])->name('get.section');
 
     // -- EDIT ADMIN
     Route::get('/EditAdmin/{id}', [FirebaseAuthController::class, 'showEditAdmin'])->name('EditAdmin');
@@ -148,9 +151,9 @@ Route::prefix('mio/admin/')->middleware(
 
     Route::post('/subjects/{grade}/AddSubject', [SubjectController::class, 'addSubject'])->name('StoreSubject');
 
-    Route::get('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'editSubject'])->name('EditSubject');
+    Route::get('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'showEditSubject'])->name('EditSubject');
 
-    Route::post('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'updateSubject'])->name('UpdateSubject');
+    Route::put('/subjects/{grade}/EditSubject/{subjectId}', [SubjectController::class, 'editSubject'])->name('UpdateSubject');
 
     Route::delete('/subjects/{grade}/DeleteSubject/{subjectId}', [SubjectController::class, 'deleteSubject'])->name('DeleteSubject');
 
