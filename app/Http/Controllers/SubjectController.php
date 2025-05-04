@@ -55,6 +55,34 @@ class SubjectController extends Controller
         ], compact('subjects', 'grade'));
     }
 
+    public function viewSubjectsMobile(Request $request)
+{
+    $gradeLevel = $request->input("gradeLevel");
+
+    // getting subject by gradeLevel
+    $subjects = $this->database
+        ->getReference("subjects/{$gradeLevel}")
+        ->getSnapshot()
+        ->getValue() 
+      ?? [];
+
+    // filter subjects by subject Id, section, title and description
+    $filteredSubjects = [];
+    foreach ($subjects as $subjectId => $subjectData) {
+        $filteredSubjects[] = [
+            'subject_id' => $subjectId,
+            'section' => $subjectData['code'] ?? null,
+            'title' => $subjectData['title'] ?? null,
+            'description' => $subjectData['modules']['MOD00']['description'] ?? null,
+        ];
+    }
+
+    // restful api response
+    return response()->json([
+        'subjects' => $filteredSubjects,
+    ], 200);
+}
+
     // Show add subject form
     public function showAddSubjectForm($grade)
         {
