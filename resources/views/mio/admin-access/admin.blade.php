@@ -32,7 +32,9 @@
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <a href="{{ route('mio.AddAdmin') }}" class="btn add-btn">+ New Admin</a>
+            @if ($isHeadAdmin)
+                <a href="{{ route('mio.AddAdmin') }}" class="btn add-btn">+ New Admin</a>
+            @endif
         </div>
     </div>
 
@@ -59,15 +61,24 @@
                                 <button class="download-btn pdf-btn">PDF</button>
                                 <button class="download-btn csv-btn">CSV</button>
                             </td>
-                            <td class="action-icons">
+
+                            @php
+                                $isSuperAdmin = (session('firebase_user')['category'] ?? '') === 'head_admin';
+                            @endphp
+
+                        <td class="action-icons">
+                            @if ($isSuperAdmin)
                                 <a href="{{ url('mio/admin/EditAdmin/'.$item['adminid']) }}">
                                     <i class="fa fa-pencil"></i>
                                 </a>
-
                                 <button onclick="openModal('{{ url('mio/admin/DeleteAdmin/'.$item['adminid']) }}', '{{ $item['fname'] }} {{ $item['lname'] }}')" class="open-btn">
                                     <i class="fa fa-trash"></i>
                                 </button>
-                            </td>
+                            @else
+                                <i class="fa fa-pencil disabled-icon" style="pointer-events: none; opacity: 0.5;"></i>
+                                <i class="fa fa-trash disabled-icon" style="pointer-events: none; opacity: 0.5;"></i>
+                            @endif
+                        </td>
                         </tr>
                     @endif
                 @empty

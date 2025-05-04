@@ -48,6 +48,11 @@
                 </label>
             </div>
             <div class="form-group">
+                <label><input type="radio" name="category" value="head_admin" {{ (isset($editdata['category']) && $editdata['category'] == 'head_admin') ? 'checked' : '' }}>
+                Head Admin
+            </label>
+            </div>
+            <div class="form-group">
                 <label>
                     <input type="radio" name="category" value="admin_staff" {{ (isset($editdata['category']) && $editdata['category'] == 'admin_staff') ? 'checked' : '' }}> Admin Staff
                 </label>
@@ -219,19 +224,6 @@
                         <option value="inactive" @if (isset($editdata['account_status']) && $editdata['account_status'] == 'inactive') selected @endif>Inactive</option>
                     </select>
                 </div>
-        </div>
-
-
-        <!-- Schedule Section -->
-        <div class="section-header">Schedule</div>
-        <div class="section-content" id="schedule-section">
-          <div class="form-row" id="schedule-container">
-            <div class="form-group">
-              <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" />
-            </div>
-          </div>
-          <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
         </div>
 
       </div>

@@ -76,6 +76,7 @@ public function login(Request $request)
             'email' => $email,
             'role' => $role,
             'name' => $name, // Store name in session
+            'category' => $userData['category'] ?? null, // <-- Add this
         ]);
 
         // Update login timestamp

@@ -36,7 +36,10 @@
                 <label><input type="radio" name="category" value="guidance_counselor"> Guidance Counselor</label>
             </div>
             <div class="form-group">
-                <label><input type="radio" name="category" value="admin_staff" checked> Admin Staff</label>
+                <label><input type="radio" name="category" value="head_admin"> Head Admin</label>
+            </div>
+            <div class="form-group">
+                <label><input type="radio" name="category" value="admin_staff"> Admin Staff</label>
             </div>
             </div>
 
@@ -180,19 +183,6 @@
         </div>
         </div>
 
-
-
-        <!-- Schedule Section -->
-        <div class="section-header">Schedule</div>
-        <div class="section-content" id="schedule-section">
-          <div class="form-row" id="schedule-container">
-            <div class="form-group">
-              <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" required />
-            </div>
-          </div>
-          <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
-        </div>
 
       </div>
     </form>

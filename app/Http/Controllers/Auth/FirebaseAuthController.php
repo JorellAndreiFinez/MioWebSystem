@@ -611,6 +611,15 @@ class FirebaseAuthController extends Controller
         }
 
     // ADMIN - PAGE
+
+        protected function isSuperAdmin()
+        {
+            $uid = session('firebase_user.uid'); // This is how you stored it in login()
+
+            $admin = $this->database->getReference('users/'.$uid)->getValue(); // Adjust path if needed
+            return isset($admin['category']) && $admin['category'] === "head_admin";
+        }
+
         public function admins() {
             // Fetch all users
             $users = $this->database->getReference($this->tablename)->getValue();
@@ -621,7 +630,8 @@ class FirebaseAuthController extends Controller
                 return isset($user['role']) && $user['role'] === 'admin';
             });
 
-            return view('mio.head.admin-panel', ['page' => 'admin'], compact('admins'));
+            $isHeadAdmin = $this->isSuperAdmin();
+            return view('mio.head.admin-panel', ['page' => 'admin', 'isHeadAdmin' => $isHeadAdmin], compact('admins'));
         }
 
 
@@ -666,7 +676,6 @@ class FirebaseAuthController extends Controller
                     'email' => 'required|email|max:255',
                     'previous_school' => 'required|string|max:255',
                     'grade_level' => 'required|integer|min:1',
-                    'schedule' => 'required|array',
                     'adminid' => 'required|string|max:12',
                     'category' => 'required|string',
                     'username' => 'required|string|max:255',
@@ -744,7 +753,6 @@ class FirebaseAuthController extends Controller
                     'previous_school' => $validatedData['previous_school'],
                     'grade_level' => $validatedData['grade_level'],
                     'category' => $validatedData['category'],
-                    'schedule' => $validatedData['schedule'],
                     'adminid' => $adminIdKey,
                     'teacherid' => $teacherId ?? null,
                     'role' => 'admin',
@@ -780,60 +788,6 @@ class FirebaseAuthController extends Controller
                 } else {
                     return redirect('mio/admin/admins')->with('status', 'Admin Not Added');
                 }
-        }
-
-        // GET TEACHER
-        public function getTeacherData($id)
-            {
-                $usersRef = $this->database->getReference($this->tablename)->getValue();
-
-                if (!isset($usersRef[$id]) || $usersRef[$id]['role'] !== 'teacher') {
-                    return response()->json(['error' => 'Teacher not found'], 404);
-                }
-
-                $teacher = $usersRef[$id];
-
-                return response()->json([
-                    'first_name' => $teacher['fname'] ?? '',
-                    'last_name' => $teacher['lname'] ?? '',
-                    'gender' => $teacher['gender'] ?? '',
-                    'birthday' => $teacher['bday'] ?? '',
-                    'age' => $teacher['age'] ?? '',
-                    'address' => $teacher['address'] ?? '',
-                    'barangay' => $teacher['barangay'] ?? '',
-                    'region' => $teacher['region'] ?? '',
-                    'province' => $teacher['province'] ?? '',
-                    'city' => $teacher['city'] ?? '',
-                    'zip_code' => $teacher['zip_code'] ?? '',
-                    'contact_number' => $teacher['contact_number'] ?? '',
-                    'email' => $teacher['email'] ?? ''
-                ]);
-        }
-
-        // GET SECTION
-        public function getSectionData($id)
-        {
-            // Fetch all sections from Firebase
-            $sectionsRef = $this->database->getReference('sections')->getValue();
-
-            // Check if the section with the given ID exists
-            if (!isset($sectionsRef[$id])) {
-                return response()->json(['error' => 'Section not found'], 404);
-            }
-
-            $section = $sectionsRef[$id];
-
-            // Return the section data
-            return response()->json([
-                'section_id' => $section['sectionid'] ?? '',
-                'section_name' => $section['section_name'] ?? '',
-                'section_status' => $section['section_status'] ?? '',
-                'max_students' => $section['max_students'] ?? '',
-                'teacher_id' => $section['teacherid'] ?? '',
-                'status' => $section['status'] ?? '',
-                'created_at' => $section['created_at'] ?? '',
-                'updated_at' => $section['updated_at'] ?? '',
-            ]);
         }
 
 
@@ -907,7 +861,6 @@ class FirebaseAuthController extends Controller
                 'email' => 'required|email|max:255',
                 'previous_school' => 'required|string|max:255',
                 'grade_level' => 'required|integer|min:1',
-                'schedule' => 'required|array',
                 'adminid' => 'required|string|max:12',
                 'category' => 'required|string',
                 'username' => 'required|string|max:255',
@@ -962,7 +915,6 @@ class FirebaseAuthController extends Controller
                 'previous_school' => $validatedData['previous_school'],
                 'grade_level' => $validatedData['grade_level'],
                 'category' => $validatedData['category'],
-                'schedule' => $validatedData['schedule'],
                 'teacherid' => $teacherId ?? null,
                 'role' => 'admin',
                 'username' => $validatedData['username'],
@@ -993,19 +945,82 @@ class FirebaseAuthController extends Controller
 
 
     // DELETE ADMIN
-         public function deleteAdmin($id)
-         {
-             $key = $id;
-             $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+        public function deleteAdmin($id)
+        {
+            // Prevent deleting the Super Admin
+            $admin = $this->database->getReference($this->tablename.'/'.$id)->getValue();
 
-             if ($del_data) {
-                 return redirect('mio/admin/admins')->with('status', 'Admin Deleted Successfully');
-             } else {
-                 return redirect('mio/admin/admins')->with('status', 'Admin Not Deleted');
-             }
+            if ($admin && isset($admin['role']) && $admin['role'] === 'super_admin') {
+                return redirect('mio/admin/admins')->with('status', 'You cannot delete the Super Admin!');
+            }
+
+            // Allow only Super Admin to delete
+            if (!$this->isSuperAdmin()) {
+                return redirect('mio/admin/admins')->with('status', 'Access denied. Only Super Admin can delete admins.');
+            }
+
+            $del_data = $this->database->getReference($this->tablename.'/'.$id)->remove();
+
+            return redirect('mio/admin/admins')->with('status', $del_data ? 'Admin Deleted Successfully' : 'Admin Not Deleted');
         }
 
-     // ADMIN - PAGE
+         // GET TEACHER
+         public function getTeacherData($id)
+         {
+             $usersRef = $this->database->getReference($this->tablename)->getValue();
+
+             if (!isset($usersRef[$id]) || $usersRef[$id]['role'] !== 'teacher') {
+                 return response()->json(['error' => 'Teacher not found'], 404);
+             }
+
+             $teacher = $usersRef[$id];
+
+             return response()->json([
+                 'first_name' => $teacher['fname'] ?? '',
+                 'last_name' => $teacher['lname'] ?? '',
+                 'gender' => $teacher['gender'] ?? '',
+                 'birthday' => $teacher['bday'] ?? '',
+                 'age' => $teacher['age'] ?? '',
+                 'address' => $teacher['address'] ?? '',
+                 'barangay' => $teacher['barangay'] ?? '',
+                 'region' => $teacher['region'] ?? '',
+                 'province' => $teacher['province'] ?? '',
+                 'city' => $teacher['city'] ?? '',
+                 'zip_code' => $teacher['zip_code'] ?? '',
+                 'contact_number' => $teacher['contact_number'] ?? '',
+                 'email' => $teacher['email'] ?? ''
+             ]);
+     }
+
+     // GET SECTION
+     public function getSectionData($id)
+     {
+         // Fetch all sections from Firebase
+         $sectionsRef = $this->database->getReference('sections')->getValue();
+
+         // Check if the section with the given ID exists
+         if (!isset($sectionsRef[$id])) {
+             return response()->json(['error' => 'Section not found'], 404);
+         }
+
+         $section = $sectionsRef[$id];
+
+         // Return the section data
+         return response()->json([
+             'section_id' => $section['sectionid'] ?? '',
+             'section_name' => $section['section_name'] ?? '',
+             'section_status' => $section['section_status'] ?? '',
+             'max_students' => $section['max_students'] ?? '',
+             'teacher_id' => $section['teacherid'] ?? '',
+             'status' => $section['status'] ?? '',
+             'created_at' => $section['created_at'] ?? '',
+             'updated_at' => $section['updated_at'] ?? '',
+         ]);
+     }
+
+
+
+     // PARENTS - PAGE
         public function parents() {
         // Fetch all users
         $users = $this->database->getReference($this->tablename)->getValue();
