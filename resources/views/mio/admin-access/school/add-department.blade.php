@@ -63,17 +63,21 @@
             </div>
 
 
-          <div class="form-row">
-            <div class="form-group" style="flex: 1;">
-                <label>Head Teacher <span style="color: red; font-weight:700">*</span></label>
-                <select name="teacherid" required>
-                    <option value="" disabled selected>Select a Teacher</option>
-                    @foreach($teachers as $teacher)
-                        <option value="{{ $teacher['teacherid'] }}">{{ $teacher['name'] }}</option>
-                    @endforeach
-                </select>
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label>Head Teacher <span style="color: red; font-weight:700">*</span></label>
+                    <select name="teacherid">
+                        <option value="" disabled selected>Select a Teacher</option>
+                        @foreach($teachers as $teacher)
+                            <option value="{{ $teacher['teacherid'] }}">
+                                {{ $teacher['name'] }}
+                                ({{ $teacher['departmentname'] }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
-        </div>
+
 
         </div>
       </div>

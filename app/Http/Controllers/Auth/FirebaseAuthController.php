@@ -44,14 +44,20 @@ class FirebaseAuthController extends Controller
             // Get the total number of users per role
             $studentsCount = $this->database->getReference('users')->orderByChild('role')->equalTo('student')->getSnapshot()->numChildren();
             $teachersCount = $this->database->getReference('users')->orderByChild('role')->equalTo('teacher')->getSnapshot()->numChildren();
-            $coursesCount = $this->database->getReference('courses')->getSnapshot()->numChildren(); // Example for courses
+            $sectionsCount = $this->database->getReference('sections')->getSnapshot()->numChildren(); // Example for courses
+
+            //  Fetch departments
+            $departmentsRef = $this->database->getReference('departments')->getValue();
+            $teachers = $this->database->getReference('users')->orderByChild('role')->equalTo('teacher')->getValue();
 
             // Pass data to the view
             return view('mio.head.admin-panel', [
                 'page' => 'dashboard',
                 'studentsCount' => $studentsCount,
                 'teachersCount' => $teachersCount,
-                'coursesCount' => $coursesCount
+                'sectionsCount' => $sectionsCount,
+                'departments' => $departmentsRef ?? [],
+                'teachers' => $teachers ?? [],
             ]);
         }
 
@@ -356,7 +362,32 @@ class FirebaseAuthController extends Controller
         }
 
         public function showAddTeacher(){
-            return view('mio.head.admin-panel', ['page' => 'add-teacher']);
+            $usersRaw = $this->database->getReference('users')->getValue() ?? [];
+            $departmentsRaw = $this->database->getReference('departments')->getValue() ?? [];
+
+            $teachers = [];
+            foreach ($usersRaw as $key => $user) {
+                if (isset($user['role']) && $user['role'] === 'teacher') {
+                    $teachers[] = [
+                        'teacherid' => $key,
+                        'name' => ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? '')
+                    ];
+                }
+            }
+
+            $departments = [];
+            foreach ($departmentsRaw as $key => $dept) {
+                $departments[] = [
+                    'departmentid' => $dept['departmentid'],
+                    'department_name' => $dept['department_name']
+                ];
+            }
+
+            return view('mio.head.admin-panel', [
+                'page' => 'add-teacher',
+                'teachers' => $teachers,
+                'departments' => $departments
+            ]);
         }
 
     // ADD Teacher
@@ -386,6 +417,8 @@ class FirebaseAuthController extends Controller
                 'username' => 'required|string|max:255',
                 'account_password' => 'required|string|min:6',
                 'account_status' => 'required|string|in:active,inactive',
+                'department_id' => 'required|string|max:20',
+
             ]);
 
 
@@ -434,6 +467,7 @@ class FirebaseAuthController extends Controller
                 'username' => $request->username,
                 'password' => bcrypt($request->account_password), // <- note: bcrypt account_password
                 'account_status' => $request->account_status,
+                'department_id' => $request->department_id,
 
                 // Timestamps
                 'date_created' => Carbon::now()->toDateTimeString(),
@@ -468,31 +502,41 @@ class FirebaseAuthController extends Controller
     // DISPLAY EDIT TEACHER
         public function showEditTeacher($id)
         {
-            // Get all teachers
             $teachers = $this->database->getReference($this->tablename)->getValue();
             $editdata = null;
 
-            // Find the student by studentid
             if ($teachers) {
                 foreach ($teachers as $key => $teacher) {
                     if (isset($teacher['teacherid']) && $teacher['teacherid'] == $id) {
                         $editdata = $teacher;
-                        $editdata['firebase_key'] = $key;  // Store Firebase key
+                        $editdata['firebase_key'] = $key;
                         break;
                     }
                 }
             }
 
-            // If student data is found, return the view with the data
             if ($editdata) {
+                // Fetch departments
+                $departmentsRaw = $this->database->getReference('departments')->getValue() ?? [];
+                $departments = [];
+
+                foreach ($departmentsRaw as $dept) {
+                    $departments[] = [
+                        'departmentid' => $dept['departmentid'],
+                        'department_name' => $dept['department_name']
+                    ];
+                }
+
                 return view('mio.head.admin-panel', [
                     'page' => 'edit-teacher',
-                    'editdata' => $editdata,  // Pass the student data including category
+                    'editdata' => $editdata,
+                    'departments' => $departments
                 ]);
             } else {
                 return redirect('mio/admin/teachers')->with('status', 'Teacher ID Not Found');
             }
         }
+
 
     // EDIT TEACHER
         public function editTeacher(Request $request, $id)
@@ -523,6 +567,8 @@ class FirebaseAuthController extends Controller
                 'username' => 'required|string|max:255',
                 'account_status' => 'required|string|in:active,inactive',
                 'account_password' => 'nullable|string|min:6', // Optional, only if changing password
+                'department_id' => 'required|string|max:20',
+
             ]);
 
             $teacherIdKey = $request->teacherid;
@@ -575,6 +621,8 @@ class FirebaseAuthController extends Controller
                 'username' => $usernameInput,
                 'account_status' => $request->account_status,
                 'date_updated' => Carbon::now()->toDateTimeString(),
+                'department_id' => $request->department_id,
+
             ];
 
             // Only update password if user entered a new one
@@ -1018,9 +1066,36 @@ class FirebaseAuthController extends Controller
          ]);
      }
 
+     // GET DEPARTMENT
+     public function getDepartmentData($id)
+        {
+            // Fetch all departments from Firebase
+            $departmentsRef = $this->database->getReference('departments')->getValue();
+
+            // Check if the department with the given ID exists
+            if (!isset($departmentsRef[$id])) {
+                return response()->json(['error' => 'Department not found'], 404);
+            }
+
+            $department = $departmentsRef[$id];
+
+            // Return the department data
+            return response()->json([
+                'department_id'    => $department['departmentid'] ?? '',
+                'department_name'  => $department['department_name'] ?? '',
+                'department_code'  => $department['department_code'] ?? '',
+                'department_type'  => $department['department_type'] ?? '',
+                'description'      => $department['description'] ?? '',
+                'teacher_id'       => $department['teacherid'] ?? '',
+                'created_at'       => $department['created_at'] ?? '',
+                'updated_at'       => $department['updated_at'] ?? '',
+            ]);
+        }
 
 
-     // PARENTS - PAGE
+
+
+        // PARENTS - PAGE
         public function parents() {
         // Fetch all users
         $users = $this->database->getReference($this->tablename)->getValue();

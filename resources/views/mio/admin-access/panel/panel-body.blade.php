@@ -64,10 +64,10 @@
                     <div class="overviewcard__info">
 
                         <div class="info-num">
-                            32
+                        {{ $sectionsCount }}
                         </div>
                         <div class="info-label">
-                            Total Courses
+                            Total Sections
                         </div>
                     </div>
                     <div class="overviewcard__arrow">&rsaquo;</div>
@@ -126,37 +126,36 @@
         <div class="third-row">
             <!-- DEPARTMENT LIST -->
             <div class="list-card">
-            <div class="card">
-                <div class="card-header">
-                    <span>Department List</span>
-                    <span>➡</span>
-                </div>
-                <div class="list-item">
-                    <span>Language Development</span>
-                    <div class="profile-group">
-                        <img src="https://i.pravatar.cc/40?img=1" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=2" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=3" alt="Profile">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Department List</span>
+                        <span>➡</span>
                     </div>
-                </div>
-                <div class="list-item">
-                    <span>Counseling</span>
-                    <div class="profile-group">
-                        <img src="https://i.pravatar.cc/40?img=4" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=5" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=6" alt="Profile">
-                    </div>
-                </div>
-                <div class="list-item">
-                    <span>General Education</span>
-                    <div class="profile-group">
-                        <img src="https://i.pravatar.cc/40?img=7" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=8" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=9" alt="Profile">
-                    </div>
+
+                    @forelse ($departments as $dept)
+                        <div class="list-item">
+                            <span>{{ $dept['department_name'] ?? 'Unnamed Department' }}</span>
+                            <div class="profile-group">
+                                @php
+                                    $teacherId = $dept['teacherid'] ?? null;
+                                    $teacher = $teachers[$teacherId] ?? null;
+                                @endphp
+
+                                @if ($teacher)
+                                    <img src="https://ui-avatars.com/api/?name={{ urlencode($teacher['fname'] . ' ' . $teacher['lname']) }}&background=random" alt="Profile" title="{{ $teacher['fname'] }} {{ $teacher['lname'] }}">
+                                @else
+                                    <span style="color: #999; font-size: 12px;">No teacher assigned</span>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="list-item">
+                            <span>No departments available.</span>
+                        </div>
+                    @endforelse
                 </div>
             </div>
-            </div>
+
 
             <!-- CLASSES LIST -->
             <div class="list-card">

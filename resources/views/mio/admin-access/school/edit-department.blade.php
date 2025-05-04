@@ -71,7 +71,7 @@
                 @foreach($teachers as $teacher)
                     <option value="{{ $teacher['teacherid'] }}"
                         {{ (isset($editdata['teacherid']) && $editdata['teacherid'] === $teacher['teacherid']) ? 'selected' : '' }}>
-                        {{ $teacher['name'] }}
+                        {{ $teacher['name'] }} ({{ $teacher['departmentname'] }})
                     </option>
                 @endforeach
             </select>

@@ -39,15 +39,24 @@ class DepartmentController extends Controller
 
     public function showAddDepartment()
     {
-        // Get teachers from Firebase
         $teachersRaw = $this->database->getReference('users')->getValue() ?? [];
+        $departmentsRaw = $this->database->getReference('departments')->getValue() ?? [];
+
+        // Create mapping of teacherid => department_name
+        $teacherDepartmentMap = [];
+        foreach ($departmentsRaw as $dept) {
+            if (!empty($dept['teacherid'])) {
+                $teacherDepartmentMap[$dept['teacherid']] = $dept['department_name'];
+            }
+        }
 
         $teachers = [];
         foreach ($teachersRaw as $key => $teacher) {
             if (isset($teacher['role']) && $teacher['role'] === 'teacher') {
                 $teachers[] = [
                     'teacherid' => $key,
-                    'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '')
+                    'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? ''),
+                    'departmentname' => $teacherDepartmentMap[$key] ?? 'Unassigned'
                 ];
             }
         }
@@ -99,11 +108,11 @@ class DepartmentController extends Controller
     // DISPLAY EDIT DEPARTMENT
     public function showEditDepartment($id)
     {
-        // Get all students
+        // Get all departments
         $departments = $this->database->getReference($this->table)->getValue();
         $editdata = null;
 
-        // Find the student by studentid
+        // Find the department by departmentid
         if ($departments) {
             foreach ($departments as $key => $department) {
                 if (isset($department['departmentid']) && $department['departmentid'] == $id) {
@@ -114,20 +123,29 @@ class DepartmentController extends Controller
             }
         }
 
-        // Get teachers from Firebase
+        // Get all teachers
         $teachersRaw = $this->database->getReference('users')->getValue() ?? [];
+        $departmentsRaw = $this->database->getReference('departments')->getValue() ?? [];
+
+        // Map each teacher ID to their department name (if assigned)
+        $teacherDepartmentMap = [];
+        foreach ($departmentsRaw as $dept) {
+            if (!empty($dept['teacherid'])) {
+                $teacherDepartmentMap[$dept['teacherid']] = $dept['department_name'];
+            }
+        }
 
         $teachers = [];
         foreach ($teachersRaw as $key => $teacher) {
             if (isset($teacher['role']) && $teacher['role'] === 'teacher') {
                 $teachers[] = [
                     'teacherid' => $key,
-                    'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '')
+                    'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? ''),
+                    'departmentname' => $teacherDepartmentMap[$key] ?? 'Unassigned'
                 ];
             }
         }
 
-        // If student data is found, return the view with the data
         if ($editdata) {
             return view('mio.head.admin-panel', [
                 'page' => 'edit-department',
@@ -138,6 +156,7 @@ class DepartmentController extends Controller
             return redirect('mio/admin/departments')->with('status', 'Department ID Not Found');
         }
     }
+
 
     public function editDepartment(Request $request, $id)
     {
@@ -168,7 +187,7 @@ class DepartmentController extends Controller
             'department_name' => $validated['department_name'],
             'department_type' => $validated['department_type'],
             'department_code' => $validated['department_code'],
-            'description' => $validated['description'],
+            'description' => $validated['description'] ?? '',
             'teacherid' => $validated['teacherid'] ?? null,
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),

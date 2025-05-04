@@ -43,9 +43,22 @@
                 </div>
             </div>
             <div class="form-group wide">
-                <label>Student ID <span style="color: red; font-weight:700">*</span></label>
+                <label>Teacher ID <span style="color: red; font-weight:700">*</span></label>
                 <input type="text" name="teacherid" id="teacherid" value="{{ $editdata['teacherid'] }}" required />
             </div>
+            <div class="form-group">
+                <label for="department_id">Department</label>
+                <select name="department_id" id="department_id" required>
+                    <option value="">Select Department</option>
+                    @foreach ($departments as $dept)
+                        <option value="{{ $dept['departmentid'] }}"
+                            {{ $editdata['department_id'] ?? '' == $dept['departmentid'] ? 'selected' : '' }}>
+                            {{ $dept['department_name'] }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
         </div>
 
 
