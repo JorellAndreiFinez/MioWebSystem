@@ -155,11 +155,17 @@ public function mobileLogin(Request $request)
                 'last_login' => Carbon::now()->toDateTimeString(),
             ]);
 
+            // get session ID
+            session([
+                'firebase_user' => $firebaseUser['localId'],
+            ]);
+
+            Session::regenerate();
+
             // Return success response with user data
             return response()->json([
-                'success' => true,
-                'message' => 'Login successful.',
-                'user' => [
+                'session_id' => $tokeId,
+                'user' => [ 
                     'uid' => $uid,
                     'email' => $email,
                     'role' => $role,
@@ -169,10 +175,13 @@ public function mobileLogin(Request $request)
                 ],
             ], 200);
 
-        } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
-            return response()->json(['error' => 'Incorrect password.'], 401);
-        } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
-            return response()->json(['error' => 'Email not registered.'], 404);
+            // return response()->json([
+            //     'user' => $firebaseUser,
+            //     // 'tokenId' => $tokeId,
+            // ]);
+
+        } catch (\Kreait\Firebase\Exception\AuthException $e) {
+            return response()->json(['error' => 'Invalid Credentials.'], 401);
         } catch (\Throwable $e) {
             return response()->json(['error' => 'Login failed: Server Error'], 500);
         }
