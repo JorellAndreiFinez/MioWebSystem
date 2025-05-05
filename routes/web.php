@@ -315,3 +315,5 @@ Route::prefix('mio/teacher')->middleware(
     })->name('mio.subject');
 
 });
+
+require __DIR__.'/mobile.php';
