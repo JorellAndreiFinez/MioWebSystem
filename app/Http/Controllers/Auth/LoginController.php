@@ -93,10 +93,12 @@ public function login(Request $request)
             default   => redirect()->back()->with('error', 'Unrecognized role.'),
         };
 
-    } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
-        return redirect()->back()->with('error', 'Incorrect password.');
-    } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
-        return redirect()->back()->with('error', 'Email not registered.');
+    // } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
+    //     return redirect()->back()->with('error', 'Incorrect password.');
+    // } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
+    //     return redirect()->back()->with('error', 'Email not registered.');
+    } catch (\Kreait\Firebase\Exception\AuthException $e) {
+        return response()->json(['error' => 'Invalid Credentials.'], 401);
     } catch (\Throwable $e) {
         return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
     }
@@ -122,17 +124,25 @@ public function mobileLogin(Request $request)
         $password = $request->input('password');
 
         try {
+            // check data if valid
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
+
+            // authenticate user
             $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
             $firebaseUser = $signInResult->data();
             $uid = $firebaseUser['localId'];
 
+            // get user id
             $userData = $this->database->getReference('users/' . $uid)->getValue();
 
             if (!$userData || !isset($userData['role'])) {
                 return response()->json(['error' => 'User or role not found.'], 404);
             }
 
-            // Retrieve name safely (set default if not found)
+            // Retrieve name safely
             $name = $userData['fname'] ?? 'User';
             $role = strtolower($userData['role']);
 
@@ -141,10 +151,14 @@ public function mobileLogin(Request $request)
                 'last_login' => Carbon::now()->toDateTimeString(),
             ]);
 
+            // get session ID
+            $sessionId = session()->getId();
+
             // Return success response with user data
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful.',
+                'session_id' => $sessionId,
                 'user' => [
                     'uid' => $uid,
                     'email' => $email,
@@ -154,12 +168,10 @@ public function mobileLogin(Request $request)
                 ],
             ], 200);
 
-        } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
-            return response()->json(['error' => 'Incorrect password.'], 401);
-        } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
-            return response()->json(['error' => 'Email not registered.'], 404);
+        } catch (\Kreait\Firebase\Exception\AuthException $e) {
+            return response()->json(['error' => 'Invalid Credentials.'], 401);
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'Login failed: Server Error'], 500);
         }
     }
 
