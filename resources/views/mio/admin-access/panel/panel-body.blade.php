@@ -23,7 +23,7 @@
         <div class="grid-row">
             <div class="main-overview">
 
-            <a href="#"><div class="overviewcard">
+            <a href="{{ route('mio.students') }}"><div class="overviewcard">
                     <div class="overviewcard__icon">
                         <i class="bx bx-user"></i>
                     </div>
@@ -40,7 +40,7 @@
             </div>
             </a>
 
-            <a href="#"><div class="overviewcard">
+            <a href="{{ route('mio.teachers') }}"><div class="overviewcard">
                     <div class="overviewcard__icon">
                         <i class="bx bxs-graduation"></i>
                     </div>
@@ -57,7 +57,7 @@
             </div>
             </a>
 
-            <a href="#"><div class="overviewcard">
+            <a href="{{ route('mio.ViewSection') }}"><div class="overviewcard">
                     <div class="overviewcard__icon">
                         <i class="bx bx-book"></i>
                     </div>
@@ -129,7 +129,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span>Department List</span>
-                        <span>➡</span>
+                        <a href="{{ route('mio.ViewDepartment') }}"><span>➡</span></a>
                     </div>
 
                     @forelse ($departments as $dept)

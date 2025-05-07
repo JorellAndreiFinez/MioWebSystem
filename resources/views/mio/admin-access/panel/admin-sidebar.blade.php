@@ -17,6 +17,7 @@
                 ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
             ],
             'Other' => [
+                ['route' => 'mio.ViewCMS', 'icon' => 'bx bx-chalkboard', 'label' => 'PID Website'],
                 ['route' => 'mio.emergency', 'icon' => 'bx bxs-error', 'label' => 'Emergency Alert'],
                 ['url' => '#', 'icon' => 'bx bxs-chart', 'label' => 'Data Analytics', 'custom_active' => request()->is('help')],
                 ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],

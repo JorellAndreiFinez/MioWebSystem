@@ -1,13 +1,16 @@
 <?php
 
+use App\Http\Controllers\admin\CmsController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\Enrollment\EnrollController;
 use App\Http\Controllers\FirebaseConnectionController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
+use App\Http\Middleware\EnrollAuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
 use Illuminate\Support\Facades\Route;
 use Kreait\Laravel\Firebase\Facades\Firebase;
@@ -56,11 +59,23 @@ Route::prefix('')->group(function () {
     })->name('events');
 });
 
+
 Route::prefix('enrollment')->group(function () {
     Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
 
-    Route::view('/dashboard', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-dashboard'])->name('enroll-dashboard');
+    Route::view('/send-otp', 'enrollment-panel.enrollment-panel', ['page' => 'send-otp'])->name('send-otp');
+
+    Route::post('/signup', [EnrollController::class, 'signup'])->name('enroll.signup');
+    Route::post('/login', [EnrollController::class, 'login'])->name('enroll.login');
+
+    Route::middleware([EnrollAuthMiddleware::class])->group(function () {
+        Route::view('/dashboard', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-dashboard'])->name('enroll-dashboard');
+        Route::post('/logout', [EnrollController::class, 'logout'])->name('enroll.logout');
+    });
 });
+
+
+
 
 // ADMIN LOGIN
 
@@ -76,6 +91,15 @@ Route::prefix('mio/admin/')->middleware(
 )->name('mio.')->group(function () {
 
     Route::get('/dashboard', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
+
+// ----------------  PID
+
+    Route::get('/PID', [CmsController::class, 'showCMS'])->name('ViewCMS');
+    Route::get('/admin/cms/{id}', [CmsController::class, 'show'])->name('cms.show');
+
+
+
+
 
 //  ---------------  TEACHERS
     Route::get('/teachers', [FirebaseAuthController::class, 'teachers'])->name('teachers');
@@ -240,6 +264,12 @@ Route::prefix('mio/student')->middleware(
     Route::post('/user-login', [LoginController::class, 'login']);
 
     Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// FORGOT PASSWORD
+    Route::get('/forgot-password', [LoginController::class, 'showForgotForm'])->name('forgot.form');
+
+    Route::post('/forgot-password', [LoginController::class, 'sendResetLink'])->name('forgot.send');
+
 
 
 // SUBJECT

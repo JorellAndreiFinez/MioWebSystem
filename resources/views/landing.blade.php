@@ -26,11 +26,13 @@
 <!-- NAVBAR -->
 @include('layouts.navbar');
 
-<!-- HEADER  -->
-@include('layouts.landing.header');
+@include('mio.admin-access.pid.components.carousel')
+@include('mio.admin-access.pid.components.container-1')
+@include('mio.admin-access.pid.components.container-2')
+@include('mio.admin-access.pid.components.container-3')
+@include('mio.admin-access.pid.components.container-4')
+@include('mio.admin-access.pid.components.container-5')
 
-<!-- CONTENT SECTION -->
-@include('layouts.landing.content');
 
 <!----- FOOTER ----->
 @extends('layouts.footer')

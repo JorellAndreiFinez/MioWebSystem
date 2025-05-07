@@ -12,13 +12,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Add your middleware here if needed
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+        // Handle exceptions
+    })
+    ->create();
 
-    $app->middleware([
-        // Add your middleware here
-        RoleBasedAccess::class,
+$app->middleware([
+    // Add your middleware here, like the RoleBasedAccess
+    RoleBasedAccess::class,
+]);
+
+$app->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'enroll.auth' => \App\Http\Middleware\EnrollAuthMiddleware::class,
     ]);
+});

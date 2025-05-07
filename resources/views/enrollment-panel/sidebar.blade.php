@@ -49,9 +49,12 @@
                     <div class="job">{{ Auth::user()->role ?? 'Role' }}</div>
                 </div>
             </div>
-            <a href="{{ route('mio.login') }}">
-                <i class='bx bx-log-out' id="log_out"></i>
-            </a>
+            <form method="POST" action="{{ route('enroll.logout') }}" style="margin: 0;">
+                @csrf
+                <button type="submit" style="background: none; border: none; padding: 0; cursor: pointer;">
+                    <i class='bx bx-log-out' id="log_out"></i>
+                </button>
+            </form>
         </li>
     </ul>
 </div>
