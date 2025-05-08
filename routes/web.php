@@ -5,6 +5,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\EmergencyController;
 use App\Http\Controllers\Enrollment\EnrollController;
 use App\Http\Controllers\FirebaseConnectionController;
 use App\Http\Controllers\SectionController;
@@ -96,9 +97,6 @@ Route::prefix('mio/admin/')->middleware(
 
     Route::get('/PID', [CmsController::class, 'showCMS'])->name('ViewCMS');
     Route::get('/admin/cms/{id}', [CmsController::class, 'show'])->name('cms.show');
-
-
-
 
 
 //  ---------------  TEACHERS
@@ -231,6 +229,9 @@ Route::prefix('mio/admin/')->middleware(
 // Emergency
     Route::view('/emergency', 'mio.head.admin-panel', ['page' => 'emergency'])->name('emergency');
 });
+
+Route::post('/trigger-emergency', [EmergencyController::class, 'triggerEmergency'])->name('trigger.emergency');
+
 
 // MIO - STUDENT PANEL
 Route::prefix('mio/student')->middleware(
