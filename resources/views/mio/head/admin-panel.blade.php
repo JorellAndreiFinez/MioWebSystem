@@ -29,7 +29,6 @@
     @elseif ($page === 'pid')
         @include('mio.admin-access.pid')
 
-
     @elseif ($page === 'students')
         @include('mio.admin-access.students')
     @elseif ($page === 'add-student')

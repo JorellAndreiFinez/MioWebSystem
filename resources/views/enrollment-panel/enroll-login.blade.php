@@ -21,6 +21,15 @@
     </div>
 @endif
 
+@if(session('error') == 'Please verify your email address first.')
+<form action="{{ route('resend-verification') }}" method="POST">
+    @csrf
+    <input type="hidden" name="email" value="{{ old('user_login') }}">
+    <button type="submit">Resend Verification Email</button>
+</form>
+@endif
+
+
     <div class="tabs">
         <h3 class="signup-tab">
             <a class="" href="#signup-tab-content">Sign Up</a>

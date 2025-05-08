@@ -39,27 +39,30 @@ class EnrollController extends Controller
     $password = $request->user_pass;
 
     try {
-        // Create Firebase Auth user
+        // Create user
         $user = $this->auth->createUserWithEmailAndPassword($email, $password);
 
-        // Send verification email
+        // Send verification link
         $this->auth->sendEmailVerificationLink($email);
 
-        // Store name temporarily in session (optional)
+        // Save minimal data temporarily in session
         Session::put('pending_user', [
             'uid' => $user->uid,
+            'email' => $email,
             'username' => $request->user_name,
         ]);
 
         return redirect()->route('enroll-login')->with([
-            'status' => 'Account created. A verification email was sent to your inbox.',
+            'status' => 'Account created. Please verify your email before logging in.',
         ]);
+
     } catch (EmailExists $e) {
         return redirect()->back()->with(['error' => 'Email already exists.']);
     } catch (AuthException $e) {
-        return redirect()->back()->with(['error' => 'Firebase Auth error: ' . $e->getMessage()]);
+        return redirect()->back()->with(['error' => 'Auth error: ' . $e->getMessage()]);
     }
 }
+
 
 
     public function login(Request $request)

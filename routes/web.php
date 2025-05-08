@@ -270,6 +270,15 @@ Route::prefix('mio/student')->middleware(
 
     Route::post('/forgot-password', [LoginController::class, 'sendResetLink'])->name('forgot.send');
 
+    Route::get('/verify-email', function () {
+        return view('mio.dashboard.verify-email');
+    })->name('mio.verify-email');
+    Route::get('/mio/check-verification', [LoginController::class, 'checkVerification'])->name('mio.check-verification');
+
+    Route::post('/resend-verification', [LoginController::class, 'resendVerification'])->name('mio.resend-verification');
+
+
+
 
 
 // SUBJECT
