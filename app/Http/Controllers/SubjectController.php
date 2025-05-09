@@ -116,6 +116,25 @@ class SubjectController extends Controller
             return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
         }
 
+        // Fetch all school years
+        $schoolYears = $this->database->getReference('schoolyears')->getValue();
+
+        $activeSchoolYearId = null;
+
+        if (!empty($schoolYears)) {
+            foreach ($schoolYears as $id => $year) {
+                if (isset($year['status']) && $year['status'] === 'active') {
+                    $activeSchoolYearId = $year['schoolyearid'];
+                    break;
+                }
+            }
+        }
+
+        if (!$activeSchoolYearId) {
+            return redirect()->back()->with('status', 'No active school year found.')->withInput();
+        }
+
+
         // Step 3: Format subject data
         $postData = [
             'subject_id' => $validatedData['subject_id'],
@@ -123,6 +142,7 @@ class SubjectController extends Controller
             'title' => $validatedData['title'],
             'teacher_id' => $validatedData['teacher_id'],
             'section_id' => $validatedData['section_id'],
+            'schoolyear_id' => $activeSchoolYearId,
             'modules' => [],
             'date_created' => Carbon::now()->toDateTimeString(),
             'date_updated' => Carbon::now()->toDateTimeString(),

@@ -73,13 +73,13 @@
 
     @elseif ($page === 'school')
         @include('mio.admin-access.school')
-
+<!--
     @elseif ($page === 'view-calendar')
         @include('mio.admin-access.school.view-calendar')
     @elseif ($page === 'add-calendar')
         @include('mio.admin-access.school.add-calendar')
     @elseif ($page === 'edit-calendar')
-        @include('mio.admin-access.school.edit-calendar')
+        @include('mio.admin-access.school.edit-calendar') -->
 
     @elseif ($page === 'view-department')
         @include('mio.admin-access.school.view-department')
@@ -94,6 +94,14 @@
         @include('mio.admin-access.school.add-announcement')
     @elseif ($page === 'edit-announcement')
         @include('mio.admin-access.school.edit-announcement')
+
+    @elseif ($page === 'view-schoolyear')
+        @include('mio.admin-access.school.view-schoolyear')
+    @elseif ($page === 'add-schoolyear')
+        @include('mio.admin-access.school.add-schoolyear')
+    @elseif($page === 'edit-schoolyear')
+        @include('mio.admin-access.school.edit-schoolyear')
+
 
     @elseif ($page === 'view-section')
         @include('mio.admin-access.school.view-section')

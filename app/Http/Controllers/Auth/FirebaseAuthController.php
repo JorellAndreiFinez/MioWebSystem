@@ -78,7 +78,18 @@ class FirebaseAuthController extends Controller
 
     // DISPLAY ADD STUDENT
         public function showAddStudent(){
-            return view('mio.head.admin-panel', ['page' => 'add-student']);
+            $sectionsRaw = $this->database->getReference('sections')->getValue() ?? [];
+            $sections = [];
+            foreach ($sectionsRaw as $key => $sect) {
+                $sections[] = [
+                    'sectionid' => $sect['sectionid'],
+                    'section_name' => $sect['section_name']
+                ];
+            }
+            return view('mio.head.admin-panel', [
+                'page' => 'add-student',
+                'sections' => $sections
+            ]);
         }
 
     // ADD STUDENT
@@ -102,12 +113,12 @@ class FirebaseAuthController extends Controller
                 'email' => 'required|email|max:255',
                 'previous_school' => 'required|string|max:255',
                 'grade_level' => 'required|integer|min:1',
-                'schedule' => 'required|array',
                 'studentid' => 'required|string|max:12',
                 'category' => 'required|string',
                 'username' => 'required|string|max:255',
                 'account_password' => 'required|string|min:6',
                 'account_status' => 'required|in:active,inactive',
+                'section_id' => 'required|string|max:20',
             ]);
 
             $studentIdKey = $request->studentid;
@@ -132,6 +143,24 @@ class FirebaseAuthController extends Controller
                 }
             }
 
+            // Fetch all school years
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+
+            $activeSchoolYearId = null;
+
+            if (!empty($schoolYears)) {
+                foreach ($schoolYears as $id => $year) {
+                    if (isset($year['status']) && $year['status'] === 'active') {
+                        $activeSchoolYearId = $year['schoolyearid'];
+                        break;
+                    }
+                }
+            }
+
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
             // Prepare the data for saving
             $postData = [
                 'fname' => $request->first_name,
@@ -151,9 +180,10 @@ class FirebaseAuthController extends Controller
                 'previous_school' => $request->previous_school,
                 'grade_level' => $request->grade_level,
                 'category' => $request->category,
-                'schedule' => $request->schedule,
                 'studentid' => $studentIdKey,
                 'role' => 'student',
+                'section_id' => $request->section_id,
+                'schoolyear_id' => $activeSchoolYearId,
 
                 // Account Info
                 'username' => $request->username,
@@ -209,11 +239,21 @@ class FirebaseAuthController extends Controller
                 }
             }
 
+            $sectionsRaw = $this->database->getReference('sections')->getValue() ?? [];
+            $sections = [];
+            foreach ($sectionsRaw as $key => $sect) {
+                $sections[] = [
+                    'sectionid' => $sect['sectionid'],
+                    'section_name' => $sect['section_name']
+                ];
+            }
+
             // If student data is found, return the view with the data
             if ($editdata) {
                 return view('mio.head.admin-panel', [
                     'page' => 'edit-student',
-                    'editdata' => $editdata,  // Pass the student data including category
+                    'editdata' => $editdata,
+                    'sections' => $sections,  // Pass the student data including category
                 ]);
             } else {
                 return redirect('mio/admin/students')->with('status', 'Student ID Not Found');
@@ -221,130 +261,160 @@ class FirebaseAuthController extends Controller
         }
 
     // EDIT STUDENT
-        public function editStudent(Request $request, $id)
-        {
-            $oldKey = $id;
-            $newKey = $request->studentid;
+    public function editStudent(Request $request, $id)
+    {
+        $oldKey = $id;
+        $newKey = $request->studentid;
 
-            // Validate the incoming request data
-            $validatedData = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'gender' => 'required|string|max:10',
-                'age' => 'required|integer|min:1',
-                'birthday' => 'required|date',
-                'address' => 'required|string|max:255',
-                'barangay' => 'required|string|max:255',
-                'region' => 'required|string|max:100',
-                'province' => 'required|string|max:100',
-                'city' => 'required|string|max:100',
-                'zip_code' => 'required|digits:4',
-                'contact_number' => 'required|string|max:15',
-                'emergency_contact' => 'required|string|max:15',
-                'email' => 'required|email|max:255',
-                'previous_school' => 'required|string|max:255',
-                'grade_level' => 'required|integer|min:1',
-                'schedule' => 'required|array',
-                'studentid' => 'required|string|max:12',
-                'category' => 'required|string',
-                'username' => 'required|string|max:255',
-                'account_password' => 'nullable|string|min:6',
-                'account_status' => 'required|in:active,inactive',
-            ]);
+        // Validate the incoming request data
+        $validatedData = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'gender' => 'required|string|max:10',
+            'age' => 'required|integer|min:1',
+            'birthday' => 'required|date',
+            'address' => 'required|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'region' => 'required|string|max:100',
+            'province' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'zip_code' => 'required|digits:4',
+            'contact_number' => 'required|string|max:15',
+            'emergency_contact' => 'required|string|max:15',
+            'email' => 'required|email|max:255',
+            'previous_school' => 'required|string|max:255',
+            'grade_level' => 'required|integer|min:1',
+            'studentid' => 'required|string|max:12',
+            'category' => 'required|string',
+            'username' => 'required|string|max:255',
+            'account_password' => 'nullable|string|min:6',
+            'account_status' => 'required|in:active,inactive',
+        ]);
 
-            $studentIdKey = $request->studentid;
-            $emailInput = $request->email;
-            $usernameInput = $request->username;
 
-            // Fetch all students
-            $studentsRef = $this->database->getReference($this->tablename)->getValue();
+        $studentIdKey = $request->studentid;
+        $emailInput = $request->email;
+        $usernameInput = $request->username;
 
-            if (!empty($studentsRef)) {
-                foreach ($studentsRef as $key => $student) {
-                    if ($key !== $oldKey) {
-                        if (isset($student['studentid']) && $student['studentid'] == $studentIdKey) {
-                            return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
-                        }
-                        if (isset($student['email']) && $student['email'] == $emailInput) {
-                            return redirect()->back()->with('status', 'Email already exists!')->withInput();
-                        }
-                        if (isset($student['username']) && $student['username'] == $usernameInput) {
-                            return redirect()->back()->with('status', 'Username already exists!')->withInput();
-                        }
+        // Fetch all students
+        $studentsRef = $this->database->getReference($this->tablename)->getValue();
+
+        if (!empty($studentsRef)) {
+            foreach ($studentsRef as $key => $student) {
+                if ($key !== $oldKey) {
+                    if (isset($student['studentid']) && $student['studentid'] == $studentIdKey) {
+                        return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
+                    }
+                    if (isset($student['email']) && $student['email'] == $emailInput) {
+                        return redirect()->back()->with('status', 'Email already exists!')->withInput();
+                    }
+                    if (isset($student['username']) && $student['username'] == $usernameInput) {
+                        return redirect()->back()->with('status', 'Username already exists!')->withInput();
                     }
                 }
             }
+        }
 
-            // Get existing data to preserve date_created and last_login
-            $existingData = $this->database->getReference($this->tablename.'/'.$oldKey)->getValue();
+        // Fetch active school year (if it's not passed in the request)
+        $schoolYears = $this->database->getReference('schoolyears')->getValue();
+        $activeSchoolYearId = null;
 
-            // Prepare updated data
-            $updateData = [
-                'fname' => $request->first_name,
-                'lname' => $request->last_name,
-                'gender' => $request->gender,
-                'age' => $request->age,
-                'bday' => $request->birthday,
-                'address' => $request->address,
-                'barangay' => $request->barangay,
-                'region' => $request->region,
-                'province' => $request->province,
-                'city' => $request->city,
-                'zip_code' => $request->zip_code,
-                'contact_number' => $request->contact_number,
-                'emergency_contact' => $request->emergency_contact,
-                'email' => $request->email,
-                'previous_school' => $request->previous_school,
-                'grade_level' => $request->grade_level,
-                'category' => $request->category,
-                'schedule' => $request->schedule,
-                'studentid' => $studentIdKey,
-                'role' => 'student',
-                'username' => $usernameInput,
-                'account_status' => $request->account_status,
-                'date_updated' => Carbon::now()->toDateTimeString(),
-            ];
-
-            // Only update password if user entered a new one
-            if ($request->filled('account_password')) {
-                $updateData['password'] = bcrypt($request->account_password);
-            } else {
-                // Retain existing password if not updated
-                if (isset($existingData['password'])) {
-                    $updateData['password'] = $existingData['password'];
+        if (!empty($schoolYears)) {
+            foreach ($schoolYears as $id => $year) {
+                if (isset($year['status']) && $year['status'] === 'active') {
+                    $activeSchoolYearId = $year['schoolyearid'];
+                    break;
                 }
             }
-
-            // Preserve date_created and last_login if available
-            if (isset($existingData['date_created'])) {
-                $updateData['date_created'] = $existingData['date_created'];
-            }
-            if (isset($existingData['last_login'])) {
-                $updateData['last_login'] = $existingData['last_login'];
-            }
-
-            // Update Firebase data
-            if ($oldKey === $newKey) {
-                $this->database->getReference($this->tablename.'/'.$oldKey)->update($updateData);
-            } else {
-                $this->database->getReference($this->tablename.'/'.$newKey)->set($updateData);
-                $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
-            }
-
-            return redirect('mio/admin/students')->with('status', 'Student Updated Successfully');
         }
+
+        if (!$activeSchoolYearId) {
+            return redirect()->back()->with('status', 'No active school year found.')->withInput();
+        }
+
+        // Get existing data to preserve date_created and last_login
+        $existingData = $this->database->getReference($this->tablename.'/'.$oldKey)->getValue();
+
+        // Prepare updated data
+        $updateData = [
+            'fname' => $request->first_name,
+            'lname' => $request->last_name,
+            'gender' => $request->gender,
+            'age' => $request->age,
+            'bday' => $request->birthday,
+            'address' => $request->address,
+            'barangay' => $request->barangay,
+            'region' => $request->region,
+            'province' => $request->province,
+            'city' => $request->city,
+            'zip_code' => $request->zip_code,
+            'contact_number' => $request->contact_number,
+            'emergency_contact' => $request->emergency_contact,
+            'email' => $request->email,
+            'previous_school' => $request->previous_school,
+            'grade_level' => $request->grade_level,
+            'category' => $request->category,
+            'studentid' => $studentIdKey,
+            'role' => 'student',
+            'section_id' => $request->section_id,
+            'schoolyear_id' => $activeSchoolYearId,  // Ensure this is included
+            'username' => $usernameInput,
+            'account_status' => $request->account_status,
+            'date_updated' => Carbon::now()->toDateTimeString(),
+        ];
+
+        // Only update password if user entered a new one
+        if ($request->filled('account_password')) {
+            $updateData['password'] = bcrypt($request->account_password);
+        } else {
+            // Retain existing password if not updated
+            if (isset($existingData['password'])) {
+                $updateData['password'] = $existingData['password'];
+            }
+        }
+
+        // Preserve date_created and last_login if available
+        if (isset($existingData['date_created'])) {
+            $updateData['date_created'] = $existingData['date_created'];
+        }
+        if (isset($existingData['last_login'])) {
+            $updateData['last_login'] = $existingData['last_login'];
+        }
+
+        // Update Firebase data
+        if ($oldKey === $newKey) {
+            $this->database->getReference($this->tablename.'/'.$oldKey)->update($updateData);
+        } else {
+            $this->database->getReference($this->tablename.'/'.$newKey)->set($updateData);
+            $this->database->getReference($this->tablename.'/'.$oldKey)->remove();
+        }
+
+        return redirect('mio/admin/students')->with('status', 'Student Updated Successfully');
+    }
+
 
     // DELETE STUDENT
         public function deleteStudent($id)
-            {
-                $key = $id;
-                $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+        {
+            $key = $id;
 
-                if ($del_data) {
-                    return redirect('mio/admin/students')->with('status', 'Student Deleted Successfully');
-                } else {
-                    return redirect('mio/admin/students')->with('status', 'Student Not Deleted');
+            // Delete from Realtime Database
+            $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+
+            if ($del_data) {
+                try {
+                    // Delete from Firebase Authentication
+                    $this->auth->deleteUser($key); // Assuming $key is also the Firebase UID
+
+                    return redirect('mio/admin/students')->with('status', 'Student Info and Account Deleted Successfully');
+                } catch (UserNotFound $e) {
+                    return redirect('mio/admin/students')->with('status', 'Student deleted, but Auth user not found');
+                } catch (Exception $e) {
+                    return redirect('mio/admin/students')->with('status', 'Student deleted, but Auth user deletion failed: '.$e->getMessage());
                 }
+            } else {
+                return redirect('mio/admin/students')->with('status', 'Student Not Deleted');
+            }
         }
 
     // ------ TEACHER - PAGE
@@ -442,6 +512,25 @@ class FirebaseAuthController extends Controller
                 }
             }
 
+            // Fetch all school years
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+
+            $activeSchoolYearId = null;
+
+            if (!empty($schoolYears)) {
+                foreach ($schoolYears as $id => $year) {
+                    if (isset($year['status']) && $year['status'] === 'active') {
+                        $activeSchoolYearId = $year['schoolyearid'];
+                        break;
+                    }
+                }
+            }
+
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
+
             // Prepare data
             $postData = [
                 'fname' => $request->first_name,
@@ -468,6 +557,7 @@ class FirebaseAuthController extends Controller
                 'password' => bcrypt($request->account_password), // <- note: bcrypt account_password
                 'account_status' => $request->account_status,
                 'department_id' => $request->department_id,
+                'schoolyear_id' => $activeSchoolYearId,
 
                 // Timestamps
                 'date_created' => Carbon::now()->toDateTimeString(),
@@ -647,15 +737,26 @@ class FirebaseAuthController extends Controller
 
     // DELETE TEACHER
         public function deleteTeacher($id)
-            {
-                $key = $id;
-                $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+        {
+            $key = $id;
 
-                if ($del_data) {
-                    return redirect('mio/admin/teachers')->with('status', 'Teacher Deleted Successfully');
-                } else {
-                    return redirect('mio/admin/teachers')->with('status', 'Teacher Not Deleted');
+            // Delete from Realtime Database
+            $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+
+            if ($del_data) {
+                try {
+                    // Delete from Firebase Authentication
+                    $this->auth->deleteUser($key); // $key must be the Firebase Auth UID
+
+                    return redirect('mio/admin/teachers')->with('status', 'Teacher Info and Account Deleted Deleted Successfully');
+                } catch (UserNotFound $e) {
+                    return redirect('mio/admin/teachers')->with('status', 'Teacher deleted, but Auth user not found');
+                } catch (Exception $e) {
+                    return redirect('mio/admin/teachers')->with('status', 'Teacher deleted, but Auth user deletion failed: '.$e->getMessage());
                 }
+            } else {
+                return redirect('mio/admin/teachers')->with('status', 'Teacher Not Deleted');
+            }
         }
 
     // ADMIN - PAGE
@@ -782,6 +883,25 @@ class FirebaseAuthController extends Controller
                     $validatedData['email'] = $teacherData['email'] ?? $validatedData['email'];
                 }
 
+                // Fetch all school years
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+
+            $activeSchoolYearId = null;
+
+            if (!empty($schoolYears)) {
+                foreach ($schoolYears as $id => $year) {
+                    if (isset($year['status']) && $year['status'] === 'active') {
+                        $activeSchoolYearId = $year['schoolyearid'];
+                        break;
+                    }
+                }
+            }
+
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
+
                 // Prepare admin data for Firebase
                 $postData = [
                     'fname' => $validatedData['first_name'],
@@ -803,6 +923,8 @@ class FirebaseAuthController extends Controller
                     'category' => $validatedData['category'],
                     'adminid' => $adminIdKey,
                     'teacherid' => $teacherId ?? null,
+                    'schoolyear_id' => $activeSchoolYearId,
+
                     'role' => 'admin',
                     'username' => $validatedData['username'],
                     'password' => bcrypt($validatedData['account_password']),
@@ -1007,14 +1129,29 @@ class FirebaseAuthController extends Controller
                 return redirect('mio/admin/admins')->with('status', 'Access denied. Only Super Admin can delete admins.');
             }
 
+            // Delete from Realtime Database
             $del_data = $this->database->getReference($this->tablename.'/'.$id)->remove();
 
-            return redirect('mio/admin/admins')->with('status', $del_data ? 'Admin Deleted Successfully' : 'Admin Not Deleted');
+            if ($del_data) {
+                try {
+                    // Delete from Firebase Authentication
+                    $this->auth->deleteUser($id); // Assuming $id is the Firebase Auth UID
+
+                    return redirect('mio/admin/admins')->with('status', 'Admin Info and Account Deleted Deleted Successfully');
+                } catch (UserNotFound $e) {
+                    return redirect('mio/admin/admins')->with('status', 'Admin deleted, but Auth user not found');
+                } catch (Exception $e) {
+                    return redirect('mio/admin/admins')->with('status', 'Admin deleted, but Auth user deletion failed: '.$e->getMessage());
+                }
+            } else {
+                return redirect('mio/admin/admins')->with('status', 'Admin Not Deleted');
+            }
         }
 
+
          // GET TEACHER
-         public function getTeacherData($id)
-         {
+        public function getTeacherData($id)
+        {
              $usersRef = $this->database->getReference($this->tablename)->getValue();
 
              if (!isset($usersRef[$id]) || $usersRef[$id]['role'] !== 'teacher') {
@@ -1038,36 +1175,36 @@ class FirebaseAuthController extends Controller
                  'contact_number' => $teacher['contact_number'] ?? '',
                  'email' => $teacher['email'] ?? ''
              ]);
-     }
+        }
 
      // GET SECTION
-     public function getSectionData($id)
-     {
-         // Fetch all sections from Firebase
-         $sectionsRef = $this->database->getReference('sections')->getValue();
+        public function getSectionData($id)
+        {
+            // Fetch all sections from Firebase
+            $sectionsRef = $this->database->getReference('sections')->getValue();
 
-         // Check if the section with the given ID exists
-         if (!isset($sectionsRef[$id])) {
-             return response()->json(['error' => 'Section not found'], 404);
-         }
+            // Check if the section with the given ID exists
+            if (!isset($sectionsRef[$id])) {
+                return response()->json(['error' => 'Section not found'], 404);
+            }
 
-         $section = $sectionsRef[$id];
+            $section = $sectionsRef[$id];
 
-         // Return the section data
-         return response()->json([
-             'section_id' => $section['sectionid'] ?? '',
-             'section_name' => $section['section_name'] ?? '',
-             'section_status' => $section['section_status'] ?? '',
-             'max_students' => $section['max_students'] ?? '',
-             'teacher_id' => $section['teacherid'] ?? '',
-             'status' => $section['status'] ?? '',
-             'created_at' => $section['created_at'] ?? '',
-             'updated_at' => $section['updated_at'] ?? '',
-         ]);
-     }
+            // Return the section data
+            return response()->json([
+                'section_id' => $section['sectionid'] ?? '',
+                'section_name' => $section['section_name'] ?? '',
+                'section_status' => $section['section_status'] ?? '',
+                'max_students' => $section['max_students'] ?? '',
+                'teacher_id' => $section['teacherid'] ?? '',
+                'status' => $section['status'] ?? '',
+                'created_at' => $section['created_at'] ?? '',
+                'updated_at' => $section['updated_at'] ?? '',
+            ]);
+        }
 
      // GET DEPARTMENT
-     public function getDepartmentData($id)
+        public function getDepartmentData($id)
         {
             // Fetch all departments from Firebase
             $departmentsRef = $this->database->getReference('departments')->getValue();
@@ -1091,8 +1228,6 @@ class FirebaseAuthController extends Controller
                 'updated_at'       => $department['updated_at'] ?? '',
             ]);
         }
-
-
 
 
         // PARENTS - PAGE
@@ -1182,6 +1317,25 @@ class FirebaseAuthController extends Controller
                 $validatedData['zip_code'] = $studentData['zip_code'] ?? $validatedData['zip_code'];
             }
 
+            // Fetch all school years
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+
+            $activeSchoolYearId = null;
+
+            if (!empty($schoolYears)) {
+                foreach ($schoolYears as $id => $year) {
+                    if (isset($year['status']) && $year['status'] === 'active') {
+                        $activeSchoolYearId = $year['schoolyearid'];
+                        break;
+                    }
+                }
+            }
+
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
+
             // Prepare parent data for Firebase
             $postData = [
                 'fname' => $request->first_name,
@@ -1201,6 +1355,7 @@ class FirebaseAuthController extends Controller
                 'category' => $request->category,
                 'parentid' => $parentIdKey,
                 'studentid' => $studentId ?? null, // Save student ID if provided
+                'schoolyear_id' => $activeSchoolYearId,
                 'role' => 'parent',
                 'username' => $request->username,
                 'password' => bcrypt($request->account_password),
@@ -1406,16 +1561,25 @@ class FirebaseAuthController extends Controller
         }
 
     // DELETE PARENT
-         public function deleteParent($id)
-         {
-             $key = $id;
-             $del_data = $this->database->getReference($this->tablename.'/'.$key)->remove();
+        public function deleteParent($id)
+        {
+            // Delete from Realtime Database
+            $del_data = $this->database->getReference($this->tablename.'/'.$id)->remove();
 
-             if ($del_data) {
-                 return redirect('mio/admin/parents')->with('status', 'Parent Deleted Successfully');
-             } else {
-                 return redirect('mio/admin/parents')->with('status', 'Parent Not Deleted');
-             }
+            if ($del_data) {
+                try {
+                    // Delete from Firebase Authentication
+                    $this->auth->deleteUser($id); // Assuming $id is the Firebase Auth UID
+
+                    return redirect('mio/admin/parents')->with('status', 'Parent Info and Account Deleted Successfully');
+                } catch (UserNotFound $e) {
+                    return redirect('mio/admin/parents')->with('status', 'Parent deleted, but Auth user not found');
+                } catch (Exception $e) {
+                    return redirect('mio/admin/parents')->with('status', 'Parent deleted, but Auth user deletion failed: '.$e->getMessage());
+                }
+            } else {
+                return redirect('mio/admin/parents')->with('status', 'Parent Not Deleted');
+            }
         }
 
 

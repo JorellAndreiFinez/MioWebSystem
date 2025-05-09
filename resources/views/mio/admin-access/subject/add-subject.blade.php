@@ -2,7 +2,8 @@
 <div class="text">Add New Subject</div>
 <div class="teacher-container">
 
- <form action="{{ route('mio.StoreSubject', ['grade' => $grade]) }}" method="POST">
+<form action="{{ route('mio.StoreSubject', ['grade' => $grade]) }}" method="POST" enctype="multipart/form-data">
+
             @csrf
 
     <div class="table-header">
@@ -68,15 +69,19 @@
                     <div class="section-content" id="module-section">
                         <!-- Initial Module Block (Module 1) -->
                         <div class="form-row module-row" data-index="0">
-                            <div class="form-group">
-                                <label>Module Title <span style="color: red">*</span></label>
-                                <input type="text" name="modules[0][title]" placeholder="e.g. Module 1: Introduction" required />
-                            </div>
-                            <div class="form-group">
-                                <label>Description</label>
-                                <textarea name="modules[0][description]" placeholder="Optional module description"></textarea>
-                            </div>
+                        <div class="form-group">
+                            <label>Module Title <span style="color: red">*</span></label>
+                            <input type="text" name="modules[0][title]" placeholder="e.g. Module 1: Introduction" required />
                         </div>
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea name="modules[0][description]" placeholder="Optional module description"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload File</label>
+                            <input type="file" name="modules[0][file]" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" />
+                        </div>
+                    </div>
 
                         <!-- Add Module Button -->
                         <button type="button" class="btn add-btn" onclick="addModuleField()">+ Add Module</button>

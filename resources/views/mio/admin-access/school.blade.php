@@ -22,10 +22,10 @@
     <div class="text">School</div>
     <section class="grade-section">
     <div class="grade-grid">
-        <a href="{{ route('mio.view-calendar') }}">
+        <a href="{{ route('mio.view-schoolyear') }}">
         <div class="grade-card">
             <span class="icon"></span>
-            <p>School Calendar</p>
+            <p>School Year</p>
             <span class="arrow">&rsaquo;</span>
         </div>
         </a>

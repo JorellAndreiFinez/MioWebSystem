@@ -134,11 +134,25 @@ class SectionController extends Controller
             }
         }
 
+         // Get teachers from Firebase
+         $teachersRaw = $this->database->getReference('users')->getValue() ?? [];
+
+         $teachers = [];
+         foreach ($teachersRaw as $key => $teacher) {
+             if (isset($teacher['role']) && $teacher['role'] === 'teacher') {
+                 $teachers[] = [
+                     'teacherid' => $key,
+                     'name' => ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '')
+                 ];
+             }
+         }
+
         // If student data is found, return the view with the data
         if ($editdata) {
             return view('mio.head.admin-panel', [
                 'page' => 'edit-section',
                 'editdata' => $editdata,
+                'teachers' => $teachers,
             ]);
         } else {
             return redirect('mio/admin/section')->with('status', 'Section ID Not Found');

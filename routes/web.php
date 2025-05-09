@@ -8,6 +8,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmergencyController;
 use App\Http\Controllers\Enrollment\EnrollController;
 use App\Http\Controllers\FirebaseConnectionController;
+use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
@@ -214,6 +215,19 @@ Route::prefix('mio/admin/')->middleware(
     Route::put('/UpdateAnnouncement/{id}', [AnnouncementController::class, 'editAnnouncement'])->name('UpdateAnnouncement');
 
     Route::delete('/DeleteAnnouncement/{id}', [AnnouncementController::class, 'deleteAnnouncement'])->name('DeleteAnnouncement');
+
+
+// -- SCHOOL YEAR
+    Route::get('/schoolyear', [SchoolYearController::class, 'viewSchoolYear'])->name('view-schoolyear');
+
+    Route::get('/CreateSchoolYear', [SchoolYearController::class, 'showCreateSchoolYear'])->name('CreateSchoolYear');
+    Route::post('/CreateSchoolYear', [SchoolYearController::class, 'addSchoolYear'])->name('StoreSchoolYear');
+
+    Route::get('/EditSchoolYear/{id}', [SchoolYearController::class, 'showEditSchoolYear'])->name('EditSchoolYear');
+    Route::put('/UpdateSchoolYear/{id}', [SchoolYearController::class, 'editSchoolYear'])->name('UpdateSchoolYear');
+
+    Route::get('/schoolyear/{id}/totals', [SchoolYearController::class, 'getTotalsBySchoolYear']);
+
 
 // ---------------  SECTIONS
     Route::get('/section', [SectionController::class, 'sections'])->name('ViewSection');
