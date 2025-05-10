@@ -273,9 +273,112 @@ class StudentController extends Controller
         return view('mio.head.student-panel', [
             'page' => 'announcement-body',
             'subject' => $subject,
-            'announcement' => $announcement
+            'announcement' => $announcement,
+            'announcementId' => $announcementId,
         ]);
     }
+
+    public function storeReply(Request $request, $subjectId, $announcementId)
+{
+    // Get the current logged-in user
+    $user = session('firebase_user');
+    $userId = $user['uid'] ?? null;
+    $userName = $user['name'] ?? 'Anonymous';
+
+    // Validate the reply input
+    $request->validate([
+        'reply' => 'required|string|max:500',
+    ]);
+
+    // Get the current timestamp
+    $timestamp = now()->toDateTimeString();
+
+    // Fetch all subjects from Firebase
+    $subjectsRef = $this->database->getReference("subjects")->getValue();
+
+    // Dynamically get the grade level for the subject
+    $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
+
+    // Check if the grade is found
+    if ($grade === null) {
+        return redirect()->back()->with('status', 'Subject not found.')->withInput();
+    }
+
+    // Get the announcement data path in Firebase
+    $announcementRef = $this->database->getReference("subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies");
+
+    // Prepare the reply data
+    $replyData = [
+        'user_id' => $userId,
+        'user_name' => $userName,
+        'message' => $request->input('reply'),
+        'timestamp' => $timestamp,
+    ];
+
+    // Push the reply data to Firebase
+    try {
+        $announcementRef->push($replyData);
+        return redirect()->route('mio.subject.announcement-body', ['subjectId' => $subjectId, 'announcementId' => $announcementId])
+                         ->with('success', 'Reply posted successfully.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('status', 'Failed to post reply: ' . $e->getMessage())->withInput();
+    }
+    }
+
+    public function deleteReply($subjectId, $announcementId, $replyId)
+{
+    // Fetch the grade level dynamically from Firebase
+    $subjectsRef = $this->database->getReference("subjects")->getValue();
+    $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
+
+    if (!$grade) {
+        return redirect()->back()->with('error', 'Grade level not found for the subject.');
+    }
+
+    // Get the specific reply reference path
+    $replyRefPath = "subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies/{$replyId}";
+
+    // Fetch the specific reply data to check the user
+    $reply = $this->database->getReference($replyRefPath)->getValue();
+
+    // Get the current logged-in user
+    $user = session('firebase_user');
+    $userId = $user['uid'] ?? null;
+
+    // Check if the reply exists and if the logged-in user matches the user who posted the reply
+    if (!$reply || $reply['user_id'] !== $userId) {
+        return redirect()->back()->with('error', 'You are not authorized to delete this reply.');
+    }
+
+    // Proceed with deletion
+    try {
+        $this->database->getReference($replyRefPath)->remove();
+
+        return redirect()->route('mio.subject.announcement-body', [
+            'subjectId' => $subjectId,
+            'announcementId' => $announcementId
+        ])->with('success', 'Reply deleted successfully.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('error', 'Failed to delete reply: ' . $e->getMessage());
+    }
+}
+
+
+    // Helper function to get grade level for a subject
+    private function getGradeLevelForSubject($subjectId, $subjectsRef)
+    {
+        // Loop through the subjects and find the grade level for the given subjectId
+        foreach ($subjectsRef as $grade => $subjects) {
+            if (array_key_exists($subjectId, $subjects)) {
+                return $grade;  // Return the grade level for the subject
+            }
+        }
+        return null;  // Return null if subject is not found
+    }
+
+
+
+
 
 
 

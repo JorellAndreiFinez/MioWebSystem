@@ -268,10 +268,13 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
         Route::get('/{subjectId}', [StudentController::class, 'showSubject'])->name('show-subject');
 
-        // Subject-related subpages
+        // Announcments
         Route::get('/{subjectId}/announcements', [StudentController::class, 'showSubjectAnnouncements'])->name('announcements');
-       // Route for individual announcement details
         Route::get('/{subjectId}/announcements/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('announcement-body');
+
+        Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [StudentController::class, 'storeReply'])->name('storeReply');
+        Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
+
 
 
         Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');

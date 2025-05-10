@@ -1,3 +1,9 @@
+@php
+    function hasRole($role) {
+        return session()->has('firebase_user') && session('firebase_user.role') === $role;
+    }
+@endphp
+
 <section class="home-section">
 
     <main class="main-announcement">
@@ -22,39 +28,49 @@
                     <!-- Toggle Reply Button -->
                     <button class="toggle-reply-btn" onclick="toggleReply()">💬 Reply</button>
 
-                    <!-- Reply Section (Hidden by Default) -->
                     <div class="reply-section" id="replySection" style="display: none;">
-                        <form method="POST" action="#">
+                        <form method="POST" action="{{ route('mio.subject.storeReply', ['subjectId' => $subject['subject_id'], 'announcementId' => $announcementId]) }}">
                             @csrf
                             <textarea name="reply" placeholder="Write your reply..." required></textarea>
                             <button type="submit">Send Reply</button>
                             <button type="button" class="close-reply-btn" onclick="toggleReply()">Close</button>
                         </form>
                     </div>
+
                 </div>
             </div>
         </div>
 
         <!-- Replies Container -->
+        <!-- Replies Container -->
         <div class="all-replies">
             <h4>Replies</h4>
 
-            <!-- Sample replies -->
-            <div class="reply-item">
-                <div class="reply-header">
-                    <strong>Juan Dela Cruz</strong> • <small>April 18, 2025 at 10:12 AM</small>
+            @if(count($announcement['replies'] ?? []) > 0)
+                @foreach($announcement['replies'] as $replyId => $reply)
+                <div class="reply-item">
+                    <div class="reply-header">
+                        <strong>{{ $reply['user_name'] }}</strong> • <small>{{ $reply['timestamp'] }}</small>
+                        @if (hasRole('admin') || session('firebase_user.uid') === $reply['user_id'])
+                            <form action="{{ route('mio.subject.deleteReply', ['subjectId' => $subject['subject_id'], 'announcementId' => $announcementId, 'replyId' => $replyId]) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm" title="Delete Reply">
+                                    <i class="fas fa-trash-alt"></i> <!-- Trash icon -->
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                    <p>{{ $reply['message'] }}</p>
                 </div>
-                <p>Thank you for the update, stay safe everyone!</p>
-            </div>
+            @endforeach
 
-            <div class="reply-item reply-own">
-                <div class="reply-header">
-                    <strong>You</strong> • <small>April 18, 2025 at 10:45 AM</small>
-                </div>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Sit, vitae porro...</p>
-                <button class="reply-delete-btn" title="Delete your reply">🗑</button>
-            </div>
+            @else
+                <p>No replies yet.</p>
+            @endif
         </div>
+
+
     </main>
 </section>
 
