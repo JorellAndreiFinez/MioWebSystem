@@ -62,40 +62,25 @@
 
         <div class="right-side">
         <div class="announcement-card">
-            <h4 >Announcements</h4>
+            <h4>Announcements</h4>
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">March 30, 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">All Grade Homeroom Meeting</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
+            @php
+            $rawDate = $announcement['date'] ?? null;
+            $timestamp = strtotime($rawDate);
+            $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
+        @endphp
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">Grade 10 Seminar</h3> <!-- slightly bigger bold -->
+            @foreach($announcements as $announcement)
+                <div class="sub-card">
+                    <div class="announce-header">
+                        <p class="announce-date">{{ $announcement['date']}}</p>
+                        <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
+                        <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+                    </div>
                 </div>
-            </div>
-
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">April 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">English</h2> <!-- small bold -->
-                    <h3 class="announce-title">Missing Assignments</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
-
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">Apr 1 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">No Classes</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
+            @endforeach
         </div>
+
 
             <div class="task-card">
                 <h4>Assigned Tasks</h4>

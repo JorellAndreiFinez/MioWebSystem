@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 use Kreait\Firebase\Factory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class LoginController extends Controller
 {
@@ -66,17 +67,22 @@ public function login(Request $request)
             return redirect()->back()->with('error', 'User or role not found.');
         }
 
-        // Retrieve name safely (set default if not found)
+        // Retrieve name and section_id safely
         $name = $userData['fname'] ?? 'User'; // Default to 'User' if name is not set
         $role = strtolower($userData['role']);
+        $sectionId = $userData['section_id'] ?? null; // Ensure section_id is fetched
 
-        // Set the entire firebase_user in session with name, role, etc.
+        // Log the section_id for debugging
+        Log::debug('Fetched Section ID:', ['section_id' => $sectionId]);
+
+        // Set the entire firebase_user in session with section_id included
         Session::put('firebase_user', [
             'uid' => $uid,
             'email' => $email,
             'role' => $role,
-            'name' => $name, // Store name in session
-            'category' => $userData['category'] ?? null, // <-- Add this
+            'name' => $name, 
+            'category' => $userData['category'] ?? null,
+            'section_id' => $sectionId, // Store section_id in session
         ]);
 
         // Update login timestamp
@@ -93,16 +99,13 @@ public function login(Request $request)
             default   => redirect()->back()->with('error', 'Unrecognized role.'),
         };
 
-    // } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
-    //     return redirect()->back()->with('error', 'Incorrect password.');
-    // } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
-    //     return redirect()->back()->with('error', 'Email not registered.');
     } catch (\Kreait\Firebase\Exception\AuthException $e) {
         return response()->json(['error' => 'Invalid Credentials.'], 401);
     } catch (\Throwable $e) {
         return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
     }
 }
+
 
 public function logout()
 {

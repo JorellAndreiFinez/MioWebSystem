@@ -139,6 +139,7 @@
 <script>
 let moduleCount = 1;
 
+// Function to add a new module field
 function addModuleField() {
     const section = document.getElementById("module-section");
 
@@ -177,8 +178,9 @@ function addModuleField() {
 
     section.insertBefore(wrapper, section.querySelector(".add-btn"));
 
-    // Add listener for file name change
-    wrapper.querySelector(`#file-upload-${moduleCount}`).addEventListener('change', function () {
+    // Add listener for file name change for the newly added file input
+    const fileInput = wrapper.querySelector(`#file-upload-${moduleCount}`);
+    fileInput.addEventListener('change', function () {
         const fileName = this.files.length ? this.files[0].name : 'No file chosen';
         document.getElementById(`file-name-${moduleCount}`).textContent = fileName;
     });
@@ -186,11 +188,15 @@ function addModuleField() {
     moduleCount++;
 }
 
+
+// Function to remove a module field
 function removeModuleField(button) {
     const moduleBlock = button.closest('.module-block');
     moduleBlock.remove();
 }
+
 </script>
+
 
 
 <!-- GENERATE SUBJECT ID -->

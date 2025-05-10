@@ -63,9 +63,9 @@
         @include('mio.student-access.subject.score.score')
 
     @elseif ($page === 'module')
-        @include('mio.student-access.subject.module.module')
+        @include('mio.student-access.subject.module.module', ['modules' => $modules])
     @elseif ($page === 'module-body')
-        @include('mio.student-access.subject.module.module-body')
+        @include('mio.student-access.subject.module.module-body', ['module' => $module])
     @endif
 
     {{-- Sidebar script (keep the collapse logic) --}}

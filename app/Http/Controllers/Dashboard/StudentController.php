@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Database;
 use Kreait\Firebase\Factory;
+use Illuminate\Support\Facades\Log;
 
 class StudentController extends Controller
 {
@@ -24,8 +25,11 @@ class StudentController extends Controller
             ->createDatabase();
     }
 
-    public function showDashboard()
+   public function showDashboard()
 {
+    // Fetch the current logged-in user's section_id
+    $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
+    
     // Fetch the active school year from Firebase
     $activeSchoolYearRef = $this->database->getReference('schoolyears');
     $schoolYears = $activeSchoolYearRef->getValue() ?? [];
@@ -50,13 +54,16 @@ class StudentController extends Controller
         $subjectsRef = $this->database->getReference('subjects/' . $gradeLevelKey);
         $subjects = $subjectsRef->getValue() ?? [];
 
-        // Only add subjects for the active school year
-        $gradeSubjects = array_filter($subjects, function($subject) use ($activeSchoolYear) {
-            return isset($subject['schoolyear_id']) && $subject['schoolyear_id'] === $activeSchoolYear;
+        // Only add subjects for the active school year AND the user's section
+        $gradeSubjects = array_filter($subjects, function($subject) use ($activeSchoolYear, $userSectionId) {
+            return isset($subject['schoolyear_id'], $subject['section_id']) &&
+                $subject['schoolyear_id'] === $activeSchoolYear &&
+                $subject['section_id'] === $userSectionId;
         });
 
         $allSubjects[$gradeLevelKey] = $gradeSubjects;
     }
+
 
     // Fetch sections under the active school year
     $sectionsRef = $this->database->getReference('sections');
@@ -68,9 +75,6 @@ class StudentController extends Controller
             $activeSections[] = $section;
         }
     }
-
-    // Fetch the current logged-in user's section_id
-    $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
 
     // Filter active sections based on the logged-in user's section_id
     $filteredSections = array_filter($activeSections, function($section) use ($userSectionId) {
@@ -116,14 +120,55 @@ class StudentController extends Controller
     // Fetch modules for the logged-in user's section and ensure they are assigned correctly
     $modulesForUserSection = [];
     foreach ($allSubjects as $gradeLevelKey => $subjects) {
+    foreach ($subjects as $subject) {
+        // Ensure the student’s section matches the subject's section
+        if ($subject['section_id'] === $userSectionId) {
+            // Ensure subject is linked to the active school year
+            if ($subject['schoolyear_id'] === $activeSchoolYear) {
+                $modulesForUserSection[] = $subject;
+            }
+        }
+    }
+}
+
+    $adminAnnouncementsRef = $this->database->getReference('admin-announcements');
+    $adminAnnouncements = $adminAnnouncementsRef->getValue() ?? [];
+
+    $subjectAnnouncements = [];
+
+    foreach ($allSubjects as $gradeLevelKey => $subjects) {
         foreach ($subjects as $subject) {
-            if (isset($subject['section_id']) && $subject['section_id'] === $userSectionId) {
-                if (isset($subject['modules']) && !empty($subject['modules'])) {
-                    $modulesForUserSection[] = $subject['modules'];
+            if ($subject['section_id'] === $userSectionId && $subject['schoolyear_id'] === $activeSchoolYear) {
+                $subjectId = $subject['subject_id'];
+                $announcementRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/announcements");
+                $announcements = $announcementRef->getValue() ?? [];
+
+                foreach ($announcements as $announcementId => $announcement) {
+                    // Optional: add subject name or ID to each announcement
+                    $announcement['subject'] = $subject['title'] ?? 'Subject';
+                    $announcement['date'] = $announcement['date_posted'] ?? 'Unknown Date';
+                    $subjectAnnouncements[] = $announcement;
                 }
             }
         }
     }
+
+    $allAnnouncements = [];
+
+    // Tag and merge admin announcements
+    foreach ($adminAnnouncements as $announcement) {
+        $announcement['subject'] = 'General';
+        $announcement['date'] = $announcement['date'] ?? 'Unknown Date';
+        $allAnnouncements[] = $announcement;
+    }
+
+    // Merge subject-specific announcements
+    $allAnnouncements = array_merge($allAnnouncements, $subjectAnnouncements);
+
+    // Sort by date (latest first)
+    usort($allAnnouncements, function ($a, $b) {
+        return strtotime($b['date']) <=> strtotime($a['date']);
+    });
 
     // Pass filtered data to the view
     return view('mio.head.student-panel', [
@@ -132,10 +177,10 @@ class StudentController extends Controller
         'allSubjects' => $allSubjects,
         'activeSchoolYear' => $activeSchoolYear,
         'activeSections' => $filteredSections, // Display only the filtered sections for the logged-in user
-        'sectionUsers' => $sectionUsers
+        'sectionUsers' => $sectionUsers,
+        'announcements' => $allAnnouncements
     ]);
-    }
-
+}
 
 
 
@@ -326,43 +371,42 @@ class StudentController extends Controller
     }
 
     public function deleteReply($subjectId, $announcementId, $replyId)
-{
-    // Fetch the grade level dynamically from Firebase
-    $subjectsRef = $this->database->getReference("subjects")->getValue();
-    $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
+    {
+        // Fetch the grade level dynamically from Firebase
+        $subjectsRef = $this->database->getReference("subjects")->getValue();
+        $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
 
-    if (!$grade) {
-        return redirect()->back()->with('error', 'Grade level not found for the subject.');
+        if (!$grade) {
+            return redirect()->back()->with('error', 'Grade level not found for the subject.');
+        }
+
+        // Get the specific reply reference path
+        $replyRefPath = "subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies/{$replyId}";
+
+        // Fetch the specific reply data to check the user
+        $reply = $this->database->getReference($replyRefPath)->getValue();
+
+        // Get the current logged-in user
+        $user = session('firebase_user');
+        $userId = $user['uid'] ?? null;
+
+        // Check if the reply exists and if the logged-in user matches the user who posted the reply
+        if (!$reply || $reply['user_id'] !== $userId) {
+            return redirect()->back()->with('error', 'You are not authorized to delete this reply.');
+        }
+
+        // Proceed with deletion
+        try {
+            $this->database->getReference($replyRefPath)->remove();
+
+            return redirect()->route('mio.subject.announcement-body', [
+                'subjectId' => $subjectId,
+                'announcementId' => $announcementId
+            ])->with('success', 'Reply deleted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete reply: ' . $e->getMessage());
+        }
     }
-
-    // Get the specific reply reference path
-    $replyRefPath = "subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies/{$replyId}";
-
-    // Fetch the specific reply data to check the user
-    $reply = $this->database->getReference($replyRefPath)->getValue();
-
-    // Get the current logged-in user
-    $user = session('firebase_user');
-    $userId = $user['uid'] ?? null;
-
-    // Check if the reply exists and if the logged-in user matches the user who posted the reply
-    if (!$reply || $reply['user_id'] !== $userId) {
-        return redirect()->back()->with('error', 'You are not authorized to delete this reply.');
-    }
-
-    // Proceed with deletion
-    try {
-        $this->database->getReference($replyRefPath)->remove();
-
-        return redirect()->route('mio.subject.announcement-body', [
-            'subjectId' => $subjectId,
-            'announcementId' => $announcementId
-        ])->with('success', 'Reply deleted successfully.');
-    } catch (\Exception $e) {
-        return redirect()->back()->with('error', 'Failed to delete reply: ' . $e->getMessage());
-    }
-}
-
 
     // Helper function to get grade level for a subject
     private function getGradeLevelForSubject($subjectId, $subjectsRef)
@@ -375,6 +419,95 @@ class StudentController extends Controller
         }
         return null;  // Return null if subject is not found
     }
+
+    
+    
+    public function showModules($subjectId)
+{
+    $userSectionId = session('firebase_user')['section_id'] ?? null;
+
+    $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
+    $activeSchoolYear = collect($schoolYears)->firstWhere('status', 'active')['schoolyearid'] ?? null;
+
+    $subjectsData = $this->database->getReference('subjects')->getValue() ?? [];
+
+    $modulesList = [];
+
+    foreach ($subjectsData as $gradeLevel => $subjects) {
+        foreach ($subjects as $subject) {
+            if (
+                $subject['subject_id'] === $subjectId &&
+                isset($subject['modules']) &&
+                is_array($subject['modules'])  // check if modules are in array format
+            ) {
+                foreach ($subject['modules'] as $index => $module) {
+                    $modulesList[] = [
+                        'title' => $module['title'] ?? 'Untitled Module',
+                        'description' => $module['description'] ?? '',
+                        'subject_id' => $subject['subject_id'],
+                        'module_index' => $index
+                    ];
+                }
+            }
+        }
+    }
+
+    return view('mio.head.student-panel', [
+        'page' => 'module',
+        'modules' => $modulesList,
+        'subject_id' => $subjectId
+    ]);
+}
+
+public function showModuleBody($subjectId, $moduleIndex)
+{
+    // Get active school year
+    $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
+    $activeSchoolYear = null;
+    foreach ($schoolYears as $year) {
+        if ($year['status'] === 'active') {
+            $activeSchoolYear = $year['schoolyearid'];
+            break;
+        }
+    }
+
+    // Get the grade level and subject data
+    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+    $subject = null;
+    $gradeLevelKey = null;
+
+    foreach ($subjects as $gradeLevel => $items) {
+        foreach ($items as $key => $item) {
+            if ($item['subject_id'] === $subjectId) {
+                $subject = $item;
+                $gradeLevelKey = $gradeLevel;
+                break 2;
+            }
+        }
+    }
+
+    if (!$subject || !$gradeLevelKey) {
+        return redirect()->route('mio.student-panel')->with('error', 'Subject not found.');
+    }
+
+    // Get the module using the module index
+    $module = $subject['modules'][$moduleIndex] ?? null;
+
+    if (!$module) {
+        return redirect()->route('mio.student-panel')->with('error', 'Module not found.');
+    }
+
+    return view('mio.head.student-panel', [
+        'page' => 'module-body',
+        'subject' => $subject,
+        'module' => $module,
+        'moduleIndex' => $moduleIndex
+    ]);
+}
+
+
+
+
 
 
 

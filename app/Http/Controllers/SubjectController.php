@@ -93,72 +93,75 @@ class SubjectController extends Controller
         }
 
         public function addSubject(Request $request, $grade)
-{
-    $validatedData = $request->validate([
-        'subject_id' => 'required|string|max:100',
-        'code' => 'required|string|max:50',
-        'title' => 'required|string|max:255',
-        'teacher_id' => 'required|string|max:50',
-        'section_id' => 'required|string|max:50',
-        'modules' => 'nullable|array',
-        'modules.*.title' => 'required|string|max:255',
-        'modules.*.description' => 'nullable|string',
-        'modules.*.file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip|max:20480',
+        {
+            $validatedData = $request->validate([
+                'subject_id' => 'required|string|max:100',
+                'code' => 'required|string|max:50',
+                'title' => 'required|string|max:255',
+                'teacher_id' => 'required|string|max:50',
+                'section_id' => 'required|string|max:50',
+                'modules' => 'nullable|array',
+                'modules.*.title' => 'required|string|max:255',
+                'modules.*.description' => 'nullable|string',
+                'modules.*.file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip|max:20480',
 
-        // Announcement
-        'announcement.title' => 'nullable|string|max:255',
-        'announcement.description' => 'nullable|string|max:1000',
-        'announcement.date' => 'nullable|date',
-        'announcement.file' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:20480',
-        'announcement.link' => 'nullable|url',
-    ]);
+                // Announcement
+                'announcement.title' => 'nullable|string|max:255',
+                'announcement.description' => 'nullable|string|max:1000',
+                'announcement.date' => 'nullable|date',
+                'announcement.file' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:20480',
+                'announcement.link' => 'nullable|url',
+            ]);
 
-    $subjectId = $validatedData['subject_id'];
-    $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
+            $subjectId = $validatedData['subject_id'];
+            $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
 
-    if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
-        return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
-    }
-
-    // Find active school year
-    $schoolYears = $this->database->getReference('schoolyears')->getValue();
-    $activeSchoolYearId = null;
-
-    if (!empty($schoolYears)) {
-        foreach ($schoolYears as $id => $year) {
-            if (isset($year['status']) && $year['status'] === 'active') {
-                $activeSchoolYearId = $year['schoolyearid'];
-                break;
+            if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
+                return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
             }
-        }
-    }
 
-    if (!$activeSchoolYearId) {
-        return redirect()->back()->with('status', 'No active school year found.')->withInput();
-    }
+            // Find active school year
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+            $activeSchoolYearId = null;
 
-    // Prepare base data
-    $postData = [
-        'subject_id' => $validatedData['subject_id'],
-        'code' => $validatedData['code'],
-        'title' => $validatedData['title'],
-        'teacher_id' => $validatedData['teacher_id'],
-        'section_id' => $validatedData['section_id'],
-        'schoolyear_id' => $activeSchoolYearId,
-        'modules' => [],
-        'assignments' => '',
-        'scores' => '',
-        'announcements' => [],
-        'attendance' => '',
-        'people' => [],
-        'date_created' => Carbon::now()->toDateTimeString(),
-        'date_updated' => Carbon::now()->toDateTimeString(),
-    ];
+            if (!empty($schoolYears)) {
+                foreach ($schoolYears as $id => $year) {
+                    if (isset($year['status']) && $year['status'] === 'active') {
+                        $activeSchoolYearId = $year['schoolyearid'];
+                        break;
+                    }
+                }
+            }
 
-    // Handle module uploads
-    if (isset($validatedData['modules'])) {
-        foreach ($validatedData['modules'] as $index => $module) {
-            $moduleData = [
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
+            // Prepare base data
+            $postData = [
+                'subject_id' => $validatedData['subject_id'],
+                'code' => $validatedData['code'],
+                'title' => $validatedData['title'],
+                'teacher_id' => $validatedData['teacher_id'],
+                'section_id' => $validatedData['section_id'],
+                'schoolyear_id' => $activeSchoolYearId,
+                'modules' => [],
+                'assignments' => '',
+                'scores' => '',
+                'announcements' => [],
+                'attendance' => '',
+                'people' => [],
+                'date_created' => Carbon::now()->toDateTimeString(),
+                'date_updated' => Carbon::now()->toDateTimeString(),
+            ];
+
+            // Handle module uploads with keys like MOD00, MOD01
+            if (isset($validatedData['modules'])) {
+                $moduleDataArray = [];
+                foreach ($validatedData['modules'] as $index => $module) {
+                    $moduleKey = 'MOD' . str_pad($index, 2, '0', STR_PAD_LEFT); // e.g., MOD00, MOD01
+
+                    $moduleData = [
                 'title' => $module['title'],
                 'description' => $module['description'] ?? '',
             ];
@@ -173,9 +176,12 @@ class SubjectController extends Controller
                 ];
             }
 
-            $postData['modules'][] = $moduleData;
+            $moduleDataArray[$moduleKey] = $moduleData;
         }
+
+        $postData['modules'] = $moduleDataArray;
     }
+
 
     // Handle single announcement
     if (isset($validatedData['announcement']['title']) && isset($validatedData['announcement']['description'])) {

@@ -79,43 +79,62 @@ class SectionController extends Controller
     }
 
     public function addSection(Request $request)
-    {
-        // Validate input based on HTML names
-        $validated = $request->validate([
-            'sectionid' => 'required|string|max:20',
-            'section_name' => 'required|string|max:255',
-            'status' => 'required|in:active,inactive',
-            'section_status' => 'required|in:open,closed',
-            'max_students' => 'required|integer|min:1',
-            'teacherid' => 'nullable|string|max:50',
-        ]);
+{
+    // Validate input based on HTML names
+    $validated = $request->validate([
+        'sectionid' => 'required|string|max:20',
+        'section_name' => 'required|string|max:255',
+        'status' => 'required|in:active,inactive',
+        'section_status' => 'required|in:open,closed',
+        'max_students' => 'required|integer|min:1',
+        'teacherid' => 'nullable|string|max:50',
+    ]);
 
-        $sectionIdKey = $request->input('sectionid');
+    $sectionIdKey = $request->input('sectionid');
 
-        // Check for duplicate section ID in Firebase
-        $existingSections = $this->database->getReference('sections')->getValue();
-        if (!empty($existingSections) && array_key_exists($sectionIdKey, $existingSections)) {
-            return back()->with('status', 'Section ID already exists!')->withInput();
+    // Fetch the active school year from Firebase
+    $activeSchoolYearRef = $this->database->getReference('schoolyears');
+    $schoolYears = $activeSchoolYearRef->getValue() ?? [];
+    $activeSchoolYear = null;
+
+    // Find the active school year
+    foreach ($schoolYears as $schoolYear) {
+        if ($schoolYear['status'] === 'active') {
+            $activeSchoolYear = $schoolYear['schoolyearid'];
+            break;
         }
-
-        // Prepare data to store
-        $postData = [
-            'sectionid' => $sectionIdKey,
-            'section_name' => $validated['section_name'],
-            'status' => $validated['status'],
-            'section_status' => $validated['section_status'],
-            'max_students' => $validated['max_students'],
-            'teacherid' => $validated['teacherid'] ?? null,
-            'students' => [],  // Initialize empty students array
-            'created_at' => Carbon::now()->toDateTimeString(),
-            'updated_at' => Carbon::now()->toDateTimeString(),
-        ];
-
-        // Save to Firebase
-        $this->database->getReference('sections/' . $sectionIdKey)->set($postData);
-
-        return redirect()->route('mio.ViewSection')->with('success', 'Section added successfully.');
     }
+
+    if (!$activeSchoolYear) {
+        return back()->with('status', 'No active school year found!')->withInput();
+    }
+
+    // Check for duplicate section ID in Firebase
+    $existingSections = $this->database->getReference('sections')->getValue();
+    if (!empty($existingSections) && array_key_exists($sectionIdKey, $existingSections)) {
+        return back()->with('status', 'Section ID already exists!')->withInput();
+    }
+
+    // Prepare data to store, including schoolyear_id
+    $postData = [
+        'sectionid' => $sectionIdKey,
+        'section_name' => $validated['section_name'],
+        'status' => $validated['status'],
+        'section_status' => $validated['section_status'],
+        'max_students' => $validated['max_students'],
+        'teacherid' => $validated['teacherid'] ?? null,
+        'students' => [],  // Initialize empty students array
+        'schoolyear_id' => $activeSchoolYear,  // Include active school year
+        'created_at' => Carbon::now()->toDateTimeString(),
+        'updated_at' => Carbon::now()->toDateTimeString(),
+    ];
+
+    // Save to Firebase
+    $this->database->getReference('sections/' . $sectionIdKey)->set($postData);
+
+    return redirect()->route('mio.ViewSection')->with('success', 'Section added successfully.');
+}
+
 
 
     // DISPLAY EDIT TEACHER

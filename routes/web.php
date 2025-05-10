@@ -276,14 +276,14 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
 
 
-
         Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
         Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
 
         Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
 
-        Route::view('/module', 'mio.head.student-panel', ['page' => 'module'])->name('module');
-        Route::view('/module/sample1', 'mio.head.student-panel', ['page' => 'module-body'])->name('module-body');
+        Route::get('/{subjectId}/modules', [StudentController::class, 'showModules'])->name('modules');
+        Route::get('/{subjectId}/modules/{moduleIndex}', [StudentController::class, 'showModuleBody'])->name('module-body');
+
 
     });
 

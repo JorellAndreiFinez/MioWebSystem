@@ -11,7 +11,9 @@ use Illuminate\Support\Facades\Auth;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Exception\Auth\InvalidPassword;
 use Kreait\Firebase\Exception\Auth\UserNotFound;
+use Kreait\Firebase\Auth as FirebaseAuth;
 use Carbon\Carbon;
+use Kreait\Firebase\Exception\Auth\EmailExists;
 
 class FirebaseAuthController extends Controller
 {
@@ -93,88 +95,115 @@ class FirebaseAuthController extends Controller
         }
 
     // ADD STUDENT
-    public function addStudent(Request $request)
-    {
-        // Validate all fields including account info
-        $validatedData = $request->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'gender' => 'required|string|max:10',
-            'age' => 'required|integer|min:1',
-            'birthday' => 'required|date',
-            'address' => 'required|string|max:255',
-            'barangay' => 'required|string|max:255',
-            'region' => 'required|string|max:100',
-            'province' => 'required|string|max:100',
-            'city' => 'required|string|max:100',
-            'zip_code' => 'required|digits:4',
-            'contact_number' => 'required|string|max:15',
-            'emergency_contact' => 'required|string|max:15',
-            'email' => 'required|email|max:255',
-            'previous_school' => 'required|string|max:255',
-            'grade_level' => 'required|integer|min:1',
-            'studentid' => 'required|string|max:12',
-            'category' => 'required|string',
-            'username' => 'required|string|max:255',
-            'account_password' => 'required|string|min:6',
-            'account_status' => 'required|in:active,inactive',
-            'section_id' => 'required|string|max:20',
-        ]);
 
-        $studentIdKey = $request->studentid;
-        $sectionId = $request->section_id;
 
-        // Fetch section data
-        $sectionsRef = $this->database->getReference('sections')->getValue();
-        $section = $sectionsRef[$sectionId] ?? null;
+public function addStudent(Request $request)
+{
+    $validatedData = $request->validate([
+        'first_name' => 'required|string|max:255',
+        'last_name' => 'required|string|max:255',
+        'gender' => 'required|string|max:10',
+        'age' => 'required|integer|min:1',
+        'birthday' => 'required|date',
+        'address' => 'required|string|max:255',
+        'barangay' => 'required|string|max:255',
+        'region' => 'required|string|max:100',
+        'province' => 'required|string|max:100',
+        'city' => 'required|string|max:100',
+        'zip_code' => 'required|digits:4',
+        'contact_number' => 'required|string|max:15',
+        'emergency_contact' => 'required|string|max:15',
+        'email' => 'required|email|max:255',
+        'previous_school' => 'required|string|max:255',
+        'grade_level' => 'required|integer|min:1',
+        'studentid' => 'required|string|max:12',
+        'category' => 'required|string',
+        'username' => 'required|string|max:255',
+        'account_password' => 'required|string|min:6',
+        'account_status' => 'required|in:active,inactive',
+        'section_id' => 'required|string|max:20',
+    ]);
 
-        if (!$section) {
-            return redirect()->back()->with('status', 'Section not found!')->withInput();
+    $studentIdKey = $request->studentid;
+    $sectionId = $request->section_id;
+
+    // Check for existing UID or Email
+    $students = $this->database->getReference('students')->getValue();
+    if (!empty($students)) {
+        foreach ($students as $student) {
+            if ($student['studentid'] == $studentIdKey) {
+                return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
+            }
+            if ($student['email'] == $request->email) {
+                return redirect()->back()->with('status', 'Email already exists!')->withInput();
+            }
+            if ($student['username'] == $request->username) {
+                return redirect()->back()->with('status', 'Username already exists!')->withInput();
+            }
         }
-
-        // Prepare the data for saving
-        $postData = [
-            'fname' => $request->first_name,
-            'lname' => $request->last_name,
-            'gender' => $request->gender,
-            'age' => $request->age,
-            'bday' => $request->birthday,
-            'address' => $request->address,
-            'barangay' => $request->barangay,
-            'region' => $request->region,
-            'province' => $request->province,
-            'city' => $request->city,
-            'zip_code' => $request->zip_code,
-            'contact_number' => $request->contact_number,
-            'emergency_contact' => $request->emergency_contact,
-            'email' => $request->email,
-            'previous_school' => $request->previous_school,
-            'grade_level' => $request->grade_level,
-            'category' => $request->category,
-            'studentid' => $studentIdKey,
-            'role' => 'student',
-            'section_id' => $sectionId,
-
-            // Account Info
-            'username' => $request->username,
-            'password' => bcrypt($request->account_password), // hash for basic security
-            'account_status' => $request->account_status,
-
-            // Timestamps
-            'date_created' => Carbon::now()->toDateTimeString(),
-            'date_updated' => Carbon::now()->toDateTimeString(),
-            'last_login' => null // Leave empty on creation
-        ];
-
-        // Save student data to Firebase
-        $this->database->getReference('users/' . $studentIdKey)->set($postData);
-
-        // Add the student's ID to the section's 'students' array
-        $this->database->getReference('sections/' . $sectionId . '/students')
-            ->push($studentIdKey); // Add student ID to section's student list
-
-        return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
     }
+
+    // Fetch section
+    $section = $this->database->getReference('sections/' . $sectionId)->getValue();
+    if (!$section) {
+        return redirect()->back()->with('status', 'Section not found!')->withInput();
+    }
+
+    // Create Firebase Auth user
+    try {
+        $this->auth->createUser([
+            'uid' => $studentIdKey,
+            'email' => $request->email,
+            'password' => $request->account_password,
+            'displayName' => $request->first_name . ' ' . $request->last_name,
+            'disabled' => $request->account_status === 'inactive',
+        ]);
+    } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
+        return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
+    }
+
+    // Prepare Realtime DB data
+    $postData = [
+        'fname' => $request->first_name,
+        'lname' => $request->last_name,
+        'gender' => $request->gender,
+        'age' => $request->age,
+        'bday' => $request->birthday,
+        'address' => $request->address,
+        'barangay' => $request->barangay,
+        'region' => $request->region,
+        'province' => $request->province,
+        'city' => $request->city,
+        'zip_code' => $request->zip_code,
+        'contact_number' => $request->contact_number,
+        'emergency_contact' => $request->emergency_contact,
+        'email' => $request->email,
+        'previous_school' => $request->previous_school,
+        'grade_level' => $request->grade_level,
+        'category' => $request->category,
+        'studentid' => $studentIdKey,
+        'section_id' => $sectionId,
+        'role' => 'student',
+
+        'username' => $request->username,
+        'password' => bcrypt($request->account_password),
+        'account_status' => $request->account_status,
+
+        'date_created' => Carbon::now()->toDateTimeString(),
+        'date_updated' => Carbon::now()->toDateTimeString(),
+        'last_login' => null
+    ];
+
+    // Save under users/{studentid}
+    $this->database->getReference('users/' . $studentIdKey)->set($postData);
+
+    // Add to section’s student list
+    $this->database->getReference('sections/' . $sectionId . '/students')->push($studentIdKey);
+
+    return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
+}
+
+
 
 
     // DISPLAY EDIT STUDENT
