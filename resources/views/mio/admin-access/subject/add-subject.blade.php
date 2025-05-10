@@ -19,134 +19,179 @@
         </div>
     </div>
 
-        <div class="form-container">
-                <!-- Subject Information -->
-                <div class="section-header">Subject Details</div>
-                <div class="section-content">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Subject ID <span style="color: red">*</span></label>
-                            <input type="text" name="subject_id" id="subjectID" placeholder="Enter Subject ID" required />
-                        </div>
-                        <div class="form-group">
-                            <label>Subject Code <span style="color: red">*</span></label>
-                            <input type="text" name="code" placeholder="Enter Subject Code" required />
-                        </div>
-                        <div class="form-group">
-                            <label>Subject Title <span style="color: red">*</span></label>
-                            <input type="text" name="title" placeholder="Enter Subject Title" required />
-                        </div>
-                    </div>
+    <div class="form-container">
+        <!-- Subject Details -->
+        <div class="section-header">Subject Details</div>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Subject ID <span style="color: red">*</span></label>
+                    <input type="text" name="subject_id" id="subjectID" placeholder="Enter Subject ID" required  />
+                </div>
+                <div class="form-group">
+                    <label>Subject Code <span style="color: red">*</span></label>
+                    <input type="text" name="code" value="SA0001" placeholder="Enter Subject Code" required />
+                </div>
+                <div class="form-group">
+                    <label>Subject Title <span style="color: red">*</span></label>
+                    <input type="text" name="title" value="SAMPLE1" placeholder="Enter Subject Title" required />
+                </div>
+            </div>
 
-                    <div class="form-row">
-                    <div class="form-group wide">
-                        <label>Teacher ID <small>(If the admin is also a teacher)</small> </label>
-                        <select name="teacher_id" id="teacherID">
-                                <option value="" selected>Select a Teacher</option>
-                                @foreach($teachers as $teacher)
-                                <option value="{{ $teacher['teacherid'] }}">{{ $teacher['name'] }}</option>
-                                @endforeach
-                            </select>
-                    </div>
-
-                        <div class="form-group">
-                            <label>Section ID <span style="color: red">*</span></label>
-
-                            <select name="section_id" id="sectionID">
-                                @foreach ($sections as $section)
-                                <option value="">Select a Section</option>
-                                    <option value="{{ $section['sectionid'] }}">
-                                        {{ $section['name'] }} ({{ $section['status'] }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
+            <div class="form-row">
+                <div class="form-group wide">
+                    <label>Teacher ID</label>
+                    <select name="teacher_id" id="teacherID">
+                        <option value="">Select a Teacher</option>
+                        @foreach($teachers as $teacher)
+                            <option value="{{ $teacher['teacherid'] }}">{{ $teacher['name'] }}</option>
+                        @endforeach
+                    </select>
                 </div>
 
-                <!-- Module Section -->
-                <div class="section-header">Modules</div>
-                    <div class="section-content" id="module-section">
-                        <!-- Initial Module Block (Module 1) -->
-                        <div class="form-row module-row" data-index="0">
-                        <div class="form-group">
-                            <label>Module Title <span style="color: red">*</span></label>
-                            <input type="text" name="modules[0][title]" placeholder="e.g. Module 1: Introduction" required />
-                        </div>
-                        <div class="form-group">
-                            <label>Description</label>
-                            <textarea name="modules[0][description]" placeholder="Optional module description"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Upload File</label>
-                            <input type="file" name="modules[0][file]" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" />
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label>Section ID <span style="color: red">*</span></label>
+                    <select name="section_id" id="sectionID">
+                        <option value="">Select a Section</option>
+                        @foreach ($sections as $section)
+                            <option value="{{ $section['sectionid'] }}">
+                                {{ $section['name'] }} ({{ $section['status'] }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        </div>
 
-                        <!-- Add Module Button -->
-                        <button type="button" class="btn add-btn" onclick="addModuleField()">+ Add Module</button>
-                    </div>
+        <!-- Modules Section -->
+        <div class="section-header">Modules</div>
+        <div class="section-content" id="module-section">
+            <!-- Initial Module Block -->
+            <div class="form-row module-row" data-index="0">
+                <div class="form-group">
+                    <label>Module Title <span style="color: red">*</span></label>
+                    <input type="text" name="modules[0][title]" placeholder="e.g. Module 1: Introduction" required />
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea name="modules[0][description]" placeholder="Optional module description"></textarea>
+                </div>
+            </div>
 
+            <div class="form-row">
+                <div class="form-group custom-file-upload">
+                    <label>Upload File</label>
+                    <label for="file-upload-0" class="file-label">
+                        <span class="upload-icon">📁</span> Choose File
+                    </label>
+                    <input type="file" name="modules[0][file]" id="file-upload-0" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" required/>
+                    <span class="file-name" id="file-name-0">No file chosen</span>
+                </div>
+            </div>
+
+            <!-- Add Module Button -->
+            <button type="button" class="btn add-btn" onclick="addModuleField()">+ Add Module</button>
+        </div>
+
+        <!-- Announcement Section -->
+        <div class="section-header">Announcement</div>
+        <div class="section-content">
+            <div class="form-row">
+                <div class="form-group wide">
+                    <label>Announcement Title</label>
+                    <input type="text" name="announcement[title]" placeholder="Enter Announcement Title" value="Welcome Students!"/>
+                </div>
+
+                <div class="form-group">
+                    <label>Publish Date</label>
+                    <input type="date" name="announcement[date]" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group wide">
+                    <label>Announcement Description</label>
+                    <textarea name="announcement[description]" placeholder="Enter details about the announcement..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Upload Image/Video (Optional)</label>
+                    <input type="file" name="announcement[file]" accept="image/*,video/*" />
+                </div>
+                <div class="form-group">
+                    <label>Or External Link (Image/Video)</label>
+                    <input type="url" name="announcement[link]" placeholder="https://example.com/image.jpg or video.mp4" />
+                </div>
+            </div>
 
         </div>
+
+    </div>
 </form>
 </div>
-
 </section>
+
 
 
 <!-- ADD MODULE SECTION -->
 <script>
-let moduleCount = 1; // Start from 1 since Module 0 is already added
+let moduleCount = 1;
 
 function addModuleField() {
     const section = document.getElementById("module-section");
 
-    // Create module input row
-    const moduleRow = document.createElement("div");
-    moduleRow.className = "form-row module-row";
-    moduleRow.dataset.index = moduleCount;
+    // Wrapper for all fields in a module
+    const wrapper = document.createElement("div");
+    wrapper.className = "module-block";
+    wrapper.dataset.index = moduleCount;
 
-    moduleRow.innerHTML = `
-        <div class="form-group">
-            <label>Module Title <span style="color: red">*</span></label>
-            <input type="text" name="modules[${moduleCount}][title]" placeholder="e.g. Module ${moduleCount + 1}" required />
+    wrapper.innerHTML = `
+        <div class="form-row">
+            <div class="form-group">
+                <label>Module Title <span style="color: red">*</span></label>
+                <input type="text" name="modules[${moduleCount}][title]" placeholder="e.g. Module ${moduleCount + 1}" required />
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <textarea name="modules[${moduleCount}][description]" placeholder="Optional module description"></textarea>
+            </div>
         </div>
-        <div class="form-group">
-            <label>Description</label>
-            <textarea name="modules[${moduleCount}][description]" placeholder="Optional module description"></textarea>
+        <div class="form-row">
+            <div class="form-group custom-file-upload">
+                <label>Upload File</label>
+                <label for="file-upload-${moduleCount}" class="file-label">
+                    <span class="upload-icon">📁</span> Choose File
+                </label>
+                <input type="file" name="modules[${moduleCount}][file]" id="file-upload-${moduleCount}" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" />
+                <span class="file-name" id="file-name-${moduleCount}">No file chosen</span>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <button type="button" class="btn cancel-btn" onclick="removeModuleField(this)">Remove</button>
+            </div>
         </div>
     `;
 
-    // Create separate remove button row
-    const removeRow = document.createElement("div");
-    removeRow.className = "form-row remove-row";
-    removeRow.dataset.index = moduleCount;
+    section.insertBefore(wrapper, section.querySelector(".add-btn"));
 
-    removeRow.innerHTML = `
-        <div class="form-group" style="align-self: end;">
-            <button type="button" class="btn cancel-btn" onclick="removeModuleField(this)">Remove</button>
-        </div>
-    `;
-
-    // Insert before the "Add Module" button
-    section.insertBefore(moduleRow, section.querySelector(".add-btn"));
-    section.insertBefore(removeRow, section.querySelector(".add-btn"));
+    // Add listener for file name change
+    wrapper.querySelector(`#file-upload-${moduleCount}`).addEventListener('change', function () {
+        const fileName = this.files.length ? this.files[0].name : 'No file chosen';
+        document.getElementById(`file-name-${moduleCount}`).textContent = fileName;
+    });
 
     moduleCount++;
 }
 
 function removeModuleField(button) {
-    const removeRow = button.closest('.remove-row');
-    const index = removeRow.dataset.index;
-
-    const inputRow = document.querySelector(`.module-row[data-index="${index}"]`);
-    if (inputRow) inputRow.remove();
-    if (removeRow) removeRow.remove();
-
-    moduleCount--;
+    const moduleBlock = button.closest('.module-block');
+    moduleBlock.remove();
 }
 </script>
+
 
 <!-- GENERATE SUBJECT ID -->
 <script>
@@ -230,6 +275,12 @@ document.getElementById('sectionID').addEventListener('blur', function () {
 });
 </script>
 
-
+<!-- FILE DISPLAY NAME -->
+<script>
+document.getElementById('file-upload-0').addEventListener('change', function () {
+    const fileName = this.files.length ? this.files[0].name : 'No file chosen';
+    document.getElementById('file-name-0').textContent = fileName;
+});
+</script>
 
 

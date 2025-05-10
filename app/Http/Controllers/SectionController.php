@@ -106,6 +106,7 @@ class SectionController extends Controller
             'section_status' => $validated['section_status'],
             'max_students' => $validated['max_students'],
             'teacherid' => $validated['teacherid'] ?? null,
+            'students' => [],  // Initialize empty students array
             'created_at' => Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
         ];
@@ -115,6 +116,7 @@ class SectionController extends Controller
 
         return redirect()->route('mio.ViewSection')->with('success', 'Section added successfully.');
     }
+
 
     // DISPLAY EDIT TEACHER
     public function showEditSection($id)
@@ -175,7 +177,7 @@ class SectionController extends Controller
         ]);
 
         // Reference to Firebase
-        $sectionsRef = $this->database->getReference($this->table)->getValue();
+        $sectionsRef = $this->database->getReference('sections')->getValue();
 
         // Check if section ID has changed and the new key already exists
         if ($oldKey !== $newKey && !empty($sectionsRef) && array_key_exists($newKey, $sectionsRef)) {
@@ -190,6 +192,7 @@ class SectionController extends Controller
             'section_status' => $validated['section_status'],
             'max_students' => $validated['max_students'],
             'teacherid' => $validated['teacherid'] ?? null,
+            'students' => $sectionsRef[$oldKey]['students'] ?? [],  // Keep existing students array
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
         ];
@@ -197,14 +200,15 @@ class SectionController extends Controller
         // If section ID changed, remove old key and create new one
         if ($oldKey !== $newKey) {
             // Remove old
-            $this->database->getReference($this->table . '/' . $oldKey)->remove();
+            $this->database->getReference('sections/' . $oldKey)->remove();
         }
 
         // Save under new or same key
-        $this->database->getReference($this->table . '/' . $newKey)->set($postData);
+        $this->database->getReference('sections/' . $newKey)->set($postData);
 
         return redirect()->route('mio.ViewSection')->with('status', 'Section updated successfully!');
     }
+
 
 
 // DELETE SECTION

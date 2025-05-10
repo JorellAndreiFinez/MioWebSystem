@@ -4,6 +4,7 @@ use App\Http\Controllers\admin\CmsController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\StudentController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmergencyController;
 use App\Http\Controllers\Enrollment\EnrollController;
@@ -247,14 +248,9 @@ Route::prefix('mio/admin/')->middleware(
 Route::post('/trigger-emergency', [EmergencyController::class, 'triggerEmergency'])->name('trigger.emergency');
 
 
-// MIO - STUDENT PANEL
-Route::prefix('mio/student')->middleware(
-    [AuthMiddleware::class, RoleBasedAccess::class . ':student']
-)->group(function () {
+Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess::class . ':student'])->group(function () {
 
-    Route::get('/dashboard', function () {
-        return view('mio.head.student-panel', ['page' => 'dashboard']);
-    })->name('mio.student-panel');
+    Route::get('/dashboard', [StudentController::class, 'showDashboard'])->name('mio.student-panel');
 
     Route::get('/calendar', function () {
         return view('mio.head.student-panel', ['page' => 'calendar']);
@@ -268,17 +264,34 @@ Route::prefix('mio/student')->middleware(
         return view('mio.head.student-panel', ['page' => 'profile']);
     })->name('mio.profile');
 
-    Route::get('/subject', function () {
-        return view('mio.head.student-panel', ['page' => 'subject']);
-    })->name('mio.subject');
+    Route::prefix('subject')->name('mio.subject.')->group(function () {
+
+        Route::get('/{subjectId}', [StudentController::class, 'showSubject'])->name('show-subject');
+
+        // Subject-related subpages
+        Route::get('/{subjectId}/announcements', [StudentController::class, 'showSubjectAnnouncements'])->name('announcements');
+       // Route for individual announcement details
+        Route::get('/{subjectId}/announcements/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('announcement-body');
+
+
+        Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
+        Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
+
+        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+
+        Route::view('/module', 'mio.head.student-panel', ['page' => 'module'])->name('module');
+        Route::view('/module/sample1', 'mio.head.student-panel', ['page' => 'module-body'])->name('module-body');
+
+    });
 
 });
+
 
 // LOGIN ROUTES
     Route::get('mio/login', [LoginController::class, 'loginForm'])->name('mio.login');
     Route::post('/user-login', [LoginController::class, 'login']);
 
-    Route::get('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::get('mio/logout', [LoginController::class, 'logout'])->name('logout');
 
 // FORGOT PASSWORD
     Route::get('/forgot-password', [LoginController::class, 'showForgotForm'])->name('forgot.form');
@@ -296,23 +309,6 @@ Route::prefix('mio/student')->middleware(
 
 
 
-// SUBJECT
-
-Route::prefix('mio/sample1')->name('mio.subject.')->group(function () {
-
-    Route::view('/announcement', 'mio.head.student-panel', ['page' => 'announcement'])->name('announcement');
-    Route::view('/announcement/sample1', 'mio.head.student-panel', ['page' => 'announcement-body'])->name('announcement-body');
-
-    Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
-
-    Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
-
-    Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
-
-    Route::view('/module', 'mio.head.student-panel', ['page' => 'module'])->name('module');
-
-    Route::view('/module/sample1', 'mio.head.student-panel', ['page' => 'module-body'])->name('module-body');
-});
 
 
 // MIO - PARENT PANEL

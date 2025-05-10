@@ -25,7 +25,7 @@
     <!--Begin Main Overview-->
     <div class="main-overview">
 
-    <a href="{{ route('mio.subject.announcement') }}"><div class="overviewcard">
+    <a href="{{ route('mio.subject.announcements', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Announcements</div>
             <div class="overviewcard__arrow">&rsaquo;</div>

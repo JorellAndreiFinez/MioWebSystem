@@ -22,7 +22,7 @@
             </div>
         </main>
 
-
+    @include("mio.dashboard.breadcrumbs")
         <div class="dashboard-grid">
 
         <div class="card-grid">
@@ -38,35 +38,25 @@
                 </select>
             </div>
         </div>
-        <div class="card-wrap">
-            <a href="{{ route('mio.subject') }}" class="card-link">
-                <div class="card">
-                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
-                    <div>
-                        <h4>SPD701 Speech Development</h4>
-                        <p>SEC-7A</p>
-                    </div>
-                </div>
- </a>
-        </div>
+        @forelse($allSubjects as $gradeLevel => $subjects)
+        @foreach($subjects as $subject)
             <div class="card-wrap">
-                <div class="card">
-                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
-                    <div>
-                        <h4>SPD702 Speech Development</h4>
-                        <p>SEC-7B</p>
+                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
+                    <div class="card">
+                        <img src="{{ $subject['image_url'] ?? asset('images/default-subject.png') }}" class="card-img" />
+                        <div>
+                            <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>
+                            <p>{{ $subject['section_id'] ?? 'No Section' }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
-            <div class="card-wrap">
-                <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfbEYWJwIfyiqseSNKVHkCPlsoSC8ToVHO8Ws3ThnMNpNA42_ScCo0CrT2t5zNM1cFqKc&usqp=CAU" class="card-img" />
-                    <div>
-                        <h4>ENG704 English Language</h4>
-                        <p>SEC-7D</p>
-                    </div>
-                </div>
-            </div>
+        @endforeach
+    @empty
+        <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
+    @endforelse
+
+
 
         </div>
 

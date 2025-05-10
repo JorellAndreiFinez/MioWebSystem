@@ -24,13 +24,18 @@
             <!--Begin Main Overview-->
             <div class="main-overview">
 
-            <a href="{{ route('mio.subject.announcement-body') }}"><div class="overviewcard">
+            @foreach ($announcements as $announcementId => $announcement)
+            <a href="{{ route('mio.subject.announcement-body', ['subjectId' => $subject['subject_id'], 'announcementId' => $announcementId]) }}">
+                <div class="overviewcard">
                     <div class="overviewcard__icon"></div>
-                    <div class="overviewcard__info">Walang Pasok</div>
-                    <div class="overviewcard__date">Datetime</div>
+                    <div class="overviewcard__info">{{ $announcement['title'] ?? 'No Title' }}</div>
+                    <div class="overviewcard__date">{{ $announcement['date_created'] ?? '' }}</div>
                     <div class="overviewcard__arrow">&rsaquo;</div>
-            </div>
+                </div>
             </a>
+        @endforeach
+
+
 
             </div>
         <!--End Main Overview-->

@@ -92,81 +92,147 @@ class SubjectController extends Controller
             ]);
         }
 
+        public function addSubject(Request $request, $grade)
+{
+    $validatedData = $request->validate([
+        'subject_id' => 'required|string|max:100',
+        'code' => 'required|string|max:50',
+        'title' => 'required|string|max:255',
+        'teacher_id' => 'required|string|max:50',
+        'section_id' => 'required|string|max:50',
+        'modules' => 'nullable|array',
+        'modules.*.title' => 'required|string|max:255',
+        'modules.*.description' => 'nullable|string',
+        'modules.*.file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip|max:20480',
 
-    // Handle form submission
-    public function addSubject(Request $request, $grade)
-    {
-        // Step 1: Validate all required fields
-        $validatedData = $request->validate([
-            'subject_id' => 'required|string|max:100',
-            'code' => 'required|string|max:50',
-            'title' => 'required|string|max:255',
-            'teacher_id' => 'required|string|max:50',
-            'section_id' => 'required|string|max:50',
-            'modules' => 'nullable|array',
-            'modules.*.title' => 'required|string|max:255',
-            'modules.*.description' => 'nullable|string',
-        ]);
+        // Announcement
+        'announcement.title' => 'nullable|string|max:255',
+        'announcement.description' => 'nullable|string|max:1000',
+        'announcement.date' => 'nullable|date',
+        'announcement.file' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:20480',
+        'announcement.link' => 'nullable|url',
+    ]);
 
-        $subjectId = $validatedData['subject_id'];
-        $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
+    $subjectId = $validatedData['subject_id'];
+    $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
 
-        // Step 2: Check for duplicate subject ID
-        if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
-            return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
-        }
+    if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
+        return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
+    }
 
-        // Fetch all school years
-        $schoolYears = $this->database->getReference('schoolyears')->getValue();
+    // Find active school year
+    $schoolYears = $this->database->getReference('schoolyears')->getValue();
+    $activeSchoolYearId = null;
 
-        $activeSchoolYearId = null;
-
-        if (!empty($schoolYears)) {
-            foreach ($schoolYears as $id => $year) {
-                if (isset($year['status']) && $year['status'] === 'active') {
-                    $activeSchoolYearId = $year['schoolyearid'];
-                    break;
-                }
+    if (!empty($schoolYears)) {
+        foreach ($schoolYears as $id => $year) {
+            if (isset($year['status']) && $year['status'] === 'active') {
+                $activeSchoolYearId = $year['schoolyearid'];
+                break;
             }
-        }
-
-        if (!$activeSchoolYearId) {
-            return redirect()->back()->with('status', 'No active school year found.')->withInput();
-        }
-
-
-        // Step 3: Format subject data
-        $postData = [
-            'subject_id' => $validatedData['subject_id'],
-            'code' => $validatedData['code'],
-            'title' => $validatedData['title'],
-            'teacher_id' => $validatedData['teacher_id'],
-            'section_id' => $validatedData['section_id'],
-            'schoolyear_id' => $activeSchoolYearId,
-            'modules' => [],
-            'date_created' => Carbon::now()->toDateTimeString(),
-            'date_updated' => Carbon::now()->toDateTimeString(),
-        ];
-
-        // Step 4: Append module data (if any)
-        if (isset($validatedData['modules'])) {
-            foreach ($validatedData['modules'] as $index => $module) {
-                $postData['modules'][] = [
-                    'title' => $module['title'],
-                    'description' => $module['description'] ?? '',
-                ];
-            }
-        }
-
-        // Step 5: Save to Firebase
-        try {
-            $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
-            return redirect()->route('mio.ViewSubject', ['grade' => $grade])
-                            ->with('success', 'Subject added successfully.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
         }
     }
+
+    if (!$activeSchoolYearId) {
+        return redirect()->back()->with('status', 'No active school year found.')->withInput();
+    }
+
+    // Prepare base data
+    $postData = [
+        'subject_id' => $validatedData['subject_id'],
+        'code' => $validatedData['code'],
+        'title' => $validatedData['title'],
+        'teacher_id' => $validatedData['teacher_id'],
+        'section_id' => $validatedData['section_id'],
+        'schoolyear_id' => $activeSchoolYearId,
+        'modules' => [],
+        'assignments' => '',
+        'scores' => '',
+        'announcements' => [],
+        'attendance' => '',
+        'people' => [],
+        'date_created' => Carbon::now()->toDateTimeString(),
+        'date_updated' => Carbon::now()->toDateTimeString(),
+    ];
+
+    // Handle module uploads
+    if (isset($validatedData['modules'])) {
+        foreach ($validatedData['modules'] as $index => $module) {
+            $moduleData = [
+                'title' => $module['title'],
+                'description' => $module['description'] ?? '',
+            ];
+
+            if ($request->hasFile("modules.{$index}.file")) {
+                $file = $request->file("modules.{$index}.file");
+                $filePath = $file->storeAs('modules', $file->getClientOriginalName(), 'public');
+                $moduleData['file'] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $filePath,
+                    'url' => asset('storage/' . $filePath),
+                ];
+            }
+
+            $postData['modules'][] = $moduleData;
+        }
+    }
+
+    // Handle single announcement
+    if (isset($validatedData['announcement']['title']) && isset($validatedData['announcement']['description'])) {
+        $announcementData = [
+            'title' => $validatedData['announcement']['title'],
+            'description' => $validatedData['announcement']['description'],
+            'date_posted' => $validatedData['announcement']['date'] ?? Carbon::now()->toDateTimeString(),
+        ];
+
+        if ($request->hasFile('announcement.file')) {
+            $file = $request->file('announcement.file');
+            $filePath = $file->storeAs('announcements', $file->getClientOriginalName(), 'public');
+            $announcementData['file'] = [
+                'name' => $file->getClientOriginalName(),
+                'path' => $filePath,
+                'url' => asset('storage/' . $filePath),
+            ];
+        }
+
+        if (!empty($validatedData['announcement']['link'])) {
+            $announcementData['link'] = $validatedData['announcement']['link'];
+        }
+
+        $postData['announcements'][] = $announcementData;
+    }
+
+    // Get section students
+    $sectionRef = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
+    if (isset($sectionRef['students']) && is_array($sectionRef['students'])) {
+        foreach ($sectionRef['students'] as $studentId) {
+            $postData['people'][] = [
+                'student_id' => $studentId,
+                'role' => 'student',
+            ];
+        }
+    }
+
+    // Add teacher to people
+    $postData['people'][] = [
+        'teacher_id' => $validatedData['teacher_id'],
+        'role' => 'teacher',
+    ];
+
+    // Save to Firebase
+    try {
+        $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
+        return redirect()->route('mio.ViewSubject', ['grade' => $grade])
+                         ->with('success', 'Subject added successfully.');
+    } catch (\Exception $e) {
+        return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
+    }
+}
+
+
+
+
+
 
 // DISPLAY EDIT SUBJECT
     public function showEditSubject($grade, $subject_id)

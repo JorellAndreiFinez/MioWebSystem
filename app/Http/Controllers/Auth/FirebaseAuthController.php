@@ -93,133 +93,89 @@ class FirebaseAuthController extends Controller
         }
 
     // ADD STUDENT
-        public function addStudent(Request $request)
-        {
-            // Validate all fields including account info
-            $validatedData = $request->validate([
-                'first_name' => 'required|string|max:255',
-                'last_name' => 'required|string|max:255',
-                'gender' => 'required|string|max:10',
-                'age' => 'required|integer|min:1',
-                'birthday' => 'required|date',
-                'address' => 'required|string|max:255',
-                'barangay' => 'required|string|max:255',
-                'region' => 'required|string|max:100',
-                'province' => 'required|string|max:100',
-                'city' => 'required|string|max:100',
-                'zip_code' => 'required|digits:4',
-                'contact_number' => 'required|string|max:15',
-                'emergency_contact' => 'required|string|max:15',
-                'email' => 'required|email|max:255',
-                'previous_school' => 'required|string|max:255',
-                'grade_level' => 'required|integer|min:1',
-                'studentid' => 'required|string|max:12',
-                'category' => 'required|string',
-                'username' => 'required|string|max:255',
-                'account_password' => 'required|string|min:6',
-                'account_status' => 'required|in:active,inactive',
-                'section_id' => 'required|string|max:20',
-            ]);
+    public function addStudent(Request $request)
+    {
+        // Validate all fields including account info
+        $validatedData = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'gender' => 'required|string|max:10',
+            'age' => 'required|integer|min:1',
+            'birthday' => 'required|date',
+            'address' => 'required|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'region' => 'required|string|max:100',
+            'province' => 'required|string|max:100',
+            'city' => 'required|string|max:100',
+            'zip_code' => 'required|digits:4',
+            'contact_number' => 'required|string|max:15',
+            'emergency_contact' => 'required|string|max:15',
+            'email' => 'required|email|max:255',
+            'previous_school' => 'required|string|max:255',
+            'grade_level' => 'required|integer|min:1',
+            'studentid' => 'required|string|max:12',
+            'category' => 'required|string',
+            'username' => 'required|string|max:255',
+            'account_password' => 'required|string|min:6',
+            'account_status' => 'required|in:active,inactive',
+            'section_id' => 'required|string|max:20',
+        ]);
 
-            $studentIdKey = $request->studentid;
-            $emailInput = $request->email;
-            $usernameInput = $request->username;
+        $studentIdKey = $request->studentid;
+        $sectionId = $request->section_id;
 
-            // Fetch all students
-            $studentsRef = $this->database->getReference($this->tablename)->getValue();
+        // Fetch section data
+        $sectionsRef = $this->database->getReference('sections')->getValue();
+        $section = $sectionsRef[$sectionId] ?? null;
 
-            // Check if studentid already exists
-            if (!empty($studentsRef) && array_key_exists($studentIdKey, $studentsRef)) {
-                return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
-            }
-
-            // Check if email or username already exists
-            if (!empty($studentsRef)) {
-                foreach ($studentsRef as $student) {
-                    if ((isset($student['email']) && $student['email'] === $emailInput) ||
-                        (isset($student['username']) && $student['username'] === $usernameInput)) {
-                        return redirect()->back()->with('status', 'Email or Username already exists!')->withInput();
-                    }
-                }
-            }
-
-            // Fetch all school years
-            $schoolYears = $this->database->getReference('schoolyears')->getValue();
-
-            $activeSchoolYearId = null;
-
-            if (!empty($schoolYears)) {
-                foreach ($schoolYears as $id => $year) {
-                    if (isset($year['status']) && $year['status'] === 'active') {
-                        $activeSchoolYearId = $year['schoolyearid'];
-                        break;
-                    }
-                }
-            }
-
-            if (!$activeSchoolYearId) {
-                return redirect()->back()->with('status', 'No active school year found.')->withInput();
-            }
-
-            // Prepare the data for saving
-            $postData = [
-                'fname' => $request->first_name,
-                'lname' => $request->last_name,
-                'gender' => $request->gender,
-                'age' => $request->age,
-                'bday' => $request->birthday,
-                'address' => $request->address,
-                'barangay' => $request->barangay,
-                'region' => $request->region,
-                'province' => $request->province,
-                'city' => $request->city,
-                'zip_code' => $request->zip_code,
-                'contact_number' => $request->contact_number,
-                'emergency_contact' => $request->emergency_contact,
-                'email' => $request->email,
-                'previous_school' => $request->previous_school,
-                'grade_level' => $request->grade_level,
-                'category' => $request->category,
-                'studentid' => $studentIdKey,
-                'role' => 'student',
-                'section_id' => $request->section_id,
-                'schoolyear_id' => $activeSchoolYearId,
-
-                // Account Info
-                'username' => $request->username,
-                'password' => bcrypt($request->account_password), // hash for basic security
-                'account_status' => $request->account_status,
-
-                // Timestamps
-                'date_created' => Carbon::now()->toDateTimeString(),
-                'date_updated' => Carbon::now()->toDateTimeString(),
-                'last_login' => null // Leave empty on creation
-            ];
-
-            try {
-                // Create Firebase Auth user with student_id as UID
-                $this->auth->createUser([
-                    'uid' => $request->studentid,
-                    'email' => $request->email,
-                    'password' => $request->account_password,
-                    'displayName' => $request->first_name . ' ' . $request->last_name,
-                    'disabled' => $request->account_status === 'inactive',
-                ]);
-            } catch (\Kreait\Firebase\Exception\Auth\AuthError $e) {
-                return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
-            }
-
-            // Proceed to save to Realtime Database as before
-
-            // Save to Firebase
-            $postRef = $this->database->getReference($this->tablename.'/'.$studentIdKey)->set($postData);
-
-            if ($postRef) {
-                return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
-            } else {
-                return redirect('mio/admin/students')->with('status', 'Student Not Added');
-            }
+        if (!$section) {
+            return redirect()->back()->with('status', 'Section not found!')->withInput();
         }
+
+        // Prepare the data for saving
+        $postData = [
+            'fname' => $request->first_name,
+            'lname' => $request->last_name,
+            'gender' => $request->gender,
+            'age' => $request->age,
+            'bday' => $request->birthday,
+            'address' => $request->address,
+            'barangay' => $request->barangay,
+            'region' => $request->region,
+            'province' => $request->province,
+            'city' => $request->city,
+            'zip_code' => $request->zip_code,
+            'contact_number' => $request->contact_number,
+            'emergency_contact' => $request->emergency_contact,
+            'email' => $request->email,
+            'previous_school' => $request->previous_school,
+            'grade_level' => $request->grade_level,
+            'category' => $request->category,
+            'studentid' => $studentIdKey,
+            'role' => 'student',
+            'section_id' => $sectionId,
+
+            // Account Info
+            'username' => $request->username,
+            'password' => bcrypt($request->account_password), // hash for basic security
+            'account_status' => $request->account_status,
+
+            // Timestamps
+            'date_created' => Carbon::now()->toDateTimeString(),
+            'date_updated' => Carbon::now()->toDateTimeString(),
+            'last_login' => null // Leave empty on creation
+        ];
+
+        // Save student data to Firebase
+        $this->database->getReference('users/' . $studentIdKey)->set($postData);
+
+        // Add the student's ID to the section's 'students' array
+        $this->database->getReference('sections/' . $sectionId . '/students')
+            ->push($studentIdKey); // Add student ID to section's student list
+
+        return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
+    }
+
 
     // DISPLAY EDIT STUDENT
         public function showEditStudent($id)
