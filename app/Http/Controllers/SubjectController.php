@@ -92,8 +92,18 @@ class SubjectController extends Controller
             ]);
         }
 
-        public function addSubject(Request $request, $grade)
+    public function addSubject(Request $request, $grade)
         {
+           // Get current date components
+            $now = now(); // Carbon instance
+            $currentYear = $now->year;
+            $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT); // Ensure month is two digits
+            $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT); // Ensure day is two digits
+            $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+
+            // Construct the custom key for the announcement (e.g., SUB-ANN20250511XXX)
+            $announcementKey = "SUB-ANN{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+
             $validatedData = $request->validate([
                 'subject_id' => 'required|string|max:100',
                 'code' => 'required|string|max:50',
@@ -183,57 +193,59 @@ class SubjectController extends Controller
     }
 
 
-    // Handle single announcement
-    if (isset($validatedData['announcement']['title']) && isset($validatedData['announcement']['description'])) {
-        $announcementData = [
-            'title' => $validatedData['announcement']['title'],
-            'description' => $validatedData['announcement']['description'],
-            'date_posted' => $validatedData['announcement']['date'] ?? Carbon::now()->toDateTimeString(),
+        // Handle single announcement
+        if (isset($validatedData['announcement']['title']) && isset($validatedData['announcement']['description'])) {
+            $announcementData = [
+                'title' => $validatedData['announcement']['title'],
+                'description' => $validatedData['announcement']['description'],
+                'date_posted' => $validatedData['announcement']['date'] ?? Carbon::now()->toDateTimeString(),
+                'subject_id' => $validatedData['subject_id'],  // Add subject_id here
+            ];
+
+            if ($request->hasFile('announcement.file')) {
+                $file = $request->file('announcement.file');
+                $filePath = $file->storeAs('announcements', $file->getClientOriginalName(), 'public');
+                $announcementData['file'] = [
+                    'name' => $file->getClientOriginalName(),
+                    'path' => $filePath,
+                    'url' => asset('storage/' . $filePath),
+                ];
+            }
+
+            if (!empty($validatedData['announcement']['link'])) {
+                $announcementData['link'] = $validatedData['announcement']['link'];
+            }
+
+            // Add the announcement with the custom key
+        $postData['announcements'][$announcementKey] = $announcementData;
+        }
+
+        // Get section students
+        $sectionRef = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
+        if (isset($sectionRef['students']) && is_array($sectionRef['students'])) {
+            foreach ($sectionRef['students'] as $studentId) {
+                $postData['people'][] = [
+                    'student_id' => $studentId,
+                    'role' => 'student',
+                ];
+            }
+        }
+
+        // Add teacher to people
+        $postData['people'][] = [
+            'teacher_id' => $validatedData['teacher_id'],
+            'role' => 'teacher',
         ];
 
-        if ($request->hasFile('announcement.file')) {
-            $file = $request->file('announcement.file');
-            $filePath = $file->storeAs('announcements', $file->getClientOriginalName(), 'public');
-            $announcementData['file'] = [
-                'name' => $file->getClientOriginalName(),
-                'path' => $filePath,
-                'url' => asset('storage/' . $filePath),
-            ];
-        }
-
-        if (!empty($validatedData['announcement']['link'])) {
-            $announcementData['link'] = $validatedData['announcement']['link'];
-        }
-
-        $postData['announcements'][] = $announcementData;
-    }
-
-    // Get section students
-    $sectionRef = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
-    if (isset($sectionRef['students']) && is_array($sectionRef['students'])) {
-        foreach ($sectionRef['students'] as $studentId) {
-            $postData['people'][] = [
-                'student_id' => $studentId,
-                'role' => 'student',
-            ];
+        // Save to Firebase
+        try {
+            $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
+            return redirect()->route('mio.ViewSubject', ['grade' => $grade])
+                            ->with('success', 'Subject added successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
         }
     }
-
-    // Add teacher to people
-    $postData['people'][] = [
-        'teacher_id' => $validatedData['teacher_id'],
-        'role' => 'teacher',
-    ];
-
-    // Save to Firebase
-    try {
-        $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
-        return redirect()->route('mio.ViewSubject', ['grade' => $grade])
-                         ->with('success', 'Subject added successfully.');
-    } catch (\Exception $e) {
-        return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
-    }
-}
 
 
 

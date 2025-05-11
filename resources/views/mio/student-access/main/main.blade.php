@@ -43,7 +43,8 @@
             <div class="card-wrap">
                 <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
                     <div class="card">
-                        <img src="{{ $subject['image_url'] ?? asset('images/default-subject.png') }}" class="card-img" />
+                        <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
+
                         <div>
                             <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>
                             <p>{{ $subject['section_id'] ?? 'No Section' }}</p>
@@ -70,15 +71,28 @@
             $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
         @endphp
 
-            @foreach($announcements as $announcement)
+           @foreach($announcements as $announcement)
                 <div class="sub-card">
                     <div class="announce-header">
-                        <p class="announce-date">{{ $announcement['date']}}</p>
+                        <p class="announce-date">{{ $announcement['date'] }}</p>
                         <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
-                        <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+
+                       @if (($announcement['type'] ?? 'general') === 'general')
+                            <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
+                        @else
+                            <a href="{{ route('mio.announcements-body', [
+                                'subjectId' => $announcement['subject_id'] ?? '',
+                                'announcementId' => $announcement['id']
+                            ]) }}">
+                        @endif
+                                <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+                            </a>
+
                     </div>
                 </div>
             @endforeach
+
+
         </div>
 
 

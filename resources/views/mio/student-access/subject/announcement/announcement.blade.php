@@ -1,4 +1,5 @@
 
+
 <section class="home-section">
 <div class="text">
       <a href="{{ route('mio.subject') }}">Subject</a>
@@ -16,7 +17,7 @@
             </div>
         </main>
 
-
+    @include('mio.dashboard.status-message')
         <div class="grid-container">
 
         <!-- Begin Main-->
@@ -24,20 +25,26 @@
             <!--Begin Main Overview-->
             <div class="main-overview">
 
-            @foreach ($announcements as $announcementId => $announcement)
-            <a href="{{ route('mio.subject.announcement-body', ['subjectId' => $subject['subject_id'], 'announcementId' => $announcementId]) }}">
+        @foreach($announcements as $announcement)
+
+
+              <a href="{{ route('mio.subject.announcements-body', [
+                                'subjectId' => $announcement['subject_id'] ?? '',
+                                'announcementId' =>  $announcement['id']
+                            ]) }}">
+
+
                 <div class="overviewcard">
                     <div class="overviewcard__icon"></div>
                     <div class="overviewcard__info">{{ $announcement['title'] ?? 'No Title' }}</div>
-                    <div class="overviewcard__date">{{ $announcement['date_created'] ?? '' }}</div>
+                    <div class="overviewcard__date">{{ $announcement['date_posted'] ?? '' }}</div>
                     <div class="overviewcard__arrow">&rsaquo;</div>
                 </div>
-            </a>
-        @endforeach
+            @endforeach
 
 
 
-            </div>
+
         <!--End Main Overview-->
 
 

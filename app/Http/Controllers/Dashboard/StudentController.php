@@ -29,7 +29,7 @@ class StudentController extends Controller
 {
     // Fetch the current logged-in user's section_id
     $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
-    
+
     // Fetch the active school year from Firebase
     $activeSchoolYearRef = $this->database->getReference('schoolyears');
     $schoolYears = $activeSchoolYearRef->getValue() ?? [];
@@ -144,9 +144,12 @@ class StudentController extends Controller
                 $announcements = $announcementRef->getValue() ?? [];
 
                 foreach ($announcements as $announcementId => $announcement) {
-                    // Optional: add subject name or ID to each announcement
                     $announcement['subject'] = $subject['title'] ?? 'Subject';
                     $announcement['date'] = $announcement['date_posted'] ?? 'Unknown Date';
+                    $announcement['subject_id'] = $subject['subject_id'];
+                    $announcement['grade_level_key'] = $gradeLevelKey;
+                    $announcement['type'] = 'subject';
+                    $announcement['id'] = $announcementId;
                     $subjectAnnouncements[] = $announcement;
                 }
             }
@@ -156,11 +159,14 @@ class StudentController extends Controller
     $allAnnouncements = [];
 
     // Tag and merge admin announcements
-    foreach ($adminAnnouncements as $announcement) {
-        $announcement['subject'] = 'General';
-        $announcement['date'] = $announcement['date'] ?? 'Unknown Date';
-        $allAnnouncements[] = $announcement;
-    }
+    foreach ($adminAnnouncements as $announcementId => $announcement) {
+    $announcement['subject'] = 'General';
+    $announcement['date'] = $announcement['date'] ?? 'Unknown Date';
+    $announcement['type'] = 'general';
+    $announcement['id'] = $announcementId;
+    $allAnnouncements[] = $announcement;
+}
+
 
     // Merge subject-specific announcements
     $allAnnouncements = array_merge($allAnnouncements, $subjectAnnouncements);
@@ -264,12 +270,20 @@ class StudentController extends Controller
         }
 
         if (!$subject || !$gradeLevelKey) {
-            return redirect()->route('mio.student-panel')->with('error', 'Subject not found.');
+            return redirect()->route('mio.subject.announcements', ['subjectId' => $subjectId])->with('error', 'Subject not found.');
+
         }
 
         // Fetch announcements from correct path
         $announcementsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/announcements");
-        $announcements = $announcementsRef->getValue() ?? [];
+        $announcementsSnapshot = $announcementsRef->getValue() ?? [];
+        $announcements = [];
+
+        foreach ($announcementsSnapshot as $key => $announcement) {
+            $announcement['id'] = $key;
+            $announcements[] = $announcement;
+        }
+
 
         return view('mio.head.student-panel', [
             'page' => 'announcement',
@@ -312,7 +326,8 @@ class StudentController extends Controller
         }
 
         if (!$subject || !$announcement) {
-            return redirect()->route('mio.student-panel')->with('error', 'Announcement not found.');
+            return redirect()->route('mio.subject.announcements', ['subjectId' => $subjectId])->with('error', 'Announcement not found.');
+
         }
 
         return view('mio.head.student-panel', [
@@ -420,8 +435,8 @@ class StudentController extends Controller
         return null;  // Return null if subject is not found
     }
 
-    
-    
+
+
     public function showModules($subjectId)
 {
     $userSectionId = session('firebase_user')['section_id'] ?? null;

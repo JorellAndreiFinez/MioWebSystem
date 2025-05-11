@@ -252,6 +252,12 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
     Route::get('/dashboard', [StudentController::class, 'showDashboard'])->name('mio.student-panel');
 
+    // Announcments
+
+    Route::get('/subject/{subjectId}/announcements', [StudentController::class, 'showSubjectAnnouncements'])->name('mio.announcements');
+
+    Route::get('/subject/{subjectId}/announcement/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('mio.announcements-body');
+
     Route::get('/calendar', function () {
         return view('mio.head.student-panel', ['page' => 'calendar']);
     })->name('mio.calendar');
@@ -268,11 +274,12 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
         Route::get('/{subjectId}', [StudentController::class, 'showSubject'])->name('show-subject');
 
-        // Announcments
         Route::get('/{subjectId}/announcements', [StudentController::class, 'showSubjectAnnouncements'])->name('announcements');
-        Route::get('/{subjectId}/announcements/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('announcement-body');
+
+        Route::get('/{subjectId}/announcements/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('announcements-body');
 
         Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [StudentController::class, 'storeReply'])->name('storeReply');
+
         Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
 
 
