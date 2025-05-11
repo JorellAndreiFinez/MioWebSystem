@@ -227,6 +227,46 @@
 }
 
 
+/* NEW MESSAGE */
+
+.new-message-content {
+    width: 70%;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+.compose-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.compose-form input,
+.compose-form select,
+.compose-form textarea {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.send-message-btn {
+    align-self: flex-start;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.send-message-btn:hover {
+    background-color: #388e3c;
+}
+
+
 /* Responsive */
 
 @media (max-width: 768px) {

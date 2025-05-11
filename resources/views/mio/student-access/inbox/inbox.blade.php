@@ -128,6 +128,54 @@
                         </div>
                     </div>
                     </div>
+
+                    <!-- Change the chat-content when clicking to add message -->
+                     <div class="chat-content new-message-content" style="display: none;">
+                        <div class="header">
+                            <h2>New Message</h2>
+                            <p class="subtitle">Compose a new message</p>
+                        </div>
+
+                        <form action="{{ route('mio.message-send') }}" method="post">
+                            @csrf
+                            <meta name="csrf-token" content="{{ csrf_token() }}">
+                            <div class="compose-form">
+                            <!-- Dropdown for To: field -->
+                            <label for="recipient">To:</label>
+
+                            <select id="group-select" >
+                                <option value="">Select Group</option>
+                                @foreach($sections as $section)
+                                    <option value="section_{{ $loop->index }}">{{ $section['section_name'] }}</option>
+                                @endforeach
+
+                                @foreach($subjects as $subject)
+                                    <option value="subject_{{ $loop->index }}">{{ $subject['subject_name'] }}</option>
+                                @endforeach
+                            </select>
+
+                            <select id="people-select" name="receiver_id">
+                                <option value="">Select Person</option>
+                            </select>
+
+
+                            <label for="subject">Subject:</label>
+                            <input type="text" id="subject" placeholder="Enter subject (optional)" name="subject">
+
+                            <label for="message">Message:</label>
+                            <textarea id="message" rows="6" placeholder="Type your message..." name="message"></textarea>
+
+                            <label for="attachment">Attachment:</label>
+                            <input type="file" id="attachment" multiple name="attachment">
+                            <ul id="file-list"></ul>
+
+
+
+                            <button class="send-message-btn">Send</button>
+                        </div>
+                        </form>
+                    </div>
+
                 </div>
 
             </div>
@@ -136,6 +184,141 @@
         <!-- End Main -->
     </div>
 </section>
+
+<!-- ADD NEW MESSAGE -->
+<script>
+    const newMessageBtn = document.querySelector('.new-message-btn');
+    const chatContent = document.querySelector('.chat-content');
+    const newMessageContent = document.querySelector('.new-message-content');
+
+    newMessageBtn.addEventListener('click', () => {
+        chatContent.style.display = 'none';
+        newMessageContent.style.display = 'block';
+    });
+</script>
+
+<script>
+    const data = {
+        @foreach($sections as $index => $section)
+        "section_{{ $index }}": [
+            @foreach($section['people'] as $person)
+            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+            @endforeach
+        ],
+        @endforeach
+
+        @foreach($subjects as $index => $subject)
+        "subject_{{ $index }}": [
+            @foreach($subject['people'] as $person)
+            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+            @endforeach
+        ],
+        @endforeach
+    };
+
+    document.getElementById('group-select').addEventListener('change', function () {
+        const group = this.value;
+        const peopleSelect = document.getElementById('people-select');
+        peopleSelect.innerHTML = '<option value="">Select Person</option>';
+
+        if (data[group]) {
+            data[group].forEach(person => {
+                const option = document.createElement('option');
+                option.value = person.id;
+                option.textContent = person.name;
+                peopleSelect.appendChild(option);
+            });
+        }
+    });
+</script>
+
+<script>
+    // Toggle to show New Message view
+    document.querySelector('.new-message-btn').addEventListener('click', () => {
+        document.querySelector('.chat-content').style.display = 'none';
+        document.querySelector('.new-message-content').style.display = 'block';
+    });
+
+    // Dynamic recipient list data
+    const data = {
+        @foreach($sections as $index => $section)
+        "section_{{ $index }}": [
+            @foreach($section['people'] as $person)
+            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+            @endforeach
+        ],
+        @endforeach
+
+        @foreach($subjects as $index => $subject)
+        "subject_{{ $index }}": [
+            @foreach($subject['people'] as $person)
+            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+            @endforeach
+        ],
+        @endforeach
+    };
+
+    // Populate recipient dropdown based on selected group
+    document.getElementById('group-select').addEventListener('change', function () {
+        const peopleSelect = document.getElementById('people-select');
+        peopleSelect.innerHTML = '<option value="">Select Person</option>';
+        const group = this.value;
+
+        if (data[group]) {
+            data[group].forEach(person => {
+                const option = document.createElement('option');
+                option.value = person.id;
+                option.textContent = person.name;
+                peopleSelect.appendChild(option);
+            });
+        }
+    });
+
+    // Handle attachment file display
+    document.getElementById('attachment').addEventListener('change', function () {
+        const fileList = document.getElementById('file-list');
+        fileList.innerHTML = '';
+
+        Array.from(this.files).forEach(file => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            fileList.appendChild(li);
+        });
+    });
+
+    // Send message
+    document.querySelector('.send-message-btn').addEventListener('click', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData();
+        formData.append('receiver_id', document.getElementById('people-select').value);
+        formData.append('subject', document.getElementById('subject').value);
+        formData.append('message', document.getElementById('message').value);
+        formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+        const files = document.getElementById('attachment').files;
+        for (let i = 0; i < files.length; i++) {
+            formData.append('attachments[]', files[i]);
+        }
+
+        const response = await fetch('/mio/send-message', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert('Message sent with attachment!');
+            document.querySelector('form').reset();
+            document.getElementById('file-list').innerHTML = '';
+        } else {
+            alert('Failed to send message.');
+        }
+    });
+</script>
+
+
+
 
 
 

@@ -198,7 +198,13 @@ public function addStudent(Request $request)
     $this->database->getReference('users/' . $studentIdKey)->set($postData);
 
     // Add to section’s student list
-    $this->database->getReference('sections/' . $sectionId . '/students')->push($studentIdKey);
+    $this->database->getReference('sections/' . $sectionId . '/students')->push([
+        'studentid' => $studentIdKey,
+        'first_name' => $request->first_name,
+        'last_name' => $request->last_name,
+        'role' => 'student',
+
+    ]);
 
     return redirect('mio/admin/students')->with('status', 'Student Added Successfully');
 }

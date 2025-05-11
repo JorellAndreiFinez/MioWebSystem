@@ -4,6 +4,7 @@ use App\Http\Controllers\admin\CmsController;
 use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Dashboard\MessagingController;
 use App\Http\Controllers\Dashboard\StudentController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmergencyController;
@@ -262,9 +263,9 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         return view('mio.head.student-panel', ['page' => 'calendar']);
     })->name('mio.calendar');
 
-    Route::get('/inbox', function () {
-        return view('mio.head.student-panel', ['page' => 'inbox']);
-    })->name('mio.inbox');
+    Route::get('/inbox', [MessagingController::class, 'showInbox'])->name('mio.inbox');
+    Route::post('/mio/send-message', [MessagingController::class, 'sendMessage'])->name('mio.message-send');
+
 
     Route::get('/profile', function () {
         return view('mio.head.student-panel', ['page' => 'profile']);
