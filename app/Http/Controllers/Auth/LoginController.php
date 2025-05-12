@@ -179,4 +179,9 @@ public function logout()
         ], 200);
     }
 
+<<<<<<< HEAD
 }
+=======
+}
+
+>>>>>>> d101085d (feat: added login and logout functionality for mobile)
