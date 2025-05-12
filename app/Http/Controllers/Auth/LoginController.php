@@ -116,73 +116,56 @@ public function logout()
     return redirect()->route('mio.login')->with('status', 'Logged out successfully.');
 }
 
+
+
 // Mobile Login
 
-public function mobileLogin(Request $request)
-    {
-        $email = $request->input('email');
-        $password = $request->input('password');
+    public function mobileLogin(Request $request)
+        {
+            $email = $request->input('email');
+            $password = $request->input('password');
 
-        try {
-            // check data if valid
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
+            try {
+                $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
+                $firebaseUser = $signInResult->data();
+                $uid = $firebaseUser['localId'];
 
-            // authenticate user
-            $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
-            $firebaseUser = $signInResult->data();
-            $uid = $firebaseUser['localId'];
-            $tokeId = $firebaseUser['idToken'];
+                $userData = $this->database->getReference('users/' . $uid)->getValue();
 
-            // get user id
-            $userData = $this->database->getReference('users/' . $uid)->getValue();
+                if (!$userData || !isset($userData['role'])) {
+                    return response()->json(['error' => 'User or role not found.'], 404);
+                }
 
-            if (!$userData || !isset($userData['role'])) {
-                return response()->json(['error' => 'User or role not found.'], 404);
+                // Retrieve name safely (set default if not found)
+                $name = $userData['fname'] ?? 'User';
+                $role = strtolower($userData['role']);
+
+                // Update login timestamp
+                $this->database->getReference('users/' . $uid)->update([
+                    'last_login' => Carbon::now()->toDateTimeString(),
+                ]);
+
+                // Return success response with user data
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Login successful.',
+                    'user' => [
+                        'uid' => $uid,
+                        'email' => $email,
+                        'role' => $role,
+                        'name' => $name,
+                        'category' => $userData['category'] ?? null,
+                    ],
+                ], 200);
+
+            } catch (\Kreait\Firebase\Exception\Auth\InvalidPassword $e) {
+                return response()->json(['error' => 'Incorrect password.'], 401);
+            } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
+                return response()->json(['error' => 'Email not registered.'], 404);
+            } catch (\Throwable $e) {
+                return response()->json(['error' => 'Login failed: ' . $e->getMessage()], 500);
             }
-
-            // Retrieve name safely
-            $name = $userData['fname'] ?? 'User';
-            $role = strtolower($userData['role']);
-
-            // Update login timestamp
-            $this->database->getReference('users/' . $uid)->update([
-                'last_login' => Carbon::now()->toDateTimeString(),
-            ]);
-
-            // get session ID
-            session([
-                'firebase_user' => $firebaseUser['localId'],
-            ]);
-
-            Session::regenerate();
-
-            // Return success response with user data
-            return response()->json([
-                'session_id' => $tokeId,
-                'user' => [ 
-                    'uid' => $uid,
-                    'email' => $email,
-                    'role' => $role,
-                    'name' => $name,
-                    'gradeLevel' => "GR7", // temporary
-                    'category' => $userData['category'] ?? null,
-                ],
-            ], 200);
-
-            // return response()->json([
-            //     'user' => $firebaseUser,
-            //     // 'tokenId' => $tokeId,
-            // ]);
-
-        } catch (\Kreait\Firebase\Exception\AuthException $e) {
-            return response()->json(['error' => 'Invalid Credentials.'], 401);
-        } catch (\Throwable $e) {
-            return response()->json(['error' => 'Login failed: Server Error'], 500);
         }
-    }
 
     public function mobileLogout()
     {
@@ -196,11 +179,4 @@ public function mobileLogin(Request $request)
         ], 200);
     }
 
-    public function mobileValidateToken(Request $request)
-    {
-        return response()->json([
-            'message' => 'Token is valid',
-            'user_id' => $request->get('firebase_user'),
-        ], 200);
-    }
 }
