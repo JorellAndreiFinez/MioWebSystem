@@ -178,10 +178,4 @@ public function logout()
             'message' => 'Logged out successfully.',
         ], 200);
     }
-
-<<<<<<< HEAD
 }
-=======
-}
-
->>>>>>> d101085d (feat: added login and logout functionality for mobile)
