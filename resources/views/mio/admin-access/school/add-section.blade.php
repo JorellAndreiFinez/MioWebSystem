@@ -34,6 +34,13 @@
           </div>
 
           <div class="form-row">
+          <div class="form-group">
+            <label>Section Grade <span style="color: red; font-weight:700">*</span></label>
+            <input type="number" name="section_grade" min="1" max="10" placeholder="Enter section grade" required />
+          </div>
+        </div>
+
+          <div class="form-row">
             <div class="form-group">
               <label>Status <span style="color: red; font-weight:700">*</span></label>
               <select name="status" required>

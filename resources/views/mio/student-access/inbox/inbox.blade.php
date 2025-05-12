@@ -80,9 +80,6 @@
 
                             <select id="group-select" >
                                 <option value="">Select Group</option>
-                                @foreach($sections as $section)
-                                    <option value="section_{{ $loop->index }}">{{ $section['section_name'] }}</option>
-                                @endforeach
 
                                 @foreach($subjects as $subject)
                                     <option value="subject_{{ $loop->index }}">{{ $subject['subject_name'] }}</option>
@@ -132,33 +129,30 @@
     });
 </script>
 
-<!-- FETCH recipient -->
 <script>
-    const data = {
-        @foreach($sections as $index => $section)
-        "section_{{ $index }}": [
-            @foreach($section['people'] as $person)
-            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
-            @endforeach
-        ],
-        @endforeach
+document.addEventListener('DOMContentLoaded', function () {
+    const groupSelect = document.getElementById('group-select');
+    const peopleSelect = document.getElementById('people-select');
+    const attachmentInput = document.getElementById('attachment');
+    const fileList = document.getElementById('file-list');
+    const sendForm = document.getElementById('sendMessageForm');
 
+    // Dynamic people per subject
+    const subjectPeople = {
         @foreach($subjects as $index => $subject)
-        "subject_{{ $index }}": [
-            @foreach($subject['people'] as $person)
-            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
-            @endforeach
-        ],
+            "subject_{{ $index }}": [
+                @foreach($subject['people'] as $person)
+                    { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+                @endforeach
+            ],
         @endforeach
     };
 
-    document.getElementById('group-select').addEventListener('change', function () {
-        const group = this.value;
-        const peopleSelect = document.getElementById('people-select');
+    groupSelect.addEventListener('change', function () {
+        const selectedGroup = this.value;
         peopleSelect.innerHTML = '<option value="">Select Person</option>';
-
-        if (data[group]) {
-            data[group].forEach(person => {
+        if (subjectPeople[selectedGroup]) {
+            subjectPeople[selectedGroup].forEach(person => {
                 const option = document.createElement('option');
                 option.value = person.id;
                 option.textContent = person.name;
@@ -166,9 +160,41 @@
             });
         }
     });
+
+    attachmentInput.addEventListener('change', function () {
+        fileList.innerHTML = '';
+        Array.from(this.files).forEach(file => {
+            const li = document.createElement('li');
+            li.textContent = file.name;
+            fileList.appendChild(li);
+        });
+    });
+
+    sendForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(sendForm);
+
+        const response = await fetch(sendForm.action, {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert('Message sent!');
+            sendForm.reset();
+            fileList.innerHTML = '';
+        } else {
+            alert('Failed to send message: ' + result.message);
+        }
+    });
+});
 </script>
 
 <!-- SEND MESSAGE -->
+
 <script>
     // Toggle to show New Message view
     document.querySelector('.new-message-btn').addEventListener('click', () => {
@@ -178,13 +204,6 @@
 
     // Dynamic recipient list data
     const data = {
-        @foreach($sections as $index => $section)
-        "section_{{ $index }}": [
-            @foreach($section['people'] as $person)
-            { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
-            @endforeach
-        ],
-        @endforeach
 
         @foreach($subjects as $index => $subject)
         "subject_{{ $index }}": [
@@ -337,11 +356,6 @@ document.querySelectorAll(".contact").forEach(contact => {
     });
 });
 </script>
-
-<!-- <div class="actions">
-    <button class="action-btn">✎</button>
-    <button class="action-btn">🗑</button>
-</div> -->
 
 
 

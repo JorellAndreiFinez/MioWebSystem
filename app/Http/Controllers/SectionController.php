@@ -88,6 +88,7 @@ class SectionController extends Controller
         'section_status' => 'required|in:open,closed',
         'max_students' => 'required|integer|min:1',
         'teacherid' => 'nullable|string|max:50',
+         'section_grade' => 'required|integer|min:1|max:10'
     ]);
 
     $sectionIdKey = $request->input('sectionid');
@@ -123,6 +124,7 @@ class SectionController extends Controller
         'section_status' => $validated['section_status'],
         'max_students' => $validated['max_students'],
         'teacherid' => $validated['teacherid'] ?? null,
+        'section_grade' => $validated['section_grade'],
         'students' => [],  // Initialize empty students array
         'schoolyear_id' => $activeSchoolYear,  // Include active school year
         'created_at' => Carbon::now()->toDateTimeString(),
@@ -193,6 +195,7 @@ class SectionController extends Controller
             'section_status' => 'required|in:open,closed',
             'max_students' => 'required|integer|min:1',
             'teacherid' => 'nullable|string|max:50',
+            'section_grade' => 'nullable|integer|min:1|max:10'
         ]);
 
         // Reference to Firebase
@@ -211,6 +214,7 @@ class SectionController extends Controller
             'section_status' => $validated['section_status'],
             'max_students' => $validated['max_students'],
             'teacherid' => $validated['teacherid'] ?? null,
+            'section_grade' => $validated['section_grade'],
             'students' => $sectionsRef[$oldKey]['students'] ?? [],  // Keep existing students array
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),

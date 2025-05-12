@@ -10,7 +10,7 @@
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/1.2.2 home-pid.png/') }}">
 
     {{-- Conditional CSS based on the page --}}
-    @if ($page === 'inbox')
+    @if ($page === 'teacher-inbox')
         @vite(['resources/css/Mio/dashboard/inbox.css', 'resources/css/Mio/mio-app.css'])
     @elseif($page === 'teacher-dashboard')
         @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/Mio/mio-app.css'])
@@ -40,8 +40,8 @@
     @elseif ($page === 'calendar')
         @include('mio.student-access.calendar.calendar')
 
-    @elseif ($page === 'inbox')
-        @include('mio.student-access.inbox.inbox')
+    @elseif ($page === 'teacher-inbox')
+        @include('mio.teacher-access.inbox.inbox')
 
     @elseif ($page === 'profile')
         @include('mio.student-access.profile.profile')

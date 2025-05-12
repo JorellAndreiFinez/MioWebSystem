@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\MessagingController;
 use App\Http\Controllers\Dashboard\StudentController;
+use App\Http\Controllers\Dashboard\TeacherController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\EmergencyController;
 use App\Http\Controllers\Enrollment\EnrollController;
@@ -263,9 +264,9 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         return view('mio.head.student-panel', ['page' => 'calendar']);
     })->name('mio.calendar');
 
-    Route::get('/inbox', [MessagingController::class, 'showInbox'])->name('mio.inbox');
+    Route::get('/messages', [MessagingController::class, 'showInbox'])->name('mio.inbox');
     Route::post('/send-message', [MessagingController::class, 'sendMessage'])->name('mio.message-send');
-    Route::get('/messages/{senderId}/{receiverId}', [MessagingController::class, 'getMessages'])->name('mio.message-get');
+     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getMessages']);
     Route::post('/edit-message/{messageId}', [MessagingController::class, 'editMessage'])->name('mio.message-edit');
     Route::post('/delete-message/{messageId}', [MessagingController::class, 'deleteMessage']);
 
@@ -302,6 +303,64 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 });
 
 
+// MIO - TEACHER PANEL
+Route::prefix('mio/teacher')->middleware(
+    [AuthMiddleware::class, RoleBasedAccess::class . ':teacher']
+)->group(function () {
+
+    Route::get('/dashboard', [TeacherController::class, 'showDashboard'])->name('mio.teacher-panel');
+
+    // Announcments
+    Route::get('/subject/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('mio.announcements');
+    Route::get('/subject/{subjectId}/announcement/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('mio.announcements-body');
+
+
+    Route::get('/calendar', function () {
+        return view('mio.head.teacher-panel', ['page' => 'calendar']);
+    })->name('mio.teacher-calendar');
+
+    // INBOX MESSAGING
+       Route::get('/messages', [MessagingController::class, 'showTeacherInbox'])->name('mio.teacher-inbox');
+       
+    Route::post('/send-message', [MessagingController::class, 'sendTeacherMessage'])->name('mio.teacher-message-send');
+     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
+  
+
+    Route::get('/profile', function () {
+        return view('mio.head.teacher-panel', ['page' => 'profile']);
+    })->name('mio.teacher-profile');
+
+    Route::get('/subject', function () {
+        return view('mio.head.teacher-panel', ['page' => 'subject']);
+    })->name('mio.subject');
+
+    Route::prefix('subject')->name('mio.subject.')->group(function () {
+
+        Route::get('/{subjectId}', [TeacherController::class, 'showSubject'])->name('show-subject');
+
+        Route::get('/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('announcements');
+
+        Route::get('/{subjectId}/announcements/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('announcements-body');
+
+        Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [TeacherController::class, 'storeReply'])->name('storeReply');
+
+        Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [TeacherController::class, 'deleteReply'])->name('deleteReply');
+
+
+        Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
+        Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
+
+        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+
+        Route::get('/{subjectId}/modules', [TeacherController::class, 'showModules'])->name('modules');
+        Route::get('/{subjectId}/modules/{moduleIndex}', [TeacherController::class, 'showModuleBody'])->name('module-body');
+
+
+    });
+
+});
+
+
 // LOGIN ROUTES
     Route::get('mio/login', [LoginController::class, 'loginForm'])->name('mio.login');
     Route::post('/user-login', [LoginController::class, 'login']);
@@ -319,10 +378,6 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     Route::get('/mio/check-verification', [LoginController::class, 'checkVerification'])->name('mio.check-verification');
 
     Route::post('/resend-verification', [LoginController::class, 'resendVerification'])->name('mio.resend-verification');
-
-
-
-
 
 
 
@@ -354,31 +409,5 @@ Route::prefix('mio/parent')->middleware(
 });
 
 
-// MIO - TEACHER PANEL
-Route::prefix('mio/teacher')->middleware(
-    [AuthMiddleware::class, RoleBasedAccess::class . ':teacher']
-)->group(function () {
-
-    Route::get('/dashboard', function () {
-        return view('mio.head.teacher-panel', ['page' => 'teacher-dashboard']);
-    })->name('mio.teacher-panel');
-
-    Route::get('/calendar', function () {
-        return view('mio.head.teacher-panel', ['page' => 'calendar']);
-    })->name('mio.teacher-calendar');
-
-    Route::get('/inbox', function () {
-        return view('mio.head.teacher-panel', ['page' => 'inbox']);
-    })->name('mio.teacher-inbox');
-
-    Route::get('/profile', function () {
-        return view('mio.head.teacher-panel', ['page' => 'profile']);
-    })->name('mio.teacher-profile');
-
-    Route::get('/subject', function () {
-        return view('mio.head.teacher-panel', ['page' => 'subject']);
-    })->name('mio.subject');
-
-});
 
 require __DIR__.'/mobile.php';

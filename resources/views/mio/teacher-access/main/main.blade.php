@@ -10,7 +10,7 @@
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
-                <h2>Welcome back,<br> John Doe!</h2>
+                <h2>Welcome back,<br>  {{ session('firebase_user.name') }}</h2>
                 <p>Helping deaf children develop communication skills and confidence for a brighter future.</p>
             </div>
             <div class="divider"></div>
@@ -22,6 +22,7 @@
             </div>
         </main>
 
+    @include("mio.dashboard.breadcrumbs")
         <div class="dashboard-grid">
 
         <div class="card-grid">
@@ -37,74 +38,63 @@
                 </select>
             </div>
         </div>
-        <div class="card-wrap">
-            <a href="{{ route('mio.subject') }}" class="card-link">
-                <div class="card">
-                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
-                    <div>
-                        <h4>SPD701 Speech Development</h4>
-                        <p>SEC-7A</p>
-                    </div>
-                </div>
- </a>
-        </div>
+        @forelse($allSubjects as $gradeLevel => $subjects)
+        @foreach($subjects as $subject)
             <div class="card-wrap">
-                <div class="card">
-                    <img src="https://www.radiancevisiongroup.com/assets/images/blogs/2d-and-3d-animation-in-mumbai-thane1.jpg" class="card-img" />
-                    <div>
-                        <h4>SPD702 Speech Development</h4>
-                        <p>SEC-7B</p>
+                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
+                    <div class="card">
+                        <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
+
+                        <div>
+                            <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>
+                            <p>{{ $subject['section_id'] ?? 'No Section' }}</p>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
-            <div class="card-wrap">
-                <div class="card">
-                    <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfbEYWJwIfyiqseSNKVHkCPlsoSC8ToVHO8Ws3ThnMNpNA42_ScCo0CrT2t5zNM1cFqKc&usqp=CAU" class="card-img" />
-                    <div>
-                        <h4>ENG704 English Language</h4>
-                        <p>SEC-7D</p>
-                    </div>
-                </div>
-            </div>
+        @endforeach
+    @empty
+        <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
+    @endforelse
+
+
 
         </div>
 
         <div class="right-side">
         <div class="announcement-card">
-            <h4 >Announcements</h4>
+            <h4>Announcements</h4>
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">March 30, 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">All Grade Homeroom Meeting</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
+            @php
+            $rawDate = $announcement['date'] ?? null;
+            $timestamp = strtotime($rawDate);
+            $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
+        @endphp
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">Jan 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">Grade 10 Seminar</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
+           @foreach($announcements as $announcement)
+                <div class="sub-card">
+                    <div class="announce-header">
+                        <p class="announce-date">{{ $announcement['date'] }}</p>
+                        <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">April 10 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">English</h2> <!-- small bold -->
-                    <h3 class="announce-title">Missing Assignments</h3> <!-- slightly bigger bold -->
-                </div>
-            </div>
+                       @if (($announcement['type'] ?? 'general') === 'general')
+                            <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
+                        @else
+                            <a href="{{ route('mio.announcements-body', [
+                                'subjectId' => $announcement['subject_id'] ?? '',
+                                'announcementId' => $announcement['id']
+                            ]) }}">
+                        @endif
+                                <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+                            </a>
 
-            <div class="sub-card">
-                <div class="announce-header">
-                    <p class="announce-date">Apr 1 2025</p> <!-- italic small gray -->
-                    <h2 class="announce-subject">General</h2> <!-- small bold -->
-                    <h3 class="announce-title">No Classes</h3> <!-- slightly bigger bold -->
+                    </div>
                 </div>
-            </div>
+            @endforeach
+
+
         </div>
+
 
             <div class="task-card">
                 <h4>Assigned Tasks</h4>
