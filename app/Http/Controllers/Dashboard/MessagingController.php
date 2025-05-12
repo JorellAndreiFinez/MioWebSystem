@@ -71,6 +71,31 @@ public function showInbox()
         }
     }
 
+    // GET THE RECEIVER IN MESSAGE
+    $contacts = [];
+    $messagesRef = $this->database->getReference('messages');
+    $allMessages = $messagesRef->getValue();
+
+    if ($allMessages) {
+        foreach ($allMessages as $key => $messageThread) {
+            if (Str::startsWith($key, $studentId . '_')) {
+                $receiverId = Str::after($key, $studentId . '_');
+                $receiverData = $usersRef->getChild($receiverId)->getValue();
+
+                if ($receiverData) {
+                    $contacts[] = [
+                        'id' => $receiverId,
+                        'name' => ($receiverData['fname'] ?? '') . ' ' . ($receiverData['lname'] ?? ''),
+                        'role' => $receiverData['role'],
+                        'profile_pic' => $receiverData['profile_pic'] ?? null,
+                        'last_message_time' => end($messageThread)['timestamp'] ?? null
+                    ];
+                }
+            }
+        }
+    }
+
+
     // Fetch subjects and get related teachers
     $subjectsRef = $this->database->getReference('subjects');
     $subjectsSnapshot = $subjectsRef->getValue();
@@ -122,6 +147,7 @@ public function showInbox()
         'page' => 'inbox',
         'sections' => $sections,
         'subjects' => array_values($subjectTeachers),
+        'contacts' => $contacts,
     ]);
 }
 
@@ -206,12 +232,102 @@ public function showInbox()
         }
     }
 
+    // Fetch contacts (same as showInbox method)
+    $contacts = [];
+    $messagesRef = $this->database->getReference('messages');
+    $allMessages = $messagesRef->getValue();
+
+    if ($allMessages) {
+        foreach ($allMessages as $key => $messageThread) {
+            if (Str::startsWith($key, $senderId . '_')) {
+                $receiverId = Str::after($key, $senderId . '_');
+                $receiverData = $usersRef->getChild($receiverId)->getValue();
+
+                if ($receiverData) {
+                    $contacts[] = [
+                        'id' => $receiverId,
+                        'name' => ($receiverData['fname'] ?? '') . ' ' . ($receiverData['lname'] ?? ''),
+                        'role' => $receiverData['role'],
+                        'profile_pic' => $receiverData['profile_pic'] ?? null,
+                        'last_message_time' => end($messageThread)['timestamp'] ?? null
+                    ];
+                }
+            }
+        }
+    }
+
+    // Return the view with the necessary data
     return view('mio.head.student-panel', [
         'page' => 'inbox',
         'sections' => $sections,
         'subjects' => array_values($subjectTeachers),
+        'contacts' => $contacts,  // Make sure contacts is passed here
     ]);
 }
+
+
+    public function getMessages($senderId, $receiverId)
+    {
+        // Try fetching the messages
+        $messageThreadRef = $this->database->getReference('messages/' . $senderId . '_' . $receiverId);
+        $messages = $messageThreadRef->getValue();
+
+        if (!$messages) {
+            // Try reverse
+            $messageThreadRef = $this->database->getReference('messages/' . $receiverId . '_' . $senderId);
+            $messages = $messageThreadRef->getValue();
+        }
+
+        $formatted = [];
+        $contacts = []; // Initialize contacts array
+
+        if ($messages) {
+            $usersRef = $this->database->getReference('users');
+            // Get the receiver's data
+            $receiverData = $usersRef->getChild($receiverId)->getValue();
+
+            // Log the receiver data to debug
+            Log::info("Receiver Data for ID $receiverId: " . print_r($receiverData, true));
+
+            // Add receiver information to contacts (only include the necessary fields)
+            if ($receiverData) {
+                $contacts[] = [
+                    'id' => $receiverId,
+                    'name' => ($receiverData['fname'] ?? '') . ' ' . ($receiverData['lname'] ?? ''),
+                    'role' => $receiverData['role'],  // Adding role to the contact
+                    'profile_pic' => $receiverData['profile_pic'] ?? null
+                ];
+            } else {
+                Log::warning("Receiver data not found for ID $receiverId");
+            }
+
+            foreach ($messages as $msgId => $msg) {
+                $senderData = $usersRef->getChild($msg['sender_id'])->getValue();
+                $formatted[] = [
+                    'message' => $msg['message'],
+                    'sender_id' => $msg['sender_id'],
+                    'receiver_id' => $msg['receiver_id'],
+                    'timestamp' => $msg['timestamp'],
+                    'name' => ($senderData['fname'] ?? '') . ' ' . ($senderData['lname'] ?? ' ')
+                ];
+            }
+        } else {
+            Log::warning("No messages found for $senderId and $receiverId.");
+        }
+
+        // Return both the messages and contacts (with receiver's info)
+        return response()->json([
+            'messages' => $formatted,
+            'contacts' => $contacts  // Add contacts array to the response
+        ]);
+    }
+
+
+
+
+
+
+
 
 
 

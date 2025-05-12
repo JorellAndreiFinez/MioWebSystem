@@ -10,122 +10,57 @@
                 <!-- Main Content -->
                 <div class="main-content">
                     <!-- Left Column - Chat List -->
-
-                    <div class="chat-list">
-
-
-                        <div class="contacts">
-
-                        <div class="contact selected">
-                                <img src="https://2.img-dpreview.com/files/p/E~C1000x0S4000x4000T1200x1200~articles/3925134721/0266554465.jpeg" alt="Leo Kenter" class="profile-pic" />
-                                <div class="contact-info">
-                                    <p class="name">Leo Kenter</p>
-                                    <!-- <p class="preview">Don't forget! Your next speech development session is scheduled...</p> -->
-                                </div>
-                                <span class="time">9:00 AM</span>
-                            </div>
-                            <div class="contact">
-                                <img src="https://photographylife.com/cdn-cgi/imagedelivery/GrQZt6ZFhE4jsKqjDEtqRA/photographylife.com/2023/05/nikon-z8-00017.jpg/w=300,h=200" alt="Gretchen Kenter" class="profile-pic" />
-                                <div class="contact-info">
-                                    <p class="name">Gretchen Kenter</p>
-
-                                </div>
-                                <span class="time">9:00 AM</span>
-                            </div>
-                            <div class="contact">
-                                <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSYVx6CB56pxO8gwlzLLOkV8fPN0jfF3T_98w&s" alt="Alfredo Press" class="profile-pic" />
-                                <div class="contact-info">
-                                    <p class="name">Alfredo Press</p>
-
-                                </div>
-                                <span class="time">9:00 AM</span>
-                            </div>
+                   <div class="chat-list">
+                    @if(count($contacts) === 0)
+                        <div class="no-messages">
+                            <p>You haven’t messaged anyone yet.</p>
+                            <p>Start a conversation by clicking the <strong>"+ New Message"</strong> button.</p>
                         </div>
-                    </div>
+                    @else
+                        @foreach($contacts as $contact)
+                            <div class="contact" data-contact-id="{{ $contact['id'] }}" data-contact-name="{{ $contact['name'] }}" data-contact-role="{{ $contact['role'] }}" data-contact-image="{{ $contact['profile_pic'] }}">
+                                <img src="{{ $contact['profile_pic'] ?? 'default.jpg' }}" class="profile-pic" />
+                                <div class="contact-info">
+                                    <p class="name">{{ $contact['name'] }}</p>
+                                    <p class="role">{{ $contact['role'] }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    @endif
+                </div>
 
                     <!-- Right Column - Chat Messages -->
-                    <div class="chat-content">
+                <div class="no-contact-selected">
+                    <div class="no-contact-icon">
+                        <!-- Heroicons: Chat Bubble Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 3.866-3.582 7-8 7-1.146 0-2.226-.207-3.188-.578L3 21l1.578-4.812C4.207 15.226 4 14.146 4 13c0-4.418 3.134-8 7-8s7 3.582 7 8z" />
+                        </svg>
+                    </div>
+                    <div class="no-contact-text">
+                        <h2>No conversation selected</h2>
+                        <p>Please select a contact from the list to start chatting.</p>
+                    </div>
+                </div>
+
+
+                    <div class="chat-content hidden">
                         <div class="header">
-                            <img src="https://2.img-dpreview.com/files/p/E~C1000x0S4000x4000T1200x1200~articles/3925134721/0266554465.jpeg" alt="Leo Kenter" class="profile-pic-large" />
-                            <div>
                                 <h2>Leo Kenter</h2>
                                 <p class="subtitle">Speech Development</p>
                             </div>
-                        </div>
+
 
                         <!-- Conversation -->
-                    <div class="conversation">
-                        <div class="message sender">
-                            <div class="message-header">
-                                <img src="profile3.jpg" alt="Julie Esguerra" class="profile-pic" />
-                                <div>
-                                    <p class="name">Julie Esguerra</p>
-                                    <p class="time">Jan 20, 2025 at 9:00 AM</p>
-                                </div>
-                            </div>
-                            <p class="message-content">
-                                I have been encountering a problem about my schedule page. I can't seem to view or update my class schedule properly...
-                            </p>
-                            <div class="actions">
-                                <button class="action-btn">↩</button>
-                                <button class="action-btn">🔁</button>
-                                <button class="action-btn">🗑️</button>
-                            </div>
-                        </div>
+                        <div class="conversation ">
+                            <div class="message sender">
 
-                        <div class="message response">
-                            <div class="message-header">
-                                <img src="profile1.jpg" alt="Leo Kenter" class="profile-pic" />
-                                <div>
-                                    <p class="name">Leo Kenter</p>
-                                    <p class="time">Jan 21, 2025 at 9:00 AM</p>
-                                </div>
                             </div>
-                            <p class="message-content">
-                                Thank you for reporting the issue with the Schedule page on the school dashboard. Our team has investigated and resolved the problem...
-                            </p>
-                            <div class="actions">
-                                <button class="action-btn">↩</button>
-                                <button class="action-btn">🔁</button>
-                                <button class="action-btn">🗑️</button>
-                            </div>
-                        </div>
 
-                        <div class="message sender">
-                            <div class="message-header">
-                                <img src="profile3.jpg" alt="Julie Esguerra" class="profile-pic" />
-                                <div>
-                                    <p class="name">Julie Esguerra</p>
-                                    <p class="time">Jan 20, 2025 at 9:00 AM</p>
-                                </div>
-                            </div>
-                            <p class="message-content">
-                                I have been encountering a problem about my schedule page. I can't seem to view or update my class schedule properly...
-                            </p>
-                            <div class="actions">
-                                <button class="action-btn">↩</button>
-                                <button class="action-btn">🔁</button>
-                                <button class="action-btn">🗑️</button>
-                            </div>
-                        </div>
+                            <div class="message response">
 
-                        <div class="message sender">
-                            <div class="message-header">
-                                <img src="profile3.jpg" alt="Julie Esguerra" class="profile-pic" />
-                                <div>
-                                    <p class="name">Julie Esguerra</p>
-                                    <p class="time">Jan 20, 2025 at 9:00 AM</p>
-                                </div>
                             </div>
-                            <p class="message-content">
-                                I have been encountering a problem about my schedule page. I can't seem to view or update my class schedule properly...
-                            </p>
-                            <div class="actions">
-                                <button class="action-btn">↩</button>
-                                <button class="action-btn">🔁</button>
-                                <button class="action-btn">🗑️</button>
-                            </div>
-                        </div>
                     </div>
                     </div>
 
@@ -197,6 +132,7 @@
     });
 </script>
 
+<!-- FETCH recipient -->
 <script>
     const data = {
         @foreach($sections as $index => $section)
@@ -232,6 +168,7 @@
     });
 </script>
 
+<!-- SEND MESSAGE -->
 <script>
     // Toggle to show New Message view
     document.querySelector('.new-message-btn').addEventListener('click', () => {
@@ -316,6 +253,97 @@
         }
     });
 </script>
+
+<!-- Get MESSAGES -->
+<script>
+let currentlySelectedContactId = null;
+
+document.querySelectorAll(".contact").forEach(contact => {
+    contact.addEventListener("click", function () {
+        const clickedContactId = this.dataset.contactId;
+
+        // If clicked again, deselect the contact
+        if (currentlySelectedContactId === clickedContactId) {
+            currentlySelectedContactId = null;
+
+            // Remove the selected class from the contact
+            this.classList.remove('selected');
+
+            // Show the 'no contact selected' message and hide the chat content
+            document.querySelector('.no-contact-selected').style.display = 'flex';
+            document.querySelector('.chat-content').style.display = 'none';
+            return; // Exit here to prevent the rest of the code from running
+        }
+
+        // Deselect the previously selected contact
+        if (currentlySelectedContactId) {
+            document.querySelector(`[data-contact-id="${currentlySelectedContactId}"]`).classList.remove('selected');
+        }
+
+        // Update the selected contact ID
+        currentlySelectedContactId = clickedContactId;
+
+        // Add the selected class to the clicked contact
+        this.classList.add('selected');
+
+        // Hide the 'no contact selected' message
+        document.querySelector('.no-contact-selected').style.display = 'none';
+
+        // Show the chat content for the selected contact
+        document.querySelector('.chat-content').style.display = 'block';
+        // Hide the new message content if it is currently displayed
+        document.querySelector('.new-message-content').style.display = 'none';
+
+        const userId = "{{ Session::get('firebase_user')['uid'] }}";
+        const receiverId = this.dataset.contactId;
+        const receiverName = this.dataset.contactName;
+        const receiverRole = this.dataset.contactRole;
+        const receiverImage = this.dataset.contactImage;
+
+        const header = document.querySelector(".chat-content .header");
+        header.innerHTML = `
+            <img src="${receiverImage}" alt="${receiverName}" class="profile-pic-large" />
+            <div>
+                <h2>${receiverName}</h2>
+                <p class="subtitle">${receiverRole}</p>
+            </div>
+        `;
+
+        const chatSection = document.querySelector(".conversation");
+        chatSection.innerHTML = '<p>Loading conversation...</p>';
+
+        fetch(`/mio/student/messages/${userId}/${receiverId}`)
+            .then(res => res.json())
+            .then(data => {
+                chatSection.innerHTML = '';
+                data.messages.forEach(msg => {
+                    const sender = msg.sender_id === userId ? 'sender' : 'response';
+                    const messageHTML = `
+                        <div class="message ${sender}">
+                            <div class="message-header">
+                                <p class="name">${msg.name}</p>
+                                <p class="time">${new Date(msg.timestamp * 1000).toLocaleString()}</p>
+                            </div>
+                            <p class="message-content">${msg.message}</p>
+
+                        </div>`;
+                    chatSection.innerHTML += messageHTML;
+                });
+            })
+            .catch(error => {
+                chatSection.innerHTML = '<p>Error loading conversation.</p>';
+                console.error(error);
+            });
+    });
+});
+</script>
+
+<!-- <div class="actions">
+    <button class="action-btn">✎</button>
+    <button class="action-btn">🗑</button>
+</div> -->
+
+
 
 
 

@@ -264,7 +264,11 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     })->name('mio.calendar');
 
     Route::get('/inbox', [MessagingController::class, 'showInbox'])->name('mio.inbox');
-    Route::post('/mio/send-message', [MessagingController::class, 'sendMessage'])->name('mio.message-send');
+    Route::post('/send-message', [MessagingController::class, 'sendMessage'])->name('mio.message-send');
+    Route::get('/messages/{senderId}/{receiverId}', [MessagingController::class, 'getMessages'])->name('mio.message-get');
+    Route::post('/edit-message/{messageId}', [MessagingController::class, 'editMessage'])->name('mio.message-edit');
+    Route::post('/delete-message/{messageId}', [MessagingController::class, 'deleteMessage']);
+
 
 
     Route::get('/profile', function () {
