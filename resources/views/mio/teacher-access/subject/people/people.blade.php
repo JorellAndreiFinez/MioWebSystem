@@ -1,7 +1,16 @@
 <section class="home-section">
-    @include('mio.dashboard.breadcrumbs', ['page' => 'view-subject'])
+    <!-- BREADCRUMBS -->
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
+        </div>
+
+        <div class="breadcrumb-item active">People</div>
+    </div>
+
     <div class="teacher-container">
-        <h1 class="text">< People</h1>
 
         <!-- HEADER CONTROLS -->
         <div class="table-header">
@@ -70,6 +79,7 @@
                 row.style.display = "";
             } else {
                 row.style.display = "none";
+
             }
         }
     }

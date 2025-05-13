@@ -36,6 +36,22 @@
     background-color: rgba(0, 0, 0, 0.3);
 }
 
+
+/* Hide arrows in Chrome, Safari, Edge, Opera */
+
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+
+/* Hide arrows in Firefox */
+
+.no-spinner[type=number] {
+    -moz-appearance: textfield;
+}
+
 * {
     margin: 0;
     padding: 0;

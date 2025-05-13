@@ -1,51 +1,87 @@
-
 <section class="home-section">
-      @include('mio.dashboard.breadcrumbs')
 
-        <main class="main-module-content ">
-            <div class="module-card">
-            <div cincludes="banner">
-            <div class="content">
-            <h3>[Module 1 - Lorem Ipsum]</h3>
-                <p>Lorem ipsum dolor sit amet consectetur adipisicing elit. Esse perspiciatis adipisci illo magni, labore autem incidunt, assumenda mollitia neque est quos harum nostrum odit cum pariatur. Exercitationem odio libero temporibus!
-                Sint id atque sapiente sed labore incidunt at aliquam harum, accusantium, aut quos! Et magnam molestiae vitae illum deleniti! Consequuntur, quis illum? Et aperiam fugit vel nemo autem libero ea?
-                Itaque quis magnam harum eaque repellendus sapiente, est corrupti quisquam accusamus maxime voluptatibus consequatur, doloremque asperiores atque, fugiat fugit ut sunt dolores doloribus libero ad ex voluptatem minus. Quisquam, aliquam.
-                Molestias nesciunt aspernatur similique, ullam nam earum eaque cupiditate fuga incidunt eum impedit recusandae dolor? Fugit impedit velit aperiam odit pariatur, repudiandae fugiat assumenda provident recusandae placeat eligendi, veniam consequatur?</p>
-            </div>
+<div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
+        </div>
 
-            </div>
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.modules', ['subjectId' => $subject['subject_id']]) }}">
+                Modules
+            </a>
+        </div>
+        <div class="breadcrumb-item active">{{ $moduleIndex }}</div>
 
-            </div>
-
-        </main>
-
-        <a href="#" class="preview-module-btn" id="togglePdfBtn">View Module</a>
-
-    <div class="module-viewer" id="pdfViewer">
-        <!-- <h1>[ Module Title ]</h1> -->
-        <object class="pdf"
-            data="https://media.geeksforgeeks.org/wp-content/cdn-uploads/20210101201653/PDF.pdf"
-            type="application/pdf">
-        </object>
     </div>
 
-  </section>
 
-  <script>
-        // Get the button and the PDF viewer div
-        const togglePdfBtn = document.getElementById('togglePdfBtn');
-        const pdfViewer = document.getElementById('pdfViewer');
+    <main class="main-banner">
 
-        // Add click event listener to toggle the display of the PDF viewer
-        togglePdfBtn.addEventListener('click', function(event) {
-            event.preventDefault();  // Prevent default anchor behavior
-            // Toggle the display of the PDF viewer
-            if (pdfViewer.style.display === "none" || pdfViewer.style.display === "") {
-                pdfViewer.style.display = "block";
-                togglePdfBtn.textContent = "Close Module";  // Show the PDF viewer
-            } else {
-                pdfViewer.style.display = "none";  // Hide the PDF viewer
-            }
-        });
-    </script>
+        <div class="welcome-banner">
+            <div class="banner">
+                <div class="content">
+                    <h5>Module: {{ $module['title'] }}</h5>
+                </div>
+            </div>
+        </div>
+    </main>
 
+    <div class="grid-container">
+
+    <!-- Begin Main -->
+    <main class="main main-module-content">
+
+    <div class="edit-btn-container" style="margin-bottom: 2rem;">
+        <button type="button" class="edit-btn" onclick="enableEditMode()">✏️ Edit Module </button>
+    </div>
+        <!-- Module Description -->
+        <div class="module-card">
+            <div class="module-card__content">
+                <p class="module-description">{{ $module['description'] }}</p>
+            </div>
+        </div>
+        <br>
+        <hr class="section-divider">
+
+        <br>
+        <!-- View Button -->
+        <div class="view-button-container">
+            <a href="#" class="preview-module-btn" id="togglePdfBtn">View Module</a>
+        </div>
+
+        <!-- PDF Viewer -->
+        <div class="module-viewer" id="pdfViewer">
+            <object class="pdf"
+                    data="{{ $module['file']['url'] ?? '#' }}"
+                    type="application/pdf"
+                    width="100%"
+                    height="600px">
+                <p>Your browser does not support PDFs.
+                    <a href="{{ $module['file']['url'] ?? '#' }}">Download the PDF</a>.
+                </p>
+            </object>
+        </div>
+
+    </main>
+    <!-- End Main -->
+</div>
+
+</section>
+
+<script>
+document.getElementById('togglePdfBtn').addEventListener('click', function (event) {
+    event.preventDefault();
+    const viewer = document.getElementById('pdfViewer');
+    console.log('Viewer state:', viewer.style.display);  // Check if it's being toggled
+    if (viewer.style.display === "none" || viewer.style.display === "") {
+        viewer.style.display = "block";
+        this.textContent = "Close Module";
+    } else {
+        viewer.style.display = "none";
+        this.textContent = "View Module";
+    }
+});
+
+</script>
