@@ -567,20 +567,23 @@ class StudentController extends Controller
     public function showPeople($subjectId)
     {
         // Get all subjects grouped by grade level
-        $subjectsByGrade = $this->database->getReference('subjects')->getValue();
+        $subjectsByGrade = $this->database->getReference('subjects')->getValue() ?? [];
 
         $subject = null;
         $gradeLevel = null;
 
-        // Loop through grade levels to find the subject ID
+        // Loop through grade levels to find the subject with the matching subject_id
         foreach ($subjectsByGrade as $grade => $subjects) {
-            if (isset($subjects[$subjectId])) {
-                $subject = $subjects[$subjectId];
-                $gradeLevel = $grade;
-                break;
+            foreach ($subjects as $key => $s) {
+                if (isset($s['subject_id']) && $s['subject_id'] === $subjectId) {
+                    $subject = $s;
+                    $gradeLevel = $grade;
+                    break 2;
+                }
             }
         }
 
+        // If no matching subject or no people listed, show error
         if (!$subject || !isset($subject['people'])) {
             abort(404, 'Subject or people not found.');
         }
@@ -591,13 +594,16 @@ class StudentController extends Controller
             return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
         });
 
+        // Return view with subject info included
         return view('mio.head.student-panel', [
             'page' => 'people',
+            'subject' => $subject,              // ✅ include full subject info
             'subject_id' => $subjectId,
-            'grade_level' => $gradeLevel, // optional if needed in view
+            'grade_level' => $gradeLevel,
             'people' => $people
         ]);
     }
+
 
 
 

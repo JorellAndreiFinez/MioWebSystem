@@ -43,7 +43,7 @@
             <div class="card-wrap">
                 <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
                     <div class="card">
-                        <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
+                       <img src="{{ $subject['image_url'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($subject['title']) }}" class="card-img" />
 
                         <div>
                             <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>

@@ -19,7 +19,7 @@
                     @else
                         @foreach($contacts as $contact)
                             <div class="contact" data-contact-id="{{ $contact['id'] }}" data-contact-name="{{ $contact['name'] }}" data-contact-role="{{ $contact['role'] }}" data-contact-image="{{ $contact['profile_pic'] }}">
-                                <img src="{{ $contact['profile_pic'] ?? 'default.jpg' }}" class="profile-pic" />
+                                <img src="{{ $contact['profile_pic'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($contact['name']) }}" class="profile-pic" />
                                 <div class="contact-info">
                                     <p class="name">{{ $contact['name'] }}</p>
                                     <p class="role">{{ $contact['role'] }}</p>
@@ -28,6 +28,7 @@
                         @endforeach
                     @endif
                 </div>
+
 
                     <!-- Right Column - Chat Messages -->
                 <div class="no-contact-selected">

@@ -71,6 +71,17 @@
                                 @endforeach
                             </select>
                         </div>
+
+                       <div class="form-group">
+                        <label>Subject Type <span style="color: red">*</span></label>
+                        <select name="subjectType" required>
+                            <option value="">Select Subject Type</option>
+                            <option value="academics" {{ ($editdata['subjectType'] ?? '') == 'academics' ? 'selected' : '' }}>Academics</option>
+                            <option value="specialized" {{ ($editdata['subjectType'] ?? '') == 'specialized' ? 'selected' : '' }}>Specialized</option>
+                        </select>
+                    </div>
+
+
                     </div>
                 </div>
 

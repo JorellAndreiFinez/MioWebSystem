@@ -195,6 +195,11 @@ img {
     font-size: 14px;
 }
 
+.task-card .task-subject {
+    font-size: 4px;
+    margin-left: 10px;
+}
+
 .announcement-card,
 .task-card a {
     text-decoration: none;
