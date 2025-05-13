@@ -111,6 +111,10 @@ input::placeholder {
     color: #555;
 }
 
+.section-divider {
+    border: .2rem solid;
+}
+
 
 /* ---------- BUTTON STYLES ----------  */
 
@@ -512,10 +516,11 @@ button:link {
 .text {
     display: inline-block;
     color: #11101d;
-    font-size: 35px;
+    font-size: 1.7rem;
     font-weight: 700;
-    margin: 18px;
-    margin-left: 2.5rem;
+    margin: 15px;
+    margin-left: 3rem;
+    text-transform: uppercase;
 }
 
 
@@ -804,7 +809,36 @@ button:link {
 }
 
 
-/* EDIT ANNOUNCEMENTS */
+/* BREAD CRUMBS */
+
+.breadcrumb-item {
+    display: inline-block;
+}
+
+.breadcrumb-item a {
+    text-transform: none;
+    text-decoration: none;
+    color: var(--primary-color);
+    text-transform: uppercase;
+}
+
+.breadcrumb-item.active {
+    font-weight: bold;
+    color: #474747;
+}
+
+.breadcrumb-item:not(.active)::after {
+    content: '';
+    color: #474747;
+    margin-left: 5px;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--sort-btn-color);
+}
+
+
+/* EDIT ANNOUNCEMENTS - TEACHER */
 
 #editAnnouncementForm {
     display: none;

@@ -192,10 +192,6 @@ class StudentController extends Controller
     ]);
 }
 
-
-
-
-
     public function showSubject($subjectId)
     {
         // Fetch the active school year from Firebase
@@ -294,7 +290,8 @@ class StudentController extends Controller
         return view('mio.head.student-panel', [
             'page' => 'announcement',
             'subject' => $subject,
-            'announcements' => $announcements
+            'announcements' => $announcements,
+             'subjectId' => $subjectId,
         ]);
     }
 
@@ -341,6 +338,7 @@ class StudentController extends Controller
             'subject' => $subject,
             'announcement' => $announcement,
             'announcementId' => $announcementId,
+             'subjectId' => $subjectId,
         ]);
     }
 
@@ -451,14 +449,14 @@ class StudentController extends Controller
         $subjectsData = $this->database->getReference('subjects')->getValue() ?? [];
 
         $modulesList = [];
+        $subjectDetails = null; // Initialize to store subject details
 
         foreach ($subjectsData as $gradeLevel => $subjects) {
             foreach ($subjects as $subject) {
-                if (
-                    $subject['subject_id'] === $subjectId &&
-                    isset($subject['modules']) &&
-                    is_array($subject['modules'])  // check if modules are in array format
-                ) {
+                if ($subject['subject_id'] === $subjectId && isset($subject['modules']) && is_array($subject['modules'])) {
+                    // Store the subject details in $subjectDetails when found
+                    $subjectDetails = $subject;
+
                     foreach ($subject['modules'] as $index => $module) {
                         $modulesList[] = [
                             'title' => $module['title'] ?? 'Untitled Module',
@@ -467,16 +465,22 @@ class StudentController extends Controller
                             'module_index' => $index
                         ];
                     }
+                    break; // Exit the loop once the subject is found
                 }
+            }
+            if ($subjectDetails) {
+                break; // Exit the outer loop once the subject is found
             }
         }
 
         return view('mio.head.student-panel', [
             'page' => 'module',
             'modules' => $modulesList,
-            'subject_id' => $subjectId
+            'subject_id' => $subjectId,
+            'subject' => $subjectDetails, // Pass the correct subject data to the view
         ]);
     }
+
 
     public function showModuleBody($subjectId, $moduleIndex)
     {
@@ -520,7 +524,8 @@ class StudentController extends Controller
         'page' => 'module-body',
         'subject' => $subject,
         'module' => $module,
-        'moduleIndex' => $moduleIndex
+        'moduleIndex' => $moduleIndex,
+
     ]);
 }
 
@@ -558,6 +563,42 @@ class StudentController extends Controller
             'section' => $studentSection // Pass section data to the view
         ]);
     }
+
+    public function showPeople($subjectId)
+    {
+        // Get all subjects grouped by grade level
+        $subjectsByGrade = $this->database->getReference('subjects')->getValue();
+
+        $subject = null;
+        $gradeLevel = null;
+
+        // Loop through grade levels to find the subject ID
+        foreach ($subjectsByGrade as $grade => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $subject = $subjects[$subjectId];
+                $gradeLevel = $grade;
+                break;
+            }
+        }
+
+        if (!$subject || !isset($subject['people'])) {
+            abort(404, 'Subject or people not found.');
+        }
+
+        // Sort people by last name
+        $people = $subject['people'];
+        uasort($people, function ($a, $b) {
+            return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
+        });
+
+        return view('mio.head.student-panel', [
+            'page' => 'people',
+            'subject_id' => $subjectId,
+            'grade_level' => $gradeLevel, // optional if needed in view
+            'people' => $people
+        ]);
+    }
+
 
 
 

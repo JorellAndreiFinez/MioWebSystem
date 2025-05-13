@@ -1,5 +1,21 @@
 <section class="home-section">
 
+<div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
+        </div>
+
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject.modules', ['subjectId' => $subject['subject_id']]) }}">
+                Modules
+            </a>
+        </div>
+        <div class="breadcrumb-item active">{{ $moduleIndex }}</div>
+
+    </div>
+
     <main class="main-banner">
         <div class="welcome-banner">
             <div class="banner">
@@ -11,30 +27,41 @@
     </main>
 
     <div class="grid-container">
-        <!-- Begin Main -->
-        <main class="main main-module-content">
-            <div class="module-card">
-                <div class="module-card__content">
-                    <h3>{{ $module['title'] }}</h3>
-                    <p>{{ $module['description'] }}</p>
-                </div>
-            </div>
+    <!-- Begin Main -->
+    <main class="main main-module-content">
 
+        <!-- Module Description -->
+        <div class="module-card">
+            <div class="module-card__content">
+                <p class="module-description">{{ $module['description'] }}</p>
+            </div>
+        </div>
+        <br>
+        <hr class="section-divider">
+
+        <br>
+        <!-- View Button -->
+        <div class="view-button-container">
             <a href="#" class="preview-module-btn" id="togglePdfBtn">View Module</a>
+        </div>
 
-            <div class="module-viewer" id="pdfViewer" style="display: none;">
-                <object class="pdf"
-                        data="{{ $module['url'] ?? '#' }}"
-                        type="application/pdf"
-                        width="100%"
-                        height="600px">
-                    <p>Your browser does not support PDFs.
-                        <a href="{{ $module['url'] ?? '#' }}">Download the PDF</a>.</p>
-                </object>
-            </div>
-        </main>
-        <!-- End Main -->
-    </div>
+        <!-- PDF Viewer -->
+        <div class="module-viewer" id="pdfViewer">
+            <object class="pdf"
+                    data="{{ $module['file']['url'] ?? '#' }}"
+                    type="application/pdf"
+                    width="100%"
+                    height="600px">
+                <p>Your browser does not support PDFs.
+                    <a href="{{ $module['file']['url'] ?? '#' }}">Download the PDF</a>.
+                </p>
+            </object>
+        </div>
+
+    </main>
+    <!-- End Main -->
+</div>
+
 </section>
 
 <script>

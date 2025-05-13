@@ -588,6 +588,37 @@ class TeacherController extends Controller
 
     }
 
+    public function showPeople($subjectId)
+{
+    // Fetch subject data from Firebase
+    $subjectsRef = $this->database->getReference('subjects/GR7/'.$subjectId);
+    $subject = $subjectsRef->getValue();
+
+    if (!$subject || !isset($subject['people'])) {
+        abort(404, 'Subject or people not found.');
+    }
+
+    // Fetch and retain student IDs as keys
+    $people = $subject['people'];
+
+    // Sort people by last name
+    uasort($people, function ($a, $b) {
+        return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
+    });
+
+    return view('mio.head.teacher-panel', [
+        'page' => 'people',
+        'subject_id' => $subjectId,
+        'people' => $people
+    ]);
+}
+
+
+
+
+
+
+
 
 
 }
