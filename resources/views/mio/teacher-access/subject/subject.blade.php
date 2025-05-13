@@ -1,8 +1,6 @@
 
 <section class="home-section">
-    @include('mio.dashboard.breadcrumbs')
-
-
+    <h1 class="text">{{ $subject['title']  }}</h1>
         <main class="main-banner">
             <div class="welcome-banner">
             <div class="banner">
@@ -32,7 +30,7 @@
     </div>
     </a>
 
-    <a href="{{ route('mio.subject-teacher.assignment') }}"><div class="overviewcard">
+    <a href="{{ route('mio.subject-teacher.assignment', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Assignments</div>
             <div class="overviewcard__arrow">&rsaquo;</div>
@@ -46,7 +44,7 @@
     </div>
     </a>
 
-    <a href="{{ route('mio.subject-teacher.modules', ['subjectId' => $subject['subject_id']]) }}">
+   <a href="{{ route('mio.subject-teacher.modules', ['subjectId' => $subject['subject_id']]) }}">
         <div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Modules</div>

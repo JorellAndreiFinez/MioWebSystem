@@ -5,7 +5,6 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\MessagingController;
-use App\Http\Controllers\Dashboard\SettingsController;
 use App\Http\Controllers\Dashboard\StudentController;
 use App\Http\Controllers\Dashboard\TeacherController;
 use App\Http\Controllers\DepartmentController;
@@ -14,7 +13,6 @@ use App\Http\Controllers\Enrollment\EnrollController;
 use App\Http\Controllers\FirebaseConnectionController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\SectionController;
-use App\Http\Controllers\SpeechaceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
@@ -68,35 +66,16 @@ Route::prefix('')->group(function () {
 
 
 Route::prefix('enrollment')->group(function () {
+    Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
 
-    // Routes only accessible if NOT logged in
-    Route::middleware('enroll.guest')->group(function () {
-        Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
-        Route::post('/login', [EnrollController::class, 'login'])->name('enroll.login');
-        Route::post('/signup', [EnrollController::class, 'signup'])->name('enroll.signup');
-    });
+    Route::view('/send-otp', 'enrollment-panel.enrollment-panel', ['page' => 'send-otp'])->name('send-otp');
 
-    // Routes only accessible if logged in
-    Route::middleware('enroll.auth')->group(function () {
-        Route::get('/dashboard', [EnrollController::class, 'showDashboard'])->name('enroll-dashboard');
+    Route::post('/signup', [EnrollController::class, 'signup'])->name('enroll.signup');
+    Route::post('/login', [EnrollController::class, 'login'])->name('enroll.login');
 
-        Route::get('/enrollment-form', [EnrollController::class, 'showEnrollmentForm'])->name('enroll-form');
-        Route::post('/enrollment-submit', [EnrollController::class, 'submitEnrollmentForm'])->name('enrollment.submit');
+    Route::middleware([EnrollAuthMiddleware::class])->group(function () {
+        Route::view('/dashboard', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-dashboard'])->name('enroll-dashboard');
         Route::post('/logout', [EnrollController::class, 'logout'])->name('enroll.logout');
-
-        Route::get('/enroll-assessment', [EnrollController::class, 'showAssessmentPage'])->name('enroll-assessment');
-
-        Route::get('/start-assessment', [EnrollController::class, 'startAssessment'])->name('enroll.assessment.start');
-
-        Route::get('/assessment/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
-
-        // ASSESSMENT ROUTES
-        Route::prefix('assessment')->name('assessment.')->group(function () {
-            Route::get('/physical', [EnrollController::class, 'assessmentPhysical'])->name('physical');
-            Route::get('/written', [EnrollController::class, 'assessmentWritten'])->name('written');
-            Route::get('/achievement', [EnrollController::class, 'assessmentAchievement'])->name('achievement');
-            Route::post('/submit', action: [SpeechaceController::class, 'submit'])->name('speechace.submit');
-        });
     });
 });
 
@@ -121,19 +100,7 @@ Route::prefix('mio/admin/')->middleware(
 // ----------------  PID
 
     Route::get('/PID', [CmsController::class, 'showCMS'])->name('ViewCMS');
-
-    Route::get('/PID/edit/{key}', [CmsController::class, 'editNav'])->name('cms.edit-nav');
-
-    Route::POST('/PID/cms/homepage/update', [CMSController::class, 'updateCMSHomepage'])->name('cms.homepage.update');
-
-// ----------------  ENROLLMENT
-    Route::get('/enrollment', [EnrollController::class, 'showAdminEnrollment'])->name('enrollment');
-     Route::get('/enrollment/{id}', [EnrollController::class, 'viewAdminEnrollee'])->name('view-enrollee');
-
-     Route::put('/enrollment/update/{id}', [EnrollController::class, 'updateEnrolleeStatus'])->name('update-enrollee');
-
-
-
+    Route::get('/admin/cms/{id}', [CmsController::class, 'show'])->name('cms.show');
 
 
 //  ---------------  TEACHERS
@@ -315,32 +282,20 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
         Route::get('/{subjectId}/announcements/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('announcements-body');
 
-        Route::post('/{subjectId}/announcements/{announcementId}/reply', [StudentController::class, 'storeReply'])->name('storeReply');
+        Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [StudentController::class, 'storeReply'])->name('storeReply');
 
-        Route::delete('/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
-
-        Route::get('/{subjectId}/people', [StudentController::class, 'showPeople'])->name('people');
+        Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
 
         Route::get('/{subjectId}/people', [StudentController::class, 'showPeople'])->name('people');
 
 
-    // ASSIGNMENT
-        Route::get('/{subjectId}/assignment', [StudentController::class, 'showAssignment'])->name('assignment');
-        Route::get('/{subjectId}/assignment/{assignmentId}', [StudentController::class, 'showAssignmentDetails'])->name('assignment-body');
+        Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
+        Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
 
-        Route::post('/{subjectId}/assignment/{assignmentId}/submit', [StudentController::class, 'submitAssignment'])->name('assignment-submit');
-
-
-    // SCORES
-        Route::get('/{subjectId}/scores', [StudentController::class, 'showScores'])->name('scores');
+        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
 
         Route::get('/{subjectId}/modules', [StudentController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [StudentController::class, 'showModuleBody'])->name('module-body');
-
-    // QUIZZES
-        Route::get('/{subjectId}/quiz', [StudentController::class, 'showQuizzes'])->name('quiz');
-
-         Route::get('/{subjectId}/quiz/{quizId}', [StudentController::class, 'showQuizDetails'])->name('quiz-body');
 
 
     });
@@ -368,12 +323,12 @@ Route::prefix('mio/teacher')->middleware(
        Route::get('/messages', [MessagingController::class, 'showTeacherInbox'])->name('mio.teacher-inbox');
 
     Route::post('/send-message', [MessagingController::class, 'sendTeacherMessage'])->name('mio.teacher-message-send');
+     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
 
-     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages'])->name('mio.teacher-inbox-message');
 
-    Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
-
-    Route::get('/settings', [SettingsController::class, 'showSettings'])->name('mio.teacher-settings');
+    Route::get('/profile', function () {
+        return view('mio.head.teacher-panel', ['page' => 'profile']);
+    })->name('mio.teacher-profile');
 
     Route::prefix('subject')->name('mio.subject-teacher.')->group(function () {
 
@@ -393,45 +348,20 @@ Route::prefix('mio/teacher')->middleware(
     // ASSIGNMENT
         Route::get('/{subjectId}/assignment', [TeacherController::class, 'showAssignment'])->name('assignment');
         Route::post('/{subjectId}/assignment/add', [TeacherController::class, 'addAssignment'])->name('addAssignment');
-        Route::delete('/{subjectId}/assignment/{assignmentId}/delete', [TeacherController::class, 'deleteAssignment'])->name('deleteAssignment');
 
 
-        Route::get('/{subjectId}/assignment/{assignmentId}', [TeacherController::class, 'showAssignmentDetails'])->name('assignment-body');
-        Route::put('/{subjectId}/assignment/{assignmentId}/edit', [TeacherController::class, 'editAssignment'])->name('assignment.edit');
-        // Save or update review for a student's assignment
-        Route::post('/{subjectId}/assignment/{assignmentId}/review/{studentId}', [TeacherController::class, 'saveReview'])->name('assignment.review-save');
-
-    // QUIZZES
-        Route::get('/{subjectId}/quiz', [TeacherController::class, 'showQuizzes'])->name('quiz');
-
-        Route::get('/{subjectId}/quiz/add-quiz', [TeacherController::class, 'addAcadsQuiz'])->name('add-acads-quiz');
-
-        Route::post('/{subjectId}/quiz/store-quiz', [TeacherController::class, 'storeQuiz'])->name('store-acads-quiz');
-
-        Route::delete('/{subjectId}/quiz/{quizId}/delete', [TeacherController::class, 'deleteQuiz'])->name('deleteQuiz');
-
-        Route::get('/{subjectId}/quiz/{quizId}/edit-quiz', [TeacherController::class, 'showEditAcadsQuiz'])->name('edit-acads-quiz');
-
-        Route::put('/{subjectId}/quiz/{quizId}/update-quiz', [TeacherController::class, 'updateAcadsQuiz'])->name('update-acads-quiz');
-
-         Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
+        Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
 
 
-    // SCORES
-        Route::get('/{subjectId}/scores', [TeacherController::class, 'showScores'])->name('scores');
 
-
-        Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
+        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
 
         Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 
         Route::get('/{subjectId}/modules', [TeacherController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [TeacherController::class, 'showModuleBody'])->name('module-body');
 
-    // ATTENDANCE
-        Route::get('/{subjectId}/attendance', [TeacherController::class, 'showAttendance'])->name('attendance');
-        Route::post('/{subjectId}/attendance/{attendanceId}', [TeacherController::class, 'updateAttendance'])->name('attendance.update');
-        Route::post('/{subjectId}/attendance', [TeacherController::class, 'storeAttendance'])->name('attendance.store');
+
     });
 
 });
