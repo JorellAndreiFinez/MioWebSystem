@@ -334,6 +334,7 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::get('/{subjectId}', [TeacherController::class, 'showSubject'])->name('show-subject');
 
+    // ANNOUNCEMENTS
         Route::get('/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('announcement');
 
         Route::get('/{subjectId}/announcements/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('announcements-body');
@@ -344,8 +345,14 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::put('/{subjectId}/announcement/{announcementId}/edit', [TeacherController::class, 'editAnnouncement'])->name('editAnnouncement');
 
-        Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
+    // ASSIGNMENT
+        Route::get('/{subjectId}/assignment', [TeacherController::class, 'showAssignment'])->name('assignment');
+        Route::post('/{subjectId}/assignment/add', [TeacherController::class, 'addAssignment'])->name('addAssignment');
+
+
         Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
+
+
 
         Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
 

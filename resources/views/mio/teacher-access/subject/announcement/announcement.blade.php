@@ -1,7 +1,27 @@
 
 
 <section class="home-section">
-@include('mio.dashboard.breadcrumbs');
+<!-- BREADCRUMBS -->
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subjectId]) }}" >
+                {{ $subject['title'] }}
+            </a>
+        </div>
+
+        @if(isset($announcementId))
+            <div class="breadcrumb-item">
+                <a href="{{ route('mio.subject-teacher.announcements', ['subjectId' => $subjectId]) }}">
+                    Announcements
+                </a>
+            </div>
+        @else
+            <div class="breadcrumb-item active" style="color: #474747;
+">
+                Announcements
+            </div>
+        @endif
+    </div>
         <main class="main-banner">
             <div class="welcome-banner">
             <div class="banner">
@@ -23,8 +43,6 @@
             <div class="main-overview">
 
         @foreach($announcements as $announcement)
-
-
               <a href="{{ route('mio.subject-teacher.announcements-body', [
                                 'subjectId' => $announcement['subject_id'] ?? '',
                                 'announcementId' =>  $announcement['id']
@@ -37,6 +55,7 @@
                     <div class="overviewcard__date">{{ $announcement['date_posted'] ?? '' }}</div>
                     <div class="overviewcard__arrow">&rsaquo;</div>
                 </div>
+                </a>
             @endforeach
 
 
