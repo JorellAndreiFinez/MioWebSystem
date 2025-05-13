@@ -7,7 +7,6 @@ use Kreait\Firebase\Database;
 use Kreait\Firebase\Factory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
-use Carbon\Carbon;
 
 
 class StudentController extends Controller
@@ -29,169 +28,169 @@ class StudentController extends Controller
     }
 
    public function showDashboard()
-    {
-        Log::debug('Session firebase_user:', Session::get('firebase_user'));
+{
+    Log::debug('Session firebase_user:', Session::get('firebase_user'));
 
-        // Fetch the current logged-in user's section_id and teacher_id
-        $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
-        $userTeacherId = session('firebase_user')['teacher_id'] ?? null; // Fetch the student ID from the session
+    // Fetch the current logged-in user's section_id and teacher_id
+    $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
+    $userTeacherId = session('firebase_user')['teacher_id'] ?? null; // Fetch the teacher ID from the session
 
-        // Fetch the active school year from Firebase
-        $activeSchoolYearRef = $this->database->getReference('schoolyears');
-        $schoolYears = $activeSchoolYearRef->getValue() ?? [];
-        $activeSchoolYear = null;
+    // Fetch the active school year from Firebase
+    $activeSchoolYearRef = $this->database->getReference('schoolyears');
+    $schoolYears = $activeSchoolYearRef->getValue() ?? [];
+    $activeSchoolYear = null;
 
-        foreach ($schoolYears as $schoolYear) {
-            if ($schoolYear['status'] === 'active') {
-                $activeSchoolYear = $schoolYear['schoolyearid'];
-                break;
-            }
+    foreach ($schoolYears as $schoolYear) {
+        if ($schoolYear['status'] === 'active') {
+            $activeSchoolYear = $schoolYear['schoolyearid'];
+            break;
         }
+    }
 
-        // Fetch grade levels from Firebase
-        $gradeLevelsRef = $this->database->getReference('gradelevel');
-        $gradeLevels = $gradeLevelsRef->getValue() ?? [];
+    // Fetch grade levels from Firebase
+    $gradeLevelsRef = $this->database->getReference('gradelevel');
+    $gradeLevels = $gradeLevelsRef->getValue() ?? [];
 
-        // Initialize an array to hold the subjects for each grade level
-        $allSubjects = [];
+    // Initialize an array to hold the subjects for each grade level
+    $allSubjects = [];
 
-        foreach ($gradeLevels as $gradeLevelKey => $gradeLevel) {
-            // Fetch subjects for each grade level under the active school year
-            $subjectsRef = $this->database->getReference('subjects/' . $gradeLevelKey);
-            $subjects = $subjectsRef->getValue() ?? [];
+    foreach ($gradeLevels as $gradeLevelKey => $gradeLevel) {
+        // Fetch subjects for each grade level under the active school year
+        $subjectsRef = $this->database->getReference('subjects/' . $gradeLevelKey);
+        $subjects = $subjectsRef->getValue() ?? [];
 
-            // Only add subjects for the active school year AND the user's section or teacher
-            $gradeSubjects = array_filter($subjects, function($subject) use ($activeSchoolYear, $userSectionId, $userTeacherId) {
-                return isset($subject['schoolyear_id']) && $subject['schoolyear_id'] === $activeSchoolYear &&
-                    (
-                        // Check if the subject is assigned to the user's section
-                        (isset($subject['section_id']) && $subject['section_id'] === $userSectionId) ||
-                        // Or check if the teacher is assigned to the subject
-                        (isset($subject['teacher_id']) && $subject['teacher_id'] === $userTeacherId)
-                    );
-            });
-
-            $allSubjects[$gradeLevelKey] = $gradeSubjects;
-        }
-
-        // Fetch sections under the active school year
-        $sectionsRef = $this->database->getReference('sections');
-        $sections = $sectionsRef->getValue();
-
-        $activeSections = [];
-        foreach ($sections as $sectionId => $section) {
-            if ($section['schoolyear_id'] === $activeSchoolYear && $section['status'] === 'active') {
-                $activeSections[] = $section;
-            }
-        }
-
-        // Filter active sections based on the logged-in user's section_id
-        $filteredSections = array_filter($activeSections, function($section) use ($userSectionId) {
-            return $section['sectionid'] === $userSectionId;
+        // Only add subjects for the active school year AND the user's section or teacher
+        $gradeSubjects = array_filter($subjects, function($subject) use ($activeSchoolYear, $userSectionId, $userTeacherId) {
+            return isset($subject['schoolyear_id']) && $subject['schoolyear_id'] === $activeSchoolYear &&
+                (
+                    // Check if the subject is assigned to the user's section
+                    (isset($subject['section_id']) && $subject['section_id'] === $userSectionId) ||
+                    // Or check if the teacher is assigned to the subject
+                    (isset($subject['teacher_id']) && $subject['teacher_id'] === $userTeacherId)
+                );
         });
 
-        // Fetch users (students and teachers) for the active sections
-        $usersRef = $this->database->getReference('users');
-        $users = $usersRef->getValue();
+        $allSubjects[$gradeLevelKey] = $gradeSubjects;
+    }
 
-        // Organize users by section
-        $sectionUsers = [];
-        foreach ($filteredSections as $section) {
-            $sectionId = $section['sectionid'];
-            $sectionUsers[$sectionId] = [
-                'teachers' => [],
-                'students' => []
-            ];
+    // Fetch sections under the active school year
+    $sectionsRef = $this->database->getReference('sections');
+    $sections = $sectionsRef->getValue();
 
-            // Add teachers based on the modules in the section
-            if (isset($section['modules'])) {
-                foreach ($section['modules'] as $module) {
-                    if (isset($module['people'])) {
-                        foreach ($module['people'] as $person) {
-                            if ($person['role'] === 'teacher') {
-                                $sectionUsers[$sectionId]['teachers'][] = $users[$person['teacher_id']] ?? null;
-                            }
+    $activeSections = [];
+    foreach ($sections as $sectionId => $section) {
+        if ($section['schoolyear_id'] === $activeSchoolYear && $section['status'] === 'active') {
+            $activeSections[] = $section;
+        }
+    }
+
+    // Filter active sections based on the logged-in user's section_id
+    $filteredSections = array_filter($activeSections, function($section) use ($userSectionId) {
+        return $section['sectionid'] === $userSectionId;
+    });
+
+    // Fetch users (students and teachers) for the active sections
+    $usersRef = $this->database->getReference('users');
+    $users = $usersRef->getValue();
+
+    // Organize users by section
+    $sectionUsers = [];
+    foreach ($filteredSections as $section) {
+        $sectionId = $section['sectionid'];
+        $sectionUsers[$sectionId] = [
+            'teachers' => [],
+            'students' => []
+        ];
+
+        // Add teachers based on the modules in the section
+        if (isset($section['modules'])) {
+            foreach ($section['modules'] as $module) {
+                if (isset($module['people'])) {
+                    foreach ($module['people'] as $person) {
+                        if ($person['role'] === 'teacher') {
+                            $sectionUsers[$sectionId]['teachers'][] = $users[$person['teacher_id']] ?? null;
                         }
                     }
                 }
             }
+        }
 
-            // Add students based on the section ID
-            foreach ($users as $user) {
-                if (isset($user['category']) && $user['category'] === 'new' && isset($user['schoolyear_id']) && $user['schoolyear_id'] === $activeSchoolYear) {
-                    if (isset($user['section_id']) && $user['section_id'] === $sectionId) {
-                        $sectionUsers[$sectionId]['students'][] = $user;
-                    }
+        // Add students based on the section ID
+        foreach ($users as $user) {
+            if (isset($user['category']) && $user['category'] === 'new' && isset($user['schoolyear_id']) && $user['schoolyear_id'] === $activeSchoolYear) {
+                if (isset($user['section_id']) && $user['section_id'] === $sectionId) {
+                    $sectionUsers[$sectionId]['students'][] = $user;
                 }
             }
         }
-
-        // Fetch modules for the logged-in user's section and ensure they are assigned correctly
-        $modulesForUserSection = [];
-        foreach ($allSubjects as $gradeLevelKey => $subjects) {
-            foreach ($subjects as $subject) {
-                // Ensure the student’s section matches the subject's section or the teacher is assigned
-                if ($subject['section_id'] === $userSectionId || $subject['teacher_id'] === $userTeacherId) {
-                    // Ensure subject is linked to the active school year
-                    if ($subject['schoolyear_id'] === $activeSchoolYear) {
-                        $modulesForUserSection[] = $subject;
-                    }
-                }
-            }
-        }
-
-        // Fetch and display announcements
-        $adminAnnouncementsRef = $this->database->getReference('admin-announcements');
-        $adminAnnouncements = $adminAnnouncementsRef->getValue() ?? [];
-
-        $subjectAnnouncements = [];
-        foreach ($allSubjects as $gradeLevelKey => $subjects) {
-            foreach ($subjects as $subject) {
-                if ($subject['section_id'] === $userSectionId && $subject['schoolyear_id'] === $activeSchoolYear) {
-                    $subjectId = $subject['subject_id'];
-                    $announcementRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/announcements");
-                    $announcements = $announcementRef->getValue() ?? [];
-
-                    foreach ($announcements as $announcementId => $announcement) {
-                        $announcement['subject'] = $subject['title'] ?? 'Subject';
-                        $announcement['date'] = $announcement['date_posted'] ?? 'Unknown Date';
-                        $announcement['subject_id'] = $subject['subject_id'];
-                        $announcement['grade_level_key'] = $gradeLevelKey;
-                        $announcement['type'] = 'subject';
-                        $announcement['id'] = $announcementId;
-                        $subjectAnnouncements[] = $announcement;
-                    }
-                }
-            }
-        }
-
-        // Merge and sort all announcements
-        $allAnnouncements = [];
-        foreach ($adminAnnouncements as $announcementId => $announcement) {
-            $announcement['subject'] = 'General';
-            $announcement['date'] = $announcement['date'] ?? 'Unknown Date';
-            $announcement['type'] = 'general';
-            $announcement['id'] = $announcementId;
-            $allAnnouncements[] = $announcement;
-        }
-        $allAnnouncements = array_merge($allAnnouncements, $subjectAnnouncements);
-
-        // Sort by date (latest first)
-        usort($allAnnouncements, function ($a, $b) {
-            return strtotime($b['date']) <=> strtotime($a['date']);
-        });
-
-        // Pass filtered data to the view
-        return view('mio.head.student-panel', [
-            'page' => 'dashboard',
-            'subjects' => $modulesForUserSection,
-            'allSubjects' => $allSubjects,
-            'activeSchoolYear' => $activeSchoolYear,
-            'activeSections' => $filteredSections,
-            'sectionUsers' => $sectionUsers,
-            'announcements' => $allAnnouncements
-        ]);
     }
+
+    // Fetch modules for the logged-in user's section and ensure they are assigned correctly
+    $modulesForUserSection = [];
+    foreach ($allSubjects as $gradeLevelKey => $subjects) {
+        foreach ($subjects as $subject) {
+            // Ensure the student’s section matches the subject's section or the teacher is assigned
+            if ($subject['section_id'] === $userSectionId || $subject['teacher_id'] === $userTeacherId) {
+                // Ensure subject is linked to the active school year
+                if ($subject['schoolyear_id'] === $activeSchoolYear) {
+                    $modulesForUserSection[] = $subject;
+                }
+            }
+        }
+    }
+
+    // Fetch and display announcements
+    $adminAnnouncementsRef = $this->database->getReference('admin-announcements');
+    $adminAnnouncements = $adminAnnouncementsRef->getValue() ?? [];
+
+    $subjectAnnouncements = [];
+    foreach ($allSubjects as $gradeLevelKey => $subjects) {
+        foreach ($subjects as $subject) {
+            if ($subject['section_id'] === $userSectionId && $subject['schoolyear_id'] === $activeSchoolYear) {
+                $subjectId = $subject['subject_id'];
+                $announcementRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/announcements");
+                $announcements = $announcementRef->getValue() ?? [];
+
+                foreach ($announcements as $announcementId => $announcement) {
+                    $announcement['subject'] = $subject['title'] ?? 'Subject';
+                    $announcement['date'] = $announcement['date_posted'] ?? 'Unknown Date';
+                    $announcement['subject_id'] = $subject['subject_id'];
+                    $announcement['grade_level_key'] = $gradeLevelKey;
+                    $announcement['type'] = 'subject';
+                    $announcement['id'] = $announcementId;
+                    $subjectAnnouncements[] = $announcement;
+                }
+            }
+        }
+    }
+
+    // Merge and sort all announcements
+    $allAnnouncements = [];
+    foreach ($adminAnnouncements as $announcementId => $announcement) {
+        $announcement['subject'] = 'General';
+        $announcement['date'] = $announcement['date'] ?? 'Unknown Date';
+        $announcement['type'] = 'general';
+        $announcement['id'] = $announcementId;
+        $allAnnouncements[] = $announcement;
+    }
+    $allAnnouncements = array_merge($allAnnouncements, $subjectAnnouncements);
+
+    // Sort by date (latest first)
+    usort($allAnnouncements, function ($a, $b) {
+        return strtotime($b['date']) <=> strtotime($a['date']);
+    });
+
+    // Pass filtered data to the view
+    return view('mio.head.student-panel', [
+        'page' => 'dashboard',
+        'subjects' => $modulesForUserSection,
+        'allSubjects' => $allSubjects,
+        'activeSchoolYear' => $activeSchoolYear,
+        'activeSections' => $filteredSections,
+        'sectionUsers' => $sectionUsers,
+        'announcements' => $allAnnouncements
+    ]);
+}
 
     public function showSubject($subjectId)
     {
@@ -244,382 +243,6 @@ class StudentController extends Controller
             'modules' => $subjectModules
         ]);
     }
-
-    // STUDENT QUIZZES
-    public function showQuizzes($subjectId)
-    {
-        // Find grade level key
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-        $gradeLevelKey = null;
-        $matchedSubject = null;
-
-        foreach ($allSubjects as $key => $subjects) {
-            foreach ($subjects as $subject) {
-                if ($subject['subject_id'] === $subjectId) {
-                    $gradeLevelKey = $key;
-                    $matchedSubject = $subject;
-                    break 2;
-                }
-            }
-        }
-
-        if (!$gradeLevelKey || !$matchedSubject) {
-            return abort(404, 'Subject not found.');
-        }
-
-        // Fetch quizzes
-        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
-        $rawQuizzes = $quizzesRef->getValue() ?? [];
-
-        $quizzes = [];
-        foreach ($rawQuizzes as $key => $quiz) {
-            $quiz['id'] = $key;
-            $quizzes[] = $quiz;
-        }
-
-        return view('mio.head.student-panel', [
-            'page' => 'quiz',
-            'quizzes' => $quizzes,
-            'subjectId' => $subjectId,
-            'subject' => $matchedSubject,
-        ]);
-    }
-
-    // QUIZ DETAILS
-    public function showQuizDetails($subjectId, $quizId)
-    {
-        // Step 1: Find grade level and subjectKey
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-
-        $gradeLevelKey = null;
-        $subjectKey = null;
-
-        foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $key => $subjectData) {
-                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
-                    $gradeLevelKey = $gradeKey;
-                    $subjectKey = $key;
-                    $subject = $subjectData; // ✅ Assign subject details
-                    break 2;
-                }
-            }
-        }
-
-
-        if (!$gradeLevelKey || !$subjectKey) {
-            return abort(404, 'Subject not found.');
-        }
-
-        // Step 2: Get the specific assignment
-        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
-        $quiz = $quizRef->getValue();
-
-        if (!$quiz) {
-            return abort(404, 'Quiz not found.');
-        }
-
-        $quiz['id'] = $quizId;
-
-        // Step 3: Get students/people
-        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people");
-        $quiz['people'] = $peopleRef->getValue() ?? [];
-
-        // Step 4: Load submission for selected student
-        $selectedStudentId = request()->input('student_id');
-        $submission = null;
-
-        if ($selectedStudentId) {
-            $submissionRef = $this->database
-                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/submissions/{$selectedStudentId}");
-            $submission = $submissionRef->getValue();
-        }
-
-        $questions = isset($quiz['questions']) ? $quiz['questions'] : [];
-
-
-        return view('mio.head.student-panel', [
-            'page' => 'quiz-body',
-            'quiz' => $quiz,
-            'questions' => $quiz['questions'] ?? [],
-            'subjectId' => $subjectId,
-            'quizId' => $quizId,
-            'gradeLevelKey' => $gradeLevelKey,
-            'submission' => $submission,
-            'selectedStudentId' => $selectedStudentId,
-            'subject' => $subject,
-        ]);
-    }
-
-    // ASSIGNMENTS
-
-    public function showAssignment($subjectId)
-    {
-        $studentId = session('firebase_user')['uid'] ?? null;
-        $studentSectionId = session('firebase_user')['section_id'] ?? null;
-
-        if (!$studentId || !$studentSectionId) {
-            return back()->with('error', 'Student session data missing.');
-        }
-
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-
-        $studentAssignments = [];
-        $matchedSubject = null; // Add this line before the loops
-
-        foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $id => $subject) {
-                if (
-                    $id === $subjectId &&
-                    isset($subject['section_id']) &&
-                    $subject['section_id'] === $studentSectionId &&
-                    isset($subject['people'][$studentId])
-                ) {
-                    $matchedSubject = $subject; // Save subject
-                    if (isset($subject['assignments'])) {
-                        foreach ($subject['assignments'] as $assignmentKey => $assignment) {
-                            $assignment['id'] = $assignmentKey;
-                            $assignment['subject_id'] = $subjectId;
-                            $assignment['subject_title'] = $subject['title'] ?? 'Untitled Subject';
-
-                            $assignment['student_data'] = $assignment['people'][$studentId] ?? [
-                                'attempts' => 0,
-                                'work' => '',
-                                'comments' => '',
-                                'feedback' => '',
-                                'timestamp' => null,
-                            ];
-
-                            $studentAssignments[] = $assignment;
-                        }
-                    }
-                }
-            }
-        }
-
-
-
-        return view('mio.head.student-panel', [
-            'page' => 'assignment',
-            'assignments' => $studentAssignments,
-            'subjectId' => $subjectId,
-            'subject' => $matchedSubject
-        ]);
-    }
-
-    public function showAssignmentDetails($subjectId, $assignmentId)
-    {
-        // Step 1: Find grade level and subjectKey
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-
-        $gradeLevelKey = null;
-        $subjectKey = null;
-
-        foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $key => $subject) {
-                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
-                    $gradeLevelKey = $gradeKey;
-                    $subjectKey = $key;
-                    break 2;
-                }
-            }
-        }
-
-        if (!$gradeLevelKey || !$subjectKey) {
-            return abort(404, 'Subject not found.');
-        }
-
-        // Step 2: Get the specific assignment
-        $assignmentRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}");
-        $assignment = $assignmentRef->getValue();
-
-        if (!$assignment) {
-            return abort(404, 'Assignment not found.');
-        }
-
-        $assignment['id'] = $assignmentId;
-
-        // Step 3: Get students/people
-        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/people");
-        $assignment['people'] = $peopleRef->getValue() ?? [];
-
-        // Step 4: Load submission for selected student
-        $selectedStudentId = request()->input('student_id');
-        $submission = null;
-
-       if ($selectedStudentId) {
-        $submissionRef = $this->database
-            ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/submissions/{$selectedStudentId}");
-        $submissions = $submissionRef->getValue() ?? [];
-        } else {
-            $submissions = [];
-        }
-
-        $subject = $allSubjects[$gradeLevelKey][$subjectKey];
-
-
-        return view('mio.head.student-panel', [
-            'page' => 'assignment-body',
-            'assignment' => $assignment,
-            'subjectId' => $subjectId,
-            'assignmentId' => $assignmentId,
-            'gradeLevelKey' => $gradeLevelKey,
-            'submission' => $submissions,
-            'subject' => $subject,
-        ]);
-    }
-
-    public function submitAssignment(Request $request, $subjectId, $assignmentId)
-    {
-        $request->validate([
-            'work' => 'required|file|max:10240', // 10MB max
-        ]);
-
-        $studentId = session('firebase_user.uid');
-        $studentSectionId = session('firebase_user.section_id');
-
-        if (!$studentId || !$studentSectionId) {
-            return back()->with('error', 'Student session data missing.');
-        }
-
-        // Upload the file to Laravel storage
-        $file = $request->file('work');
-        $fileName = time() . '_' . $file->getClientOriginalName();
-        $filePath = $file->storeAs('submissions', $fileName, 'public');
-        $fileUrl = asset('storage/' . $filePath);
-
-        // Find subject
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-
-        foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $key => $subject) {
-                if ($key === $subjectId && isset($subject['assignments'][$assignmentId])) {
-                    // Get current attempts
-                    $currentData = $subject['assignments'][$assignmentId]['people'][$studentId] ?? [
-                        'attempts' => 0,
-                        'comments' => '',
-                        'feedback' => '',
-                        'name' => session('firebase_user.first_name') . ' ' . session('firebase_user.last_name'),
-                    ];
-
-                    $currentAttempts = $currentData['attempts'] ?? 0;
-
-                    // Update submission
-                    $this->database->getReference("subjects/{$gradeKey}/{$key}/assignments/{$assignmentId}/people/{$studentId}")
-                        ->update([
-                            'work' => $fileUrl,
-                            'attempts' => $currentAttempts + 1,
-                            'timestamp' => now()->format('Y-m-d H:i:s'),
-                            'name' => $currentData['name'] ?? 'Student',
-                        ]);
-
-                    return back()->with('success', 'Assignment submitted successfully.');
-                }
-            }
-        }
-
-        return back()->with('error', 'Assignment or subject not found.');
-    }
-
-// SCORES
-
-    public function showScores($subjectId)
-{
-    $studentId = session('firebase_user')['uid'] ?? null;
-    $studentSectionId = session('firebase_user')['section_id'] ?? null;
-
-    if (!$studentId || !$studentSectionId) {
-        return back()->with('error', 'Student session data missing.');
-    }
-
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
-
-    $assignmentScores = [];
-    $quizScores = [];
-    $matchedSubject = null;
-
-    foreach ($allSubjects as $gradeKey => $subjects) {
-        foreach ($subjects as $id => $subject) {
-            if (
-                $id === $subjectId &&
-                isset($subject['section_id']) &&
-                $subject['section_id'] === $studentSectionId &&
-                isset($subject['people'][$studentId])
-            ) {
-                $matchedSubject = $subject;
-                $matchedSubject['subject_id'] = $id;
-
-                // Assignments
-            if (isset($subject['assignments'])) {
-                foreach ($subject['assignments'] as $assignmentId => $assignment) {
-                    $studentData = $assignment['people'][$studentId] ?? null;
-
-                    // Default score display
-                    $scoreDisplay = '- / -';
-
-                    // Use points from assignment node, not student node
-                    if (isset($assignment['points'])) {
-                        $earned = $studentData['score'] ?? '-';
-                        $total = $assignment['points']['total'] ?? null;
-
-                        if ($earned !== null && $total !== null) {
-                            $scoreDisplay = "{$earned} / {$total}";
-                        }
-                    }
-
-                    $assignmentScores[] = [
-                        'title' => $assignment['title'] ?? 'Untitled',
-                        'submitted' => $studentData && !empty($studentData['work']) ? 'Submitted' : '-',
-                        'score' => $scoreDisplay,
-                    ];
-                }
-            }
-
-        // Quizzes
-        if (isset($subject['quizzes'])) {
-            foreach ($subject['quizzes'] as $quizId => $quiz) {
-                $studentData = $quiz['people'][$studentId] ?? null;
-
-                $scoreDisplay = '- / -';
-
-                // Use points from quiz node, not student node
-                if (isset($quiz['points'])) {
-                    $earned = $studentData['score'] ?? '-';
-                    $total = $quiz['points']['total'] ?? null;
-
-                    if ($earned !== null && $total !== null) {
-                        $scoreDisplay = "{$earned} / {$total}";
-                    }
-                }
-
-                $quizScores[] = [
-                    'title' => $quiz['title'] ?? 'Untitled',
-                    'submitted' => $studentData && !empty($studentData['work']) ? 'Submitted' : '-',
-                    'score' => $scoreDisplay,
-                ];
-            }
-        }
-
-            }
-        }
-    }
-
-    return view('mio.head.student-panel', [
-        'page' => 'scores',
-        'assignmentScores' => $assignmentScores,
-        'quizScores' => $quizScores,
-        'subjectId' => $subjectId,
-        'subject' => $matchedSubject,
-    ]);
-}
-
-
-// ANNOUNCEMENTS
 
     public function showSubjectAnnouncements($subjectId)
     {
@@ -944,23 +567,20 @@ class StudentController extends Controller
     public function showPeople($subjectId)
     {
         // Get all subjects grouped by grade level
-        $subjectsByGrade = $this->database->getReference('subjects')->getValue() ?? [];
+        $subjectsByGrade = $this->database->getReference('subjects')->getValue();
 
         $subject = null;
         $gradeLevel = null;
 
-        // Loop through grade levels to find the subject with the matching subject_id
+        // Loop through grade levels to find the subject ID
         foreach ($subjectsByGrade as $grade => $subjects) {
-            foreach ($subjects as $key => $s) {
-                if (isset($s['subject_id']) && $s['subject_id'] === $subjectId) {
-                    $subject = $s;
-                    $gradeLevel = $grade;
-                    break 2;
-                }
+            if (isset($subjects[$subjectId])) {
+                $subject = $subjects[$subjectId];
+                $gradeLevel = $grade;
+                break;
             }
         }
 
-        // If no matching subject or no people listed, show error
         if (!$subject || !isset($subject['people'])) {
             abort(404, 'Subject or people not found.');
         }
@@ -971,16 +591,13 @@ class StudentController extends Controller
             return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
         });
 
-        // Return view with subject info included
         return view('mio.head.student-panel', [
             'page' => 'people',
-            'subject' => $subject,              // ✅ include full subject info
             'subject_id' => $subjectId,
-            'grade_level' => $gradeLevel,
+            'grade_level' => $gradeLevel, // optional if needed in view
             'people' => $people
         ]);
     }
-
 
 
 
