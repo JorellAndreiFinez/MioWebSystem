@@ -97,12 +97,15 @@
 
 .profile-card {
     display: flex;
+    flex-direction: row;
     background-color: #ffffff;
     border-radius: 12px;
     box-shadow: 0 4px 5px rgba(0, 0, 0, 0.1);
     padding: 20px;
+    width: 900px;
+    /* Set fixed width */
+    min-width: 800px;
     max-width: 900px;
-    width: 100%;
     gap: 20px;
     justify-content: center;
 }
@@ -111,9 +114,10 @@
 /* Profile Picture Section */
 
 .profile-picture {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
     position: relative;
-    width: 120px;
-    height: 120px;
 }
 
 .profile-picture img {
@@ -149,6 +153,9 @@
 
 .profile-info {
     flex: 1;
+    min-width: 0;
+    /* Ensures text wraps inside */
+    overflow-wrap: break-word;
 }
 
 h2 {

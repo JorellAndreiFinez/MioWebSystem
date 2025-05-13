@@ -13,7 +13,8 @@
                 <div class="profile-card">
 
                     <div class="profile-picture">
-                        <img src="https://2.img-dpreview.com/files/p/E~C1000x0S4000x4000T1200x1200~articles/3925134721/0266554465.jpeg" alt="Profile Picture" />
+                        <img src="{{ $student['profile_picture'] ?? asset('default-profile.png') }}" alt="Profile Picture" />
+
                         <button class="edit-button">✎</button>
                     </div>
                     <button class="new-message-btn">

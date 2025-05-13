@@ -539,49 +539,55 @@ class TeacherController extends Controller
     }
 
     public function showModuleBody($subjectId, $moduleIndex)
-    {
-        // Get active school year
-        $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
-        $activeSchoolYear = null;
-        foreach ($schoolYears as $year) {
-            if ($year['status'] === 'active') {
-                $activeSchoolYear = $year['schoolyearid'];
-                break;
+        {
+            // Get active school year
+            $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
+            $activeSchoolYear = null;
+            foreach ($schoolYears as $year) {
+                if ($year['status'] === 'active') {
+                    $activeSchoolYear = $year['schoolyearid'];
+                    break;
+                }
+            }
+
+        // Get the grade level and subject data
+        $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+        $subject = null;
+        $gradeLevelKey = null;
+
+        foreach ($subjects as $gradeLevel => $items) {
+            foreach ($items as $key => $item) {
+                if ($item['subject_id'] === $subjectId) {
+                    $subject = $item;
+                    $gradeLevelKey = $gradeLevel;
+                    break 2;
+                }
             }
         }
 
-    // Get the grade level and subject data
-    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
-    $subject = null;
-    $gradeLevelKey = null;
-
-    foreach ($subjects as $gradeLevel => $items) {
-        foreach ($items as $key => $item) {
-            if ($item['subject_id'] === $subjectId) {
-                $subject = $item;
-                $gradeLevelKey = $gradeLevel;
-                break 2;
-            }
+        if (!$subject || !$gradeLevelKey) {
+            return redirect()->route('mio.student-panel')->with('error', 'Subject not found.');
         }
+
+        // Get the module using the module index
+        $module = $subject['modules'][$moduleIndex] ?? null;
+
+        if (!$module) {
+            return redirect()->route('mio.student-panel')->with('error', 'Module not found.');
+        }
+
+        return view('mio.head.student-panel', [
+            'page' => 'module-body',
+            'subject' => $subject,
+            'module' => $module,
+            'moduleIndex' => $moduleIndex
+        ]);
     }
 
-    if (!$subject || !$gradeLevelKey) {
-        return redirect()->route('mio.student-panel')->with('error', 'Subject not found.');
+    public function showProfile(){
+
     }
 
-    // Get the module using the module index
-    $module = $subject['modules'][$moduleIndex] ?? null;
 
-    if (!$module) {
-        return redirect()->route('mio.student-panel')->with('error', 'Module not found.');
-    }
-
-    return view('mio.head.student-panel', [
-        'page' => 'module-body',
-        'subject' => $subject,
-        'module' => $module,
-        'moduleIndex' => $moduleIndex
-    ]);
-}
 
 }

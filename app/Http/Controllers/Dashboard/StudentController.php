@@ -30,7 +30,7 @@ class StudentController extends Controller
    public function showDashboard()
 {
     Log::debug('Session firebase_user:', Session::get('firebase_user'));
-    
+
     // Fetch the current logged-in user's section_id and teacher_id
     $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
     $userTeacherId = session('firebase_user')['teacher_id'] ?? null; // Fetch the teacher ID from the session
@@ -524,7 +524,42 @@ class StudentController extends Controller
     ]);
 }
 
-// MESSAGE
+    public function showProfile()
+    {
+        $userId = session('firebase_user.uid');
+        $studentName = session('firebase_user.name');
+
+        // Get student data
+        $studentRef = $this->database->getReference('users/' . $userId);
+        $student = $studentRef->getValue();
+
+        if (!$student) {
+            abort(404, 'Student not found.');
+        }
+
+        // Find the section where this student is enrolled
+        $sectionsRef = $this->database->getReference('sections');
+        $sections = $sectionsRef->getValue();
+
+        $studentSection = null;
+
+        foreach ($sections as $sectionId => $sectionData) {
+            if (isset($sectionData['students']) && array_key_exists($userId, $sectionData['students'])) {
+                $studentSection = $sectionData;
+                break;
+            }
+        }
+
+        return view('mio.head.student-panel', [
+            'page' => 'profile',
+            'student' => $student,
+            'name' => $studentName,
+            'uid' => $userId,
+            'section' => $studentSection // Pass section data to the view
+        ]);
+    }
+
+
 
 
 }

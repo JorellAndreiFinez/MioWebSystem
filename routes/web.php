@@ -271,9 +271,7 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     Route::post('/delete-message/{messageId}', [MessagingController::class, 'deleteMessage']);
 
 
-    Route::get('/profile', function () {
-        return view('mio.head.student-panel', ['page' => 'profile']);
-    })->name('mio.profile');
+    Route::get('/profile', [StudentController::class, 'showProfile'])->name('mio.student.profile');
 
     Route::prefix('subject')->name('mio.subject.')->group(function () {
 
@@ -310,8 +308,8 @@ Route::prefix('mio/teacher')->middleware(
     Route::get('/dashboard', [TeacherController::class, 'showDashboard'])->name('mio.teacher-panel');
 
     // Announcments
-    Route::get('/subject/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('mio.announcements');
-    Route::get('/subject/{subjectId}/announcement/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('mio.announcements-body');
+    Route::get('/subject/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('mio.teacher-announcements');
+    Route::get('/subject/{subjectId}/announcement/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('mio.teacher-announcements-body');
 
 
     Route::get('/calendar', function () {

@@ -17,7 +17,7 @@
                 ['route' => 'mio.inbox', 'icon' => 'bx bx-message', 'label' => 'Inbox'],
             ],
             'Other' => [
-                ['route' => 'mio.profile', 'icon' => 'bx bx-user', 'label' => 'Profile'],
+                ['route' => 'mio.student.profile', 'icon' => 'bx bx-user', 'label' => 'Profile'],
                 ['url' => '#', 'icon' => 'bx bx-info-circle', 'label' => 'Help & Report', 'custom_active' => request()->is('help')],
                 ['url' => '#', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
             ],

@@ -78,9 +78,9 @@
                         <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
 
                        @if (($announcement['type'] ?? 'general') === 'general')
-                            <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
+                            <a href="{{ route('mio.teacher-announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
                         @else
-                            <a href="{{ route('mio.announcements-body', [
+                            <a href="{{ route('mio.teacher-announcements-body', [
                                 'subjectId' => $announcement['subject_id'] ?? '',
                                 'announcementId' => $announcement['id']
                             ]) }}">
