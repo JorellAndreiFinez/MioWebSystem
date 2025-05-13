@@ -20,7 +20,7 @@
         @vite(['resources/css/Mio/dashboard/calendar.css', 'resources/js/Mio/dashboard/calendar.js', 'resources/css/Mio/mio-app.css'])
     @elseif ($page === 'profile')
         @vite(['resources/css/Mio/dashboard/profile.css', 'resources/js/Mio/dashboard/profile.js', 'resources/css/Mio/mio-app.css'])
-    @elseif ($page === 'subject')
+    @elseif ($page === 'teacher-subject')
         @vite(['resources/js/Mio/dashboard/subject.js', 'resources/css/Mio/mio-app.css'])
     @elseif (in_array($page, ['announcement', 'announcement-body', 'assignment', 'assignment-body', 'scores', 'module', 'module-body']))
         @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css'])
@@ -44,28 +44,28 @@
         @include('mio.teacher-access.inbox.inbox')
 
     @elseif ($page === 'profile')
-        @include('mio.student-access.profile.profile')
+        @include('mio.teacher-access.profile.profile')
 
-    @elseif ($page === 'subject')
-        @include('mio.student-access.subject.subject')
+    @elseif ($page === 'teacher-subject')
+        @include('mio.teacher-access.subject.subject')
 
     @elseif ($page === 'announcement')
-        @include('mio.student-access.subject.announcement.announcement')
+        @include('mio.teacher-access.subject.announcement.announcement')
     @elseif ($page === 'announcement-body')
-        @include('mio.student-access.subject.announcement.announcement-body')
+        @include('mio.teacher-access.subject.announcement.announcement-body')
 
     @elseif ($page === 'assignment')
-        @include('mio.student-access.subject.assignment.assignment')
+        @include('mio.teacher-access.subject.assignment.assignment')
     @elseif ($page === 'assignment-body')
-        @include('mio.student-access.subject.assignment.assignment-body')
+        @include('mio.teacher-access.subject.assignment.assignment-body')
 
     @elseif ($page === 'scores')
-        @include('mio.student-access.subject.score.score')
+        @include('mio.teacher-access.subject.score.score')
 
     @elseif ($page === 'module')
-        @include('mio.student-access.subject.module.module')
+        @include('mio.teacher-access.subject.module.module')
     @elseif ($page === 'module-body')
-        @include('mio.student-access.subject.module.module-body')
+        @include('mio.teacher-access.subject.module.module-body')
     @endif
 
     {{-- Sidebar script (keep the collapse logic) --}}

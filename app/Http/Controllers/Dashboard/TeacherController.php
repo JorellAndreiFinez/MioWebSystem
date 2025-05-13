@@ -8,6 +8,7 @@ use Kreait\Firebase\Database;
 use Kreait\Firebase\Factory;
 use Illuminate\Support\Facades\Log;
 
+
 class TeacherController extends Controller
 {
 
@@ -238,7 +239,7 @@ class TeacherController extends Controller
 
         // Pass subject and module data to the view
         return view('mio.head.teacher-panel', [
-            'page' => 'teacher-dashboard',
+            'page' => 'teacher-subject',
             'subject' => $subject,
             'modules' => $subjectModules
         ]);
@@ -272,7 +273,7 @@ class TeacherController extends Controller
         }
 
         if (!$subject || !$gradeLevelKey) {
-            return redirect()->route('mio.subject.announcements', ['subjectId' => $subjectId])->with('error', 'Subject not found.');
+            return redirect()->route('mio.subject-teacher.announcement', ['subjectId' => $subjectId])->with('error', 'Subject not found.');
 
         }
 
@@ -328,9 +329,10 @@ class TeacherController extends Controller
         }
 
         if (!$subject || !$announcement) {
-            return redirect()->route('mio.subject.announcements', ['subjectId' => $subjectId])->with('error', 'Announcement not found.');
-
+            return redirect()->route('mio.subject-teacher.announcement', ['subjectId' => $subjectId])
+                ->with('error', 'Announcement not found.');
         }
+
 
         return view('mio.head.teacher-panel', [
             'page' => 'announcement-body',
@@ -339,6 +341,68 @@ class TeacherController extends Controller
             'announcementId' => $announcementId,
         ]);
     }
+
+    public function editAnnouncement(Request $request, $subjectId, $announcementId)
+    {
+
+        $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'date_posted' => 'required|date',
+        'description' => 'required|string',
+        'link' => 'nullable|url',
+    ]);
+
+    // Fetch the subjects list
+    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+
+    $found = false;
+    $gradeLevelKey = null;
+
+    // Find the grade level where the subject exists
+    foreach ($subjects as $gradeLevel => $subjectList) {
+        if (isset($subjectList[$subjectId])) {
+            $gradeLevelKey = $gradeLevel;
+            $found = true;
+            break;
+        }
+    }
+
+    if (!$found || !$gradeLevelKey) {
+        return redirect()->back()->with('error', 'Subject not found.');
+    }
+
+    // Build the Firebase path to the announcement
+    $announcementPath = "subjects/{$gradeLevelKey}/{$subjectId}/announcements/{$announcementId}";
+
+    // Update announcement data
+    $updateData = [
+        'title' => $validated['title'],
+        'date_posted' => $validated['date_posted'],
+        'description' => $validated['description'],
+        'link' => $validated['link'] ?? '',
+        'subject_id' => $subjectId,
+    ];
+
+    if ($request->hasFile('image_file')) {
+    $file = $request->file('image_file');
+    $filename = time() . '_' . $file->getClientOriginalName();
+    $path = $file->storeAs('announcement_images', $filename, 'public');
+
+        // Store public URL of the uploaded file
+        $updateData['link'] = asset('storage/' . $path);
+    } elseif (!empty($validated['link'])) {
+        $updateData['link'] = $validated['link'];
+    } else {
+        $updateData['link'] = '';
+    }
+
+
+    $this->database->getReference($announcementPath)->update($updateData);
+
+    return redirect()->route('mio.subject-teacher.announcement', ['subjectId' => $subjectId])
+        ->with('success', 'Announcement updated successfully.');
+    }
+
 
     public function storeReply(Request $request, $subjectId, $announcementId)
 {

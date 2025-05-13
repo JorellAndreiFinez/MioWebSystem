@@ -161,6 +161,7 @@ class SubjectController extends Controller
                 'announcements' => [],
                 'attendance' => '',
                 'people' => [],
+                'posted_by' => 'admin',
                 'date_created' => Carbon::now()->toDateTimeString(),
                 'date_updated' => Carbon::now()->toDateTimeString(),
             ];
@@ -336,6 +337,7 @@ class SubjectController extends Controller
             'title' => $validatedData['title'],
             'teacher_id' => $validatedData['teacher_id'],
             'section_id' => $validatedData['section_id'],
+            'posted_by' => 'admin',
             'date_created' => $existing['date_created'] ?? Carbon::now()->toDateTimeString(),
             'date_updated' => Carbon::now()->toDateTimeString(),
         ];

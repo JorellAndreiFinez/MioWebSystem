@@ -219,7 +219,7 @@ public function showInbox()
 
         $formatted = [];
         $usersRef = $db->getReference('users');
-        
+
         // Get teacher data (as the receiver)
         $receiverData = $usersRef->getChild($teacherId)->getValue();
 
@@ -444,7 +444,6 @@ public function showInbox()
 
     return view('mio.head.teacher-panel', [
             'page' => 'teacher-inbox',
-            'sections' => $sections,
         ]);
 }
 

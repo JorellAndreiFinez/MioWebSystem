@@ -41,7 +41,7 @@
         @forelse($allSubjects as $gradeLevel => $subjects)
         @foreach($subjects as $subject)
             <div class="card-wrap">
-                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
+                <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
                     <div class="card">
                         <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
 

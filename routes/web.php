@@ -271,7 +271,6 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     Route::post('/delete-message/{messageId}', [MessagingController::class, 'deleteMessage']);
 
 
-
     Route::get('/profile', function () {
         return view('mio.head.student-panel', ['page' => 'profile']);
     })->name('mio.profile');
@@ -321,24 +320,20 @@ Route::prefix('mio/teacher')->middleware(
 
     // INBOX MESSAGING
        Route::get('/messages', [MessagingController::class, 'showTeacherInbox'])->name('mio.teacher-inbox');
-       
+
     Route::post('/send-message', [MessagingController::class, 'sendTeacherMessage'])->name('mio.teacher-message-send');
      Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
-  
+
 
     Route::get('/profile', function () {
         return view('mio.head.teacher-panel', ['page' => 'profile']);
     })->name('mio.teacher-profile');
 
-    Route::get('/subject', function () {
-        return view('mio.head.teacher-panel', ['page' => 'subject']);
-    })->name('mio.subject');
-
-    Route::prefix('subject')->name('mio.subject.')->group(function () {
+    Route::prefix('subject')->name('mio.subject-teacher.')->group(function () {
 
         Route::get('/{subjectId}', [TeacherController::class, 'showSubject'])->name('show-subject');
 
-        Route::get('/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('announcements');
+        Route::get('/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('announcement');
 
         Route::get('/{subjectId}/announcements/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('announcements-body');
 
@@ -346,6 +341,8 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [TeacherController::class, 'deleteReply'])->name('deleteReply');
 
+
+        Route::put('/{subjectId}/announcement/{announcementId}/edit', [TeacherController::class, 'editAnnouncement'])->name('editAnnouncement');
 
         Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
         Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
