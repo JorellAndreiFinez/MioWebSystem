@@ -1,5 +1,6 @@
 
 <section class="home-section">
+
       <div class="text">Dashboard</div>
       <div class="search-container">
             <i class="fas fa-search"></i>
@@ -39,9 +40,10 @@
             </div>
         </div>
         @forelse($allSubjects as $gradeLevel => $subjects)
-        @foreach($subjects as $subject)
+    @foreach($subjects as $subject)
+        @if(isset($subject['subject_id']) && !empty($subject['subject_id']))
             <div class="card-wrap">
-                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link"> <!-- Updated link to go to the subject overview -->
+                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link">
                     <div class="card">
                         <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
 
@@ -52,11 +54,11 @@
                     </div>
                 </a>
             </div>
-        @endforeach
-    @empty
-        <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
-    @endforelse
-
+        @endif
+    @endforeach
+@empty
+    <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
+@endforelse
 
 
         </div>

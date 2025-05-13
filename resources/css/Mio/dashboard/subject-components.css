@@ -535,7 +535,7 @@
     box-shadow: 0 4px 6px rgba(255, 183, 3, 0.2);
     transition: background 0.3s ease;
     align-self: flex-start;
-    margin: 3rem;
+    margin-top: 10rem;
 }
 
 .preview-module-btn:hover {

@@ -54,6 +54,14 @@
         </div>
     </a>
 
+    <a href="{{ route('mio.subject-teacher.people', ['subjectId' => $subject['subject_id']]) }}">
+        <div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">People</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
+        </div>
+    </a>
+
 
     </div>
    <!--End Main Overview-->

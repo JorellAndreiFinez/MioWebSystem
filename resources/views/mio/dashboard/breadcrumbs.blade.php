@@ -9,7 +9,7 @@
         ],
         'mio.subject.assignment' => [
             ['label' => 'Subject', 'route' => 'mio.subject'],
-            ['label' => 'Assignment', 'route' => 'mio.subject.assignment']
+            ['label' => 'Assignment', 'route' => null]
         ],
         'mio.subject.assignment-content' => [
             ['label' => 'Subject', 'route' => 'mio.subject'],
@@ -51,14 +51,14 @@
         // Other breadcrumbs untouched...
     ];
 
-
     $routeName = Route::currentRouteName();
     $currentBreadcrumbs = $breadcrumbs[$routeName] ?? [];
 
-    // Define $isParentPage properly
+    // Check if the last breadcrumb is the parent page
     $lastCrumb = end($currentBreadcrumbs);
     $isParentPage = isset($lastCrumb['route']) && $lastCrumb['route'] === $routeName;
 @endphp
+
 
 
 <div class="text">

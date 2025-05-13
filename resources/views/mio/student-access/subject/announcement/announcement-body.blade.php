@@ -6,6 +6,28 @@
 
 <section class="home-section">
 
+    <!-- BREADCRUMBS -->
+        <div class="text">
+            <div class="breadcrumb-item">
+                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subjectId]) }}">
+                    {{ $subject['title'] }}
+                </a>
+            </div>
+
+            @if(isset($announcementId))
+                <div class="breadcrumb-item">
+                    <a href="{{ route('mio.subject.announcements', ['subjectId' => $subjectId]) }}">
+                        Announcements
+                    </a>
+                </div>
+            @else
+                <div class="breadcrumb-item active">
+                    Announcements
+                </div>
+            @endif
+        </div>
+
+
     <main class="main-announcement">
         <div class="announcement-banner">
             <div class="banner">

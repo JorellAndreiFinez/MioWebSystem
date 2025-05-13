@@ -273,6 +273,7 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
     Route::get('/profile', [StudentController::class, 'showProfile'])->name('mio.student.profile');
 
+// SUBJECT
     Route::prefix('subject')->name('mio.subject.')->group(function () {
 
         Route::get('/{subjectId}', [StudentController::class, 'showSubject'])->name('show-subject');
@@ -284,6 +285,8 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [StudentController::class, 'storeReply'])->name('storeReply');
 
         Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [StudentController::class, 'deleteReply'])->name('deleteReply');
+
+        Route::get('/{subjectId}/people', [StudentController::class, 'showPeople'])->name('people');
 
 
         Route::view('/assignment', 'mio.head.student-panel', ['page' => 'assignment'])->name('assignment');
@@ -335,10 +338,9 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::get('/{subjectId}/announcements/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('announcements-body');
 
-        Route::post('/subjects/{subjectId}/announcements/{announcementId}/reply', [TeacherController::class, 'storeReply'])->name('storeReply');
+        Route::post('/{subjectId}/announcements/{announcementId}/reply', [TeacherController::class, 'storeReply'])->name('storeReply');
 
-        Route::delete('subject/{subjectId}/announcement/{announcementId}/reply/{replyId}', [TeacherController::class, 'deleteReply'])->name('deleteReply');
-
+        Route::delete('/{subjectId}/announcement/{announcementId}/reply/{replyId}', [TeacherController::class, 'deleteReply'])->name('deleteReply');
 
         Route::put('/{subjectId}/announcement/{announcementId}/edit', [TeacherController::class, 'editAnnouncement'])->name('editAnnouncement');
 
@@ -346,6 +348,8 @@ Route::prefix('mio/teacher')->middleware(
         Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
 
         Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+
+        Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 
         Route::get('/{subjectId}/modules', [TeacherController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [TeacherController::class, 'showModuleBody'])->name('module-body');
