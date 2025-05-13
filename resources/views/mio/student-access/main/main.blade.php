@@ -30,81 +30,82 @@
         <div class="top-label">
             <div class="label-container">
                 <span class="label">Available Subjects</span>
-                <select class="dropdown">
-                    <option value="option1">All Subjects</option>
-                    <option value="option2">Academics</option>
-                    <option value="option3">Speech and Auditory</option>
+                <select id="subjectTypeFilter" class="dropdown" onchange="filterSubjectsByType()">
+                <option value="all">All Subjects</option>
+                <option value="academics">Academics</option>
+                <option value="specialized">Speech and Auditory</option>
+            </select>
 
-
-                </select>
             </div>
         </div>
         @forelse($allSubjects as $gradeLevel => $subjects)
-    @foreach($subjects as $subject)
-        @if(isset($subject['subject_id']) && !empty($subject['subject_id']))
-            <div class="card-wrap">
-                <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link">
-                    <div class="card">
-                        <img src="{{ $subject['image_url'] ?? 'https://source.unsplash.com/600x400/?school,education' }}" class="card-img" />
+            @foreach($subjects as $subject)
+                @if(isset($subject['subject_id']) && !empty($subject['subject_id']))
+                    <div class="card-wrap" data-subject-type="{{ $subject['subjectType'] }}">
+                        <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link">
+                            <div class="card">
+                                <img src="{{ $subject['image_url'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($subject['title']) }}" class="card-img" />
 
-                        <div>
-                            <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>
-                            <p>{{ $subject['section_id'] ?? 'No Section' }}</p>
-                        </div>
+
+                                <div>
+                                    <h4>{{ $subject['title'] ?? 'Untitled Subject' }}</h4>
+                                    <p>{{ $subject['section_id'] ?? 'No Section' }}</p>
+                                </div>
+                            </div>
+                        </a>
                     </div>
-                </a>
-            </div>
-        @endif
-    @endforeach
-@empty
-    <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
-@endforelse
+                @endif
+            @endforeach
+        @empty
+            <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
+        @endforelse
 
 
         </div>
 
         <div class="right-side">
-        <div class="announcement-card">
-            <h4>Announcements</h4>
+            <div class="announcement-card">
+                <h4>Announcements</h4>
 
-            @php
-            $rawDate = $announcement['date'] ?? null;
-            $timestamp = strtotime($rawDate);
-            $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
-        @endphp
+                @php
+                $rawDate = $announcement['date'] ?? null;
+                $timestamp = strtotime($rawDate);
+                $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
+            @endphp
 
-           @foreach($announcements as $announcement)
-                <div class="sub-card">
-                    <div class="announce-header">
-                        <p class="announce-date">{{ $announcement['date'] }}</p>
-                        <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
+            @foreach($announcements as $announcement)
+                    <div class="sub-card">
+                        <div class="announce-header">
+                            <p class="announce-date">{{ $announcement['date'] }}</p>
+                            <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
 
-                       @if (($announcement['type'] ?? 'general') === 'general')
-                            <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
-                        @else
-                            <a href="{{ route('mio.announcements-body', [
-                                'subjectId' => $announcement['subject_id'] ?? '',
-                                'announcementId' => $announcement['id']
-                            ]) }}">
-                        @endif
-                                <h3 class="announce-title">{{ $announcement['title'] }}</h3>
-                            </a>
+                        @if (($announcement['type'] ?? 'general') === 'general')
+                                <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
+                            @else
+                                <a href="{{ route('mio.announcements-body', [
+                                    'subjectId' => $announcement['subject_id'] ?? '',
+                                    'announcementId' => $announcement['id']
+                                ]) }}">
+                            @endif
+                                    <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+                                </a>
 
+                        </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
 
 
-        </div>
+            </div>
 
 
             <div class="task-card">
-                <h4>Assigned Tasks</h4>
+                <h4>Activity</h4>
                 <div class="sub-card">
                     <div class="task-header">
                         <h3>Activity 1</h3>
                         <p class="task-date">Jan 10 2025</p>
                     </div>
+
                 </div>
 
                 <div class="sub-card">
@@ -134,20 +135,41 @@
 
   </section>
 
-      <script>
-        function searchCards() {
-            let input = document.getElementById('searchBar').value.toLowerCase();
-            let cards = document.querySelectorAll('.card-wrap');
+<script>
+function searchCards() {
+    let input = document.getElementById('searchBar');
+    let filter = input.value.toLowerCase();
+    let cards = document.querySelectorAll('.card-wrap');
 
-            cards.forEach(card => {
-                let title = card.querySelector('h3').innerText.toLowerCase();
-                let description = card.querySelector('p').innerText.toLowerCase();
+    cards.forEach(card => {
+        let title = card.querySelector('h4')?.textContent.toLowerCase() || '';
+        let section = card.querySelector('p')?.textContent.toLowerCase() || '';
 
-                if (title.includes(input) || description.includes(input)) {
-                    card.style.display = "block";
-                } else {
-                    card.style.display = "none";
-                }
-            });
+        if (title.includes(filter) || section.includes(filter)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
         }
-    </script>
+    });
+}
+</script>
+
+<script>
+function filterSubjectsByType() {
+    const selectedType = document.getElementById('subjectTypeFilter').value;
+    const cards = document.querySelectorAll('.card-wrap');
+
+    cards.forEach(card => {
+        const type = card.getAttribute('data-subject-type');
+
+        if (selectedType === 'all' || type === selectedType) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+</script>
+
+
+
