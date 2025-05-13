@@ -288,6 +288,8 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
         Route::get('/{subjectId}/people', [StudentController::class, 'showPeople'])->name('people');
 
+        Route::get('/{subjectId}/people', [StudentController::class, 'showPeople'])->name('people');
+
 
     // ASSIGNMENT
         Route::get('/{subjectId}/assignment', [StudentController::class, 'showAssignment'])->name('assignment');
@@ -355,6 +357,8 @@ Route::prefix('mio/teacher')->middleware(
         Route::put('/{subjectId}/assignment/{assignmentId}/edit', [TeacherController::class, 'editAssignment'])->name('assignment.edit');
 
         Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+
+        Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 
         Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 
