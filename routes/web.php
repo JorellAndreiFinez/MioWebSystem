@@ -326,9 +326,7 @@ Route::prefix('mio/teacher')->middleware(
      Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
 
 
-    Route::get('/profile', function () {
-        return view('mio.head.teacher-panel', ['page' => 'profile']);
-    })->name('mio.teacher-profile');
+    Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
 
     Route::prefix('subject')->name('mio.subject-teacher.')->group(function () {
 
@@ -349,7 +347,6 @@ Route::prefix('mio/teacher')->middleware(
         Route::get('/{subjectId}/assignment', [TeacherController::class, 'showAssignment'])->name('assignment');
         Route::post('/{subjectId}/assignment/add', [TeacherController::class, 'addAssignment'])->name('addAssignment');
         Route::delete('/{subjectId}/assignment/{assignmentId}/delete', [TeacherController::class, 'deleteAssignment'])->name('deleteAssignment');
-
 
 
         Route::get('/{subjectId}/assignment/{assignmentId}', [TeacherController::class, 'showAssignmentDetails'])->name('assignment-body');
