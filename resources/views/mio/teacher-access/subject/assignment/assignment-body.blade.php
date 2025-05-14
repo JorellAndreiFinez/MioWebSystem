@@ -1,412 +1,229 @@
 <section class="home-section">
-    <!-- 🟦 Header Banner -->
-    <main class="main-banner">
-        <div class="welcome-banner">
+<main class="main-banner">
+            <div class="welcome-banner">
             <div class="banner">
-                <div class="content">
-                    <h5>Assignments</h5>
-                </div>
-            </div>
-        </div>
-    </main>
+            <div class="content">
+            <h5>Assignments</h5>
 
-    <!-- 📄 Assignment Cards List -->
+            </div>
+
+            </div>
+            </div>
+        </main>
+
     <main class="main-assignment-content">
-        @if(session('message'))
-            <div class="alert alert-success">
-                {{ session('message') }}
-            </div>
-        @endif
-       <div class="assignment-card">
-            <div class="activity-info">
-                <h1>{{ $assignment['title'] }}</h1>
-            </div>
-
-            <div class="details">
-                 <div>
-                    <span>Publish at</span>
-                        <strong>{{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}</strong>
-                </div>
-                <div>
-                <span>Deadline</span>
-                <strong>
-                    @if (!empty($assignment['deadline']))
-                        {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
-                    @else
-                        No Due Date
-                    @endif
-                </strong>
-            </div>
-
-                <div>
-                    <span>Points</span>
-                    <strong>{{ $assignment['total'] ?? '0' }}</strong>
+            <div class="assignment-card">
+                <div class="activity-info">
+                    <h3>{{ $assignment['title'] ?? 'Untitled Activity' }}</h3>
                 </div>
 
-                <div>
-                    <span>Attempt/s</span>
-                    <strong>{{ $assignment['attempts'] }}</strong>
+                <div class="details">
+                    <div>
+                        <span>Deadline</span>
+                        <strong>{{ \Carbon\Carbon::parse($assignment['deadline'])->format('F j, Y') }}</strong>
+                    </div>
+                    <div>
+                        <span>Availability</span>
+                        <strong>
+                           {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
+-
+                            {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('g:i A') }}
+
+                        </strong>
+                    </div>
+                    <div>
+                        <span>Points</span>
+                        <strong>{{ $assignment['points']['earned'] ?? '0' }} / {{ $assignment['points']['total'] ?? '0' }}</strong>
+
+                    </div>
+                    <div>
+                        <span>Attempts</span>
+                        <strong>{{ $assignment['attempts'] ?? '1' }}</strong>
+                    </div>
                 </div>
             </div>
 
-            <!-- Assignment Description -->
-            @if (!empty($assignment['description']))
-                <div class="assignment-description" style="margin-top: 15px;">
-                    <h4>Description</h4>
-                    <p>{{ $assignment['description'] }}</p>
-                </div>
-            @endif
-
-            <!-- Assignment Attachments -->
-            @if (!empty($assignment['attachments']))
-                <div class="assignment-attachments" style="margin-top: 15px;">
-                    <h4>Attachments</h4>
-                    <ul>
-                        @foreach ($assignment['attachments'] as $attachment)
-                            @if (!empty($attachment['file']))
-                                <li>
-                                    📎 <a href="{{ $attachment['file'] }}" target="_blank">{{ basename($attachment['file']) }}</a>
-                                </li>
-                            @endif
-                            @if (!empty($attachment['link']))
-                                <li>
-                                    🔗 <a href="{{ $attachment['link'] }}" target="_blank">{{ $attachment['link'] }}</a>
-                                </li>
-                            @endif
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-                <div class="edit-assignment-container">
-                            <a href="#" class="primary-btn" id="openAssignmentModal">Edit Assignment</a>
-
-                            @php
-                                $submittedCount = 0;
-                                $totalStudents = 0;
-
-                                if (!empty($assignment['people'])) {
-                                    $totalStudents = count($assignment['people']);
-                                    foreach ($assignment['people'] as $student) {
-                                        if (!empty($student['work'])) {
-                                            $submittedCount++;
-                                        }
-                                    }
-                                }
-                            @endphp
-
-                            <a href="#" class="secondary-btn" id="openReviewModal">
-                                Submissions [{{ $submittedCount }} / {{ $totalStudents }}]
-                            </a>
-
-
-
-
-                            <form action="{{ route('mio.subject-teacher.deleteAssignment', ['subjectId' => $subjectId, 'assignmentId' => $assignmentId]) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="delete-btn" style="background: none; border: none; cursor: pointer;">
-                                    <i class="fas fa-trash-alt" style="color: red; font-size: 20px;"></i>
-                                </button>
-                        </form>
-
-                </div>
+         <div class="submission-review-container">
+                <button id="openReviewModal" class="btn-review-submissions">
+                    <i class="fas fa-eye"></i> Review Submissions
+                </button>
             </div>
 
     </main>
 
-    <!-- /Edit Assignment Modal -->
-    <div id="assignmentModal" class="modal assignment-modal" style="display: none;">
-        <div class="modal-content">
-            <span class="close" id="closeAssignmentModal">&times;</span>
-            <h2 id="modalTitle">Edit Assignment</h2>
+    <!-- Edit Assignment Modal -->
+   <div id="addAssignmentModal" class="modal assignment-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h2>Edit Assignment</h2>
+        <form action="{{ route('mio.subject-teacher.addAssignment', ['subjectId' => request()->route('subjectId')]) }}" method="POST">
+            @csrf
 
-            <form id="assignmentForm" action="{{ route('mio.subject-teacher.assignment.edit', ['subjectId' => $subjectId, 'assignmentId' => $assignmentId]) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
+            <label for="title">Title</label>
+            <input type="text" placeholder="Assignment Title" name="title" value="Test 1" required>
 
-                <label for="title">Title</label>
-                <input type="text" name="title" id="assignmentTitle" placeholder="Assignment Title" value="{{ $assignment['title'] ?? '' }}" required>
+            <label for="description">Description</label>
+            <textarea name="description"  placeholder="Write a brief description..." rows="3"  style="width: 100%; height: 120px; resize: none;" >Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nesciunt voluptatum necessitatibus maiores sit sint corrupti quod accusantium tempora iure excepturi, facilis et veniam temporibus adipisci unde laboriosam neque commodi incidunt.</textarea>
 
-                <label for="description">Description</label>
-                <textarea name="description" id="assignmentDescription" rows="3" placeholder="Write a brief description...">{{ $assignment['description'] ?? '' }}</textarea>
-
-                <label>Attachments</label>
-                <div id="attachment-container">
-                @php $attachmentIndex = 0; @endphp
-                @if (!empty($assignment['attachments']))
-                    @foreach ($assignment['attachments'] as $attachment)
-                        <div class="attachment-wrapper" style="margin-bottom: 15px;">
-                            @if (!empty($attachment['file']))
-                                <div>
-                                    <p>Existing File: <a href="{{ $attachment['file'] }}" target="_blank">{{ basename($attachment['file']) }}</a></p>
-                                </div>
-                            @endif
-                            <input type="file" name="attachments[{{ $attachmentIndex }}][file]" style="display:block; margin-bottom:5px;" />
-                            <input type="url" name="attachments[{{ $attachmentIndex }}][link]" placeholder="Or paste a media URL (optional)" style="width:100%;" value="{{ $attachment['link'] ?? '' }}" />
-                        </div>
-                        @php $attachmentIndex++; @endphp
-                    @endforeach
-                @endif
+            <label>Attachments</label>
+            <div id="attachment-container">
+                <!-- Dynamic attachment inputs will appear here -->
             </div>
-                <button type="button" id="add-attachment-btn" style="margin-top: 10px;">+ Add File or Link</button>
+            <button type="button" id="add-attachment-btn" style="margin-top: 10px;">+ Add File or Link</button>
 
-                <label for="publish_date">Publish Date</label>
-                <input type="date" name="publish_date" id="publish_date" value="{{\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') }}" required>
+            <label for="deadline">Deadline</label>
+            <input type="date" name="deadline" id="deadline"  required>
 
+            <label for="availability_start">Availability - Start Time</label>
+            <input type="time" name="availability_start" id="availability_start" required>
 
-                <label for="availability_start">Availability - Start Time</label>
-                <input type="time" name="availability_start" id="assignmentAvailabilityStart" value="{{ $assignment['availability']['start'] ?? '' }}"  required>
+            <label for="availability_end">Availability - End Time</label>
+            <input type="time" name="availability_end" id="availability_end" required>
 
-                <label for="deadline">Deadline (Blank - No Due Date)</label>
-                <input type="date" name="deadline" id="assignmentDeadline"
-                    value="{{ isset($assignment['deadline']) && $assignment['deadline'] ? \Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') : '' }}">
+            <label for="points_earned">Points</label>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" name="points_earned" id="points_earned" min="0" required style="width: 60px;" class="no-spinner">
+                <span>/</span>
+                <input type="number" name="points_total" id="points_total" min="1" required style="width: 60px;" class="no-spinner">
+            </div>
 
+            <label for="attempts">Attempts</label>
+            <input type="number" name="attempts" min="1" required class="no-spinner">
 
-                <label for="availability_end">Availability - End Time</label>
-                <input type="time" name="availability_end" id="assignmentAvailabilityEnd" value="{{ $assignment['availability']['end'] ?? '' }}" >
-
-                <label for="points_total">Total Points</label>
-                <input type="number" name="points_total" id="points_total" min="1" required class="no-spinner" value="{{ $assignment['total'] ?? 0 }}" placeholder="Total Points" required>
-
-                <label for="attempts">Attempts</label>
-                <input type="number" name="attempts" id="assignmentAttempts" value="{{ $assignment['attempts'] }}" min="1" required>
-
-                <button type="submit">Save Assignment</button>
-            </form>
-        </div>
+            <button type="submit">Save Assignment</button>
+        </form>
+    </div>
     </div>
 
+    <!-- Teacher Review Modal -->
+   <div id="reviewModal" class="modal" style="display: none;">
+    <div class="modal-content modal-styled">
+        <span class="close" id="closeReviewModal">&times;</span>
+        <h2>Review Assignment: {{ $assignment['title'] }}</h2>
+        <div class="review-content">
+        <h4>Student's Work Review</h4>
 
-    <!-- 🔍 Review Modal -->
-    <div id="reviewModal" class="modal" style="display: none;">
-        <div class="modal-content modal-styled">
-            <span class="close" id="closeReviewModal">&times;</span>
-            <h2>Review Assignment: {{ $assignment['title'] ?? 'Untitled' }}</h2>
-            <div class="review-content">
-                <h4>Student's Work Review</h4>
+        <!-- Student Selector -->
+        <label for="studentSelector">Select Student</label>
+        <select id="studentSelector" name="student_id" style="padding: 8px; border-radius: 5px; border: 1px solid #ccc; width: 100%;">
+            @if (!empty($assignment['people']))
+                @foreach ($assignment['people'] as $studentId => $student)
+                    <option value="{{ $studentId }}">
+                        {{ $student['name'] ?? ($student['first_name'] ?? '') . ' ' . ($student['last_name'] ?? '') }}
+                    </option>
+                @endforeach
+            @else
+                <option disabled selected>No students assigned</option>
+            @endif
+        </select>
 
-                <label for="studentSelect">Select Student:</label>
-                    <select id="studentSelect" style="margin-bottom: 15px;">
-                        @foreach ($assignment['people'] as $studentId => $student)
-                            <option value="{{ $studentId }}">{{ $student['name'] }}</option>
-                        @endforeach
-                    </select>
-
-                    <div id="submissionViewer">
-                        <div id="workViewer">
-                            <p>No submission selected.</p>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 20px; text-align: center;">
-                        <button id="prevStudentBtn">⟨ Previous</button>
-                        <button id="nextStudentBtn">Next ⟩</button>
-                    </div>
-
-                    <form id="reviewForm" method="POST" action="{{ route('mio.subject-teacher.assignment.review-save', ['subjectId' => $subjectId, 'assignmentId' => $assignmentId, 'studentId' => $studentId]) }}">
-                @csrf
-
-                <input type="hidden" name="student_id" id="studentIdInput" value="">
-
-                <label for="scoreInput">Score</label>
-                <div style="display: flex; align-items: center; gap: 5px; margin-bottom: 10px;">
-                    <input
-                        type="number"
-                        id="scoreInput"
-                        name="score"
-                        min="0"
-                        max="{{ $assignment['points']['total'] ?? 0 }}"
-                        step="0.01"
-                        required
-                        style="width: 80px;"
-                    />
-                    <span>/ {{ $assignment['points']['total'] ?? 0 }}</span>
-                </div>
-
-                <label for="feedback">Feedback</label>
-                <textarea
-                    name="feedback"
-                    id="feedbackInput"
-                    rows="4"
-                    placeholder="Enter your feedback"
-                    required
-                    style="width: 100%;"
-                ></textarea>
-
-                <div style="text-align: center; margin-top: 15px;">
-                    <button type="submit"  class="primary-btn">Save Review</button>
-                </div>
-                </form>
-            </div>
+        <!-- Submissions Preview Area -->
+        <div id="studentWorkPreview" style="margin-top: 20px;">
+            @if($submission)
+                <!-- Display the student's submission -->
+                <p>{{ $submission->content }}</p>
+            @else
+                @empty($submission)
+                    <!-- Placeholder for empty submission -->
+                    <p>No submission yet.</p>
+                @endempty
+            @endif
         </div>
+
+
+        <!-- Feedback Textarea -->
+        <label for="feedback">Feedback</label>
+        <textarea name="feedback" rows="4" placeholder="Enter your feedback" required></textarea>
     </div>
+
+    </div>
+</div>
+
+
 </section>
 
-<!-- ⚙️ SCRIPTS -->
+<!-- MODAL -->
 <script>
-    function getTodayDateString() {
+
+     function getTodayDateString() {
         const today = new Date();
-        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        return `${yyyy}-${mm}-${dd}`;
     }
 
     window.onload = function () {
-        document.getElementById("assignmentDeadline").min = getTodayDateString();
+        const today = getTodayDateString();
+        document.getElementById("deadline").min = today;
+        document.getElementById("availability_date").min = today;
     };
 
-    // Open Assignment Modal
-    document.getElementById("openAssignmentModal").addEventListener("click", function (e) {
+
+    document.getElementById("openModal").onclick = function () {
+    document.getElementById("addAssignmentModal").style.display = "block";
+    };
+
+    document.getElementById("closeModal").onclick = function () {
+        document.getElementById("addAssignmentModal").style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target.classList.contains("modal")) {
+            document.getElementById("addAssignmentModal").style.display = "none";
+        }
+    };
+
+
+</script>
+
+<script>
+    document.getElementById('media-dropzone').addEventListener('click', () => {
+        document.getElementById('media_file').click();
+    });
+
+    document.getElementById('media_file').addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('preview_image').src = e.target.result;
+                document.getElementById('preview_image').style.display = 'block';
+                document.getElementById('media_link').value = ''; // Clear URL if image is selected
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    document.getElementById('media_link').addEventListener('input', function () {
+        if (this.value.trim() !== '') {
+            document.getElementById('media_file').value = ''; // Clear file if URL is typed
+            document.getElementById('preview_image').style.display = 'none';
+        }
+    });
+
+    // Optional: drag & drop support
+    const dropzone = document.getElementById('media-dropzone');
+    dropzone.addEventListener('dragover', function (e) {
         e.preventDefault();
-        document.getElementById("assignmentModal").style.display = "block";
+        dropzone.style.borderColor = '#3498db';
     });
-
-    // Close Assignment Modal
-    document.getElementById("closeAssignmentModal").addEventListener("click", function () {
-        document.getElementById("assignmentModal").style.display = "none";
+    dropzone.addEventListener('dragleave', function () {
+        dropzone.style.borderColor = '#ccc';
     });
-
-    // Open Review Modal
-    document.getElementById("openReviewModal").addEventListener("click", function (e) {
+    dropzone.addEventListener('drop', function (e) {
         e.preventDefault();
-        document.getElementById("reviewModal").style.display = "block";
-    });
-
-    // Close Review Modal
-    document.getElementById("closeReviewModal").addEventListener("click", function () {
-        document.getElementById("reviewModal").style.display = "none";
-    });
-
-    // Close modals on outside click
-    window.addEventListener("click", function (event) {
-        const modals = document.querySelectorAll(".modal");
-        modals.forEach(modal => {
-            if (event.target === modal) {
-                modal.style.display = "none";
-            }
-        });
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const studentSelect = document.getElementById("studentSelect");
-        const workViewer = document.getElementById("workViewer");
-        const reviewForm = document.getElementById("reviewForm");
-        const studentIdInput = document.getElementById("studentIdInput");
-
-    const baseActionUrl = "{{ route('mio.subject-teacher.assignment.review-save', ['subjectId' => $subjectId, 'assignmentId' => $assignmentId, 'studentId' => 'STUDENT_ID_PLACEHOLDER']) }}";
-
-        const prevBtn = document.getElementById("prevStudentBtn");
-        const nextBtn = document.getElementById("nextStudentBtn");
-
-        const people = @json($assignment['people']);
-
-        const studentIds = Object.keys(people);
-
-        if (!studentIds.length) {d
-            workViewer.innerHTML = "<p>No students available.</p>";
-            return;
+        dropzone.style.borderColor = '#ccc';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                document.getElementById('preview_image').src = e.target.result;
+                document.getElementById('preview_image').style.display = 'block';
+                document.getElementById('media_link').value = ''; // Clear URL if image is dropped
+            };
+            reader.readAsDataURL(file);
         }
-
-        let originalAction = reviewForm.getAttribute("action") || "";
-
-        function updateReviewFields(studentId) {
-            const student = people[studentId];
-            if (!student) return;
-
-            // Set hidden student ID input
-            studentIdInput.value = studentId;
-
-            // Fill score and feedback if present
-            scoreInput.value = student.score || '';
-            feedbackInput.value = student.feedback || '';
-        }
-
-
-        // Unified form action updater
-        function updateFormAction(studentId) {
-             const newAction = baseActionUrl.replace('STUDENT_ID_PLACEHOLDER', studentId);
-            reviewForm.action = newAction;
-            studentIdInput.value = studentId;
-        }
-
-        // Initial load for the first student
-        if (studentSelect.value) {
-            updateReviewFields(studentSelect.value);
-        }
-
-        // Initial load
-        updateFormAction(studentSelect.value);
-
-
-        let currentIndex = 0;
-
-        function escapeHTML(str) {
-            if (!str) return "";
-            return str.replace(/[&<>"']/g, function (char) {
-                return ({
-                    '&': '&amp;',
-                    '<': '&lt;',
-                    '>': '&gt;',
-                    '"': '&quot;',
-                    "'": '&#039;'
-                })[char];
-            });
-        }
-
-        function renderStudentWork(studentId) {
-            const student = people[studentId];
-            const work = student?.work ?? '';
-
-            let content = `<h4>${escapeHTML(student.name)}'s Submission</h4>`;
-
-            if (!work) {
-                content += "<p>No work submitted.</p>";
-            } else if (/\.(jpeg|jpg|png|gif)$/i.test(work)) {
-                content += `<img src="${work}" alt="Submitted image" style="max-width:100%; height:auto;">`;
-            } else if (/\.(mp4|webm|ogg)$/i.test(work)) {
-                content += `<video controls style="max-width:100%; height:auto;"><source src="${work}">Your browser does not support the video tag.</video>`;
-            } else if (/\.(mp3|wav|ogg)$/i.test(work)) {
-                content += `<audio controls><source src="${work}">Your browser does not support the audio element.</audio>`;
-            } else if (/\.pdf$/i.test(work)) {
-                content += `<embed src="${work}" type="application/pdf" width="100%" height="600px" />`;
-            } else if (/^https?:\/\//i.test(work)) {
-                content += `<a href="${work}" target="_blank">${work}</a>`;
-            } else {
-                content += `<p>${escapeHTML(work)}</p>`;
-            }
-
-            workViewer.innerHTML = content;
-
-            if (studentSelect) studentSelect.value = studentId;
-            updateFormAction(studentId);
-            studentIdInput.value = studentId;
-        }
-
-        studentSelect.addEventListener("change", function () {
-            const selectedId = this.value;
-            currentIndex = studentIds.indexOf(selectedId);
-            updateReviewFields(this.value);
-            renderStudentWork(selectedId);
-        });
-
-         document.getElementById("prevStudentBtn").addEventListener("click", function (e) {
-        e.preventDefault();
-        const currentIndex = studentSelect.selectedIndex;
-        if (currentIndex > 0) {
-            studentSelect.selectedIndex = currentIndex - 1;
-            studentSelect.dispatchEvent(new Event("change"));
-        }
-    });
-
-    document.getElementById("nextStudentBtn").addEventListener("click", function (e) {
-        e.preventDefault();
-        const currentIndex = studentSelect.selectedIndex;
-        if (currentIndex < studentSelect.options.length - 1) {
-            studentSelect.selectedIndex = currentIndex + 1;
-            studentSelect.dispatchEvent(new Event("change"));
-        }
-    });
-
-        renderStudentWork(studentIds[0]);
     });
 </script>
 
@@ -423,9 +240,8 @@ let attachmentIndex = 0;
         <div style="border: 2px dashed #ccc; padding: 10px; border-radius: 5px; text-align: center; position: relative;">
             <input type="url" name="attachments[${index}][link]" placeholder="Paste a media URL (optional)" style="width: 100%; margin-bottom: 10px;" />
 
-           <input type="file" name="attachments[${index}][file]" accept=".jpg,.jpeg,.png,.gif,.mp4,.mov,.avi,.mp3,.wav,.webm,.pdf" style="display: none;" />
-            <button type="button" class="upload-btn">Choose File</button>
-            <span class="file-name" style="display: inline-block; margin-top: 5px; color: #555;"></span>
+            <input type="file" name="attachments[${index}][file]" accept="image/*" style="display: none;" />
+            <button type="button" class="upload-btn">Choose Image</button>
 
             <img src="" alt="Preview" class="preview" style="max-width: 100%; margin-top: 10px; display: none;" />
 
@@ -464,39 +280,94 @@ let attachmentIndex = 0;
     wrapper.querySelector('.remove-attachment').addEventListener('click', () => {
         wrapper.remove();
     });
-
-    fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        const fileNameSpan = document.createElement('span');
-        fileNameSpan.textContent = file.name;
-        fileNameSpan.style.display = 'inline-block';
-        fileNameSpan.style.marginTop = '10px';
-        fileNameSpan.style.fontWeight = 'bold';
-
-        // Remove old name if exists
-        const oldName = wrapper.querySelector('.file-name');
-        if (oldName) oldName.remove();
-
-        fileNameSpan.classList.add('file-name');
-        wrapper.appendChild(fileNameSpan);
-
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                previewImg.src = e.target.result;
-                previewImg.style.display = 'block';
-                urlInput.value = '';
-            };
-            reader.readAsDataURL(file);
-        } else {
-            previewImg.style.display = 'none';
-        }
-    }
 });
-
-});
-
-
 </script>
 
+
+<script>
+    // Modal functionality
+    const reviewModal = document.getElementById("reviewModal");
+    const openReviewModalBtn = document.getElementById("openReviewModal");
+    const closeReviewModalBtn = document.getElementById("closeReviewModal");
+
+
+    openReviewModalBtn.onclick = function () {
+        reviewModal.style.display = "block";
+    };
+
+    closeReviewModalBtn.onclick = function () {
+        reviewModal.style.display = "none";
+    };
+
+    window.onclick = function (event) {
+        if (event.target === reviewModal) {
+            reviewModal.style.display = "none";
+        }
+    };
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const studentSelector = document.getElementById('studentSelector');
+    const prevStudentBtn = document.getElementById('prevStudent');
+    const nextStudentBtn = document.getElementById('nextStudent');
+    const studentWorkPreview = document.getElementById('studentWorkPreview');
+
+    let students = [];
+    let currentIndex = 0;
+
+    // Load students from dropdown into array
+    for (let i = 0; i < studentSelector.options.length; i++) {
+        const option = studentSelector.options[i];
+        students.push({
+            id: option.value,
+            name: option.textContent,
+            work: option.getAttribute('data-work'),
+        });
+    }
+
+    // Display selected student's work
+    function updatePreview(index) {
+        if (index >= 0 && index < students.length) {
+            currentIndex = index;
+            studentSelector.selectedIndex = index;
+            const selectedStudent = students[index];
+
+            // You can customize how the preview is shown based on the type of submission
+            if (selectedStudent.work) {
+                const fileExtension = selectedStudent.work.split('.').pop().toLowerCase();
+
+                if (['png', 'jpg', 'jpeg', 'gif'].includes(fileExtension)) {
+                    studentWorkPreview.innerHTML = `<img src="${selectedStudent.work}" alt="Submission Image" class="w-full max-h-96 object-contain rounded border">`;
+                } else if (['pdf'].includes(fileExtension)) {
+                    studentWorkPreview.innerHTML = `<iframe src="${selectedStudent.work}" class="w-full h-96 rounded border" frameborder="0"></iframe>`;
+                } else {
+                    studentWorkPreview.innerHTML = `<a href="${selectedStudent.work}" target="_blank" class="text-blue-600 underline">View Submission</a>`;
+                }
+            } else {
+                studentWorkPreview.innerHTML = `<p class="text-gray-500 italic">No submission from this student.</p>`;
+            }
+        }
+    }
+
+    // Dropdown change
+    studentSelector.addEventListener('change', function () {
+        const selectedId = this.value;
+        const newIndex = students.findIndex(student => student.id === selectedId);
+        if (newIndex !== -1) updatePreview(newIndex);
+    });
+
+    // Navigation buttons
+    prevStudentBtn.addEventListener('click', function () {
+        if (currentIndex > 0) updatePreview(currentIndex - 1);
+    });
+
+    nextStudentBtn.addEventListener('click', function () {
+        if (currentIndex < students.length - 1) updatePreview(currentIndex + 1);
+    });
+
+    // Initialize on first load
+    updatePreview(0);
+});
+
+</script>
