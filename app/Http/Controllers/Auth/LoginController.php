@@ -123,16 +123,16 @@ public function logout()
 
 public function mobileLogin(Request $request)
     {
-        $email = $request->input('email');
-        $password = $request->input('password');
+        // check data if valid
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ]);
 
         try {
-            // check data if valid
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
-
+            $email = $request->input('email');
+            $password = $request->input('password');
+            
             // authenticate user
             $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
             $firebaseUser = $signInResult->data();
@@ -155,9 +155,13 @@ public function mobileLogin(Request $request)
                 'last_login' => Carbon::now()->toDateTimeString(),
             ]);
 
-            // get session ID
-            session([
-                'firebase_user' => $firebaseUser['localId'],
+            Session::put('firebase_user', [
+                'uid'        => $uid,
+                'email'      => $email,
+                'role'       => $role,
+                'name'       => $name,
+                'category'   => $userData['category'] ?? null,
+                'section_id' => $userData['section_id'] ?? null,
             ]);
 
             Session::regenerate();
@@ -175,11 +179,6 @@ public function mobileLogin(Request $request)
                 ],
             ], 200);
 
-            // return response()->json([
-            //     'user' => $firebaseUser,
-            //     // 'tokenId' => $tokeId,
-            // ]);
-
         } catch (\Kreait\Firebase\Exception\AuthException $e) {
             return response()->json(['error' => 'Invalid Credentials.'], 401);
         } catch (\Throwable $e) {
@@ -187,16 +186,31 @@ public function mobileLogin(Request $request)
         }
     }
 
-    public function mobileLogout()
+    public function mobileLogout(Request $request)
     {
-        Session::flush();
+        try {
+            if (Session::has('firebase_user')) {
+                $firebaseUser = Session::get('firebase_user');
+                Log::info('Firebase user session:', $firebaseUser);
 
-        Session::regenerate();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out successfully.',
-        ], 200);
+                return response()->json([
+                    'success' => true,
+                    'user' => $firebaseUser,
+                ], 200);
+            } else {
+                Log::warning('Firebase user session not found.');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No user session found.',
+                ], 401);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Logout failed:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'error' => 'Logout failed: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function mobileValidateToken(Request $request)

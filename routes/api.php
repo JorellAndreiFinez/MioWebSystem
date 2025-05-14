@@ -14,8 +14,8 @@ Route::middleware([
     AddQueuedCookiesToResponse::class,
     StartSession::class,
 ])->post('/user-login', [LoginController::class, 'mobileLogin']);
-    // ->middleware([StartSession::class]);
-Route::post('/logout',   [LoginController::class, 'mobileLogout']);
+
+Route::post('/logout',   [LoginController::class, 'mobileLogout'])->middleware(['firebase.auth']);
     
 
 Route::get('/validate/token', [LoginController::class, 'mobileValidateToken'])
@@ -27,5 +27,9 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
-    Route::get('/subjects', [SubjectController::class, 'viewSubjectsMobile']);
+    Route::get('/subjects', [SubjectController::class, 'viewSubjectsApi']);
+    Route::get('/subject/{subjectId}/modules', [SubjectController::class, 'getSubjectModulesApi']);
+    Route::get('/subject/{subjectId}/announcements', [SubjectController::class, 'getSubjectAnnouncementsApi']);
+    Route::get('/subject/{subjectId}/assignments', [SubjectController::class, 'getSubjectAssignmentsApi']);
+    Route::get('/subject/{subjectId}/scores', [SubjectController::class, 'getSubjectScoresApi']);
 });
