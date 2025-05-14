@@ -20,16 +20,16 @@
                 <div class="details">
                     <div>
                         <span>Deadline</span>
-                        <strong>{{ \Carbon\Carbon::parse($assignment['deadline'])->format('F j, Y') }}</strong>
+                        <!-- <strong>{{ $assignment['deadline']Carbon::parse()->format('F j, Y') }}</strong> -->
                     </div>
                     <div>
                         <span>Availability</span>
-                        <strong>
-                           {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
+                        <!-- <strong>
+                           {{ \Carbon\Carbon::parse($assignment[''] . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
 -
                             {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('g:i A') }}
 
-                        </strong>
+                        </strong> -->
                     </div>
                     <div>
                         <span>Points</span>
