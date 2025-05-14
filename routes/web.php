@@ -348,9 +348,11 @@ Route::prefix('mio/teacher')->middleware(
     // ASSIGNMENT
         Route::get('/{subjectId}/assignment', [TeacherController::class, 'showAssignment'])->name('assignment');
         Route::post('/{subjectId}/assignment/add', [TeacherController::class, 'addAssignment'])->name('addAssignment');
+        Route::delete('/{subjectId}/assignment/{assignmentId}/delete', [TeacherController::class, 'deleteAssignment'])->name('deleteAssignment');
 
 
-        Route::view('/assignment/sample1', 'mio.head.student-panel', ['page' => 'assignment-body'])->name('assignment-body');
+
+        Route::get('/{subjectId}/assignment/{assignmentId}', [TeacherController::class, 'showAssignmentDetails'])->name('assignment-body');
 
 
 
