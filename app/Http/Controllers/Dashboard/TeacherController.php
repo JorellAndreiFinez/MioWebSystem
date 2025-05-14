@@ -443,6 +443,20 @@ class TeacherController extends Controller
     // Add ID manually
     $assignment['id'] = $assignmentId;
 
+    // Fetch the assignment details from the database
+    $assignment = $this->getAssignmentById($subjectId, $assignmentId);
+
+    // Fetch all students for the given assignment
+    $students = $this->getStudentsForAssignment($subjectId, $assignmentId);
+
+    // Optionally: Fetch submission for a specific student (if any)
+    $submission = null;
+    $selectedStudentId = request()->input('student_id');
+    if ($selectedStudentId) {
+        $submission = $this->getSubmissionForStudent($assignmentId, $selectedStudentId);
+    }
+
+
     return view('mio.head.teacher-panel', [
         'page' => 'assignment-body',
             'assignment' => $assignment,
@@ -454,6 +468,24 @@ class TeacherController extends Controller
     }
 
     // get students in ...subjectid>people
+    private function getAssignmentById($subjectId, $assignmentId)
+    {
+        // Fetch assignment from the database (using Firebase Realtime Database or your model)
+        // For Firebase, replace this with the appropriate query method
+        return $this->database->getReference("subjects/{$subjectId}/assignments/{$assignmentId}")->getValue();
+    }
+
+    private function getStudentsForAssignment($subjectId, $assignmentId)
+    {
+        // Fetch all students for the assignment (based on your database structure)
+        return $this->database->getReference("subjects/{$subjectId}/assignments/{$assignmentId}/people")->getValue();
+    }
+
+    private function getSubmissionForStudent($assignmentId, $studentId)
+    {
+        // Fetch the specific student's submission
+        return $this->database->getReference("assignments/{$assignmentId}/people/{$studentId}")->getValue();
+    }
 
 
     // ANNOUNCEMENTS
@@ -808,7 +840,36 @@ class TeacherController extends Controller
 }
 
     public function showProfile(){
+        $userId = session('firebase_user.uid');
+        $teacherName = session('firebase_user.name');
 
+                // Get student data
+                $teacherRef = $this->database->getReference('users/' . $userId);
+                $teacher = $teacherRef->getValue();
+
+                if (!$teacher) {
+                    abort(404, 'Teacher not found.');
+                }
+
+                // // Find the section where this student is enrolled
+                // $sectionsRef = $this->database->getReference('sections');
+                // $sections = $sectionsRef->getValue();
+
+                // $studentSection = null;
+
+                // foreach ($sections as $sectionId => $sectionData) {
+                //     if (isset($sectionData['students']) && array_key_exists($userId, $sectionData['students'])) {
+                //         $studentSection = $sectionData;
+                //         break;
+                //     }
+                // }
+
+                return view('mio.head.teacher-panel', [
+                    'page' => 'profile',
+                    'teacher' => $teacher,
+                    'name' => $teacherName,
+                    'uid' => $userId,
+                ]);
     }
 
     public function showPeople($subjectId)
