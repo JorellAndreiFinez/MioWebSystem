@@ -13,7 +13,7 @@
                 <div class="profile-card">
 
                     <div class="profile-picture">
-                        <img src="{{ $student['profile_picture'] ?? asset('default-profile.png') }}" alt="Profile Picture" />
+                        <img src="{{ 'https://ui-avatars.com/api/?name='.$name }}" alt="Profile Picture" />
 
                         <button class="edit-button">✎</button>
                     </div>
@@ -23,16 +23,18 @@
 
                     <div class="profile-info">
 
-                        <h2>Leo Kenter</h2>
+                       @php
+                            $teacher_name = ($teacher['fname'] ?? '') . ' ' . ($teacher['lname'] ?? '');
+                        @endphp
+
+                        <h2>{{ $teacher_name ?: 'No Name' }}</h2>
                         <div class="section">
                             <h3>Biography</h3>
-                            <p>
-                                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam eget nunc non arcu fermentum pharetra. Vivamus id justo vitae odio feugiat scelerisque.
-                            </p>
+                            <p>{{ $teacher['bio'] ?? 'No biography available.' }}</p>
                         </div>
                         <div class="section">
                             <h3>Contact</h3>
-                            <p>leokenter@gmail.com</p>
+                            <p><p>{{ $teacher['email'] ?? 'No email' }}</p></p>
                         </div>
                         <div class="section">
                             <h3>Social Links</h3>
@@ -47,8 +49,8 @@
 
             <div class="form-container">
                 <!-- Student Category Section -->
-                <div class="section-header">Student Category</div>
-                <div class="section-content">Regular</div>
+                <div class="section-header">Teacher Category</div>
+                <div class="section-content">{{$teacher['category']}}</div>
 
                 <!-- Personal Information Section -->
                 <div class="section-header">Personal Information</div>
@@ -56,7 +58,7 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Name</label>
-                            <input type="text" value="Tatiana Donin" readonly />
+                            <input type="text" value="{{$teacher['fname']}} {{$teacher['lname']}}" readonly />
                         </div>
                         <div class="form-group">
                             <label>Gender</label>

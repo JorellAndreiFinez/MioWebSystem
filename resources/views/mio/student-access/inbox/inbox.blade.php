@@ -317,7 +317,12 @@ document.querySelectorAll(".contact").forEach(contact => {
         const receiverId = this.dataset.contactId;
         const receiverName = this.dataset.contactName;
         const receiverRole = this.dataset.contactRole;
-        const receiverImage = this.dataset.contactImage;
+        const receiverImageRaw = this.dataset.contactImage;
+
+        // Fallback logic inline using a conditional expression
+        const receiverImage = (!receiverImageRaw || receiverImageRaw === "null" || receiverImageRaw === "undefined")
+            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}`
+            : receiverImageRaw;
 
         const header = document.querySelector(".chat-content .header");
         header.innerHTML = `

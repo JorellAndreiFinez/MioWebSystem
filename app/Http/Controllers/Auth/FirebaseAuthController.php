@@ -115,6 +115,7 @@ class FirebaseAuthController extends Controller
             'previous_school' => 'required|string|max:255',
             'grade_level' => 'required|integer|min:1',
             'studentid' => 'required|string|max:12',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'category' => 'required|string',
             'username' => 'required|string|max:255',
             'account_password' => 'required|string|min:6',
@@ -185,6 +186,26 @@ class FirebaseAuthController extends Controller
             return redirect()->back()->with('status', 'Firebase Auth Error: ' . $e->getMessage())->withInput();
         }
 
+        // SAVE IMAGE
+        $profilePictureUrl = null;
+
+        if ($request->hasFile('profile_picture')) {
+            $image = $request->file('profile_picture');
+            $imageName = 'profile_pictures/' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+            // Upload to Firebase Storage (or you can use local/public folder)
+            $firebaseStorage = app('firebase.storage');
+            $defaultBucket = $firebaseStorage->getBucket();
+            $uploadedFile = fopen($image->getRealPath(), 'r');
+
+            $defaultBucket->upload($uploadedFile, [
+                'name' => $imageName,
+            ]);
+
+            // Get the public URL
+            $profilePictureUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $defaultBucket->name() . '/o/' . urlencode($imageName) . '?alt=media';
+        }
+
         // Prepare Realtime DB data
         $postData = [
             'fname' => $request->first_name,
@@ -207,6 +228,8 @@ class FirebaseAuthController extends Controller
             'studentid' => $studentIdKey,
             'section_id' => $sectionId,
             'role' => 'student',
+            'profile_picture' => $profilePictureUrl,
+
 
             'username' => $request->username,
             'password' => bcrypt($request->account_password),
