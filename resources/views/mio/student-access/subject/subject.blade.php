@@ -31,7 +31,7 @@
     </div>
     </a>
 
-    <a href="{{ route('mio.subject.assignment') }}"><div class="overviewcard">
+    <a  href="{{ route('mio.subject.assignment', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Assignments</div>
             <div class="overviewcard__arrow">&rsaquo;</div>

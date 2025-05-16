@@ -245,7 +245,7 @@ class TeacherController extends Controller
         ]);
     }
 
-    // ASSIGNMENTS
+    // TEACHER ASSIGNMENTS
 
     public function showAssignment($subjectId)
     {
@@ -292,6 +292,7 @@ class TeacherController extends Controller
             'points_earned' => 'required|integer',
             'points_total' => 'required|integer',
             'attempts' => 'required|integer',
+            'publish_date' => 'required|date',
             'attachments' => 'nullable|array',
             'attachments.*.link' => 'nullable|url',
             'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
@@ -372,6 +373,8 @@ class TeacherController extends Controller
             'attachments' => $attachments,
             'people' => $people, // Add the student information to the people field
             'created_at' => now()->toDateTimeString(),
+            'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+
         ];
 
         // Save the new assignment with the unique assignment ID
@@ -408,84 +411,139 @@ class TeacherController extends Controller
     }
 
     public function showAssignmentDetails($subjectId, $assignmentId)
-{
-    // Find the grade level key
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
-    $gradeLevelKey = null;
+    {
+        // Step 1: Find grade level and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
 
-    foreach ($allSubjects as $key => $subjects) {
-        foreach ($subjects as $subjectKey => $subject) {
-            if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
-                $gradeLevelKey = $key;
-                break 2;
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
             }
         }
-    }
 
-    if (!$gradeLevelKey) {
-        return abort(404, 'Subject not found.');
-    }
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
 
-    // Get specific assignment data
-    $assignmentRef = $this->database
-        ->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments/{$assignmentId}");
-    $assignment = $assignmentRef->getValue();
+        // Step 2: Get the specific assignment
+        $assignmentRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}");
+        $assignment = $assignmentRef->getValue();
 
-    $peopleRef = $this->database
-    ->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments/{$assignmentId}/people");
-    $people = $peopleRef->getValue() ?? [];
+        if (!$assignment) {
+            return abort(404, 'Assignment not found.');
+        }
 
-    if (!$assignment) {
-        return abort(404, 'Assignment not found.');
-    }
+        $assignment['id'] = $assignmentId;
 
-    // Add ID manually
-    $assignment['id'] = $assignmentId;
+        // Step 3: Get students/people
+        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/people");
+        $assignment['people'] = $peopleRef->getValue() ?? [];
 
-    // Fetch the assignment details from the database
-    $assignment = $this->getAssignmentById($subjectId, $assignmentId);
+        // Step 4: Load submission for selected student
+        $selectedStudentId = request()->input('student_id');
+        $submission = null;
 
-    // Fetch all students for the given assignment
-    $students = $this->getStudentsForAssignment($subjectId, $assignmentId);
+        if ($selectedStudentId) {
+            $submissionRef = $this->database
+                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/submissions/{$selectedStudentId}");
+            $submission = $submissionRef->getValue();
+        }
 
-    // Optionally: Fetch submission for a specific student (if any)
-    $submission = null;
-    $selectedStudentId = request()->input('student_id');
-    if ($selectedStudentId) {
-        $submission = $this->getSubmissionForStudent($assignmentId, $selectedStudentId);
-    }
-
-
-    return view('mio.head.teacher-panel', [
-        'page' => 'assignment-body',
+        return view('mio.head.teacher-panel', [
+            'page' => 'assignment-body',
             'assignment' => $assignment,
             'subjectId' => $subjectId,
             'assignmentId' => $assignmentId,
             'gradeLevelKey' => $gradeLevelKey,
-            'submissions' => $people,
-    ]);
+            'submission' => $submission,
+        ]);
     }
 
-    // get students in ...subjectid>people
-    private function getAssignmentById($subjectId, $assignmentId)
+    public function editAssignment(Request $request, $subjectId, $assignmentId)
     {
-        // Fetch assignment from the database (using Firebase Realtime Database or your model)
-        // For Firebase, replace this with the appropriate query method
-        return $this->database->getReference("subjects/{$subjectId}/assignments/{$assignmentId}")->getValue();
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        // Find subject location
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+
+        // Build the updated data
+        $updatedData = [
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'deadline' => $request->input('deadline'),
+            'availability' => [
+                'start' => $request->input('availability_start'),
+                'end' => $request->input('availability_end'),
+            ],
+            'points' => [
+                'earned' => (int)$request->input('points_earned'),
+                'total' => (int)$request->input('points_total'),
+            ],
+            'attempts' => (int)$request->input('attempts'),
+        ];
+
+        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+
+        // Handle attachments
+        $attachments = [];
+
+        if ($request->has('attachments')) {
+            foreach ($request->attachments as $index => $attachment) {
+                $link = $attachment['link'] ?? '';
+                $fileUrl = '';
+
+                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
+                    $file = $request->file("attachments.$index.file");
+                    $path = $file->store("assignments", 'public');
+                    $fileUrl = asset("storage/" . $path);
+                } elseif (!empty($attachment['file'])) {
+                    $fileUrl = $attachment['file']; // Retain existing file URL if no new file uploaded
+                }
+
+                $attachments[] = [
+                    'link' => $link,
+                    'file' => $fileUrl,
+                ];
+            }
+        } elseif (isset($existingAssignment['attachments'])) {
+            $attachments = $existingAssignment['attachments']; // Keep existing if not updated
+        }
+
+        $updatedData['attachments'] = $attachments;
+
+        // Update in Firebase
+        $this->database->getReference($assignmentPath)->update($updatedData);
+
+        return redirect()->back()->with('success', 'Assignment updated successfully.');
     }
 
-    private function getStudentsForAssignment($subjectId, $assignmentId)
-    {
-        // Fetch all students for the assignment (based on your database structure)
-        return $this->database->getReference("subjects/{$subjectId}/assignments/{$assignmentId}/people")->getValue();
-    }
 
-    private function getSubmissionForStudent($assignmentId, $studentId)
-    {
-        // Fetch the specific student's submission
-        return $this->database->getReference("assignments/{$assignmentId}/people/{$studentId}")->getValue();
-    }
 
 
     // ANNOUNCEMENTS
