@@ -20,15 +20,15 @@
 
                 <div class="details">
                     <div>
-                        <span>Deadline</span>
-                        <strong>{{ \Carbon\Carbon::parse($assignment['deadline'])->format('F j, Y') }}</strong>
+                        <span>Publish at</span>
+                        <strong>
+                            {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
+                        </strong>
                     </div>
                     <div>
-                        <span>Availability</span>
+                        <span>Deadline</span>
                         <strong>
-                           {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
--
-                            {{ \Carbon\Carbon::parse($assignment['deadline'] . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('g:i A') }}
+                        {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
 
                         </strong>
                     </div>
@@ -70,7 +70,7 @@
     <div class="modal-content">
         <span class="close" id="closeModal">&times;</span>
         <h2>Add Assignment</h2>
-        <form action="{{ route('mio.subject-teacher.addAssignment', ['subjectId' => request()->route('subjectId')]) }}" method="POST">
+        <form action="{{ route('mio.subject-teacher.addAssignment', ['subjectId' => request()->route('subjectId')]) }}" method="POST" enctype="multipart/form-data">
             @csrf
 
             <label for="title">Title</label>
@@ -85,12 +85,15 @@
             </div>
             <button type="button" id="add-attachment-btn" style="margin-top: 10px;">+ Add File or Link</button>
 
+            <label for="publish_date">Publish Date</label>
+            <input type="date" name="publish_date" id="publish_date" required>
 
-            <label for="deadline">Deadline</label>
-            <input type="date" name="deadline" id="deadline"  required>
 
             <label for="availability_start">Availability - Start Time</label>
             <input type="time" name="availability_start" id="availability_start" required>
+
+             <label for="deadline">Deadline</label>
+            <input type="date" name="deadline" id="deadline"  required>
 
             <label for="availability_end">Availability - End Time</label>
             <input type="time" name="availability_end" id="availability_end" required>
@@ -114,21 +117,6 @@
 
 <!-- MODAL -->
 <script>
-
-     function getTodayDateString() {
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const dd = String(today.getDate()).padStart(2, '0');
-        return `${yyyy}-${mm}-${dd}`;
-    }
-
-    window.onload = function () {
-        const today = getTodayDateString();
-        document.getElementById("deadline").min = today;
-        document.getElementById("availability_date").min = today;
-    };
-
 
     document.getElementById("openModal").onclick = function () {
     document.getElementById("addAssignmentModal").style.display = "block";
@@ -212,8 +200,9 @@ document.getElementById('add-attachment-btn').addEventListener('click', function
         <div style="border: 2px dashed #ccc; padding: 10px; border-radius: 5px; text-align: center; position: relative;">
             <input type="url" name="attachments[${index}][link]" placeholder="Paste a media URL (optional)" style="width: 100%; margin-bottom: 10px;" />
 
-            <input type="file" name="attachments[${index}][file]" accept="image/*" style="display: none;" />
-            <button type="button" class="upload-btn">Choose Image</button>
+           <input type="file" name="attachments[${index}][file]" accept=".jpg,.jpeg,.png,.gif,.mp4,.mov,.avi,.mp3,.wav,.webm,.pdf" style="display: none;" />
+            <button type="button" class="upload-btn">Choose File</button>
+            <span class="file-name" style="display: inline-block; margin-top: 5px; color: #555;"></span>
 
             <img src="" alt="Preview" class="preview" style="max-width: 100%; margin-top: 10px; display: none;" />
 
@@ -252,7 +241,57 @@ document.getElementById('add-attachment-btn').addEventListener('click', function
     wrapper.querySelector('.remove-attachment').addEventListener('click', () => {
         wrapper.remove();
     });
+
+    fileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const fileNameSpan = document.createElement('span');
+        fileNameSpan.textContent = file.name;
+        fileNameSpan.style.display = 'inline-block';
+        fileNameSpan.style.marginTop = '10px';
+        fileNameSpan.style.fontWeight = 'bold';
+
+        // Remove old name if exists
+        const oldName = wrapper.querySelector('.file-name');
+        if (oldName) oldName.remove();
+
+        fileNameSpan.classList.add('file-name');
+        wrapper.appendChild(fileNameSpan);
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+                urlInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        } else {
+            previewImg.style.display = 'none';
+        }
+    }
 });
+
+});
+
+
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const today = new Date().toISOString().split('T')[0];
+        const publishDateInput = document.getElementById('publish_date');
+        const deadlineInput = document.getElementById('deadline');
+
+        if (publishDateInput) {
+            publishDateInput.setAttribute('min', today);
+            publishDateInput.value = today;
+        }
+
+        if (deadlineInput) {
+            deadlineInput.setAttribute('min', today);
+        }
+    });
 </script>
 
 
