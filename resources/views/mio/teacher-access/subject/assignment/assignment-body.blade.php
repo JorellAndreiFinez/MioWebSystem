@@ -413,13 +413,11 @@
 <script>
 let attachmentIndex = 0;
 
-document.getElementById('add-attachment-btn').addEventListener('click', function () {
-    const container = document.getElementById('attachment-container');
-    const index = attachmentIndex++;
-
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('attachment-wrapper');
-    wrapper.style.marginBottom = '15px';
+    document.getElementById('add-attachment-btn').addEventListener('click', function () {
+        const container = document.getElementById('attachment-container');
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('attachment-wrapper');
+        wrapper.style.marginBottom = '15px';
 
     wrapper.innerHTML = `
         <div style="border: 2px dashed #ccc; padding: 10px; border-radius: 5px; text-align: center; position: relative;">
