@@ -424,4 +424,3 @@ Route::prefix('mio/parent')->middleware(
 
 
 
-require __DIR__.'/mobile.php';
