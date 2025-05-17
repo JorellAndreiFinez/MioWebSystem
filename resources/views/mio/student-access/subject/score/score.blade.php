@@ -1,63 +1,81 @@
 <section class="home-section">
-   @include('mio.dashboard.breadcrumbs')
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
+        </div>
+        <div class="breadcrumb-item active">Scores</div>
+    </div>
 
     <div class="grid-container">
-        <!-- Begin Main-->
         <main class="main-scores">
-            <!-- Begin Main Overview -->
 
-            <div class="main-overview">
-                <div class="overviewcard">
-                    <div class="overviewcard__info">
-                        <!-- <h3>Scores</h3> -->
-                        <!-- Begin Table for Subjects and Scores -->
-            <div class="score-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Assignment Type</th>
-                            <th>Title</th>
-                            <th>Submitted</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Quiz</td>
-                            <td>Lorem Ipsum</td>
-                            <td>Submitted</td>
-                            <td>10/10</td>
-                        </tr>
-                        <tr>
-                            <td>Quiz</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                        <tr>
-                            <td>Assignment</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                        <tr>
-                            <td>Speech Activity 1</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <!-- End Table for Subjects and Scores -->
-
+            {{-- Assignment Scores --}}
+            <div class="score-card">
+                <div class="score-card-header">
+                    <h2>Assignments</h2>
+                </div>
+                <div class="score-card-body">
+                    <div class="score-table-wrapper">
+                        <table class="score-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Submitted</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($assignmentScores as $score)
+                                    <tr>
+                                        <td>{{ $score['title'] }}</td>
+                                        <td>{{ $score['submitted'] }}</td>
+                                        <td>{{ $score['score'] }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4">No assignment scores available.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
-            <!-- End Main Overview -->
 
+                <div class="score-card-header">
+                    <h2>Quizzes</h2>
+                </div>
+                <div class="score-card-body">
+                    <div class="score-table-wrapper">
+                        <table class="score-table">
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Submitted</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($quizScores as $score)
+                                    <tr>
+                                        <td>{{ $score['title'] }}</td>
+                                        <td>{{ $score['submitted'] }}</td>
+                                        <td>{{ $score['score'] }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="4">No quiz scores available.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+
+            </div>
 
         </main>
-        <!-- End Main -->
     </div>
 </section>

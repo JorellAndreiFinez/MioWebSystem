@@ -293,8 +293,11 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         Route::get('/{subjectId}/assignment', [StudentController::class, 'showAssignment'])->name('assignment');
         Route::get('/{subjectId}/assignment/{assignmentId}', [StudentController::class, 'showAssignmentDetails'])->name('assignment-body');
 
+        Route::post('/{subjectId}/assignment/{assignmentId}/submit', [StudentController::class, 'submitAssignment'])->name('assignment-submit');
+
+
     // SCORES
-        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+        Route::get('/{subjectId}/scores', [StudentController::class, 'showScores'])->name('scores');
 
         Route::get('/{subjectId}/modules', [StudentController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [StudentController::class, 'showModuleBody'])->name('module-body');
@@ -353,8 +356,13 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::get('/{subjectId}/assignment/{assignmentId}', [TeacherController::class, 'showAssignmentDetails'])->name('assignment-body');
         Route::put('/{subjectId}/assignment/{assignmentId}/edit', [TeacherController::class, 'editAssignment'])->name('assignment.edit');
+        // Save or update review for a student's assignment
+        Route::post('/{subjectId}/assignment/{assignmentId}/review/{studentId}', [TeacherController::class, 'saveReview'])
+            ->name('assignment.review-save');
 
-        Route::view('/scores', 'mio.head.student-panel', ['page' => 'scores'])->name('scores');
+
+        Route::get('/{subjectId}/scores', [TeacherController::class, 'showScores'])->name('scores');
+
 
         Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 

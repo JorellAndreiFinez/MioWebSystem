@@ -260,6 +260,7 @@ class StudentController extends Controller
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $studentAssignments = [];
+        $matchedSubject = null; // Add this line before the loops
 
         foreach ($allSubjects as $gradeKey => $subjects) {
             foreach ($subjects as $id => $subject) {
@@ -269,15 +270,13 @@ class StudentController extends Controller
                     $subject['section_id'] === $studentSectionId &&
                     isset($subject['people'][$studentId])
                 ) {
+                    $matchedSubject = $subject; // Save subject
                     if (isset($subject['assignments'])) {
                         foreach ($subject['assignments'] as $assignmentKey => $assignment) {
-
-                            // Inject necessary information
                             $assignment['id'] = $assignmentKey;
                             $assignment['subject_id'] = $subjectId;
                             $assignment['subject_title'] = $subject['title'] ?? 'Untitled Subject';
 
-                            // Student-specific data (e.g., attempts)
                             $assignment['student_data'] = $assignment['people'][$studentId] ?? [
                                 'attempts' => 0,
                                 'work' => '',
@@ -293,10 +292,13 @@ class StudentController extends Controller
             }
         }
 
+
+
         return view('mio.head.student-panel', [
             'page' => 'assignment',
             'assignments' => $studentAssignments,
-            'subjectId' => $subjectId
+            'subjectId' => $subjectId,
+            'subject' => $matchedSubject
         ]);
     }
 
@@ -341,11 +343,16 @@ class StudentController extends Controller
         $selectedStudentId = request()->input('student_id');
         $submission = null;
 
-        if ($selectedStudentId) {
-            $submissionRef = $this->database
-                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/submissions/{$selectedStudentId}");
-            $submission = $submissionRef->getValue();
+       if ($selectedStudentId) {
+        $submissionRef = $this->database
+            ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/submissions/{$selectedStudentId}");
+        $submissions = $submissionRef->getValue() ?? [];
+        } else {
+            $submissions = [];
         }
+
+        $subject = $allSubjects[$gradeLevelKey][$subjectKey];
+
 
         return view('mio.head.student-panel', [
             'page' => 'assignment-body',
@@ -353,9 +360,158 @@ class StudentController extends Controller
             'subjectId' => $subjectId,
             'assignmentId' => $assignmentId,
             'gradeLevelKey' => $gradeLevelKey,
-            'submission' => $submission,
+            'submission' => $submissions,
+            'subject' => $subject,
         ]);
     }
+
+    public function submitAssignment(Request $request, $subjectId, $assignmentId)
+    {
+        $request->validate([
+            'work' => 'required|file|max:10240', // 10MB max
+        ]);
+
+        $studentId = session('firebase_user.uid');
+        $studentSectionId = session('firebase_user.section_id');
+
+        if (!$studentId || !$studentSectionId) {
+            return back()->with('error', 'Student session data missing.');
+        }
+
+        // Upload the file to Laravel storage
+        $file = $request->file('work');
+        $fileName = time() . '_' . $file->getClientOriginalName();
+        $filePath = $file->storeAs('submissions', $fileName, 'public');
+        $fileUrl = asset('storage/' . $filePath);
+
+        // Find subject
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if ($key === $subjectId && isset($subject['assignments'][$assignmentId])) {
+                    // Get current attempts
+                    $currentData = $subject['assignments'][$assignmentId]['people'][$studentId] ?? [
+                        'attempts' => 0,
+                        'comments' => '',
+                        'feedback' => '',
+                        'name' => session('firebase_user.first_name') . ' ' . session('firebase_user.last_name'),
+                    ];
+
+                    $currentAttempts = $currentData['attempts'] ?? 0;
+
+                    // Update submission
+                    $this->database->getReference("subjects/{$gradeKey}/{$key}/assignments/{$assignmentId}/people/{$studentId}")
+                        ->update([
+                            'work' => $fileUrl,
+                            'attempts' => $currentAttempts + 1,
+                            'timestamp' => now()->format('Y-m-d H:i:s'),
+                            'name' => $currentData['name'] ?? 'Student',
+                        ]);
+
+                    return back()->with('success', 'Assignment submitted successfully.');
+                }
+            }
+        }
+
+        return back()->with('error', 'Assignment or subject not found.');
+    }
+
+// SCORES
+
+    public function showScores($subjectId)
+{
+    $studentId = session('firebase_user')['uid'] ?? null;
+    $studentSectionId = session('firebase_user')['section_id'] ?? null;
+
+    if (!$studentId || !$studentSectionId) {
+        return back()->with('error', 'Student session data missing.');
+    }
+
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
+
+    $assignmentScores = [];
+    $quizScores = [];
+    $matchedSubject = null;
+
+    foreach ($allSubjects as $gradeKey => $subjects) {
+        foreach ($subjects as $id => $subject) {
+            if (
+                $id === $subjectId &&
+                isset($subject['section_id']) &&
+                $subject['section_id'] === $studentSectionId &&
+                isset($subject['people'][$studentId])
+            ) {
+                $matchedSubject = $subject;
+                $matchedSubject['subject_id'] = $id;
+
+                // Assignments
+            if (isset($subject['assignments'])) {
+                foreach ($subject['assignments'] as $assignmentId => $assignment) {
+                    $studentData = $assignment['people'][$studentId] ?? null;
+
+                    // Default score display
+                    $scoreDisplay = '- / -';
+
+                    // Use points from assignment node, not student node
+                    if (isset($assignment['points'])) {
+                        $earned = $studentData['score'] ?? '-';
+                        $total = $assignment['points']['total'] ?? null;
+
+                        if ($earned !== null && $total !== null) {
+                            $scoreDisplay = "{$earned} / {$total}";
+                        }
+                    }
+
+                    $assignmentScores[] = [
+                        'title' => $assignment['title'] ?? 'Untitled',
+                        'submitted' => $studentData && !empty($studentData['work']) ? 'Submitted' : '-',
+                        'score' => $scoreDisplay,
+                    ];
+                }
+            }
+
+        // Quizzes
+        if (isset($subject['quizzes'])) {
+            foreach ($subject['quizzes'] as $quizId => $quiz) {
+                $studentData = $quiz['people'][$studentId] ?? null;
+
+                $scoreDisplay = '- / -';
+
+                // Use points from quiz node, not student node
+                if (isset($quiz['points'])) {
+                    $earned = $studentData['score'] ?? '-';
+                    $total = $quiz['points']['total'] ?? null;
+
+                    if ($earned !== null && $total !== null) {
+                        $scoreDisplay = "{$earned} / {$total}";
+                    }
+                }
+
+                $quizScores[] = [
+                    'title' => $quiz['title'] ?? 'Untitled',
+                    'submitted' => $studentData && !empty($studentData['work']) ? 'Submitted' : '-',
+                    'score' => $scoreDisplay,
+                ];
+            }
+        }
+
+            }
+        }
+    }
+
+    return view('mio.head.student-panel', [
+        'page' => 'scores',
+        'assignmentScores' => $assignmentScores,
+        'quizScores' => $quizScores,
+        'subjectId' => $subjectId,
+        'subject' => $matchedSubject,
+    ]);
+}
+
+
 
 // ANNOUNCEMENTS
 

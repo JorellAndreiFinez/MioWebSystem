@@ -28,17 +28,20 @@
                     <div>
                         <span>Deadline</span>
                         <strong>
-                        {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
-
+                            @if (!empty($assignment['deadline']))
+                                {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
+                            @else
+                                No Due Date
+                            @endif
                         </strong>
                     </div>
-                    <div>
-                        <span>Points</span>
-                        <strong>{{ $assignment['points']['earned'] ?? '0' }} / {{ $assignment['points']['total'] ?? '0' }}</strong>
 
-                    </div>
+                        <div>
+                            <span>Points</span>
+                            <strong>{{ $assignment['total'] ?? '0' }}</strong>
+                        </div>
                     <div>
-                        <span>Attempts</span>
+                        <span>Attempt/s</span>
                         <strong>{{ $assignment['attempts'] ?? '1' }}</strong>
                     </div>
                 </div>
@@ -89,21 +92,18 @@
             <input type="date" name="publish_date" id="publish_date" required>
 
 
-            <label for="availability_start">Availability - Start Time</label>
+            <label for="availability_start">Open at - Start Time</label>
             <input type="time" name="availability_start" id="availability_start" required>
 
-             <label for="deadline">Deadline</label>
-            <input type="date" name="deadline" id="deadline"  required>
+             <label for="deadline">Deadline [Blank - No Due Date]</label>
+            <input type="date" name="deadline" id="deadline" >
 
-            <label for="availability_end">Availability - End Time</label>
-            <input type="time" name="availability_end" id="availability_end" required>
+            <label for="availability_end">Deadline - End Time</label>
+            <input type="time" name="availability_end" id="availability_end">
 
-            <label for="points_earned">Points</label>
-            <div style="display: flex; align-items: center; gap: 5px;">
-                <input type="number" name="points_earned" id="points_earned" min="0" required style="width: 60px;" class="no-spinner">
-                <span>/</span>
-                <input type="number" name="points_total" id="points_total" min="1" required style="width: 60px;" class="no-spinner">
-            </div>
+            <label for="points_total">Total Points</label>
+            <input type="number" name="points_total" id="points_total" min="1" required class="no-spinner">
+
 
             <label for="attempts">Attempts</label>
             <input type="number" name="attempts" min="1" required class="no-spinner">
