@@ -1,11 +1,32 @@
 
-
 <section class="home-section">
-<div class="text">
-      <a href="{{ route('mio.subject') }}">Subject</a>
-      > Announcement
-      </div>
-        <main class="main-banner">
+
+    <!-- BREADCRUMBS -->
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subjectId]) }}" >
+                {{ $subject['title'] }}
+            </a>
+        </div>
+
+        @if(isset($announcementId))
+            <div class="breadcrumb-item">
+                <a href="{{ route('mio.subject.announcements', ['subjectId' => $subjectId]) }}">
+                    Announcements
+                </a>
+            </div>
+        @else
+            <div class="breadcrumb-item active" style="color: #474747;
+">
+                Announcements
+            </div>
+        @endif
+    </div>
+
+
+
+
+        <main class="main-banner adjustable-banner">
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">

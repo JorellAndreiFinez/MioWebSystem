@@ -356,6 +356,7 @@ class SubjectController extends Controller
                 'subject_id' => 'required|string|max:100',
                 'code' => 'required|string|max:50',
                 'title' => 'required|string|max:255',
+                'subjectType' => 'required|in:academics,specialized',
                 'teacher_id' => 'required|string|max:50',
                 'section_id' => 'required|string|max:50',
                 'modules' => 'nullable|array',
@@ -403,6 +404,7 @@ class SubjectController extends Controller
                 'teacher_id' => $validatedData['teacher_id'],
                 'section_id' => $validatedData['section_id'],
                 'schoolyear_id' => $activeSchoolYearId,
+                'subjectType' => $validatedData['subjectType'],
                 'modules' => [],
                 'assignments' => '',
                 'scores' => '',
@@ -503,10 +505,6 @@ class SubjectController extends Controller
     }
 
 
-
-
-
-
 // DISPLAY EDIT SUBJECT
     public function showEditSubject($grade, $subject_id)
     {
@@ -563,6 +561,7 @@ class SubjectController extends Controller
             'title' => 'required|string|max:255',
             'teacher_id' => 'required|string|max:50',
             'section_id' => 'required|string|max:50',
+            'subjectType' => 'required|in:academics,specialized',
             'modules' => 'nullable|array',
             'modules.*.title' => 'required|string|max:255',
             'modules.*.description' => 'nullable|string',
@@ -585,6 +584,7 @@ class SubjectController extends Controller
             'title' => $validatedData['title'],
             'teacher_id' => $validatedData['teacher_id'],
             'section_id' => $validatedData['section_id'],
+            'subjectType' => $validatedData['subjectType'],
             'posted_by' => 'admin',
             'date_created' => $existing['date_created'] ?? Carbon::now()->toDateTimeString(),
             'date_updated' => Carbon::now()->toDateTimeString(),

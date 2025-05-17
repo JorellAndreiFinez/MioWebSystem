@@ -5,7 +5,26 @@
 @endphp
 
 <section class="home-section">
+<div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subjectId]) }}" >
+                {{ $subject['title'] }}
+            </a>
+        </div>
 
+        @if(isset($announcementId))
+            <div class="breadcrumb-item">
+                <a href="{{ route('mio.subject-teacher.announcement', ['subjectId' => $subjectId]) }}">
+                    Announcements
+                </a>
+            </div>
+        @else
+            <div class="breadcrumb-item active" style="color: #474747;
+">
+                Announcements
+            </div>
+        @endif
+    </div>
     <main class="main-announcement">
         <div class="announcement-banner">
             <div class="banner">

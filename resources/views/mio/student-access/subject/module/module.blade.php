@@ -1,5 +1,15 @@
 <section class="home-section">
-    @include('mio.dashboard.breadcrumbs')
+     <!-- BREADCRUMBS -->
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
+        </div>
+
+        <div class="breadcrumb-item active">Modules</div>
+    </div>
+
 
     <main class="main-banner">
         <div class="welcome-banner">

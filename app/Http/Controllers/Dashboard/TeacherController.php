@@ -245,6 +245,309 @@ class TeacherController extends Controller
         ]);
     }
 
+    // TEACHER ASSIGNMENTS
+
+    public function showAssignment($subjectId)
+    {
+        // Find grade level key
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+        $gradeLevelKey = null;
+
+        foreach ($allSubjects as $key => $subjects) {
+            foreach ($subjects as $subject) {
+                if ($subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        // Fetch assignments
+        $assignmentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments");
+            $rawAssignments = $assignmentsRef->getValue() ?? [];
+
+            $assignments = [];
+            foreach ($rawAssignments as $key => $assignment) {
+                $assignment['id'] = $key; // Include the Firebase key
+                $assignments[] = $assignment;
+            }
+
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'assignment',
+            'assignments' => $assignments,
+            'subjectId' => $subjectId,
+        ]);
+    }
+
+   public function addAssignment(Request $request, $subjectId)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'deadline' => 'required|date',
+            'availability_start' => 'required',
+            'availability_end' => 'required',
+            'points_earned' => 'required|integer',
+            'points_total' => 'required|integer',
+            'attempts' => 'required|integer',
+            'publish_date' => 'required|date',
+            'attachments' => 'nullable|array',
+            'attachments.*.link' => 'nullable|url',
+            'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+        ]);
+
+        // Find grade level key that contains the subject ID
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            if (array_key_exists($subjectId, $subjects)) {
+                $gradeLevelKey = $gradeKey;
+                break;
+            }
+        }
+
+        if (!$gradeLevelKey) {
+            return back()->with('error', 'Grade level not found for this subject.');
+        }
+
+        // Fetch students under this subject and grade level
+        $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/people");
+        $students = $studentsRef->getValue() ?? [];
+
+        // Prepare student information for the people field
+        $people = [];
+        foreach ($students as $studentId => $studentInfo) {
+            $people[$studentId] = [
+                'work' => '',  // Default work value, can be updated later
+                'name' => ($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? ''),
+                'submitted_at' => null,  // Initially, no submission
+                'attempts' => 0,  // Initial attempts count
+                'comments' => '',
+                'feedback' => '',  // Default no comments
+                'score' => null,  // Initially no score
+                'timestamp' => now()->toDateTimeString(),  // Timestamp of assignment creation
+            ];
+        }
+
+        // Handle attachments
+        $attachments = [];
+        if ($request->has('attachments')) {
+            foreach ($request->attachments as $index => $attachment) {
+                $fileUrl = null;
+
+                if (isset($attachment['file']) && $request->file("attachments.$index.file")) {
+                    $file = $request->file("attachments.$index.file");
+                    $path = $file->store("assignments", 'public');
+                    $fileUrl = asset("storage/" . $path);
+                }
+
+                $attachments[] = [
+                    'link' => $attachment['link'] ?? '',
+                    'file' => $fileUrl ?? '',
+                ];
+            }
+        }
+
+        // Generate a unique ID for the assignment based on a custom format
+        $dateKey = now()->format('Ymd'); // Year-Month-Day format
+        $timeKey = now()->format('His'); // Hour-Minute-Second format
+        $assignmentKey = "ASS{$dateKey}{$timeKey}"; // Example: 20230514193000
+
+        $newAssignment = [
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? '',
+            'deadline' => $validated['deadline'],
+            'availability' => [
+                'start' => $validated['availability_start'],
+                'end' => $validated['availability_end'],
+            ],
+            'points' => [
+                'earned' => $validated['points_earned'],
+                'total' => $validated['points_total'],
+            ],
+            'attempts' => $validated['attempts'],
+            'attachments' => $attachments,
+            'people' => $people, // Add the student information to the people field
+            'created_at' => now()->toDateTimeString(),
+            'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+
+        ];
+
+        // Save the new assignment with the unique assignment ID
+        $assignmentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments/{$assignmentKey}");
+        $assignmentsRef->set($newAssignment);
+
+        return redirect()->route('mio.subject-teacher.assignment', ['subjectId' => $subjectId])->with('success', 'Assignment added successfully.');
+    }
+
+    public function deleteAssignment($subjectId, $assignmentId)
+    {
+        // Get the grade level key where the subject exists
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            if (array_key_exists($subjectId, $subjects)) {
+                $gradeLevelKey = $gradeKey;
+                break;
+            }
+        }
+
+        if (!$gradeLevelKey) {
+            return back()->with('error', 'Grade level not found for this subject.');
+        }
+
+        // Delete the assignment from the Firebase database
+        $assignmentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments/{$assignmentId}");
+        $assignmentsRef->remove();
+
+        return redirect()->route('mio.subject-teacher.assignment', ['subjectId' => $subjectId])
+                        ->with('success', 'Assignment deleted successfully.');
+    }
+
+    public function showAssignmentDetails($subjectId, $assignmentId)
+    {
+        // Step 1: Find grade level and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Step 2: Get the specific assignment
+        $assignmentRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}");
+        $assignment = $assignmentRef->getValue();
+
+        if (!$assignment) {
+            return abort(404, 'Assignment not found.');
+        }
+
+        $assignment['id'] = $assignmentId;
+
+        // Step 3: Get students/people
+        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/people");
+        $assignment['people'] = $peopleRef->getValue() ?? [];
+
+        // Step 4: Load submission for selected student
+        $selectedStudentId = request()->input('student_id');
+        $submission = null;
+
+        if ($selectedStudentId) {
+            $submissionRef = $this->database
+                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/submissions/{$selectedStudentId}");
+            $submission = $submissionRef->getValue();
+        }
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'assignment-body',
+            'assignment' => $assignment,
+            'subjectId' => $subjectId,
+            'assignmentId' => $assignmentId,
+            'gradeLevelKey' => $gradeLevelKey,
+            'submission' => $submission,
+        ]);
+    }
+
+    public function editAssignment(Request $request, $subjectId, $assignmentId)
+    {
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        // Find subject location
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+
+        // Build the updated data
+        $updatedData = [
+            'title' => $request->input('title'),
+            'description' => $request->input('description'),
+            'deadline' => $request->input('deadline'),
+            'availability' => [
+                'start' => $request->input('availability_start'),
+                'end' => $request->input('availability_end'),
+            ],
+            'points' => [
+                'earned' => (int)$request->input('points_earned'),
+                'total' => (int)$request->input('points_total'),
+            ],
+            'attempts' => (int)$request->input('attempts'),
+        ];
+
+        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+
+        // Handle attachments
+        $attachments = [];
+
+        if ($request->has('attachments')) {
+            foreach ($request->attachments as $index => $attachment) {
+                $link = $attachment['link'] ?? '';
+                $fileUrl = '';
+
+                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
+                    $file = $request->file("attachments.$index.file");
+                    $path = $file->store("assignments", 'public');
+                    $fileUrl = asset("storage/" . $path);
+                } elseif (!empty($attachment['file'])) {
+                    $fileUrl = $attachment['file']; // Retain existing file URL if no new file uploaded
+                }
+
+                $attachments[] = [
+                    'link' => $link,
+                    'file' => $fileUrl,
+                ];
+            }
+        } elseif (isset($existingAssignment['attachments'])) {
+            $attachments = $existingAssignment['attachments']; // Keep existing if not updated
+        }
+
+        $updatedData['attachments'] = $attachments;
+
+        // Update in Firebase
+        $this->database->getReference($assignmentPath)->update($updatedData);
+
+        return redirect()->back()->with('success', 'Assignment updated successfully.');
+    }
+
+
+
+
+    // ANNOUNCEMENTS
+
     public function showSubjectAnnouncements($subjectId)
     {
         // Fetch active school year
@@ -291,7 +594,8 @@ class TeacherController extends Controller
         return view('mio.head.teacher-panel', [
             'page' => 'announcement',
             'subject' => $subject,
-            'announcements' => $announcements
+            'announcements' => $announcements,
+            'subjectId' => $subjectId
         ]);
     }
 
@@ -339,8 +643,11 @@ class TeacherController extends Controller
             'subject' => $subject,
             'announcement' => $announcement,
             'announcementId' => $announcementId,
+            'subjectId' => $subjectId,
         ]);
     }
+
+
 
     public function editAnnouncement(Request $request, $subjectId, $announcementId)
     {
@@ -511,14 +818,14 @@ class TeacherController extends Controller
         $subjectsData = $this->database->getReference('subjects')->getValue() ?? [];
 
         $modulesList = [];
+        $subjectDetails = null; // Initialize to store subject details
 
         foreach ($subjectsData as $gradeLevel => $subjects) {
             foreach ($subjects as $subject) {
-                if (
-                    $subject['subject_id'] === $subjectId &&
-                    isset($subject['modules']) &&
-                    is_array($subject['modules'])  // check if modules are in array format
-                ) {
+                if ($subject['subject_id'] === $subjectId && isset($subject['modules']) && is_array($subject['modules'])) {
+                    // Store the subject details in $subjectDetails when found
+                    $subjectDetails = $subject;
+
                     foreach ($subject['modules'] as $index => $module) {
                         $modulesList[] = [
                             'title' => $module['title'] ?? 'Untitled Module',
@@ -527,66 +834,146 @@ class TeacherController extends Controller
                             'module_index' => $index
                         ];
                     }
+                    break; // Exit the loop once the subject is found
                 }
+            }
+            if ($subjectDetails) {
+                break; // Exit the outer loop once the subject is found
             }
         }
 
-        return view('mio.head.student-panel', [
+        return view('mio.head.teacher-panel', [
             'page' => 'module',
             'modules' => $modulesList,
-            'subject_id' => $subjectId
+            'subject_id' => $subjectId,
+            'subject' => $subjectDetails, // Pass the correct subject data to the view
         ]);
     }
 
     public function showModuleBody($subjectId, $moduleIndex)
-        {
-            // Get active school year
-            $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
-            $activeSchoolYear = null;
-            foreach ($schoolYears as $year) {
-                if ($year['status'] === 'active') {
-                    $activeSchoolYear = $year['schoolyearid'];
-                    break;
-                }
+    {
+        // Get active school year
+        $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
+        $activeSchoolYear = null;
+        foreach ($schoolYears as $year) {
+            if ($year['status'] === 'active') {
+                $activeSchoolYear = $year['schoolyearid'];
+                break;
             }
+        }
 
-        // Get the grade level and subject data
-        $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+    // Get the grade level and subject data
+    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+    $subject = null;
+    $gradeLevelKey = null;
+
+    foreach ($subjects as $gradeLevel => $items) {
+        foreach ($items as $key => $item) {
+            if ($item['subject_id'] === $subjectId) {
+                $subject = $item;
+                $gradeLevelKey = $gradeLevel;
+                break 2;
+            }
+        }
+    }
+
+    if (!$subject || !$gradeLevelKey) {
+        return redirect()->route('mio.teacher-panel')->with('error', 'Subject not found.');
+    }
+
+    // Get the module using the module index
+    $module = $subject['modules'][$moduleIndex] ?? null;
+
+    if (!$module) {
+        return redirect()->route('mio.teacher-panel')->with('error', 'Module not found.');
+    }
+
+    return view('mio.head.teacher-panel', [
+        'page' => 'module-body',
+        'subject' => $subject,
+        'module' => $module,
+        'moduleIndex' => $moduleIndex,
+
+    ]);
+}
+
+    public function showProfile(){
+        $userId = session('firebase_user.uid');
+        $teacherName = session('firebase_user.name');
+
+                // Get student data
+                $teacherRef = $this->database->getReference('users/' . $userId);
+                $teacher = $teacherRef->getValue();
+
+                if (!$teacher) {
+                    abort(404, 'Teacher not found.');
+                }
+
+                // // Find the section where this student is enrolled
+                // $sectionsRef = $this->database->getReference('sections');
+                // $sections = $sectionsRef->getValue();
+
+                // $studentSection = null;
+
+                // foreach ($sections as $sectionId => $sectionData) {
+                //     if (isset($sectionData['students']) && array_key_exists($userId, $sectionData['students'])) {
+                //         $studentSection = $sectionData;
+                //         break;
+                //     }
+                // }
+
+                return view('mio.head.teacher-panel', [
+                    'page' => 'profile',
+                    'teacher' => $teacher,
+                    'name' => $teacherName,
+                    'uid' => $userId,
+                ]);
+    }
+
+    public function showPeople($subjectId)
+    {
+        // Get all subjects grouped by grade level
+        $subjectsByGrade = $this->database->getReference('subjects')->getValue() ?? [];
+
         $subject = null;
-        $gradeLevelKey = null;
+        $gradeLevel = null;
 
-        foreach ($subjects as $gradeLevel => $items) {
-            foreach ($items as $key => $item) {
-                if ($item['subject_id'] === $subjectId) {
-                    $subject = $item;
-                    $gradeLevelKey = $gradeLevel;
+        // Loop through grade levels to find the subject with the matching subject_id
+        foreach ($subjectsByGrade as $grade => $subjects) {
+            foreach ($subjects as $key => $s) {
+                if (isset($s['subject_id']) && $s['subject_id'] === $subjectId) {
+                    $subject = $s;
+                    $gradeLevel = $grade;
                     break 2;
                 }
             }
         }
 
-        if (!$subject || !$gradeLevelKey) {
-            return redirect()->route('mio.student-panel')->with('error', 'Subject not found.');
+        // If no matching subject or no people listed, show error
+        if (!$subject || !isset($subject['people'])) {
+            abort(404, 'Subject or people not found.');
         }
 
-        // Get the module using the module index
-        $module = $subject['modules'][$moduleIndex] ?? null;
+        // Sort people by last name
+        $people = $subject['people'];
+        uasort($people, function ($a, $b) {
+            return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
+        });
 
-        if (!$module) {
-            return redirect()->route('mio.student-panel')->with('error', 'Module not found.');
-        }
-
+        // Return view with subject info included
         return view('mio.head.student-panel', [
-            'page' => 'module-body',
-            'subject' => $subject,
-            'module' => $module,
-            'moduleIndex' => $moduleIndex
+            'page' => 'people',
+            'subject' => $subject,              // ✅ include full subject info
+            'subject_id' => $subjectId,
+            'grade_level' => $gradeLevel,
+            'people' => $people
         ]);
     }
 
-    public function showProfile(){
 
-    }
+
+
+
 
 
 

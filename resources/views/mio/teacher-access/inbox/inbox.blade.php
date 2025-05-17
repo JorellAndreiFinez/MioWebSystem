@@ -19,7 +19,7 @@
                     @else
                         @foreach($contacts as $contact)
                             <div class="contact" data-contact-id="{{ $contact['id'] }}" data-contact-name="{{ $contact['name'] }}" data-contact-role="{{ $contact['role'] }}" data-contact-image="{{ $contact['profile_pic'] }}">
-                                <img src="{{ $contact['profile_pic'] ?? 'default.jpg' }}" class="profile-pic" />
+                                <img src="{{ $contact['profile_pic'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($contact['name']) }}" class="profile-pic" />
                                 <div class="contact-info">
                                     <p class="name">{{ $contact['name'] }}</p>
                                     <p class="role">{{ $contact['role'] }}</p>
@@ -28,6 +28,7 @@
                         @endforeach
                     @endif
                 </div>
+
 
                     <!-- Right Column - Chat Messages -->
                 <div class="no-contact-selected">
@@ -150,67 +151,67 @@
 
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const groupSelect = document.getElementById('group-select');
-    const peopleSelect = document.getElementById('people-select');
-    const attachmentInput = document.getElementById('attachment');
-    const fileList = document.getElementById('file-list');
-    const sendForm = document.getElementById('sendMessageForm');
+    document.addEventListener('DOMContentLoaded', function () {
+        const groupSelect = document.getElementById('group-select');
+        const peopleSelect = document.getElementById('people-select');
+        const attachmentInput = document.getElementById('attachment');
+        const fileList = document.getElementById('file-list');
+        const sendForm = document.getElementById('sendMessageForm');
 
-    // Dynamic people per subject
-    const subjectPeople = {
-        @foreach($subjects as $index => $subject)
-            "subject_{{ $index }}": [
-                @foreach($subject['people'] as $person)
-                    { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
-                @endforeach
-            ],
-        @endforeach
-    };
+        // Dynamic people per subject
+        const subjectPeople = {
+            @foreach($subjects as $index => $subject)
+                "subject_{{ $index }}": [
+                    @foreach($subject['people'] as $person)
+                        { id: "{{ $person['id'] }}", name: "{{ $person['name'] }}" },
+                    @endforeach
+                ],
+            @endforeach
+        };
 
-    groupSelect.addEventListener('change', function () {
-        const selectedGroup = this.value;
-        peopleSelect.innerHTML = '<option value="">Select Person</option>';
-        if (subjectPeople[selectedGroup]) {
-            subjectPeople[selectedGroup].forEach(person => {
-                const option = document.createElement('option');
-                option.value = person.id;
-                option.textContent = person.name;
-                peopleSelect.appendChild(option);
-            });
-        }
-    });
-
-    attachmentInput.addEventListener('change', function () {
-        fileList.innerHTML = '';
-        Array.from(this.files).forEach(file => {
-            const li = document.createElement('li');
-            li.textContent = file.name;
-            fileList.appendChild(li);
-        });
-    });
-
-    sendForm.addEventListener('submit', async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(sendForm);
-
-        const response = await fetch(sendForm.action, {
-            method: 'POST',
-            body: formData
+        groupSelect.addEventListener('change', function () {
+            const selectedGroup = this.value;
+            peopleSelect.innerHTML = '<option value="">Select Person</option>';
+            if (subjectPeople[selectedGroup]) {
+                subjectPeople[selectedGroup].forEach(person => {
+                    const option = document.createElement('option');
+                    option.value = person.id;
+                    option.textContent = person.name;
+                    peopleSelect.appendChild(option);
+                });
+            }
         });
 
-        const result = await response.json();
-
-        if (result.success) {
-            alert('Message sent!');
-            sendForm.reset();
+        attachmentInput.addEventListener('change', function () {
             fileList.innerHTML = '';
-        } else {
-            alert('Failed to send message: ' + result.message);
-        }
+            Array.from(this.files).forEach(file => {
+                const li = document.createElement('li');
+                li.textContent = file.name;
+                fileList.appendChild(li);
+            });
+        });
+
+        sendForm.addEventListener('submit', async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(sendForm);
+
+            const response = await fetch(sendForm.action, {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert('Message sent!');
+                sendForm.reset();
+                fileList.innerHTML = '';
+            } else {
+                alert('Failed to send message: ' + result.message);
+            }
+        });
     });
-});
 </script>
 
 <!-- Get MESSAGES -->
@@ -257,7 +258,13 @@ document.querySelectorAll(".contact").forEach(contact => {
         const receiverId = this.dataset.contactId;
         const receiverName = this.dataset.contactName;
         const receiverRole = this.dataset.contactRole;
-        const receiverImage = this.dataset.contactImage;
+        const receiverImageRaw = this.dataset.contactImage;
+
+        // Fallback logic inline using a conditional expression
+        const receiverImage = (!receiverImageRaw || receiverImageRaw === "null" || receiverImageRaw === "undefined")
+            ? `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}`
+            : receiverImageRaw;
+
 
         const header = document.querySelector(".chat-content .header");
         header.innerHTML = `
@@ -267,6 +274,10 @@ document.querySelectorAll(".contact").forEach(contact => {
                 <p class="subtitle">${receiverRole}</p>
             </div>
         `;
+
+             if (!receiverImage) {
+            receiverImage = `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}`;
+        }
 
         const chatSection = document.querySelector(".conversation");
         chatSection.innerHTML = '<p>Loading conversation...</p>';
