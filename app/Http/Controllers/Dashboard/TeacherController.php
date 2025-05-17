@@ -278,6 +278,7 @@ class TeacherController extends Controller
             'page' => 'assignment',
             'assignments' => $assignments,
             'subjectId' => $subjectId,
+
         ]);
     }
 
@@ -286,10 +287,9 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'description' => 'nullable|string',
-            'deadline' => 'required|date',
+            'deadline' => 'nullable|date',
             'availability_start' => 'required',
-            'availability_end' => 'required',
-            'points_earned' => 'required|integer',
+            'availability_end' => 'nullable',
             'points_total' => 'required|integer',
             'attempts' => 'required|integer',
             'publish_date' => 'required|date',
@@ -357,18 +357,18 @@ class TeacherController extends Controller
         $timeKey = now()->format('His'); // Hour-Minute-Second format
         $assignmentKey = "ASS{$dateKey}{$timeKey}"; // Example: 20230514193000
 
+        $deadline = $validated['deadline'] ?? '';
+        $endtime = $validated['availability_end'] ?? '';
+
         $newAssignment = [
             'title' => $validated['title'],
             'description' => $validated['description'] ?? '',
-            'deadline' => $validated['deadline'],
+            'deadline' => $deadline,
             'availability' => [
                 'start' => $validated['availability_start'],
-                'end' => $validated['availability_end'],
+                'end' => $endtime,
             ],
-            'points' => [
-                'earned' => $validated['points_earned'],
-                'total' => $validated['points_total'],
-            ],
+            'total' => $validated['points_total'],
             'attempts' => $validated['attempts'],
             'attachments' => $attachments,
             'people' => $people, // Add the student information to the people field
@@ -410,6 +410,7 @@ class TeacherController extends Controller
                         ->with('success', 'Assignment deleted successfully.');
     }
 
+// ASSIGNMENT DETAILS
     public function showAssignmentDetails($subjectId, $assignmentId)
     {
         // Step 1: Find grade level and subjectKey
@@ -464,18 +465,28 @@ class TeacherController extends Controller
             'assignmentId' => $assignmentId,
             'gradeLevelKey' => $gradeLevelKey,
             'submission' => $submission,
+            'selectedStudentId' => $selectedStudentId,
         ]);
     }
 
-    public function editAssignment(Request $request, $subjectId, $assignmentId)
+     public function saveReview(Request $request, $subjectId, $assignmentId, $studentId)
     {
-        $subjectsRef = $this->database->getReference('subjects');
+        // Validate inputs
+        $validated = $request->validate([
+            'comments' => 'nullable|string',
+            'feedback' => 'nullable|string',
+            'score' => 'nullable|numeric|min:0',
+        ]);
+
+        $database = $this->database; // Your Firebase Realtime DB instance
+
+        // Step 1: Find gradeLevelKey and subjectKey by subjectId
+        $subjectsRef = $database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $gradeLevelKey = null;
         $subjectKey = null;
 
-        // Find subject location
         foreach ($allSubjects as $gradeKey => $subjects) {
             foreach ($subjects as $key => $subject) {
                 if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
@@ -487,63 +498,144 @@ class TeacherController extends Controller
         }
 
         if (!$gradeLevelKey || !$subjectKey) {
-            return abort(404, 'Subject not found.');
+            return response()->json(['message' => 'Subject not found'], 404);
         }
 
-        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+        // Step 2: Check assignment exists
+        $assignmentRef = $database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}");
+        $assignment = $assignmentRef->getValue();
 
-        // Build the updated data
-        $updatedData = [
-            'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'deadline' => $request->input('deadline'),
-            'availability' => [
-                'start' => $request->input('availability_start'),
-                'end' => $request->input('availability_end'),
-            ],
-            'points' => [
-                'earned' => (int)$request->input('points_earned'),
-                'total' => (int)$request->input('points_total'),
-            ],
-            'attempts' => (int)$request->input('attempts'),
-        ];
-
-        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
-
-        // Handle attachments
-        $attachments = [];
-
-        if ($request->has('attachments')) {
-            foreach ($request->attachments as $index => $attachment) {
-                $link = $attachment['link'] ?? '';
-                $fileUrl = '';
-
-                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
-                    $file = $request->file("attachments.$index.file");
-                    $path = $file->store("assignments", 'public');
-                    $fileUrl = asset("storage/" . $path);
-                } elseif (!empty($attachment['file'])) {
-                    $fileUrl = $attachment['file']; // Retain existing file URL if no new file uploaded
-                }
-
-                $attachments[] = [
-                    'link' => $link,
-                    'file' => $fileUrl,
-                ];
-            }
-        } elseif (isset($existingAssignment['attachments'])) {
-            $attachments = $existingAssignment['attachments']; // Keep existing if not updated
+        if (!$assignment) {
+            return response()->json(['message' => 'Assignment not found'], 404);
         }
 
-        $updatedData['attachments'] = $attachments;
+        // Step 3: Prepare review data to save (update or create)
+        $reviewData = [];
 
-        // Update in Firebase
-        $this->database->getReference($assignmentPath)->update($updatedData);
+        if (isset($validated['comments'])) {
+            $reviewData['comments'] = $validated['comments'];
+        }
 
-        return redirect()->back()->with('success', 'Assignment updated successfully.');
+        if (isset($validated['feedback'])) {
+            $reviewData['feedback'] = $validated['feedback'];
+        }
+
+        if (isset($validated['score'])) {
+            $reviewData['score'] = $validated['score'];
+        }
+
+        // Add/update timestamp
+        $reviewData['reviewed_at'] = date('Y-m-d H:i:s');
+
+        // Step 4: Save the review to the student's assignment 'people' node (or 'reviews' node if you prefer)
+        // Using 'people' because you showed the assignment structure has "people" with student data and feedback fields.
+
+        $studentReviewRef = $database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/people/{$studentId}");
+
+        // Get current data for merging
+        $currentData = $studentReviewRef->getValue() ?? [];
+
+        // Merge with current data, update with new review info
+        $updatedData = array_merge($currentData, $reviewData);
+
+        // Save
+        $studentReviewRef->set($updatedData);
+
+        return redirect()->back()->with([
+            'message' => 'Review saved successfully',
+            'review' => $updatedData,
+            'studentId' => $studentId,
+        ]);
+
     }
 
+    public function editAssignment(Request $request, $subjectId, $assignmentId)
+{
+    $validated = $request->validate([
+        'title' => 'required|string',
+        'description' => 'nullable|string',
+        'deadline' => 'nullable|date',
+        'availability_start' => 'required',
+        'availability_end' => 'nullable',
+        'points_total' => 'required|integer',
+        'attempts' => 'required|integer',
+        'publish_date' => 'required|date',
+        'attachments' => 'nullable|array',
+        'attachments.*.link' => 'nullable|url',
+        'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+    ]);
 
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
+
+    $gradeLevelKey = null;
+    $subjectKey = null;
+
+    // Find subject location
+    foreach ($allSubjects as $gradeKey => $subjects) {
+        foreach ($subjects as $key => $subject) {
+            if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                $gradeLevelKey = $gradeKey;
+                $subjectKey = $key;
+                break 2;
+            }
+        }
+    }
+
+    if (!$gradeLevelKey || !$subjectKey) {
+        return abort(404, 'Subject not found.');
+    }
+
+    $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+    $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+
+    // Handle attachments
+    $attachments = [];
+
+    if ($request->has('attachments')) {
+        foreach ($request->attachments as $index => $attachment) {
+            $fileUrl = null;
+
+            if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
+                $file = $request->file("attachments.$index.file");
+                $path = $file->store("assignments", 'public');
+                $fileUrl = asset("storage/" . $path);
+            } elseif (!empty($attachment['file'])) {
+                $fileUrl = $attachment['file']; // Keep existing file URL
+            }
+
+            $attachments[] = [
+                'link' => $attachment['link'] ?? '',
+                'file' => $fileUrl ?? '',
+            ];
+        }
+    } elseif (isset($existingAssignment['attachments'])) {
+        $attachments = $existingAssignment['attachments']; // Keep existing if no update
+    }
+
+    $deadline = $validated['deadline'] ?? null;
+    $endtime = $validated['availability_end'] ?? null;
+
+    $updatedData = [
+        'title' => $validated['title'],
+        'description' => $validated['description'] ?? '',
+        'deadline' => $deadline ?? '',
+        'availability' => [
+            'start' => $validated['availability_start'],
+            'end' => $endtime ?? '',
+        ],
+        'total' => $validated['points_total'],
+        'attempts' => $validated['attempts'],
+        'attachments' => $attachments,
+        'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+        // We retain 'people' and other fields as-is
+    ];
+
+    // Update assignment data
+    $this->database->getReference($assignmentPath)->update($updatedData);
+
+    return redirect()->back()->with('success', 'Assignment updated successfully.');
+}
 
 
     // ANNOUNCEMENTS
