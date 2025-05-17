@@ -68,16 +68,14 @@ class SubjectController extends Controller
         }
 
         // Fetch user data from Firebase
-        $userData = $this->database->getReference('users/' . $uid)->getValue();
+        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
 
-        if (!$userData || !isset($userData['grade_level'])) {
+        if (!$gradeLevel) {
             return response()->json([
                 'success' => false,
                 'error' => 'User data or grade level not found.',
             ], 404);
         }
-
-        $gradeLevel = $userData['grade_level'];
 
         // Fetch subjects by grade level
         $subjects = $this->database
@@ -123,16 +121,15 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $userData = $this->database->getReference('users/' . $uid)->getValue();
+        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
 
-        if (!$userData || !isset($userData['grade_level'])) {
+        if (!$gradeLevel) {
             return response()->json([
                 'success' => false,
                 'error' => 'User data or grade level not found.',
             ], 404);
         }
 
-        $gradeLevel = $userData['grade_level'];
 
         $modules = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/modules")
@@ -176,16 +173,14 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $userData = $this->database->getReference('users/' . $uid)->getValue();
+        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
 
-        if (!$userData || !isset($userData['grade_level'])) {
+        if (!$gradeLevel) {
             return response()->json([
                 'success' => false,
                 'error' => 'User data or grade level not found.',
             ], 404);
         }
-
-        $gradeLevel = $userData['grade_level'];
 
         $announcements = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements")
@@ -230,16 +225,14 @@ class SubjectController extends Controller
             ], 400);
         }
 
-        $userData = $this->database->getReference('users/' . $uid)->getValue();
+        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
 
-        if (!$userData || !isset($userData['grade_level'])) {
+        if (!$gradeLevel) {
             return response()->json([
                 'success' => false,
                 'error' => 'User data or grade level not found.',
             ], 404);
         }
-
-        $gradeLevel = $userData['grade_level'];
 
         $assignments = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments")
