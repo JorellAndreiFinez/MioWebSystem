@@ -113,7 +113,7 @@ class SubjectController extends Controller
 
             ], 400);
         }
-        
+
         if (!$uid) {
             return response()->json([
                 'success' => false,
@@ -165,7 +165,7 @@ class SubjectController extends Controller
 
             ], 400);
         }
-        
+
         if (!$uid) {
             return response()->json([
                 'success' => false,
@@ -217,7 +217,7 @@ class SubjectController extends Controller
 
             ], 400);
         }
-        
+
         if (!$uid) {
             return response()->json([
                 'success' => false,
@@ -272,7 +272,7 @@ class SubjectController extends Controller
 
             ], 400);
         }
-        
+
         if (!$uid) {
             return response()->json([
                 'success' => false,
@@ -476,13 +476,13 @@ class SubjectController extends Controller
         if (isset($sectionRef['students']) && is_array($sectionRef['students'])) {
             foreach ($sectionRef['students'] as $studentId => $value) {
                 // Now $studentId is the actual ID like STU123456
-                $studentData = $this->database->getReference("students/{$studentId}")->getValue();
+                $studentData = $this->database->getReference("users/{$studentId}")->getValue();
 
                 $postData['people'][] = [
                     'student_id' => $studentId,
                     'role' => 'student',
-                    'first_name' => $studentData['first_name'] ?? '',
-                    'last_name' => $studentData['last_name'] ?? '',
+                    'first_name' => $studentData['fname'] ?? '',
+                    'last_name' => $studentData['lname'] ?? '',
                 ];
 
             }

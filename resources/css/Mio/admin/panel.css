@@ -684,6 +684,7 @@
     input[type="password"],
     input[type="date"],
     input[type="number"],
+    input[type="time"],
     select {
         background-color: #f0f0f0;
         border: 1px solid #ddd;
