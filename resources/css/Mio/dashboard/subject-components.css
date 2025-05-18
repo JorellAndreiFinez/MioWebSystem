@@ -729,6 +729,41 @@
 }
 
 
+/* QUIZZES */
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding-right: 40px;
+    /* space for the icon */
+}
+
+.input-with-icon .icon-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-50%);
+    background: #e74c3c;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.input-with-icon .icon-btn i {
+    font-size: 14px;
+}
+
+
 /* MODULE */
 
 .main-module {

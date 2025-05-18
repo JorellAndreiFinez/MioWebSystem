@@ -357,10 +357,23 @@ Route::prefix('mio/teacher')->middleware(
         Route::get('/{subjectId}/assignment/{assignmentId}', [TeacherController::class, 'showAssignmentDetails'])->name('assignment-body');
         Route::put('/{subjectId}/assignment/{assignmentId}/edit', [TeacherController::class, 'editAssignment'])->name('assignment.edit');
         // Save or update review for a student's assignment
-        Route::post('/{subjectId}/assignment/{assignmentId}/review/{studentId}', [TeacherController::class, 'saveReview'])
-            ->name('assignment.review-save');
+        Route::post('/{subjectId}/assignment/{assignmentId}/review/{studentId}', [TeacherController::class, 'saveReview'])->name('assignment.review-save');
+
+    // QUIZZES
+        Route::get('/{subjectId}/quiz', [TeacherController::class, 'showQuizzes'])->name('quiz');
+
+        Route::get('/{subjectId}/quiz/add-quiz', [TeacherController::class, 'addAcadsQuiz'])->name('add-acads-quiz');
+
+        Route::post('/{subjectId}/quiz/store-quiz', [TeacherController::class, 'storeQuiz'])->name('store-acads-quiz');
+
+        Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
+
+        Route::delete('/{subjectId}/quiz/{quizId}/delete', [TeacherController::class, 'deleteQuiz'])->name('deleteQuiz');
+
+        Route::put('/{subjectId}/quiz/{quizId}/edit', [TeacherController::class, 'editQuiz'])->name('quiz.edit');
 
 
+    // SCORES
         Route::get('/{subjectId}/scores', [TeacherController::class, 'showScores'])->name('scores');
 
 

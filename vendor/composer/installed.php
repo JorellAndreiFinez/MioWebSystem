@@ -3,7 +3,7 @@
         'name' => 'laravel/laravel',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '3770c1547d0cef4767c6f0da0ed669c6e058e381',
+        'reference' => '80f41907bbbd438d1d5bf1e39fd91bbeba81f231',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -577,7 +577,7 @@
         'laravel/laravel' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '3770c1547d0cef4767c6f0da0ed669c6e058e381',
+            'reference' => '80f41907bbbd438d1d5bf1e39fd91bbeba81f231',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -1289,6 +1289,15 @@
             'install_path' => __DIR__ . '/../sebastian/version',
             'aliases' => array(),
             'dev_requirement' => true,
+        ),
+        'smalot/pdfparser' => array(
+            'pretty_version' => 'v2.12.0',
+            'version' => '2.12.0.0',
+            'reference' => '8440edbf58c8596074e78ada38dcb0bd041a5948',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../smalot/pdfparser',
+            'aliases' => array(),
+            'dev_requirement' => false,
         ),
         'spatie/once' => array(
             'dev_requirement' => false,
