@@ -52,9 +52,10 @@ class MobileRoleBasedAccessMiddleware
             return response()->json(['message' => 'Forbidden: user role not found'], 403);
         }
 
-        if (strtolower($role) !== strtolower($requiredRole)) {
+        $allowedRoles = array_map('strtolower', explode('-', $requiredRole));
+        if (! in_array(strtolower($role), $allowedRoles)) {
             return response()->json([
-                'message' => "Forbidden: requires role '{$requiredRole}'"
+                'message' => "Forbidden: requires one of the roles [" . implode(', ', $allowedRoles) . "]"
             ], 403);
         }
 

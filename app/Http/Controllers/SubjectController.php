@@ -58,6 +58,7 @@ class SubjectController extends Controller
     public function viewSubjectsApi(Request $request)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $role = $request->get('firebase_user_role');
 
         if (!$gradeLevel) {
             return response()->json([
@@ -85,6 +86,7 @@ class SubjectController extends Controller
         return response()->json([
             'success' => true,
             'subjects' => $filteredSubjects,
+            'role' => $role,
         ], 200);
     }
 
@@ -266,12 +268,14 @@ class SubjectController extends Controller
                 $filteredAssignments[] = [
                     'assignment_id' => $key,
                     'attempts' => $item['attempts'] ?? null,
-                    'deadline' => $item['deadline'] ?? null,
                     'availability' => $item['availability'] ?? null,
                     'createdAt' => $item['created_at'] ?? null,
+                    'deadline' => $item['deadline'] ?? null,
                     'description' => $item['description'] ?? null,
-                    'points' => $item['points'] ?? null,
+                    'publishedAt' => $item['published_at'] ?? null,
                     'title' => $item['title'] ?? null,
+                    'total' => $item['total'] ?? null,
+                    'submission_type' => $item['submission_type'] ?? null,
                 ];
             }
         }
