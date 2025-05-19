@@ -471,7 +471,7 @@ class TeacherController extends Controller
         $quiz = $quizRef->getValue();
 
         if (!$quiz) {
-            return abort(404, 'Assignment not found.');
+            return abort(404, 'Quiz not found.');
         }
 
         $quiz['id'] = $quizId;
@@ -493,6 +493,7 @@ class TeacherController extends Controller
         return view('mio.head.teacher-panel', [
             'page' => 'quiz-body',
             'quiz' => $quiz,
+            'questions' => $quiz['questions'] ?? [],
             'subjectId' => $subjectId,
             'quizId' => $quizId,
             'gradeLevelKey' => $gradeLevelKey,
@@ -507,24 +508,27 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'description' => 'nullable|string',
-            'deadline' => 'nullable|date',
-            'availability_start' => 'required',
-            'availability_end' => 'nullable',
-            'points_total' => 'required|integer',
+            'deadline_date' => 'nullable|date',
+            'start_time' => 'required',
+            'end_time' => 'nullable',
+            'time_limit' => 'required|integer',
+            'total_points' => 'required|integer',
             'attempts' => 'required|integer',
             'publish_date' => 'required|date',
-            'attachments' => 'nullable|array',
-            'attachments.*.link' => 'nullable|url',
-            'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+            'questions' => 'nullable|array',
+            'questions.*.type' => 'required|string',
+            'questions.*.question' => 'required|string',
+            'questions.*.options' => 'nullable|array',
+            'questions.*.answer' => 'nullable|string',
         ]);
 
+        // Locate subject in Firebase
         $subjectsRef = $this->database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $gradeLevelKey = null;
         $subjectKey = null;
 
-        // Find subject location
         foreach ($allSubjects as $gradeKey => $subjects) {
             foreach ($subjects as $key => $subject) {
                 if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
@@ -539,56 +543,70 @@ class TeacherController extends Controller
             return abort(404, 'Subject not found.');
         }
 
-        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
-        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+        $quizPath = "subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}";
+        $existingQuiz = $this->database->getReference($quizPath)->getValue();
 
-        // Handle attachments
-        $attachments = [];
+        // Combine publish_date and start_time
+        $publishedAt = "{$validated['publish_date']} {$validated['start_time']}";
+        $deadline = $validated['deadline_date'] ?? '';
+        $endTime = $validated['end_time'] ?? '';
 
-        if ($request->has('attachments')) {
-            foreach ($request->attachments as $index => $attachment) {
-                $fileUrl = null;
+        // Build formatted questions
+        $questions = [];
+        if (!empty($validated['questions'])) {
+            $qIndex = 1;
+            foreach ($validated['questions'] as $q) {
+                $question = [
+                    'type' => $q['type'],
+                    'question' => $q['question'],
+                ];
 
-                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
-                    $file = $request->file("attachments.$index.file");
-                    $path = $file->store("assignments", 'public');
-                    $fileUrl = asset("storage/" . $path);
-                } elseif (!empty($attachment['file'])) {
-                    $fileUrl = $attachment['file']; // Keep existing file URL
+                if (in_array($q['type'], ['multiple_choice', 'dropdown'])) {
+                    $question['options'] = $q['options'] ?? [];
+                    $question['answer'] = $q['answer'] ?? '';
+                } elseif ($q['type'] === 'fill_blank') {
+                    $question['answer'] = $q['answer'] ?? '';
                 }
 
-                $attachments[] = [
-                    'link' => $attachment['link'] ?? '',
-                    'file' => $fileUrl ?? '',
-                ];
+                $questions["q{$qIndex}"] = $question;
+                $qIndex++;
             }
-        } elseif (isset($existingAssignment['attachments'])) {
-            $attachments = $existingAssignment['attachments']; // Keep existing if no update
         }
 
-        $deadline = $validated['deadline'] ?? null;
-        $endtime = $validated['availability_end'] ?? null;
-
+        // Build the full quiz data
         $updatedData = [
             'title' => $validated['title'],
             'description' => $validated['description'] ?? '',
-            'deadline' => $deadline ?? '',
-            'availability' => [
-                'start' => $validated['availability_start'],
-                'end' => $endtime ?? '',
-            ],
-            'total' => $validated['points_total'],
+            'deadline' => $deadline,
+            'start_time' => $validated['start_time'],
+            'end_time' => $endTime,
+            'time_limit' => $validated['time_limit'],
+            'total' => $validated['total_points'],
             'attempts' => $validated['attempts'],
-            'attachments' => $attachments,
-            'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
-            // We retain 'people' and other fields as-is
+            'publish_date' => $validated['publish_date'],
+            'created_at' => $existingQuiz['created_at'] ?? now()->toDateTimeString(),
+            'questions' => $questions,
         ];
 
-        // Update assignment data
-        $this->database->getReference($assignmentPath)->update($updatedData);
+        // Preserve existing fields
+        if (isset($existingQuiz['people'])) {
+            $updatedData['people'] = $existingQuiz['people'];
+        }
+        if (isset($existingQuiz['attachments'])) {
+            $updatedData['attachments'] = $existingQuiz['attachments'];
+        }
 
-        return redirect()->back()->with('success', 'Assignment updated successfully.');
+        // Save to Firebase
+        $this->database->getReference($quizPath)->update($updatedData);
+
+        return redirect()->route('mio.subject-teacher.edit-acads-quiz', [
+            'subjectId' => $subjectId,
+            'quizId' => $quizId,
+        ])->with('success', 'Quiz updated successfully.');
+
     }
+
+
 
 
 // TEACHER ASSIGNMENTS
@@ -611,13 +629,16 @@ class TeacherController extends Controller
 
         // Fetch assignments
         $assignmentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments");
-            $rawAssignments = $assignmentsRef->getValue() ?? [];
+        $rawAssignments = $assignmentsRef->getValue() ?? [];
 
-            $assignments = [];
+        $assignments = [];
+
+        if (is_array($rawAssignments)) {
             foreach ($rawAssignments as $key => $assignment) {
-                $assignment['id'] = $key; // Include the Firebase key
+                $assignment['id'] = $key;
                 $assignments[] = $assignment;
             }
+        }
 
 
         return view('mio.head.teacher-panel', [

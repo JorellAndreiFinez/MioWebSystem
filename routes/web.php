@@ -366,11 +366,11 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::post('/{subjectId}/quiz/store-quiz', [TeacherController::class, 'storeQuiz'])->name('store-acads-quiz');
 
-        Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
-
         Route::delete('/{subjectId}/quiz/{quizId}/delete', [TeacherController::class, 'deleteQuiz'])->name('deleteQuiz');
 
-        Route::put('/{subjectId}/quiz/{quizId}/edit', [TeacherController::class, 'editQuiz'])->name('quiz.edit');
+        Route::put('/{subjectId}/quiz/{quizId}/edit', [TeacherController::class, 'editQuiz'])->name('edit-acads-quiz');
+
+         Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
 
 
     // SCORES
