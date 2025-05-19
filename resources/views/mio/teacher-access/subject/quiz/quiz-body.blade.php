@@ -115,117 +115,149 @@
 
     </main>
 
-    <!-- /Edit Assignment Modal -->
+    <!-- /Edit quiz Modal -->
     <div id="editQuizModal" class="modal assignment-modal" style="display: none;">
-  <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-    <span class="close" id="closeEditQuizModal">&times;</span>
-    <h2>Edit Quiz - {{ $subject['title'] }}</h2>
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+            <span class="close" id="closeEditQuizModal">&times;</span>
+            <h2>Edit Quiz - {{ $subject['title'] }}</h2>
 
-    <form id="editQuizForm" action="{{ route('mio.subject-teacher.quiz.edit', ['subjectId' => $subjectId, 'quizId' => $quizId]) }}" method="POST" enctype="multipart/form-data">
-      @csrf
-      @method('PUT')
+            <form method="POST" enctype="multipart/form-data"
+                action="{{ route('mio.subject-teacher.edit-acads-quiz', ['subjectId' => $subjectId, 'quizId' => $quizId]) }}" id="quiz-form">
 
-      <!-- Quiz Info Section -->
-      <div class="section-header">Quiz Information</div>
-      <div class="section-content">
+                @csrf
+                @method('PUT')
 
-        <div class="form-row">
-          <div class="form-group wide">
-            <label>Quiz Title <span style="color:red">*</span></label>
-            <input type="text" name="quiz[title]" value="{{ $quiz['title'] ?? '' }}" placeholder="Enter Quiz Title" required />
-          </div>
+
+                <!-- Quiz Info Section -->
+                <label for="quiz_title">Quiz Title <span style="color:red">*</span></label>
+                <input type="text" name="title" id="quiz_title" value="{{ $quiz['title'] ?? '' }}" placeholder="Enter Quiz Title" required>
+
+                <label for="quiz_description">Description</label>
+                <textarea name="description" id="quiz_description" rows="3" placeholder="Brief description or instructions...">{{ $quiz['description'] ?? '' }}</textarea>
+
+                <label for="quiz_publish_date">Publish Date <span style="color:red">*</span></label>
+                <input type="date" name="publish_date" id="quiz_publish_date" value="{{ isset($quiz['publish_date']) ? $quiz['publish_date'] : date('Y-m-d') }}" required>
+
+                <label for="quiz_start_time">Start Time <span style="color:red">*</span></label>
+                <input type="time" name="start_time" id="quiz_start_time" value="{{ $quiz['start_time'] ?? '' }}" required>
+
+                <label for="quiz_deadline_date">Deadline Date (Optional)</label>
+                <input type="date" name="deadline_date" id="quiz_deadline_date" value="{{ $quiz['deadline'] ?? date('Y-m-d', strtotime('+1 day')) }}">
+
+                <label for="quiz_end_time">End Time (Optional)</label>
+                <input type="time" name="end_time" id="quiz_end_time" value="{{ $quiz['end_time'] ?? '17:00' }}">
+
+                <label for="quiz_time_limit">Time Limit (in minutes) <span style="color:red">*</span></label>
+                <input type="number" name="time_limit" id="quiz_time_limit" min="1" value="{{ $quiz['time_limit'] ?? 30 }}" required>
+
+                <label for="quiz_total_points">Total Points <span style="color:red">*</span></label>
+                <input type="number" name="total" id="quiz_total_points" min="1" value="{{ $quiz['total'] ?? 10 }}" required>
+
+                <label for="quiz_attempts">Attempts Allowed <span style="color:red">*</span></label>
+                <input type="number" name="attempts" id="quiz_attempts" min="1" value="{{ $quiz['attempts'] ?? 1 }}" required>
+
+                <!-- Quiz Questions Section -->
+                <div class="section-header" style="margin-top: 20px;">Quiz Questions</div>
+
+                <div id="questions-section">
+            @if(!empty($questions))
+                @foreach($questions as $index => $question)
+                    <div class="question-block" data-index="{{ $index }}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Question Type</label>
+                                <select name="questions[{{ $index }}][type]" class="question-type" data-index="{{ $index }}" onchange="handleQuestionTypeChange({{ $index }})">
+                                    <option value="multiple_choice" {{ ($question['type'] ?? '') == 'multiple_choice' ? 'selected' : '' }}>Multiple Choice</option>
+                                    <option value="essay" {{ ($question['type'] ?? '') == 'essay' ? 'selected' : '' }}>Essay</option>
+                                    <option value="file_upload" {{ ($question['type'] ?? '') == 'file_upload' ? 'selected' : '' }}>File Upload</option>
+                                    <option value="fill_blank" {{ ($question['type'] ?? '') == 'fill_blank' ? 'selected' : '' }}>Fill in the Blanks</option>
+                                    <option value="dropdown" {{ ($question['type'] ?? '') == 'dropdown' ? 'selected' : '' }}>Dropdown</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group wide">
+                                <label>Question <span style="color:red">*</span></label>
+                                <input type="text" name="questions[{{ $index }}][question]" placeholder="Enter the question" required
+                                    value="{{ $question['question'] ?? '' }}" />
+                            </div>
+                        </div>
+
+                        <div class="question-type-container" data-index="{{ $index }}">
+                            <div class="choices-container form-row" data-question-index="{{ $index }}">
+                                @if(isset($question['options']) && is_array($question['options']))
+                                    @foreach($question['options'] as $letter => $option)
+                                        <div class="form-group choice-block" data-letter="{{ $letter }}">
+                                            <label>Option {{ strtoupper($letter) }}</label>
+                                            <div class="input-with-icon">
+                                                <input type="text" name="questions[{{ $index }}][options][{{ $letter }}]" required value="{{ $option }}" />
+                                                <button type="button" class="icon-btn" onclick="removeChoice({{ $index }}, this)" title="Remove Choice">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </div>
+
+                            @if(($question['type'] ?? '') == 'multiple_choice')
+                                <button type="button" class="btn add-choice-btn" onclick="addChoice({{ $index }})">+ Add Choice</button>
+                            @endif
+
+                            <div class="form-row" style="margin-top:10px;">
+                                <div class="form-group">
+                                    <label>Correct Answer</label>
+                                    <select name="questions[{{ $index }}][answer]" required class="correct-answer-select" data-question-index="{{ $index }}">
+                                        <option value="">Select</option>
+                                        @if(isset($question['options']) && is_array($question['options']))
+                                            @foreach(array_keys($question['options']) as $letter)
+                                                <option value="{{ $letter }}" {{ (isset($question['answer']) && $question['answer'] === $letter) ? 'selected' : '' }}>
+                                                    {{ strtoupper($letter) }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn remove-question-btn" onclick="removeQuestion({{ $index }})" style="background:#e74c3c; margin-top:10px;">Remove Question</button>
+                        <hr />
+                    </div>
+                @endforeach
+            @else
+                <!-- No questions, render one empty question block -->
+                <script>document.addEventListener('DOMContentLoaded', () => addQuestion());</script>
+            @endif
         </div>
 
-        <div class="form-row">
-          <div class="form-group wide">
-            <label>Description</label>
-            <textarea name="quiz[description]" placeholder="Brief description or instructions...">{{ $quiz['description'] ?? '' }}</textarea>
-          </div>
+
+                <button type="button" class="btn add-btn" onclick="addQuestion()" style="display: block; margin: 2rem auto;">+ Add Another Question</button>
+
+                <button type="submit" class="btn btn-primary" style="margin-top: 20px;">Save Quiz</button>
+            </form>
         </div>
+    </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Publish Date <span style="color:red">*</span></label>
-            <input type="date" name="quiz[publish_date]" value="{{ \Carbon\Carbon::parse($quiz['published_at'])->format('Y-m-d') }}" required />
-          </div>
-          <div class="form-group">
-            <label>Start Time <span style="color:red">*</span></label>
-            <input type="time" name="quiz[start_time]" value="{{ $quiz['availability']['start'] ?? '' }}" required />
-          </div>
-          <div class="form-group">
-            <label>Deadline Date (Optional)</label>
-            <input type="date" name="quiz[deadline_date]" value="{{ $quiz['deadline'] ? \Carbon\Carbon::parse($quiz['deadline'])->format('Y-m-d') : '' }}" />
-          </div>
-          <div class="form-group">
-            <label>End Time (Optional)</label>
-            <input type="time" name="quiz[end_time]" value="{{ $quiz['availability']['end'] ?? '' }}" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Time Limit (in minutes) <span style="color:red">*</span></label>
-            <input type="number" name="quiz[time_limit]" min="1" value="{{ $quiz['time_limit'] ?? 30 }}" required />
-          </div>
-
-          <div class="form-group">
-            <label>Total Points <span style="color:red">*</span></label>
-            <input type="number" name="quiz[total_points]" min="1" value="{{ $quiz['total'] ?? 10 }}" required />
-          </div>
-
-          <div class="form-group">
-            <label>Attempts Allowed <span style="color:red">*</span></label>
-            <input type="number" name="quiz[attempts]" min="1" value="{{ $quiz['attempts'] ?? 1 }}" required />
-          </div>
-        </div>
-      </div>
-
-      <!-- Attachments -->
-      <div class="section-header">Attachments</div>
-      <div class="section-content">
-        <div id="attachment-container">
-          @php $attachmentIndex = 0; @endphp
-          @if (!empty($quiz['attachments']))
-            @foreach ($quiz['attachments'] as $attachment)
-              <div class="attachment-wrapper" style="margin-bottom: 15px;">
-                @if (!empty($attachment['file']))
-                  <div>
-                    <p>Existing File: <a href="{{ $attachment['file'] }}" target="_blank">{{ basename($attachment['file']) }}</a></p>
-                  </div>
-                @endif
-                <input type="file" name="attachments[{{ $attachmentIndex }}][file]" />
-                <input type="url" name="attachments[{{ $attachmentIndex }}][link]" placeholder="Or paste a media URL (optional)" value="{{ $attachment['link'] ?? '' }}" />
-              </div>
-              @php $attachmentIndex++; @endphp
-            @endforeach
-          @endif
-        </div>
-        <button type="button" id="add-attachment-btn">+ Add File or Link</button>
-      </div>
-
-      <!-- Quiz Questions Section -->
-      <div class="section-header">Quiz Questions</div>
-      <div class="section-content" id="questions-section">
-        <!-- Populate questions dynamically using JS from existing $quiz['questions'] -->
-        {{-- JS will fill this area with editable question blocks --}}
-      </div>
-
-      <button type="button" class="btn add-btn" onclick="addQuestion()" style="display: block; margin: 1rem auto;">
-        + Add Question
-      </button>
-
-      <div class="form-row" style="text-align:center; margin-top: 2rem;">
-        <button type="submit" class="btn btn-primary">Save Quiz Changes</button>
-      </div>
-
-    </form>
-  </div>
-</div>
 
 </section>
 
 
 <script>
+    window.onload = function () {
+    // For each existing question-block, reorder and update choices and correct answer options
+    document.querySelectorAll('.question-block').forEach(block => {
+        const idx = block.getAttribute('data-index');
+        reorderChoices(parseInt(idx));
+        updateCorrectAnswerOptions(parseInt(idx));
+        handleQuestionTypeChange(parseInt(idx));
+    });
+
+    // If no questions, initialize first question (handled above)
+};
+
+
   let questionIndex = 1; // next question id
   const letters = 'abcdefghijklmnopqrstuvwxyz';
 
@@ -490,5 +522,35 @@ document.querySelector('form').addEventListener('submit', function (e) {
     }
 });
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const editQuizBtn = document.getElementById("openAssignmentModal");
+    const editQuizModal = document.getElementById("editQuizModal");
+    const closeEditQuizBtn = document.getElementById("closeEditQuizModal");
+
+    // Show modal on click
+    editQuizBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        editQuizModal.style.display = "block";
+
+        // Optional: Initialize default choices for the first question if needed
+        initializeChoices(0);
+    });
+
+    // Close modal on click of "×"
+    closeEditQuizBtn.addEventListener("click", function () {
+        editQuizModal.style.display = "none";
+    });
+
+    // Close modal when clicking outside the modal content
+    window.addEventListener("click", function (e) {
+        if (e.target === editQuizModal) {
+            editQuizModal.style.display = "none";
+        }
+    });
+});
+</script>
+
 
 

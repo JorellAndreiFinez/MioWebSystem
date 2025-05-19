@@ -12,53 +12,58 @@
         </main>
 
     <main class="main-assignment-content">
-        @foreach ($assignments as $assignment)
-            <div class="assignment-card">
-                <div class="activity-info">
-                    <h3>{{ $assignment['title'] ?? 'Untitled Activity' }}</h3>
-                </div>
-
-                <div class="details">
-                    <div>
-                        <span>Publish at</span>
-                        <strong>
-                            {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
-                        </strong>
-                    </div>
-                    <div>
-                        <span>Deadline</span>
-                        <strong>
-                            @if (!empty($assignment['deadline']))
-                                {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
-                            @else
-                                No Due Date
-                            @endif
-                        </strong>
+        @if (is_array($assignments) || is_object($assignments))
+            @foreach ($assignments as $assignment)
+                <div class="assignment-card">
+                    <div class="activity-info">
+                        <h3>{{ $assignment['title'] ?? 'Untitled Activity' }}</h3>
                     </div>
 
+                    <div class="details">
                         <div>
-                            <span>Points</span>
-                            <strong>{{ $assignment['total'] ?? '0' }}</strong>
+                            <span>Publish at</span>
+                            <strong>
+                                {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') . ' ' . ($assignment['availability']['start'] ?? '00:00'))->format('F j, Y g:i A') }}
+                            </strong>
                         </div>
-                    <div>
-                        <span>Attempt/s</span>
-                        <strong>{{ $assignment['attempts'] ?? '1' }}</strong>
+                        <div>
+                            <span>Deadline</span>
+                            <strong>
+                                @if (!empty($assignment['deadline']))
+                                    {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') . ' ' . ($assignment['availability']['end'] ?? '00:00'))->format('F j, Y g:i A') }}
+                                @else
+                                    No Due Date
+                                @endif
+                            </strong>
+                        </div>
+
+                            <div>
+                                <span>Points</span>
+                                <strong>{{ $assignment['total'] ?? '0' }}</strong>
+                            </div>
+                        <div>
+                            <span>Attempt/s</span>
+                            <strong>{{ $assignment['attempts'] ?? '1' }}</strong>
+                        </div>
                     </div>
+
+                <a href="{{ route('mio.subject-teacher.assignment-body', ['subjectId' => $subjectId, 'assignmentId' => $assignment['id']]) }}" class="take-quiz-btn">View Assignment</a>
+
+                    <!-- Trash Icon Button -->
+                <form action="{{ route('mio.subject-teacher.deleteAssignment', ['subjectId' => $subjectId, 'assignmentId' => $assignment['id']]) }}" method="POST" style="display:inline;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="delete-btn" style="background: none; border: none; cursor: pointer;">
+                        <i class="fas fa-trash-alt" style="color: red; font-size: 20px;"></i>  <!-- Trash icon -->
+                    </button>
+                </form>
+
                 </div>
+            @endforeach
+        @else
+                <p>No assignments found.</p>
 
-               <a href="{{ route('mio.subject-teacher.assignment-body', ['subjectId' => $subjectId, 'assignmentId' => $assignment['id']]) }}" class="take-quiz-btn">View Assignment</a>
-
-                <!-- Trash Icon Button -->
-            <form action="{{ route('mio.subject-teacher.deleteAssignment', ['subjectId' => $subjectId, 'assignmentId' => $assignment['id']]) }}" method="POST" style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="delete-btn" style="background: none; border: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="color: red; font-size: 20px;"></i>  <!-- Trash icon -->
-                </button>
-            </form>
-
-            </div>
-        @endforeach
+        @endif
 
          <div class="assignment-card">
              <div class="add-assignment-container">
