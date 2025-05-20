@@ -28,8 +28,9 @@
      @elseif($page === 'people')
         @vite(['resources/css/Mio/admin/panel.css', 'resources/js/Mio/admin/panel.js', 'resources/css/Mio/mio-app.css'])
 
-    @elseif ($page === 'add-acads-quiz')
+    @elseif (in_array($page, ['add-acads-quiz', 'edit-acads-quiz', 'attendance', 'teacher-settings']))
         @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css', 'resources/css/Mio/admin/panel.css'])
+        @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/Mio/mio-app.css'])
 
     @endif
 
@@ -71,17 +72,26 @@
         @include('mio.teacher-access.subject.quiz.quiz-body')
     @elseif ($page === 'add-acads-quiz')
         @include('mio.teacher-access.subject.quiz.add-acads-quiz')
+    @elseif ($page === 'edit-acads-quiz')
+        @include('mio.teacher-access.subject.quiz.edit-acads-quiz')
 
     @elseif ($page === 'scores')
         @include('mio.teacher-access.subject.score.score')
 
+    @elseif ($page === 'attendance')
+        @include('mio.teacher-access.subject.attendance.attendance')
+
     @elseif ($page === 'people')
         @include('mio.teacher-access.subject.people.people')
+
+    @elseif ($page === 'teacher-settings')
+        @include('mio.teacher-access.settings.setting')
 
     @elseif ($page === 'module')
         @include('mio.teacher-access.subject.module.module')
     @elseif ($page === 'module-body')
         @include('mio.teacher-access.subject.module.module-body')
+
     @endif
 
     {{-- Sidebar script (keep the collapse logic) --}}

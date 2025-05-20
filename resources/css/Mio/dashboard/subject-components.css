@@ -859,3 +859,53 @@
         height: 300px;
     }
 }
+
+
+/* ATTENDANCE */
+
+.clickable-status {
+    cursor: pointer;
+    padding: 5px 0px;
+    border-radius: 26px;
+    text-align: center;
+    font-weight: bold;
+    border: 2px solid #333;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.status-present {
+    background-color: #d4edda;
+    /* light green */
+    border-color: #28a745;
+    color: #155724;
+}
+
+.status-late {
+    background-color: #fff3cd;
+    /* light yellow */
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.status-absent {
+    background-color: #f8d7da;
+    /* light red */
+    border-color: #dc3545;
+    color: #721c24;
+}
+
+.status-none {
+    background-color: #f0f0f0;
+    border-color: #999;
+    color: #555;
+}
+
+.attendance-date-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.attendance-date-selector form {
+    margin: 0;
+}
