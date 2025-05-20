@@ -201,19 +201,18 @@ class SubjectController extends Controller
 
     public function createSubjectAnnouncementApi(Request $request, string $subjectId)
     {
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'description' => 'required|string|max:1000',
+        ]);
 
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
         if (!$gradeLevel) {
             return response()->json([
                 'success' => false,
                 'error'   => 'User grade level is missing.',
             ], 400);
         }
-
-        $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string|max:1000',
-        ]);
 
         $now = now();
         $currentYear = $now->year;
@@ -237,11 +236,38 @@ class SubjectController extends Controller
                 'success' => true,
                 'message' => 'Announcement created successfully.',
                 'announcement_id' => $announcementId,
-            ], 200);
+            ], 201);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error'   => 'Failed to create announcement: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteSubjectAnnouncementApi(Request $request, string $subjectId, string $announcementId){
+        
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        if (!$gradeLevel) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'User grade level is missing.',
+            ], 400);
+        }
+
+        try {
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
+                ->remove();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Announcement deleted successfully.",
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to delete announcement: ' . $e->getMessage(),
             ], 500);
         }
     }

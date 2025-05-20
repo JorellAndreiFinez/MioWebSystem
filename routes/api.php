@@ -29,6 +29,7 @@ Route::middleware([
     'firebase.role:teacher'
 ])
 ->group(function () {
-    Route::post('/subject/{subjectId}/announcements', [SubjectController::class, 'createSubjectAnnouncementsApi']);
-    Route::post('/subject/{subjectId}/announcements/{announcementId}', [SubjectController::class, 'editSubjectAnnouncementApi']);
+    Route::post('/subject/{subjectId}/announcement/', [SubjectController::class, 'createSubjectAnnouncementApi']);
+    Route::put('/subject/{subjectId}/announcement/{announcementId}/', [SubjectController::class, 'editSubjectAnnouncementApi']);
+    Route::delete('/subject/{subjectId}/announcement/{announcementId}/', [SubjectController::class, 'deleteSubjectAnnouncementApi']);
 });
