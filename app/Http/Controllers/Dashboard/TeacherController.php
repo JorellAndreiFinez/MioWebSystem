@@ -249,7 +249,185 @@ class TeacherController extends Controller
         ]);
     }
 
-// TEACHER QUIZZES
+// TEACHER ATTENDANCE
+   public function showAttendance(Request $request, $subjectId)
+{
+    $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
+
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
+
+    $subjectData = null;
+    $gradeLevelKey = null;
+
+    foreach ($allSubjects as $grade => $subjects) {
+        if (isset($subjects[$subjectId])) {
+            $subjectData = $subjects[$subjectId];
+            $gradeLevelKey = $grade;
+            break;
+        }
+    }
+
+    if (!$subjectData) {
+        return response()->json(['error' => 'Subject not found'], 404);
+    }
+
+    // Find attendance ID for the given date if exists
+    $attendanceId = null;
+    $attendanceData = [];
+
+    if (!empty($subjectData['attendance'])) {
+        foreach ($subjectData['attendance'] as $id => $record) {
+            if (($record['date'] ?? '') === $attendanceDate) {
+                $attendanceId = $id;
+                $attendanceData = $record;
+                break;
+            }
+        }
+    }
+
+    // Filter out teachers from the people list
+    $students = [];
+    if (!empty($subjectData['people'])) {
+        foreach ($subjectData['people'] as $personId => $person) {
+            if (
+                (isset($person['role']) && strtolower($person['role']) === 'student') ||
+                (!isset($person['role']) && !isset($person['teacher_id'])) // maybe treat as student if no role and no teacher_id
+            ) {
+                $students[$personId] = $person;
+            }
+        }
+    }
+
+
+
+
+    foreach ($subjectData['people'] as $personId => $person) {
+    Log::info("Person role: " . ($person['role'] ?? 'no role'));
+}
+
+
+    return view('mio.head.teacher-panel', [
+        'page' => 'attendance',
+        'subjectId' => $subjectId,
+        'attendanceId' => $attendanceId,
+        'attendance' => $attendanceData,
+        'subject' => $subjectData,
+        'people' => $students,
+        'attendanceDate' => $attendanceDate,
+        'gradeLevelKey' => $gradeLevelKey,
+    ]);
+}
+
+
+
+    public function updateAttendance(Request $request, $subjectId)
+{
+    $attendanceDate = $request->input('attendance_date');
+    $peopleInput = $request->input('people', []);
+
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
+
+    $gradeLevelKey = null;
+    $subjectData = null;
+
+    // Find grade level and subject data
+    foreach ($allSubjects as $grade => $subjects) {
+        if (isset($subjects[$subjectId])) {
+            $gradeLevelKey = $grade;
+            $subjectData = $subjects[$subjectId];
+            break;
+        }
+    }
+
+    if (!$subjectData) {
+        return abort(404, 'Subject not found.');
+    }
+
+    // Format attendance ID, e.g., ATT20250520_TUE
+    $date = \Carbon\Carbon::parse($attendanceDate);
+    $attendanceId = 'ATT' . $date->format('Ymd') . '_' . strtoupper($date->format('D'));
+
+    // Build student names lookup from subject people
+    $studentNames = [];
+    if (!empty($subjectData['people'])) {
+        foreach ($subjectData['people'] as $personId => $person) {
+            // Check if this person is a student by role
+            if (isset($person['role']) && $person['role'] === 'student') {
+                $first = trim($person['first_name'] ?? '');
+                $last = trim($person['last_name'] ?? '');
+                $fullName = trim($first . ' ' . $last);
+                if ($fullName === '') {
+                    $fullName = '(No Name)';
+                }
+                $studentNames[$personId] = $fullName;
+            }
+        }
+
+    }
+
+    // Prepare people attendance array with status, timestamp, and name
+    $attendancePeople = [];
+        foreach ($peopleInput as $personId => $person) {
+            if (isset($studentNames[$personId])) {
+                $attendancePeople[$personId] = [
+                    'status' => $person['status'] ?? 'absent',
+                    'timestamp' => now()->format('Y-m-d H:i:s'),
+                    'name' => $studentNames[$personId],
+                    'student_id' => $personId,
+                ];
+            }
+        }
+
+
+
+
+
+    // Get existing attendance if any
+    $existingAttendance = $subjectData['attendance'][$attendanceId] ?? null;
+
+    $attendanceRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/attendance/{$attendanceId}");
+
+    if ($existingAttendance) {
+        // Update existing attendance record
+        $attendanceRef->update([
+            'date' => $attendanceDate,
+            'people' => $attendancePeople,
+            'date_updated' => now()->format('Y-m-d H:i:s'),
+        ]);
+    } else {
+        // Create new attendance record
+        $attendanceRef->set([
+            'date' => $attendanceDate,
+            'people' => $attendancePeople,
+            'date_created' => now()->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    return redirect()->route('mio.subject-teacher.attendance', [
+        'subjectId' => $subjectId,
+        'attendance_date' => $attendanceDate,
+    ])->with('success', 'Attendance saved.');
+}
+
+
+
+    public function storeAttendance(Request $request, $subjectId)
+    {
+
+        return $this->updateAttendance($request, $subjectId);
+    }
+
+
+
+
+
+
+
+
+
+    // TEACHER QUIZZES
     public function showQuizzes($subjectId)
 {
     // Find grade level key
@@ -453,14 +631,16 @@ class TeacherController extends Controller
         $subjectKey = null;
 
         foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $key => $subject) {
-                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+            foreach ($subjects as $key => $subjectData) {
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
                     $gradeLevelKey = $gradeKey;
                     $subjectKey = $key;
+                    $subject = $subjectData; // ✅ Assign subject details
                     break 2;
                 }
             }
         }
+
 
         if (!$gradeLevelKey || !$subjectKey) {
             return abort(404, 'Subject not found.');
@@ -490,6 +670,9 @@ class TeacherController extends Controller
             $submission = $submissionRef->getValue();
         }
 
+        $questions = isset($quiz['questions']) ? $quiz['questions'] : [];
+
+
         return view('mio.head.teacher-panel', [
             'page' => 'quiz-body',
             'quiz' => $quiz,
@@ -503,37 +686,22 @@ class TeacherController extends Controller
         ]);
     }
 
-    public function editQuiz(Request $request, $subjectId, $quizId)
+    public function showEditAcadsQuiz($subjectId, $quizId)
     {
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'description' => 'nullable|string',
-            'deadline_date' => 'nullable|date',
-            'start_time' => 'required',
-            'end_time' => 'nullable',
-            'time_limit' => 'required|integer',
-            'total_points' => 'required|integer',
-            'attempts' => 'required|integer',
-            'publish_date' => 'required|date',
-            'questions' => 'nullable|array',
-            'questions.*.type' => 'required|string',
-            'questions.*.question' => 'required|string',
-            'questions.*.options' => 'nullable|array',
-            'questions.*.answer' => 'nullable|string',
-        ]);
-
-        // Locate subject in Firebase
+        // Step 1: Find grade level and subjectKey
         $subjectsRef = $this->database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $gradeLevelKey = null;
         $subjectKey = null;
+        $subject = null;
 
         foreach ($allSubjects as $gradeKey => $subjects) {
-            foreach ($subjects as $key => $subject) {
-                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+            foreach ($subjects as $key => $subjectData) {
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
                     $gradeLevelKey = $gradeKey;
                     $subjectKey = $key;
+                    $subject = $subjectData; // Subject details
                     break 2;
                 }
             }
@@ -543,71 +711,36 @@ class TeacherController extends Controller
             return abort(404, 'Subject not found.');
         }
 
-        $quizPath = "subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}";
-        $existingQuiz = $this->database->getReference($quizPath)->getValue();
+        // Step 2: Get the specific quiz
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $quiz = $quizRef->getValue();
 
-        // Combine publish_date and start_time
-        $publishedAt = "{$validated['publish_date']} {$validated['start_time']}";
-        $deadline = $validated['deadline_date'] ?? '';
-        $endTime = $validated['end_time'] ?? '';
-
-        // Build formatted questions
-        $questions = [];
-        if (!empty($validated['questions'])) {
-            $qIndex = 1;
-            foreach ($validated['questions'] as $q) {
-                $question = [
-                    'type' => $q['type'],
-                    'question' => $q['question'],
-                ];
-
-                if (in_array($q['type'], ['multiple_choice', 'dropdown'])) {
-                    $question['options'] = $q['options'] ?? [];
-                    $question['answer'] = $q['answer'] ?? '';
-                } elseif ($q['type'] === 'fill_blank') {
-                    $question['answer'] = $q['answer'] ?? '';
-                }
-
-                $questions["q{$qIndex}"] = $question;
-                $qIndex++;
-            }
+        if (!$quiz) {
+            return abort(404, 'Quiz not found.');
         }
 
-        // Build the full quiz data
-        $updatedData = [
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? '',
-            'deadline' => $deadline,
-            'start_time' => $validated['start_time'],
-            'end_time' => $endTime,
-            'time_limit' => $validated['time_limit'],
-            'total' => $validated['total_points'],
-            'attempts' => $validated['attempts'],
-            'publish_date' => $validated['publish_date'],
-            'created_at' => $existingQuiz['created_at'] ?? now()->toDateTimeString(),
+        $quiz['id'] = $quizId;
+
+        // Step 3: Get quiz questions
+        $questions = $quiz['questions'] ?? [];
+
+        // Step 4: (Optional) If you want to pass other related data, add here
+
+        // Return view with quiz data for editing
+        return view('mio.head.teacher-panel', [
+            'page' => 'edit-acads-quiz', // assuming your blade uses this to render edit quiz form
+            'quiz' => $quiz,
             'questions' => $questions,
-        ];
-
-        // Preserve existing fields
-        if (isset($existingQuiz['people'])) {
-            $updatedData['people'] = $existingQuiz['people'];
-        }
-        if (isset($existingQuiz['attachments'])) {
-            $updatedData['attachments'] = $existingQuiz['attachments'];
-        }
-
-        // Save to Firebase
-        $this->database->getReference($quizPath)->update($updatedData);
-
-        return redirect()->route('mio.subject-teacher.edit-acads-quiz', [
             'subjectId' => $subjectId,
             'quizId' => $quizId,
-        ])->with('success', 'Quiz updated successfully.');
-
+            'gradeLevelKey' => $gradeLevelKey,
+            'subject' => $subject,
+        ]);
     }
 
+    public function updateAcadsQuiz() {
 
-
+    }
 
 // TEACHER ASSIGNMENTS
 

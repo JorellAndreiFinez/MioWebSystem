@@ -5,6 +5,7 @@ use App\Http\Controllers\AnnouncementController;
 use App\Http\Controllers\Auth\FirebaseAuthController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Dashboard\MessagingController;
+use App\Http\Controllers\Dashboard\SettingsController;
 use App\Http\Controllers\Dashboard\StudentController;
 use App\Http\Controllers\Dashboard\TeacherController;
 use App\Http\Controllers\DepartmentController;
@@ -330,8 +331,9 @@ Route::prefix('mio/teacher')->middleware(
     Route::post('/send-message', [MessagingController::class, 'sendTeacherMessage'])->name('mio.teacher-message-send');
      Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
 
-
     Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
+
+    Route::get('/settings', [SettingsController::class, 'showSettings'])->name('mio.teacher-settings');
 
     Route::prefix('subject')->name('mio.subject-teacher.')->group(function () {
 
@@ -368,7 +370,9 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('/{subjectId}/quiz/{quizId}/delete', [TeacherController::class, 'deleteQuiz'])->name('deleteQuiz');
 
-        Route::put('/{subjectId}/quiz/{quizId}/edit', [TeacherController::class, 'editQuiz'])->name('edit-acads-quiz');
+        Route::get('/{subjectId}/quiz/{quizId}/edit-quiz', [TeacherController::class, 'showEditAcadsQuiz'])->name('edit-acads-quiz');
+
+        Route::put('/{subjectId}/quiz/{quizId}/edit-quiz', [TeacherController::class, 'updateAcadsQuiz'])->name('update-acads-quiz');
 
          Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
 
@@ -382,7 +386,10 @@ Route::prefix('mio/teacher')->middleware(
         Route::get('/{subjectId}/modules', [TeacherController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [TeacherController::class, 'showModuleBody'])->name('module-body');
 
-
+    // ATTENDANCE
+        Route::get('/{subjectId}/attendance', [TeacherController::class, 'showAttendance'])->name('attendance');
+        Route::post('/{subjectId}/attendance/{attendanceId}', [TeacherController::class, 'updateAttendance'])->name('attendance.update');
+        Route::post('/{subjectId}/attendance', [TeacherController::class, 'storeAttendance'])->name('attendance.store');
     });
 
 });

@@ -244,21 +244,19 @@ class SubjectController extends Controller
                 // Now $studentId is the actual ID like STU123456
                 $studentData = $this->database->getReference("users/{$studentId}")->getValue();
 
-                $postData['people'][] = [
-                    'student_id' => $studentId,
+                $postData['people'][$studentId] = [
                     'role' => 'student',
                     'first_name' => $studentData['fname'] ?? '',
                     'last_name' => $studentData['lname'] ?? '',
                 ];
-
             }
         }
 
-        // Add teacher to people
-        $postData['people'][] = [
-            'teacher_id' => $validatedData['teacher_id'],
+        // Add teacher to people, keyed by teacher_id
+        $postData['people'][$validatedData['teacher_id']] = [
             'role' => 'teacher',
         ];
+
 
         // Save to Firebase
         try {
