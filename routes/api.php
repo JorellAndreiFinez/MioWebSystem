@@ -19,7 +19,9 @@ Route::middleware([
     Route::get('/subjects', [SubjectController::class, 'viewSubjectsApi']);
     Route::get('/subject/{subjectId}/modules', [SubjectController::class, 'getSubjectModulesApi']);
     Route::get('/subject/{subjectId}/announcements', [SubjectController::class, 'getSubjectAnnouncementsApi']);
+    Route::get('/subject/{subjectId}/announcement/{announcementId}', [SubjectController::class, 'getSubjectAnnouncementByIdApi']);
     Route::get('/subject/{subjectId}/assignments', [SubjectController::class, 'getSubjectAssignmentsApi']);
+    Route::get('/subject/{subjectId}/assignment/{assignmentId}', [SubjectController::class, 'getSubjectAssignmentByIdApi']);
     Route::get('/subject/{subjectId}/scores', [SubjectController::class, 'getSubjectScoresApi']);
 });
 
