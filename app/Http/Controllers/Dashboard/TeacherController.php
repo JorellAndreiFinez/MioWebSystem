@@ -249,7 +249,8 @@ class TeacherController extends Controller
         ]);
     }
 
-// TEACHER ATTENDANCE
+
+    // TEACHER ATTENDANCE
    public function showAttendance(Request $request, $subjectId)
 {
     $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
@@ -318,8 +319,6 @@ class TeacherController extends Controller
         'gradeLevelKey' => $gradeLevelKey,
     ]);
 }
-
-
 
     public function updateAttendance(Request $request, $subjectId)
 {
@@ -412,7 +411,6 @@ class TeacherController extends Controller
 }
 
 
-
     public function storeAttendance(Request $request, $subjectId)
     {
 
@@ -420,53 +418,46 @@ class TeacherController extends Controller
     }
 
 
-
-
-
-
-
-
-
     // TEACHER QUIZZES
     public function showQuizzes($subjectId)
-{
-    // Find grade level key
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
-    $gradeLevelKey = null;
-    $matchedSubject = null;
+    {
+        // Find grade level key
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+        $gradeLevelKey = null;
+        $matchedSubject = null;
 
-    foreach ($allSubjects as $key => $subjects) {
-        foreach ($subjects as $subject) {
-            if ($subject['subject_id'] === $subjectId) {
-                $gradeLevelKey = $key;
-                $matchedSubject = $subject;
-                break 2;
+        foreach ($allSubjects as $key => $subjects) {
+            foreach ($subjects as $subject) {
+                if ($subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $key;
+                    $matchedSubject = $subject;
+                    break 2;
+                }
             }
         }
+
+        if (!$gradeLevelKey || !$matchedSubject) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Fetch quizzes
+        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+        $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+        $quizzes = [];
+        foreach ($rawQuizzes as $key => $quiz) {
+            $quiz['id'] = $key;
+            $quizzes[] = $quiz;
+        }
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'quiz',
+            'quizzes' => $quizzes,
+            'subjectId' => $subjectId,
+            'subject' => $matchedSubject,
+        ]);
     }
-
-    if (!$gradeLevelKey || !$matchedSubject) {
-        return abort(404, 'Subject not found.');
-    }
-
-    // Fetch quizzes
-    $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
-    $rawQuizzes = $quizzesRef->getValue() ?? [];
-
-    $quizzes = [];
-    foreach ($rawQuizzes as $key => $quiz) {
-        $quiz['id'] = $key;
-        $quizzes[] = $quiz;
-    }
-
-    return view('mio.head.teacher-panel', [
-        'page' => 'quiz',
-        'quizzes' => $quizzes,
-        'subjectId' => $subjectId,
-        'subject' => $matchedSubject,
-    ]);
-}
 
 
     public function addAcadsQuiz($subjectId)
@@ -503,7 +494,7 @@ class TeacherController extends Controller
         $quizData = $request->input('quiz');
         $questions = $request->input('questions');
 
-        // 1. Locate the subject’s gradeLevelKey
+        // Locate grade level key
         $subjectsRef = $this->database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
@@ -519,11 +510,10 @@ class TeacherController extends Controller
             return back()->with('error', 'Subject not found.');
         }
 
-        // 2. Generate quizId in the format QU[YEAR][MONTH][DAY]XXX
-        $today = Carbon::now()->format('Ymd'); // e.g., 20250518
+        // Generate quizId
+        $today = Carbon::now()->format('Ymd');
         $prefix = 'QU' . $today;
 
-        // Fetch existing quizzes under this subject to find matching prefix
         $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
         $existingQuizzes = $quizzesRef->getValue() ?? [];
 
@@ -534,27 +524,43 @@ class TeacherController extends Controller
             }
         }
 
-        $quizId = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT); // e.g., QU20250518001
+        $quizId = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
-        // 3. Fetch students and prepare people field
+        // Prepare students
         $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/people");
         $students = $studentsRef->getValue() ?? [];
 
         $people = [];
         foreach ($students as $studentId => $studentInfo) {
             $people[$studentId] = [
-                'work' => '',
                 'name' => ($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? ''),
-                'submitted_at' => null,
-                'attempts' => 0,
-                'comments' => '',
-                'feedback' => '',
-                'score' => null,
-                'timestamp' => now()->toDateTimeString(),
+                'attempts' => [] ?? "", // Each item is one quiz attempt
+                'latest_score' => null,
+                'latest_submitted_at' => null,
             ];
         }
 
-        // 4. Prepare quiz payload
+
+        // Handle file upload (ADDED)
+        $fileUrl = null;
+        if ($request->hasFile('quiz_file') && $request->file('quiz_file')->isValid()) {
+            $file = $request->file('quiz_file');
+            $path = $file->store("public/quiz_files");
+            $fileUrl = asset(str_replace('public', 'storage', $path));
+        }
+
+        // Use null or 0 if time_limit is missing or "no time limit" is checked
+        $timeLimit = null;
+        if (!empty($quizData['no_time_limit']) && $quizData['no_time_limit'] == 1) {
+            // No time limit set by checkbox
+            $timeLimit = 0; // or 0 if you prefer
+        } else if (isset($quizData['time_limit']) && is_numeric($quizData['time_limit'])) {
+            $timeLimit = (int) $quizData['time_limit'];
+        } else {
+            $timeLimit = 0; // default fallback
+        }
+
+        // Quiz payload
         $quizPayload = [
             'title' => $quizData['title'] ?? '',
             'description' => $quizData['description'] ?? '',
@@ -562,36 +568,48 @@ class TeacherController extends Controller
             'start_time' => $quizData['start_time'],
             'deadline' => $quizData['deadline_date'] ?? null,
             'end_time' => $quizData['end_time'] ?? null,
-            'time_limit' => (int) $quizData['time_limit'],
+            'time_limit' => $timeLimit,
             'total' => (int) $quizData['total_points'],
             'attempts' => (int) $quizData['attempts'],
             'created_at' => Carbon::now()->toDateTimeString(),
             'questions' => [],
-            'people' => $people, // ✅ add populated student info here
+            'people' => $people,
         ];
 
-        // 5. Attach questions
-        foreach ($questions as $index => $q) {
-            $questionId = 'q' . ($index + 1);
-            $question = [
+        // Add file URL to payload if uploaded (ADDED)
+        if ($fileUrl) {
+            $quizPayload['file_url'] = $fileUrl;
+        }
+
+        // Attach questions with unique IDs
+        foreach ($questions as $q) {
+            $questionId = (string) Str::uuid(); // unique ID
+            $questionPayload = [
                 'type' => $q['type'] ?? 'multiple_choice',
                 'question' => $q['question'] ?? '',
                 'answer' => $q['answer'] ?? '',
+                'options' => [],
             ];
 
             if (isset($q['options']) && is_array($q['options'])) {
-                $question['options'] = $q['options'];
+                foreach ($q['options'] as $opt) {
+                    $optionId = (string) Str::uuid();
+                    $questionPayload['options'][$optionId] = [
+                        'text' => $opt,
+                    ];
+                }
             }
 
-            $quizPayload['questions'][$questionId] = $question;
+            $quizPayload['questions'][$questionId] = $questionPayload;
         }
 
-        // 6. Save quiz to Firebase
+        // Save to Firebase
         $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes/{$quizId}");
         $quizRef->set($quizPayload);
 
         return redirect()->route('mio.subject-teacher.quiz', $subjectId)->with('success', 'Quiz successfully created.');
     }
+
 
 
     public function deleteQuiz($subjectId, $quizId)
@@ -738,9 +756,98 @@ class TeacherController extends Controller
         ]);
     }
 
-    public function updateAcadsQuiz() {
+    public function updateAcadsQuiz(Request $request, $subjectId, $quizId)
+    {
+        // Step 1: Find gradeLevelKey and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
 
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subjectData) {
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Step 2: Check if quiz exists
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $existingQuiz = $quizRef->getValue();
+
+        if (!$existingQuiz) {
+            return abort(404, 'Quiz not found.');
+        }
+
+        // Step 3: Validate input
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'publish_date' => 'required|date',
+            'start_time' => 'required',
+            'deadline' => 'nullable|date',
+            'end_time' => 'nullable',
+            'time_limit' => 'required|integer|min:0',
+            'total' => 'required|integer|min:0',
+            'attempts' => 'required|integer|min:1',
+            'questions' => 'required|array',
+            'questions.*.question' => 'required|string',
+            'questions.*.type' => 'required|string',
+            'questions.*.answer' => 'required|string',
+            'questions.*.options' => 'sometimes|array',
+            'questions.*.options.*' => 'string',
+        ]);
+
+        // Step 4: Prepare updated quiz data
+        $updatedQuiz = [
+            'title' => $request->input('title'),
+            'description' => $request->input('description', ''),
+            'publish_date' => $request->input('publish_date'),
+            'start_time' => $request->input('start_time'),
+            'deadline' => $request->input('deadline'),
+            'end_time' => $request->input('end_time'),
+            'time_limit' => (int) $request->input('time_limit'),
+            'total' => (int) $request->input('total'),
+            'attempts' => (int) $request->input('attempts'),
+            'created_at' => $existingQuiz['created_at'] ?? now()->toDateTimeString(),
+            'people' => $existingQuiz['people'] ?? [],
+            'questions' => [],
+
+            // Additional settings from form
+            'one_question_at_a_time' => $request->input('quiz.one_question_at_a_time') ? true : false,
+            'can_go_back' => $request->input('quiz.can_go_back') ? true : false,
+            'show_correct_answers' => $request->input('quiz.show_correct_answers') ? true : false,
+        ];
+
+        // Step 5: Update questions
+        $questions = $request->input('questions');
+        foreach ($questions as $key => $q) {
+            $updatedQuiz['questions'][$key] = [
+                'question' => $q['question'],
+                'type' => $q['type'],
+                'answer' => $q['answer'],
+                'options' => $q['options'] ?? [],
+            ];
+        }
+
+        // Step 6: Save to Firebase
+        $quizRef->set($updatedQuiz);
+
+        // Step 7: Redirect with success
+        return redirect()->route('mio.subject-teacher.quiz-body', ['subjectId' => $subjectId, 'quizId' => $quizId])
+                        ->with('success', 'Quiz updated successfully.');
     }
+
+
+
 
 // TEACHER ASSIGNMENTS
 
