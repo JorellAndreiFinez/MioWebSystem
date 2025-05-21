@@ -12,7 +12,6 @@
 
         <button type="submit" class="btn btn-primary">Create Academic Quiz</button>
         <!-- Quiz Info Section -->
-        <!-- Quiz Info Section -->
         <div class="section-header">Quiz Information</div>
         <div class="section-content">
         <div class="form-row">
@@ -28,6 +27,12 @@
             <textarea name="quiz[description]" placeholder="Brief description or instructions...">A simple quiz to test basic arithmetic skills.</textarea>
             </div>
         </div>
+
+        <div class="form-group">
+            <label>Access Code (Optional)</label>
+            <input type="text" name="quiz[access_code]" placeholder="Enter access code if needed" />
+            </div>
+
 
         <div class="form-row">
             <div class="form-group">
@@ -50,9 +55,17 @@
 
         <div class="form-row">
             <div class="form-group">
-            <label>Time Limit (in minutes) <span style="color:red">*</span></label>
-            <input type="number" name="quiz[time_limit]" min="1" value="30" required />
-            </div>
+                <label>Time Limit (in minutes)</label>
+                <input type="number" name="quiz[time_limit]" id="time-limit" min="1" value="30" />
+
+                <div style="margin-top: 5px;">
+                    <label style="font-weight: normal;">
+                    <input type="checkbox" id="no-time-limit" name="quiz[no_time_limit]" value="1" onchange="toggleTimeLimit()" />
+                    No Time Limit
+                    </label>
+                </div>
+                </div>
+
 
             <div class="form-group">
             <label>Total Points <span style="color:red">*</span></label>
@@ -64,6 +77,32 @@
             <input type="number" name="quiz[attempts]" min="1" value="1" required />
             </div>
         </div>
+
+        <div class="form-row">
+        <div class="form-group">
+            <label>One Question at a Time</label>
+            <label class="switch">
+            <input type="checkbox" name="quiz[one_question_at_a_time]" value="1" checked>
+            <span class="slider round"></span>
+            </label>
+        </div>
+
+        <div class="form-group">
+            <label>Allow Navigation to Previous Question</label>
+            <label class="switch">
+            <input type="checkbox" name="quiz[can_go_back]" value="1" >
+            <span class="slider round"></span>
+            </label>
+        </div>
+        <div class="form-group">
+            <label>Show Correct Answers</label>
+            <label class="switch">
+                <input type="checkbox" name="quiz[show_correct_answers]" value="1">
+                <span class="slider round"></span>
+            </label>
+        </div>
+        </div>
+
         </div>
 
 
@@ -381,4 +420,20 @@ document.querySelector('form').addEventListener('submit', function (e) {
 });
 </script>
 
+<script>
+function toggleTimeLimit() {
+  const checkbox = document.getElementById('no-time-limit');
+  const timeInput = document.getElementById('time-limit');
+
+  if (checkbox.checked) {
+    timeInput.disabled = true;
+    timeInput.removeAttribute('required');
+    timeInput.value = '';
+  } else {
+    timeInput.disabled = false;
+    timeInput.setAttribute('required', 'required');
+    timeInput.value = 30; // Default or previous value
+  }
+}
+</script>
 

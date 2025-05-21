@@ -372,7 +372,7 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::get('/{subjectId}/quiz/{quizId}/edit-quiz', [TeacherController::class, 'showEditAcadsQuiz'])->name('edit-acads-quiz');
 
-        Route::put('/{subjectId}/quiz/{quizId}/edit-quiz', [TeacherController::class, 'updateAcadsQuiz'])->name('update-acads-quiz');
+        Route::put('/{subjectId}/quiz/{quizId}/update-quiz', [TeacherController::class, 'updateAcadsQuiz'])->name('update-acads-quiz');
 
          Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
 
