@@ -29,6 +29,18 @@ class SubjectController extends Controller
             ->createDatabase();
     }
 
+    private function generateUniqueId(string $prefix): string
+    {
+        $now = now();
+        $currentYear = $now->year;
+        $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT);
+        $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT);
+        $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+        $announcementId = "{$prefix}{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+
+        return $announcementId;
+    }
+
      // Fetch grade levels from Firebase and display them in the view
      public function showGradeLevels()
      {
@@ -60,13 +72,6 @@ class SubjectController extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $role = $request->get('firebase_user_role');
 
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User grade level is missing.',
-            ], 400);
-        }
-
         $subjects = $this->database
             ->getReference("subjects/GR" . $gradeLevel)
             ->getSnapshot()
@@ -93,20 +98,6 @@ class SubjectController extends Controller
     public function getSubjectModulesApi(Request $request, string $subjectId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User grade level is missing.',
-            ], 400);
-        }
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User subjectId level is missing.',
-            ], 400);
-        }
 
         $modules = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/modules")
@@ -135,13 +126,6 @@ class SubjectController extends Controller
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User grade level is missing.',
-            ], 400);
-        }
-
         $announcements = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements")
             ->getSnapshot()
@@ -169,13 +153,6 @@ class SubjectController extends Controller
     public function editSubjectAnnouncementApi(Request $request, string $subjectId, string $announcementId){
         
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'User grade level is missing.',
-            ], 400);
-        }
 
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
@@ -207,12 +184,6 @@ class SubjectController extends Controller
         ]);
 
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'User grade level is missing.',
-            ], 400);
-        }
 
         $now = now();
         $currentYear = $now->year;
@@ -248,12 +219,6 @@ class SubjectController extends Controller
     public function deleteSubjectAnnouncementApi(Request $request, string $subjectId, string $announcementId){
         
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'User grade level is missing.',
-            ], 400);
-        }
 
         try {
             $this->database
@@ -276,13 +241,6 @@ class SubjectController extends Controller
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User grade level is missing.',
-            ], 400);
-        }
-
         $assignments = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments")
             ->getSnapshot()
@@ -296,7 +254,6 @@ class SubjectController extends Controller
                     'attempts' => $item['attempts'] ?? null,
                     'availability' => $item['availability'] ?? null,
                     'createdAt' => $item['created_at'] ?? null,
-                    'deadline' => $item['deadline'] ?? null,
                     'description' => $item['description'] ?? null,
                     'publishedAt' => $item['published_at'] ?? null,
                     'title' => $item['title'] ?? null,
@@ -310,6 +267,103 @@ class SubjectController extends Controller
             'success'       => true,
             'assignments' => $filteredAssignments,
         ], 200);
+    }
+
+    public function createSubjectAssignmentsApi(Request $request, string $subjectId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'availability'          => 'required|array|size:2',
+            'availability.start'    => 'required|string',
+            'availability.end'      => 'required|string|after:availability.start',
+            'attempts'              => 'required|integer|min:1|max:100',
+            'title'                 => 'required|string|max:250',
+            'description'           => 'required|string|max:1000',
+            'total'                 => 'required|integer|min:1',
+            'submission_type'       => 'required|string',
+            'published_at'          => 'nullable|string',
+            'deadline'              => 'nullable|string',
+        ]);
+
+        $assignmentId = $this->generateUniqueId('ASS');
+        $date = now()->toDateTimeString();
+
+        $assignmentData = array_merge($validated, [
+            'created_at' => $date,
+            'updated_at' => $date,
+        ]);
+
+        try{
+            $assignment = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
+            ->set($assignmentData);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Assignment created successfully.",
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to create assignment: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function editSubjectAssignmentApi(Request $request, string $subjectId, string $assignmentId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'availability'          => 'required|array|size:2',
+            'availability.start'    => 'required|string',
+            'availability.end'      => 'required|string|after:availability.start',
+            'attempts'              => 'required|integer|min:1|max:100',
+            'title'                 => 'required|string|max:250',
+            'description'           => 'required|string|max:1000',
+            'total'                 => 'required|integer|min:1',
+            'submission_type'       => 'required|string',
+            'published_at'          => 'nullable|string',
+            'deadline'              => 'nullable|string',
+        ]);
+
+        try{
+
+            $this->$database->Reference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
+            ->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Assignment {$assignmentId} updated successfully."
+            ], 200);
+
+        } catch(\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to delete assignment: ' . $e->getMessage(),
+            ], 500);
+        }
+
+    }
+
+    public function deleteSubjectAssignmentApi(Request $request, string $subjectId, string $assignmentId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $this->$database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
+            ->remove();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Assignment {$assignmentId} deleted successfully.",
+            ], 200);
+        } catch(\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Failed to delete assignment: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function getSubjectScoresApi(Request $request, string $subjectId)

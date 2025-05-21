@@ -49,7 +49,10 @@ class MobileRoleBasedAccessMiddleware
 
         $role = $userData['role'] ?? null;
         if (! $role) {
-            return response()->json(['message' => 'Forbidden: user role not found'], 403);
+            return response()->json([
+                'success' => false,
+                'message' => 'Forbidden: user role not found'
+            ], 403);
         }
 
         $allowedRoles = array_map('strtolower', explode('-', $requiredRole));
@@ -60,6 +63,13 @@ class MobileRoleBasedAccessMiddleware
         }
 
         $gradeLevel = $userData['grade_level'] ?? null;
+        if (! $gradeLevel) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'User grade level is missing.',
+            ], 400);
+        }
+
         $request->attributes->set('firebase_user_role', $role);
         $request->attributes->set('firebase_user_gradeLevel', $gradeLevel);
 
