@@ -183,7 +183,7 @@ class SubjectController extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
+            'title'       => 'required|string|max:250',
             'description' => 'required|string|max:1000',
         ]);
 
@@ -213,17 +213,12 @@ class SubjectController extends Controller
 
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        $now = now();
-        $currentYear = $now->year;
-        $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT);
-        $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT);
-        $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
-        $announcementId = "ANN{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+        $announcementId = $this->generateUniqueId('ANN');
 
         $announcementData = [
             'title'       => $validated['title'],
             'description' => $validated['description'],
-            'date_posted' => $now->toDateTimeString(),
+            'date_posted' => now()->toDateTimeString(),
         ];
 
         try {

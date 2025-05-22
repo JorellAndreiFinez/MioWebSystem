@@ -36,6 +36,6 @@ Route::middleware([
     Route::delete('/subject/{subjectId}/announcement/{announcementId}/', [SubjectController::class, 'deleteSubjectAnnouncementApi']);
     
     Route::post('/subject/{subjectId}/assignment/', [SubjectController::class, 'createSubjectAssignmentsApi']);
-    Route::put('/subject/{subjectId}/assignment/', [SubjectController::class, 'createSubjectAssignmentsApi']);
-    Route::delete('/subject/{subjectId}/assignment/', [SubjectController::class, 'createSubjectAssignmentsApi']);
+    Route::put('/subject/{subjectId}/assignment/', [SubjectController::class, 'editSubjectAssignmentApi']);
+    Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [SubjectController::class, 'deleteSubjectAssignmentApi']);
 });
