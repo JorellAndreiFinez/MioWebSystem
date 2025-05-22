@@ -387,7 +387,7 @@ class SubjectController extends Controller
 
         try{
 
-            $this->$database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
+            $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
             ->update($validated);
 
             return response()->json([
@@ -408,7 +408,7 @@ class SubjectController extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         try{
-            $this->$database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
+            $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
             ->remove();
 
             return response()->json([
