@@ -22,10 +22,16 @@
         @vite(['resources/css/Mio/dashboard/profile.css', 'resources/js/Mio/dashboard/profile.js', 'resources/css/Mio/mio-app.css'])
     @elseif ($page === 'teacher-subject')
         @vite(['resources/js/Mio/dashboard/subject.js', 'resources/css/Mio/mio-app.css'])
-    @elseif (in_array($page, ['announcement', 'announcement-body', 'assignment', 'assignment-body', 'scores', 'module', 'module-body']))
+    @elseif (in_array($page, ['announcement', 'announcement-body', 'assignment', 'assignment-body', 'scores', 'module', 'module-body','quiz', 'quiz-body']))
         @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css'])
     @elseif($page === 'people')
         @vite(['resources/css/Mio/admin/panel.css', 'resources/js/Mio/admin/panel.js', 'resources/css/Mio/mio-app.css'])
+
+     @elseif($page === 'people')
+        @vite(['resources/css/Mio/admin/panel.css', 'resources/js/Mio/admin/panel.js', 'resources/css/Mio/mio-app.css'])
+
+    @elseif ($page === 'add-acads-quiz')
+        @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css', 'resources/css/Mio/admin/panel.css'])
 
     @endif
 
@@ -60,6 +66,13 @@
         @include('mio.teacher-access.subject.assignment.assignment')
     @elseif ($page === 'assignment-body')
         @include('mio.teacher-access.subject.assignment.assignment-body')
+
+    @elseif ($page === 'quiz')
+        @include('mio.teacher-access.subject.quiz.quiz')
+    @elseif ($page === 'quiz-body')
+        @include('mio.teacher-access.subject.quiz.quiz-body')
+    @elseif ($page === 'add-acads-quiz')
+        @include('mio.teacher-access.subject.quiz.add-acads-quiz')
 
     @elseif ($page === 'scores')
         @include('mio.teacher-access.subject.score.score')

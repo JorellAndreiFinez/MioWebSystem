@@ -6,22 +6,23 @@ use Closure;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\Auth as FirebaseAuth;
+use Kreait\Firebase\Exception\Auth\ExpiredIdToken;
+use Kreait\Firebase\Exception\Auth\InvalidIdToken;
 use Symfony\Component\HttpFoundation\Response;
-use Exception;
 
 class MobileAuthMiddleware
 {
     protected FirebaseAuth $auth;
 
     /**
-     * Constructor to inject FirebaseAuth.
+     * Constructor to initialize FirebaseAuth.
      */
     public function __construct()
     {
         $path = base_path('storage/firebase/firebase.json');
 
-        if (!file_exists($path)) {
-            die("This File Path .{$path}. does not exist.");
+        if (! file_exists($path)) {
+            abort(500, "Missing Firebase credentials at {$path}");
         }
 
         $this->auth = (new Factory)
@@ -32,22 +33,34 @@ class MobileAuthMiddleware
     /**
      * Handle an incoming request.
      *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @return \Symfony\Component\HttpFoundation\Response
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $token = $request->bearerToken();
 
-        if (!$token) {
-            return response()->json(['message' => 'Unauthorized: Bearer token is missing or invalid.',], 401);
+        if (! $token) {
+            return response()->json([
+                'message' => 'Unauthorized: Bearer token is missing.'
+            ], 401);
         }
 
         try {
             $verifiedIdToken = $this->auth->verifyIdToken($token);
-            $request->merge(['firebase_user' => $verifiedIdToken->claims()->get('sub')]);
-        } catch (Exception $e) {
-            return response()->json(['error_message' => 'Invalid Token'], 401);
+        } catch (ExpiredIdToken $e) {
+            return response()->json([
+                'message' => 'Unauthorized: Token has expired.'
+            ], 401);
+        } catch (InvalidIdToken $e) {
+            return response()->json([
+                'message' => 'Unauthorized: Token is invalid.'
+            ], 401);
         }
+
+        $uid = $verifiedIdToken->claims()->get('sub');
+        $request->attributes->set('firebase_user_id', $uid);
 
         return $next($request);
     }

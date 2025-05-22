@@ -22,7 +22,7 @@
 </div>
 
 <section class="home-section">
-@include('mio.dashboard.breadcrumbs', ['page' => 'view-subject'])
+    <!-- BREADCRUMBS -->
 <div class="teacher-container">
 @include('mio.dashboard.status-message')
 

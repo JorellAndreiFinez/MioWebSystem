@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use Kreait\Firebase\Database;
 use Kreait\Firebase\Factory;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Smalot\PdfParser\Parser;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 
 class TeacherController extends Controller
@@ -245,7 +249,367 @@ class TeacherController extends Controller
         ]);
     }
 
-    // TEACHER ASSIGNMENTS
+// TEACHER QUIZZES
+    public function showQuizzes($subjectId)
+{
+    // Find grade level key
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
+    $gradeLevelKey = null;
+    $matchedSubject = null;
+
+    foreach ($allSubjects as $key => $subjects) {
+        foreach ($subjects as $subject) {
+            if ($subject['subject_id'] === $subjectId) {
+                $gradeLevelKey = $key;
+                $matchedSubject = $subject;
+                break 2;
+            }
+        }
+    }
+
+    if (!$gradeLevelKey || !$matchedSubject) {
+        return abort(404, 'Subject not found.');
+    }
+
+    // Fetch quizzes
+    $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+    $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+    $quizzes = [];
+    foreach ($rawQuizzes as $key => $quiz) {
+        $quiz['id'] = $key;
+        $quizzes[] = $quiz;
+    }
+
+    return view('mio.head.teacher-panel', [
+        'page' => 'quiz',
+        'quizzes' => $quizzes,
+        'subjectId' => $subjectId,
+        'subject' => $matchedSubject,
+    ]);
+}
+
+
+    public function addAcadsQuiz($subjectId)
+    {
+        // Step 1: Locate the subject
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+        $gradeLevelKey = null;
+        $matchedSubject = null;
+
+        foreach ($allSubjects as $grade => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $gradeLevelKey = $grade;
+                $matchedSubject = $subjects[$subjectId];
+                break;
+            }
+        }
+
+        if (!$gradeLevelKey || !$matchedSubject || ($matchedSubject['subjectType'] ?? '') !== 'academics') {
+            return abort(404, 'Academic subject not found.');
+        }
+
+        // Step 2: Return form view
+        return view('mio.head.teacher-panel', [
+            'page' => 'add-acads-quiz',
+            'subjectId' => $subjectId,
+            'subject' => $matchedSubject,
+            'gradeLevelKey' => $gradeLevelKey,
+        ]);
+    }
+
+   public function storeQuiz(Request $request, $subjectId)
+    {
+        $quizData = $request->input('quiz');
+        $questions = $request->input('questions');
+
+        // 1. Locate the subject’s gradeLevelKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        foreach ($allSubjects as $grade => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $gradeLevelKey = $grade;
+                break;
+            }
+        }
+
+        if (!$gradeLevelKey) {
+            return back()->with('error', 'Subject not found.');
+        }
+
+        // 2. Generate quizId in the format QU[YEAR][MONTH][DAY]XXX
+        $today = Carbon::now()->format('Ymd'); // e.g., 20250518
+        $prefix = 'QU' . $today;
+
+        // Fetch existing quizzes under this subject to find matching prefix
+        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+        $existingQuizzes = $quizzesRef->getValue() ?? [];
+
+        $count = 0;
+        foreach (array_keys($existingQuizzes) as $existingId) {
+            if (Str::startsWith($existingId, $prefix)) {
+                $count++;
+            }
+        }
+
+        $quizId = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT); // e.g., QU20250518001
+
+        // 3. Fetch students and prepare people field
+        $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/people");
+        $students = $studentsRef->getValue() ?? [];
+
+        $people = [];
+        foreach ($students as $studentId => $studentInfo) {
+            $people[$studentId] = [
+                'work' => '',
+                'name' => ($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? ''),
+                'submitted_at' => null,
+                'attempts' => 0,
+                'comments' => '',
+                'feedback' => '',
+                'score' => null,
+                'timestamp' => now()->toDateTimeString(),
+            ];
+        }
+
+        // 4. Prepare quiz payload
+        $quizPayload = [
+            'title' => $quizData['title'] ?? '',
+            'description' => $quizData['description'] ?? '',
+            'publish_date' => $quizData['publish_date'],
+            'start_time' => $quizData['start_time'],
+            'deadline' => $quizData['deadline_date'] ?? null,
+            'end_time' => $quizData['end_time'] ?? null,
+            'time_limit' => (int) $quizData['time_limit'],
+            'total' => (int) $quizData['total_points'],
+            'attempts' => (int) $quizData['attempts'],
+            'created_at' => Carbon::now()->toDateTimeString(),
+            'questions' => [],
+            'people' => $people, // ✅ add populated student info here
+        ];
+
+        // 5. Attach questions
+        foreach ($questions as $index => $q) {
+            $questionId = 'q' . ($index + 1);
+            $question = [
+                'type' => $q['type'] ?? 'multiple_choice',
+                'question' => $q['question'] ?? '',
+                'answer' => $q['answer'] ?? '',
+            ];
+
+            if (isset($q['options']) && is_array($q['options'])) {
+                $question['options'] = $q['options'];
+            }
+
+            $quizPayload['questions'][$questionId] = $question;
+        }
+
+        // 6. Save quiz to Firebase
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes/{$quizId}");
+        $quizRef->set($quizPayload);
+
+        return redirect()->route('mio.subject-teacher.quiz', $subjectId)->with('success', 'Quiz successfully created.');
+    }
+
+
+    public function deleteQuiz($subjectId, $quizId)
+        {
+            // Get the grade level key where the subject exists
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+
+            $gradeLevelKey = null;
+            foreach ($allSubjects as $gradeKey => $subjects) {
+                if (array_key_exists($subjectId, $subjects)) {
+                    $gradeLevelKey = $gradeKey;
+                    break;
+                }
+            }
+
+            if (!$gradeLevelKey) {
+                return back()->with('error', 'Grade level not found for this subject.');
+            }
+
+            // Delete the assignment from the Firebase database
+            $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes/{$quizId}");
+            $quizRef->remove();
+
+            return redirect()->route('mio.subject-teacher.quiz', ['subjectId' => $subjectId])
+                            ->with('success', 'Quiz deleted successfully.');
+        }
+
+// QUIZ DETAILS
+    public function showQuizDetails($subjectId, $quizId)
+    {
+        // Step 1: Find grade level and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Step 2: Get the specific assignment
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $quiz = $quizRef->getValue();
+
+        if (!$quiz) {
+            return abort(404, 'Quiz not found.');
+        }
+
+        $quiz['id'] = $quizId;
+
+        // Step 3: Get students/people
+        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people");
+        $quiz['people'] = $peopleRef->getValue() ?? [];
+
+        // Step 4: Load submission for selected student
+        $selectedStudentId = request()->input('student_id');
+        $submission = null;
+
+        if ($selectedStudentId) {
+            $submissionRef = $this->database
+                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/submissions/{$selectedStudentId}");
+            $submission = $submissionRef->getValue();
+        }
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'quiz-body',
+            'quiz' => $quiz,
+            'questions' => $quiz['questions'] ?? [],
+            'subjectId' => $subjectId,
+            'quizId' => $quizId,
+            'gradeLevelKey' => $gradeLevelKey,
+            'submission' => $submission,
+            'selectedStudentId' => $selectedStudentId,
+            'subject' => $subject,
+        ]);
+    }
+
+    public function editQuiz(Request $request, $subjectId, $quizId)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'deadline_date' => 'nullable|date',
+            'start_time' => 'required',
+            'end_time' => 'nullable',
+            'time_limit' => 'required|integer',
+            'total_points' => 'required|integer',
+            'attempts' => 'required|integer',
+            'publish_date' => 'required|date',
+            'questions' => 'nullable|array',
+            'questions.*.type' => 'required|string',
+            'questions.*.question' => 'required|string',
+            'questions.*.options' => 'nullable|array',
+            'questions.*.answer' => 'nullable|string',
+        ]);
+
+        // Locate subject in Firebase
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        $quizPath = "subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}";
+        $existingQuiz = $this->database->getReference($quizPath)->getValue();
+
+        // Combine publish_date and start_time
+        $publishedAt = "{$validated['publish_date']} {$validated['start_time']}";
+        $deadline = $validated['deadline_date'] ?? '';
+        $endTime = $validated['end_time'] ?? '';
+
+        // Build formatted questions
+        $questions = [];
+        if (!empty($validated['questions'])) {
+            $qIndex = 1;
+            foreach ($validated['questions'] as $q) {
+                $question = [
+                    'type' => $q['type'],
+                    'question' => $q['question'],
+                ];
+
+                if (in_array($q['type'], ['multiple_choice', 'dropdown'])) {
+                    $question['options'] = $q['options'] ?? [];
+                    $question['answer'] = $q['answer'] ?? '';
+                } elseif ($q['type'] === 'fill_blank') {
+                    $question['answer'] = $q['answer'] ?? '';
+                }
+
+                $questions["q{$qIndex}"] = $question;
+                $qIndex++;
+            }
+        }
+
+        // Build the full quiz data
+        $updatedData = [
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? '',
+            'deadline' => $deadline,
+            'start_time' => $validated['start_time'],
+            'end_time' => $endTime,
+            'time_limit' => $validated['time_limit'],
+            'total' => $validated['total_points'],
+            'attempts' => $validated['attempts'],
+            'publish_date' => $validated['publish_date'],
+            'created_at' => $existingQuiz['created_at'] ?? now()->toDateTimeString(),
+            'questions' => $questions,
+        ];
+
+        // Preserve existing fields
+        if (isset($existingQuiz['people'])) {
+            $updatedData['people'] = $existingQuiz['people'];
+        }
+        if (isset($existingQuiz['attachments'])) {
+            $updatedData['attachments'] = $existingQuiz['attachments'];
+        }
+
+        // Save to Firebase
+        $this->database->getReference($quizPath)->update($updatedData);
+
+        return redirect()->route('mio.subject-teacher.edit-acads-quiz', [
+            'subjectId' => $subjectId,
+            'quizId' => $quizId,
+        ])->with('success', 'Quiz updated successfully.');
+
+    }
+
+
+
+
+// TEACHER ASSIGNMENTS
 
     public function showAssignment($subjectId)
     {
@@ -265,19 +629,23 @@ class TeacherController extends Controller
 
         // Fetch assignments
         $assignmentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/assignments");
-            $rawAssignments = $assignmentsRef->getValue() ?? [];
+        $rawAssignments = $assignmentsRef->getValue() ?? [];
 
-            $assignments = [];
+        $assignments = [];
+
+        if (is_array($rawAssignments)) {
             foreach ($rawAssignments as $key => $assignment) {
-                $assignment['id'] = $key; // Include the Firebase key
+                $assignment['id'] = $key;
                 $assignments[] = $assignment;
             }
+        }
 
 
         return view('mio.head.teacher-panel', [
             'page' => 'assignment',
             'assignments' => $assignments,
             'subjectId' => $subjectId,
+
         ]);
     }
 
@@ -286,10 +654,9 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'title' => 'required|string',
             'description' => 'nullable|string',
-            'deadline' => 'required|date',
+            'deadline' => 'nullable|date',
             'availability_start' => 'required',
-            'availability_end' => 'required',
-            'points_earned' => 'required|integer',
+            'availability_end' => 'nullable',
             'points_total' => 'required|integer',
             'attempts' => 'required|integer',
             'publish_date' => 'required|date',
@@ -357,18 +724,18 @@ class TeacherController extends Controller
         $timeKey = now()->format('His'); // Hour-Minute-Second format
         $assignmentKey = "ASS{$dateKey}{$timeKey}"; // Example: 20230514193000
 
+        $deadline = $validated['deadline'] ?? '';
+        $endtime = $validated['availability_end'] ?? '';
+
         $newAssignment = [
             'title' => $validated['title'],
             'description' => $validated['description'] ?? '',
-            'deadline' => $validated['deadline'],
+            'deadline' => $deadline,
             'availability' => [
                 'start' => $validated['availability_start'],
-                'end' => $validated['availability_end'],
+                'end' => $endtime,
             ],
-            'points' => [
-                'earned' => $validated['points_earned'],
-                'total' => $validated['points_total'],
-            ],
+            'total' => $validated['points_total'],
             'attempts' => $validated['attempts'],
             'attachments' => $attachments,
             'people' => $people, // Add the student information to the people field
@@ -410,6 +777,7 @@ class TeacherController extends Controller
                         ->with('success', 'Assignment deleted successfully.');
     }
 
+// ASSIGNMENT DETAILS
     public function showAssignmentDetails($subjectId, $assignmentId)
     {
         // Step 1: Find grade level and subjectKey
@@ -464,18 +832,28 @@ class TeacherController extends Controller
             'assignmentId' => $assignmentId,
             'gradeLevelKey' => $gradeLevelKey,
             'submission' => $submission,
+            'selectedStudentId' => $selectedStudentId,
         ]);
     }
 
-    public function editAssignment(Request $request, $subjectId, $assignmentId)
+     public function saveReview(Request $request, $subjectId, $assignmentId, $studentId)
     {
-        $subjectsRef = $this->database->getReference('subjects');
+        // Validate inputs
+        $validated = $request->validate([
+            'comments' => 'nullable|string',
+            'feedback' => 'nullable|string',
+            'score' => 'nullable|numeric|min:0',
+        ]);
+
+        $database = $this->database; // Your Firebase Realtime DB instance
+
+        // Step 1: Find gradeLevelKey and subjectKey by subjectId
+        $subjectsRef = $database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $gradeLevelKey = null;
         $subjectKey = null;
 
-        // Find subject location
         foreach ($allSubjects as $gradeKey => $subjects) {
             foreach ($subjects as $key => $subject) {
                 if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
@@ -487,66 +865,146 @@ class TeacherController extends Controller
         }
 
         if (!$gradeLevelKey || !$subjectKey) {
-            return abort(404, 'Subject not found.');
+            return response()->json(['message' => 'Subject not found'], 404);
         }
 
-        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+        // Step 2: Check assignment exists
+        $assignmentRef = $database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}");
+        $assignment = $assignmentRef->getValue();
 
-        // Build the updated data
-        $updatedData = [
-            'title' => $request->input('title'),
-            'description' => $request->input('description'),
-            'deadline' => $request->input('deadline'),
-            'availability' => [
-                'start' => $request->input('availability_start'),
-                'end' => $request->input('availability_end'),
-            ],
-            'points' => [
-                'earned' => (int)$request->input('points_earned'),
-                'total' => (int)$request->input('points_total'),
-            ],
-            'attempts' => (int)$request->input('attempts'),
-        ];
-
-        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
-
-        // Handle attachments
-        $attachments = [];
-
-        if ($request->has('attachments')) {
-            foreach ($request->attachments as $index => $attachment) {
-                $link = $attachment['link'] ?? '';
-                $fileUrl = '';
-
-                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
-                    $file = $request->file("attachments.$index.file");
-                    $path = $file->store("assignments", 'public');
-                    $fileUrl = asset("storage/" . $path);
-                } elseif (!empty($attachment['file'])) {
-                    $fileUrl = $attachment['file']; // Retain existing file URL if no new file uploaded
-                }
-
-                $attachments[] = [
-                    'link' => $link,
-                    'file' => $fileUrl,
-                ];
-            }
-        } elseif (isset($existingAssignment['attachments'])) {
-            $attachments = $existingAssignment['attachments']; // Keep existing if not updated
+        if (!$assignment) {
+            return response()->json(['message' => 'Assignment not found'], 404);
         }
 
-        $updatedData['attachments'] = $attachments;
+        // Step 3: Prepare review data to save (update or create)
+        $reviewData = [];
 
-        // Update in Firebase
-        $this->database->getReference($assignmentPath)->update($updatedData);
+        if (isset($validated['comments'])) {
+            $reviewData['comments'] = $validated['comments'];
+        }
 
-        return redirect()->back()->with('success', 'Assignment updated successfully.');
+        if (isset($validated['feedback'])) {
+            $reviewData['feedback'] = $validated['feedback'];
+        }
+
+        if (isset($validated['score'])) {
+            $reviewData['score'] = $validated['score'];
+        }
+
+        // Add/update timestamp
+        $reviewData['reviewed_at'] = date('Y-m-d H:i:s');
+
+        // Step 4: Save the review to the student's assignment 'people' node (or 'reviews' node if you prefer)
+        // Using 'people' because you showed the assignment structure has "people" with student data and feedback fields.
+
+        $studentReviewRef = $database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}/people/{$studentId}");
+
+        // Get current data for merging
+        $currentData = $studentReviewRef->getValue() ?? [];
+
+        // Merge with current data, update with new review info
+        $updatedData = array_merge($currentData, $reviewData);
+
+        // Save
+        $studentReviewRef->set($updatedData);
+
+        return redirect()->back()->with([
+            'message' => 'Review saved successfully',
+            'review' => $updatedData,
+            'studentId' => $studentId,
+        ]);
+
     }
 
+    public function editAssignment(Request $request, $subjectId, $assignmentId)
+{
+    $validated = $request->validate([
+        'title' => 'required|string',
+        'description' => 'nullable|string',
+        'deadline' => 'nullable|date',
+        'availability_start' => 'required',
+        'availability_end' => 'nullable',
+        'points_total' => 'required|integer',
+        'attempts' => 'required|integer',
+        'publish_date' => 'required|date',
+        'attachments' => 'nullable|array',
+        'attachments.*.link' => 'nullable|url',
+        'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+    ]);
 
+    $subjectsRef = $this->database->getReference('subjects');
+    $allSubjects = $subjectsRef->getValue() ?? [];
 
+    $gradeLevelKey = null;
+    $subjectKey = null;
 
-    // ANNOUNCEMENTS
+    // Find subject location
+    foreach ($allSubjects as $gradeKey => $subjects) {
+        foreach ($subjects as $key => $subject) {
+            if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                $gradeLevelKey = $gradeKey;
+                $subjectKey = $key;
+                break 2;
+            }
+        }
+    }
+
+    if (!$gradeLevelKey || !$subjectKey) {
+        return abort(404, 'Subject not found.');
+    }
+
+    $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+    $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+
+    // Handle attachments
+    $attachments = [];
+
+    if ($request->has('attachments')) {
+        foreach ($request->attachments as $index => $attachment) {
+            $fileUrl = null;
+
+            if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
+                $file = $request->file("attachments.$index.file");
+                $path = $file->store("assignments", 'public');
+                $fileUrl = asset("storage/" . $path);
+            } elseif (!empty($attachment['file'])) {
+                $fileUrl = $attachment['file']; // Keep existing file URL
+            }
+
+            $attachments[] = [
+                'link' => $attachment['link'] ?? '',
+                'file' => $fileUrl ?? '',
+            ];
+        }
+    } elseif (isset($existingAssignment['attachments'])) {
+        $attachments = $existingAssignment['attachments']; // Keep existing if no update
+    }
+
+    $deadline = $validated['deadline'] ?? null;
+    $endtime = $validated['availability_end'] ?? null;
+
+    $updatedData = [
+        'title' => $validated['title'],
+        'description' => $validated['description'] ?? '',
+        'deadline' => $deadline ?? '',
+        'availability' => [
+            'start' => $validated['availability_start'],
+            'end' => $endtime ?? '',
+        ],
+        'total' => $validated['points_total'],
+        'attempts' => $validated['attempts'],
+        'attachments' => $attachments,
+        'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+        // We retain 'people' and other fields as-is
+    ];
+
+    // Update assignment data
+    $this->database->getReference($assignmentPath)->update($updatedData);
+
+    return redirect()->back()->with('success', 'Assignment updated successfully.');
+}
+
+// ANNOUNCEMENTS
 
     public function showSubjectAnnouncements($subjectId)
     {
@@ -712,51 +1170,52 @@ class TeacherController extends Controller
 
 
     public function storeReply(Request $request, $subjectId, $announcementId)
-{
-    // Get the current logged-in user
-    $user = session('firebase_user');
-    $userId = $user['uid'] ?? null;
-    $userName = $user['name'] ?? 'Anonymous';
+    {
 
-    // Validate the reply input
-    $request->validate([
-        'reply' => 'required|string|max:500',
-    ]);
+        // Get the current logged-in user
+        $user = session('firebase_user');
+        $userId = $user['uid'] ?? null;
+        $userName = $user['name'] ?? 'Anonymous';
 
-    // Get the current timestamp
-    $timestamp = now()->toDateTimeString();
+        // Validate the reply input
+        $request->validate([
+            'reply' => 'required|string|max:500',
+        ]);
 
-    // Fetch all subjects from Firebase
-    $subjectsRef = $this->database->getReference("subjects")->getValue();
+        // Get the current timestamp
+        $timestamp = now()->toDateTimeString();
 
-    // Dynamically get the grade level for the subject
-    $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
+        // Fetch all subjects from Firebase
+        $subjectsRef = $this->database->getReference("subjects")->getValue();
 
-    // Check if the grade is found
-    if ($grade === null) {
-        return redirect()->back()->with('status', 'Subject not found.')->withInput();
-    }
+        // Dynamically get the grade level for the subject
+        $grade = $this->getGradeLevelForSubject($subjectId, $subjectsRef);
 
-    // Get the announcement data path in Firebase
-    $announcementRef = $this->database->getReference("subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies");
+        // Check if the grade is found
+        if ($grade === null) {
+            return redirect()->back()->with('status', 'Subject not found.')->withInput();
+        }
 
-    // Prepare the reply data
-    $replyData = [
-        'user_id' => $userId,
-        'user_name' => $userName,
-        'message' => $request->input('reply'),
-        'timestamp' => $timestamp,
-    ];
+        // Get the announcement data path in Firebase
+        $announcementRef = $this->database->getReference("subjects/{$grade}/{$subjectId}/announcements/{$announcementId}/replies");
 
-    // Push the reply data to Firebase
-    try {
-        $announcementRef->push($replyData);
-        return redirect()->route('mio.subject.announcement-body', ['subjectId' => $subjectId, 'announcementId' => $announcementId])
-                         ->with('success', 'Reply posted successfully.');
-    } catch (\Exception $e) {
-        return redirect()->back()->with('status', 'Failed to post reply: ' . $e->getMessage())->withInput();
-    }
-    }
+        // Prepare the reply data
+        $replyData = [
+            'user_id' => $userId,
+            'user_name' => $userName,
+            'message' => $request->input('reply'),
+            'timestamp' => $timestamp,
+        ];
+
+        // Push the reply data to Firebase
+        try {
+            $announcementRef->push($replyData);
+            return redirect()->route('mio.subject.announcement-body', ['subjectId' => $subjectId, 'announcementId' => $announcementId])
+                            ->with('success', 'Reply posted successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('status', 'Failed to post reply: ' . $e->getMessage())->withInput();
+        }
+        }
 
     public function deleteReply($subjectId, $announcementId, $replyId)
     {

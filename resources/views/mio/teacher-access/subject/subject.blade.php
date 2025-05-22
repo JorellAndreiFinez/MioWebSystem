@@ -36,8 +36,15 @@
             <div class="overviewcard__arrow">&rsaquo;</div>
     </div>
     </a>
+    <a href="{{ route('mio.subject-teacher.quiz', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Quizzes</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
+    </a>
 
-    <a href="{{ route('mio.subject-teacher.scores') }}"><div class="overviewcard">
+<!-- href=" route('mio.subject-teacher.scores')" -->
+    <a href="#"><div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Scores</div>
             <div class="overviewcard__arrow">&rsaquo;</div>

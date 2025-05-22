@@ -93,7 +93,7 @@
                     <label for="file-upload-0" class="file-label">
                         <span class="upload-icon">📁</span> Choose File
                     </label>
-                    <input type="file" name="modules[0][file]" id="file-upload-0" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip" required/>
+                    <input type="file" name="modules[0][file]" id="file-upload-0" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip"/>
                     <span class="file-name" id="file-name-0">No file chosen</span>
                 </div>
             </div>
