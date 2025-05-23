@@ -795,6 +795,7 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
         'App\\Http\\Controllers\\Dashboard\\DashboardController' => __DIR__ . '/../..' . '/app/Http/Controllers/Dashboard/DashboardController.php',
         'App\\Http\\Controllers\\Dashboard\\MessagingController' => __DIR__ . '/../..' . '/app/Http/Controllers/Dashboard/MessagingController.php',
+        'App\\Http\\Controllers\\Dashboard\\SettingsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Dashboard/SettingsController.php',
         'App\\Http\\Controllers\\Dashboard\\StudentController' => __DIR__ . '/../..' . '/app/Http/Controllers/Dashboard/StudentController.php',
         'App\\Http\\Controllers\\Dashboard\\TeacherController' => __DIR__ . '/../..' . '/app/Http/Controllers/Dashboard/TeacherController.php',
         'App\\Http\\Controllers\\DepartmentController' => __DIR__ . '/../..' . '/app/Http/Controllers/DepartmentController.php',

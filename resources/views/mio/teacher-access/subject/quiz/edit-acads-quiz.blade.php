@@ -76,7 +76,8 @@
         <div class="form-group">
             <label>One Question at a Time</label>
             <label class="switch">
-            <input type="checkbox" name="quiz[one_question_at_a_time]" value="1" checked>
+            <input type="checkbox" name="quiz[one_question_at_a_time]" value="1" {{ old('quiz.one_question_at_a_time', $quiz['one_question_at_a_time'] ?? false) ? 'checked' : '' }}>
+
             <span class="slider round"></span>
             </label>
         </div>
@@ -84,20 +85,22 @@
         <div class="form-group">
             <label>Allow Navigation to Previous Question</label>
             <label class="switch">
-            <input type="checkbox" name="quiz[can_go_back]" value="1" >
+            <input type="checkbox" name="quiz[can_go_back]" value="1" {{ old('quiz.can_go_back', $quiz['can_go_back'] ?? false) ? 'checked' : '' }}>
+
             <span class="slider round"></span>
             </label>
         </div>
         <div class="form-group">
             <label>Show Correct Answers</label>
             <label class="switch">
-                <input type="checkbox" name="quiz[show_correct_answers]" value="1">
+                <input type="checkbox" name="quiz[show_correct_answers]" value="1" {{ old('quiz.show_correct_answers', $quiz['show_correct_answers'] ?? false) ? 'checked' : '' }}>
+
                 <span class="slider round"></span>
             </label>
         </div>
         </div>
           </div>
-        </div>
+
 
         <!-- Quiz Questions Section -->
         <div class="section-header">Quiz Questions</div>
@@ -119,6 +122,18 @@
             </div>
 
             <div class="form-row">
+                <div class="form-group" style="max-width: 150px;">
+                    <label>Points <span style="color:red">*</span></label>
+                    <input
+                    type="number"
+                    name="questions[{{ $questionKey }}][points]"
+                    value="{{ old("questions.$questionKey.points", $question['points'] ?? '') }}"
+                    step="0.01" min="0.01"
+                    class="question-points"
+                    data-index="{{ $questionKey }}"
+                    required
+                    />
+                </div>
               <div class="form-group wide">
                 <label>Question <span style="color:red">*</span></label>
                 <input type="text" name="questions[{{ $questionKey }}][question]" placeholder="Enter the question" value="{{ old("questions.$questionKey.question", $question['question']) }}" required />
@@ -146,15 +161,29 @@
               <div class="form-row" style="margin-top:10px;">
                 <div class="form-group">
                   <label>Correct Answer</label>
-                  <select name="questions[{{ $questionKey }}][answer]" required class="correct-answer-select" data-question-id="question-{{ $questionKey }}">
+                  <select name="questions[{{ $questionKey }}][answer]" required>
                     <option value="">Select</option>
-                    @foreach($question['options'] ?? [] as $optKey => $option)
-                    <option value="{{ $optKey }}" {{ (old("questions.$questionKey.answer", $question['answer']) == $optKey) ? 'selected' : '' }}>
-                      {{ $option['text'] ?? '' }}
 
-                    </option>
+                    @php
+                        $optionKeys = array_keys($question['options'] ?? []);
+                        // If your answer is letter, convert it to option key:
+                        $correctAnswerKey = null;
+                        if (isset($question['answer']) && strlen($question['answer']) === 1) {
+                            $letterIndex = ord(strtolower($question['answer'])) - ord('a');
+                            $correctAnswerKey = $optionKeys[$letterIndex] ?? null;
+                        } else {
+                            $correctAnswerKey = $question['answer'];
+                        }
+                    @endphp
+
+                    @foreach($question['options'] ?? [] as $optKey => $option)
+                        <option value="{{ $optKey }}" {{ ($correctAnswerKey == $optKey) ? 'selected' : '' }}>
+                            {{ $option['text'] ?? $option }}
+
+                        </option>
                     @endforeach
-                  </select>
+                </select>
+
                 </div>
               </div>
 
@@ -195,10 +224,92 @@
     <button type="button" class="btn add-btn" onclick="addQuestion()" style="display: block; margin: 0 auto; margin-bottom: 2rem; margin-top: 2rem;">
       + Add Question
     </button>
-        </div>
+        </div></div>
+</main>
 </section>
 
 <script>
+    // Initial call to distribute points equally on page load
+    document.addEventListener('DOMContentLoaded', () => {
+    distributePointsEqually();
+
+    const totalPointsInput = document.querySelector('input[name="total"]');
+    if (totalPointsInput) {
+        totalPointsInput.addEventListener('input', checkAndDistributePoints);
+    }
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList.contains('question-points')) {
+        updateTotalPoints();
+        checkAndDistributePoints();
+        }
+    });
+
+    // Initialize any existing questions if needed
+    // initializeChoices(0); // Uncomment if you have such a function
+    });
+    function removeChoice(button) {
+    // Find the nearest choice block to remove
+    const choiceBlock = button.closest('.choice-block');
+    if (choiceBlock) {
+        const parent = choiceBlock.parentElement;
+        choiceBlock.remove();
+
+        // If needed, re-index input names here
+        reindexChoices(parent);
+    }
+}
+
+// Distribute total points equally across all question points inputs
+function distributePointsEqually() {
+  const totalPointsInput = document.querySelector('input[name="total"]');
+  if (!totalPointsInput) return;
+
+  const totalPoints = parseFloat(totalPointsInput.value);
+  const pointInputs = document.querySelectorAll('.question-points');
+  if (!totalPoints || pointInputs.length === 0) return;
+
+  const perQuestion = (totalPoints / pointInputs.length).toFixed(2);
+
+  pointInputs.forEach(input => {
+    input.value = perQuestion;
+  });
+
+  updateTotalPoints();
+}
+
+// When points inputs are edited, update the total points input
+function updateTotalPoints() {
+  let total = 0;
+  document.querySelectorAll('.question-points').forEach(input => {
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) total += val;
+  });
+
+  const totalPointsInput = document.querySelector('input[name="total"]');
+  if (totalPointsInput) {
+    totalPointsInput.value = total.toFixed(2);
+  }
+}
+
+// Check if sum of question points exceed total and redistribute if needed
+function checkAndDistributePoints() {
+  const totalPointsInput = document.querySelector('input[name="total"]');
+  if (!totalPointsInput) return;
+
+  const totalPoints = parseFloat(totalPointsInput.value) || 0;
+  const pointInputs = document.querySelectorAll('.question-points');
+  const currentTotal = Array.from(pointInputs).reduce((sum, input) => {
+    return sum + (parseFloat(input.value) || 0);
+  }, 0);
+
+  if (currentTotal > totalPoints && pointInputs.length > 0) {
+    const newPoint = (totalPoints / pointInputs.length).toFixed(2);
+    pointInputs.forEach(input => input.value = newPoint);
+    updateTotalPoints();
+  }
+}
+
   function generateUniqueKey() {
     return 'q_' + Math.random().toString(36).substr(2, 9);
   }
@@ -226,6 +337,18 @@
     </div>
 
     <div class="form-row">
+     <div class="form-group" style="max-width: 150px;">
+        <label>Points <span style="color:red">*</span></label>
+        <input
+        type="number"
+        name="questions[{{ $questionKey }}][points]"
+        value="{{ old("questions.$questionKey.points") ?? ($question['points'] ?? '') }}"
+        step="0.01" min="0.01"
+        class="question-points"
+        data-index="{{ $questionKey }}"
+        required
+    />
+    </div>
       <div class="form-group wide">
         <label>Question <span style="color:red">*</span></label>
         <input type="text" name="questions[${key}][question]" placeholder="Enter the question" required />
@@ -295,18 +418,6 @@
     select.appendChild(option);
     }
 
-    function removeChoice(button) {
-    const choiceBlock = button.closest('.choice-block');
-    const container = choiceBlock.parentElement;
-    const select = container.parentElement.querySelector('select.correct-answer-select');
-    const key = choiceBlock.dataset.key;
-
-    // Remove the corresponding option from the correct answer dropdown
-    const optionToRemove = select.querySelector(`option[value="${key}"]`);
-    if (optionToRemove) optionToRemove.remove();
-
-    choiceBlock.remove();
-    }
 
   function updateCorrectAnswerOptions(key) {
     const questionBlock = document.querySelector(`#question-block-${key}`);
@@ -333,39 +444,6 @@
 
   let questionIndex = Date.now(); // avoid collision on reload
 
-  function addQuestion() {
-    const key = generateUniqueKey();
-    const section = document.getElementById('questions-section');
-
-    const template = `
-    <div class="question-block" id="question-block-${key}" data-question-key="${key}">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Question Type</label>
-          <select name="questions[${key}][type]" class="question-type" onchange="handleQuestionTypeChange('${key}')">
-           <option value="" selected disabled>Select Question Type</option>
-          <option value="multiple_choice">Multiple Choice</option>
-            <option value="essay">Essay</option>
-            <option value="file_upload">File Upload</option>
-            <option value="fill_blank">Fill in the Blanks</option>
-            <option value="dropdown">Dropdown</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group wide">
-          <label>Question <span style="color:red">*</span></label>
-          <input type="text" name="questions[${key}][question]" placeholder="Enter the question" required />
-        </div>
-      </div>
-
-      <div class="question-type-container" data-index="${key}"></div>
-      <button type="button" class="btn remove-question-btn" onclick="removeQuestion('${key}')" style="background:#e74c3c; margin-top:10px;">Remove Question</button>
-      <hr />
-    </div>`;
-    section.insertAdjacentHTML('beforeend', template);
-  }
 
   function handleQuestionTypeChange(key) {
   const container = document.querySelector(`.question-type-container[data-index="${key}"]`);
@@ -429,6 +507,16 @@
 
   container.innerHTML = html;
 }
+  // When total points input changes, redistribute points
+    document.getElementById('total-points-input').addEventListener('input', () => {
+        distributePoints();
+    });
+
+    document.addEventListener('input', function (e) {
+        if (e.target.classList.contains('question-points')) {
+        updateTotalPoints();
+        }
+    });
 </script>
 
 <script>
@@ -446,4 +534,7 @@ function toggleTimeLimit() {
     timeInput.value = 30; // Default or previous value
   }
 }
+
+
+
 </script>

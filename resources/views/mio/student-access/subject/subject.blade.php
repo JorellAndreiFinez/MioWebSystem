@@ -38,6 +38,14 @@
     </div>
     </a>
 
+    <a href="{{ route('mio.subject-teacher.attendance', ['subjectId' => $subject['subject_id']]) }}">
+        <div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Attendance</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
+        </div>
+    </a>
+
     <a href="{{ route('mio.subject.scores', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
             <div class="overviewcard__icon"></div>
             <div class="overviewcard__info">Scores</div>
@@ -51,6 +59,12 @@
             <div class="overviewcard__info">Modules</div>
             <div class="overviewcard__arrow">&rsaquo;</div>
         </div>
+    </a>
+    <a href="{{ route('mio.subject.quiz', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+            <div class="overviewcard__icon"></div>
+            <div class="overviewcard__info">Quizzes</div>
+            <div class="overviewcard__arrow">&rsaquo;</div>
+    </div>
     </a>
 
     <a href="{{ route('mio.subject.people', ['subjectId' => $subject['subject_id']]) }}">

@@ -26,12 +26,9 @@
 <!-- NAVBAR -->
 @include('layouts.navbar');
 
-@include('mio.admin-access.pid.components.carousel')
-@include('mio.admin-access.pid.components.container-1')
-@include('mio.admin-access.pid.components.container-2')
-@include('mio.admin-access.pid.components.container-3')
-@include('mio.admin-access.pid.components.container-4')
-@include('mio.admin-access.pid.components.container-5')
+@include('layouts.landing.header')
+@include('layouts.landing.content')
+
 
 
 <!----- FOOTER ----->

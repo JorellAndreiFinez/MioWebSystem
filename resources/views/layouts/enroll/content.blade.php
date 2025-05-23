@@ -3,7 +3,12 @@
 <!-- FIRST PART -->
 
 <div class="icon-grid">
-
+    <a href="{{ route('admission.enroll-guide') }}">
+    <div class="icon-card">
+        <img src="{{ asset('storage/assets/images/icons/payment-2.png') }}" alt="Payment">
+        <p>Payment</p>
+    </div>
+    </a>
    <a href="{{ route('admission.assess-guide') }}">
    <div class="icon-card">
         <img src="{{ asset('storage/assets/images/icons/assessment-1.png') }}" alt="Assessment Guide">

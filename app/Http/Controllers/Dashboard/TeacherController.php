@@ -491,57 +491,97 @@ class TeacherController extends Controller
 
    public function storeQuiz(Request $request, $subjectId)
     {
-        $quizData = $request->input('quiz');
-        $questions = $request->input('questions');
-
-        // Locate grade level key
+        // Step 1: Find gradeLevelKey and subjectKey (like updateAcadsQuiz)
         $subjectsRef = $this->database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
 
         $gradeLevelKey = null;
-        foreach ($allSubjects as $grade => $subjects) {
-            if (isset($subjects[$subjectId])) {
-                $gradeLevelKey = $grade;
-                break;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subjectData) {
+                // Here subjectData might be array with subject_id, match it
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
             }
         }
 
-        if (!$gradeLevelKey) {
+        if (!$gradeLevelKey || !$subjectKey) {
             return back()->with('error', 'Subject not found.');
         }
 
-        // Generate quizId
+        // Step 2: Validate request input
+        $request->validate([
+            'quiz.title' => 'required|string|max:255',
+            'quiz.description' => 'nullable|string',
+            'quiz.publish_date' => 'required|date',
+            'quiz.start_time' => 'required',
+            'quiz.deadline_date' => 'nullable|date',
+            'quiz.end_time' => 'nullable',
+            'quiz.time_limit' => 'nullable|integer|min:0',
+            'quiz.no_time_limit' => 'nullable|boolean',
+            'quiz.total_points' => 'required|integer|min:0',
+            'quiz.attempts' => 'required|integer|min:1',
+            'quiz.one_question_at_a_time' => 'nullable|boolean',
+            'quiz.can_go_back' => 'nullable|boolean',
+            'quiz.show_correct_answers' => 'nullable|boolean',
+            'questions' => 'required|array',
+            'questions.*.question' => 'required|string',
+            'questions.*.type' => 'required|string',
+            'questions.*.answer' => 'required|string',
+            'questions.*.options' => 'sometimes|array',
+            'questions.*.options.*' => 'string',
+            'questions.*.points' => 'required|numeric|min:0.01',
+
+        ]);
+
+        $quizData = $request->input('quiz');
+        $questions = $request->input('questions');
+
+        // Step 3: Generate unique quiz ID
         $today = Carbon::now()->format('Ymd');
         $prefix = 'QU' . $today;
 
-        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes");
         $existingQuizzes = $quizzesRef->getValue() ?? [];
 
-        $count = 0;
+        // Find the max 3-digit number suffix used for today to avoid duplicates
+        $maxNumber = 0;
         foreach (array_keys($existingQuizzes) as $existingId) {
             if (Str::startsWith($existingId, $prefix)) {
-                $count++;
+                // Extract the last 3 digits from the ID, e.g. QUI20250523005 -> 005
+                $numberPart = substr($existingId, strlen($prefix), 3);
+                if (ctype_digit($numberPart)) {
+                    $num = (int) $numberPart;
+                    if ($num > $maxNumber) {
+                        $maxNumber = $num;
+                    }
+                }
             }
         }
 
-        $quizId = $prefix . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
-        // Prepare students
-        $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/people");
+        $newNumber = $maxNumber + 1;
+        $quizId = $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+
+        // Step 4: Prepare students (people) structure with attempts initialized
+        $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/people");
         $students = $studentsRef->getValue() ?? [];
 
         $people = [];
         foreach ($students as $studentId => $studentInfo) {
             $people[$studentId] = [
-                'name' => ($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? ''),
-                'attempts' => [] ?? "", // Each item is one quiz attempt
+                'name' => trim(($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? '')),
+                'attempts' => [],         // store quiz attempts later per student
                 'latest_score' => null,
                 'latest_submitted_at' => null,
             ];
         }
 
-
-        // Handle file upload (ADDED)
+        // Step 5: Handle optional file upload
         $fileUrl = null;
         if ($request->hasFile('quiz_file') && $request->file('quiz_file')->isValid()) {
             $file = $request->file('quiz_file');
@@ -549,18 +589,15 @@ class TeacherController extends Controller
             $fileUrl = asset(str_replace('public', 'storage', $path));
         }
 
-        // Use null or 0 if time_limit is missing or "no time limit" is checked
-        $timeLimit = null;
+        // Step 6: Determine time limit
+        $timeLimit = 0;
         if (!empty($quizData['no_time_limit']) && $quizData['no_time_limit'] == 1) {
-            // No time limit set by checkbox
-            $timeLimit = 0; // or 0 if you prefer
-        } else if (isset($quizData['time_limit']) && is_numeric($quizData['time_limit'])) {
+            $timeLimit = 0;
+        } elseif (isset($quizData['time_limit']) && is_numeric($quizData['time_limit'])) {
             $timeLimit = (int) $quizData['time_limit'];
-        } else {
-            $timeLimit = 0; // default fallback
         }
 
-        // Quiz payload
+        // Step 7: Build quiz payload (same keys as updateAcadsQuiz)
         $quizPayload = [
             'title' => $quizData['title'] ?? '',
             'description' => $quizData['description'] ?? '',
@@ -572,44 +609,45 @@ class TeacherController extends Controller
             'total' => (int) $quizData['total_points'],
             'attempts' => (int) $quizData['attempts'],
             'created_at' => Carbon::now()->toDateTimeString(),
-            'questions' => [],
             'people' => $people,
+            'questions' => [],
+            'one_question_at_a_time' => !empty($quizData['one_question_at_a_time']),
+            'can_go_back' => !empty($quizData['can_go_back']),
+            'show_correct_answers' => !empty($quizData['show_correct_answers']),
         ];
 
-        // Add file URL to payload if uploaded (ADDED)
+        // Add file URL if uploaded
         if ($fileUrl) {
             $quizPayload['file_url'] = $fileUrl;
         }
 
-        // Attach questions with unique IDs
+        // Step 8: Attach questions with UUID keys and full structure
         foreach ($questions as $q) {
-            $questionId = (string) Str::uuid(); // unique ID
-            $questionPayload = [
+            $questionId = (string) Str::uuid();
+
+            // Use the answer text directly if given, else fallback ''
+            $answerText = $q['answer'] ?? '';
+
+            // Normalize options array
+            $options = $q['options'] ?? [];
+
+            $quizPayload['questions'][$questionId] = [
                 'type' => $q['type'] ?? 'multiple_choice',
                 'question' => $q['question'] ?? '',
-                'answer' => $q['answer'] ?? '',
-                'options' => [],
+                'answer' => $answerText,
+                'options' => $options,
+                'points' => (float) ($q['points'] ?? 0),
             ];
-
-            if (isset($q['options']) && is_array($q['options'])) {
-                foreach ($q['options'] as $opt) {
-                    $optionId = (string) Str::uuid();
-                    $questionPayload['options'][$optionId] = [
-                        'text' => $opt,
-                    ];
-                }
-            }
-
-            $quizPayload['questions'][$questionId] = $questionPayload;
         }
 
-        // Save to Firebase
-        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes/{$quizId}");
+        // Step 9: Save to Firebase
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
         $quizRef->set($quizPayload);
 
-        return redirect()->route('mio.subject-teacher.quiz', $subjectId)->with('success', 'Quiz successfully created.');
+        // Step 10: Redirect with success
+        return redirect()->route('mio.subject-teacher.quiz', $subjectId)
+            ->with('success', 'Quiz successfully created.');
     }
-
 
 
     public function deleteQuiz($subjectId, $quizId)
@@ -638,7 +676,8 @@ class TeacherController extends Controller
                             ->with('success', 'Quiz deleted successfully.');
         }
 
-// QUIZ DETAILS
+
+        // QUIZ DETAILS
     public function showQuizDetails($subjectId, $quizId)
     {
         // Step 1: Find grade level and subjectKey
@@ -1666,11 +1705,6 @@ class TeacherController extends Controller
             'people' => $people
         ]);
     }
-
-
-
-
-
 
 
 

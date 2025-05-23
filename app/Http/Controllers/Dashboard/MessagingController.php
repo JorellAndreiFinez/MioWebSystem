@@ -404,48 +404,48 @@ public function showInbox()
 
 
     public function sendTeacherMessage(Request $request)
-{
-    $senderId = Session::get('firebase_user')['uid'];
-    $receiverId = $request->input('receiver_id');
-    $subject = $request->input('subject') ?? '';
-    $message = $request->input('message');
+    {
+        $senderId = Session::get('firebase_user')['uid'];
+        $receiverId = $request->input('receiver_id');
+        $subject = $request->input('subject') ?? '';
+        $message = $request->input('message');
 
-    if (empty($receiverId) || empty($message)) {
-        return response()->json(['success' => false, 'message' => 'Receiver and message are required.']);
-    }
-
-    // Build consistent conversation ID
-    $conversationId = $senderId < $receiverId ? "{$senderId}_{$receiverId}" : "{$receiverId}_{$senderId}";
-
-    // Save attachments if available
-    $attachments = [];
-    if ($request->hasFile('attachments')) {
-        foreach ($request->file('attachments') as $file) {
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('messages/attachments', $filename, 'public');
-            $attachments[] = Storage::url($path);
+        if (empty($receiverId) || empty($message)) {
+            return response()->json(['success' => false, 'message' => 'Receiver and message are required.']);
         }
+
+        // Build consistent conversation ID
+        $conversationId = $senderId < $receiverId ? "{$senderId}_{$receiverId}" : "{$receiverId}_{$senderId}";
+
+        // Save attachments if available
+        $attachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('messages/attachments', $filename, 'public');
+                $attachments[] = Storage::url($path);
+            }
+        }
+
+        // Prepare message payload
+        $messageData = [
+            'sender_id' => $senderId,
+            'receiver_id' => $receiverId,
+            'subject' => $subject,
+            'message' => $message,
+            'attachments' => $attachments,
+            'timestamp' => now()->timestamp,
+        ];
+
+        // Store in Firebase
+        $this->database->getReference("messages/{$conversationId}")->push($messageData);
+
+        // return response()->json(['success' => true, 'message' => 'Message sent successfully.']);
+
+       return redirect()->route('mio.teacher-inbox', [
+        ])->with('success', 'Message sent!');
+
     }
-
-    // Prepare message payload
-    $messageData = [
-        'sender_id' => $senderId,
-        'receiver_id' => $receiverId,
-        'subject' => $subject,
-        'message' => $message,
-        'attachments' => $attachments,
-        'timestamp' => now()->timestamp,
-    ];
-
-    // Store in Firebase
-    $this->database->getReference("messages/{$conversationId}")->push($messageData);
-
-    // return response()->json(['success' => true, 'message' => 'Message sent successfully.']);
-
-    return view('mio.head.teacher-panel', [
-            'page' => 'teacher-inbox',
-        ]);
-}
 
 
 

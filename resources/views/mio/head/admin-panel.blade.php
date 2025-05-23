@@ -28,6 +28,8 @@
 
     @elseif ($page === 'pid')
         @include('mio.admin-access.pid')
+    @elseif ($page === 'edit-nav')
+        @include('mio.admin-access.pid.nav.edit-nav')
 
     @elseif ($page === 'students')
         @include('mio.admin-access.students')

@@ -2,6 +2,10 @@
     <div class="text">Inbox</div>
     <button class="new-message-btn">+ New Message</button>
     <div class="grid-container">
+        @if(session('success'))
+            <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
         <!-- Begin Main-->
         <main class="main">
 
@@ -64,6 +68,8 @@
                             </div>
                     </div>
                     </div>
+                    <!-- MESSAGE LOADER! -->
+                     <div class="line-wobble" id="messageLoader" style="display: none;"></div>
 
                     <!-- Change the chat-content when clicking to add message -->
                      <div class="chat-content new-message-content" style="display: none;">
@@ -71,6 +77,8 @@
                             <h2>New Message</h2>
                             <p class="subtitle">Compose a new message</p>
                         </div>
+
+
 
                         <form id="sendMessageForm" action="{{ route('mio.teacher-message-send') }}" method="post" enctype="multipart/form-data">
 
@@ -107,7 +115,7 @@
 
 
 
-                            <button class="send-message-btn">Send</button>
+                            <button type="submit" class="send-message-btn">Send</button>
                         </div>
                         </form>
                     </div>
@@ -120,6 +128,7 @@
         <!-- End Main -->
     </div>
 </section>
+
 
 <!-- ADD NEW MESSAGE -->
 <script>
@@ -151,6 +160,9 @@
 
 
 <script>
+
+
+
     document.addEventListener('DOMContentLoaded', function () {
         const groupSelect = document.getElementById('group-select');
         const peopleSelect = document.getElementById('people-select');
@@ -191,27 +203,42 @@
             });
         });
 
-        sendForm.addEventListener('submit', async function (e) {
-            e.preventDefault();
+        $('#sendMessageForm').on('submit', function(e) {
+        e.preventDefault();
 
-            const formData = new FormData(sendForm);
+        // Hide form, show loader
+        document.querySelector('.new-message-content').style.display = 'none';
+        document.getElementById('messageLoader').style.display = 'block';
 
-            const response = await fetch(sendForm.action, {
-                method: 'POST',
-                body: formData
-            });
+        let formData = new FormData(this);
 
-            const result = await response.json();
-
-            if (result.success) {
-                alert('Message sent!');
-                sendForm.reset();
-                fileList.innerHTML = '';
-            } else {
-                alert('Failed to send message: ' + result.message);
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             }
+        })
+        .then(response => response.json())
+        .then(data => {
+            setTimeout(() => {
+                window.location.reload(); // refresh page after short delay
+            }, 1000); // 1s delay so the loader appears briefly
+        })
+        .catch(err => {
+            console.error(err);
+            window.location.reload(); // fallback refresh
         });
     });
+
+          const messageContainer = document.getElementById('message-container');
+                if (messageContainer) {
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                }        if (messageContainer) {
+                    messageContainer.scrollTop = messageContainer.scrollHeight;
+                }
+    });
+
 </script>
 
 <!-- Get MESSAGES -->

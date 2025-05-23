@@ -245,6 +245,113 @@ class StudentController extends Controller
         ]);
     }
 
+    // STUDENT QUIZZES
+    public function showQuizzes($subjectId)
+    {
+        // Find grade level key
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+        $gradeLevelKey = null;
+        $matchedSubject = null;
+
+        foreach ($allSubjects as $key => $subjects) {
+            foreach ($subjects as $subject) {
+                if ($subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $key;
+                    $matchedSubject = $subject;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$gradeLevelKey || !$matchedSubject) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Fetch quizzes
+        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+        $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+        $quizzes = [];
+        foreach ($rawQuizzes as $key => $quiz) {
+            $quiz['id'] = $key;
+            $quizzes[] = $quiz;
+        }
+
+        return view('mio.head.student-panel', [
+            'page' => 'quiz',
+            'quizzes' => $quizzes,
+            'subjectId' => $subjectId,
+            'subject' => $matchedSubject,
+        ]);
+    }
+
+    // QUIZ DETAILS
+    public function showQuizDetails($subjectId, $quizId)
+    {
+        // Step 1: Find grade level and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subjectData) {
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    $subject = $subjectData; // ✅ Assign subject details
+                    break 2;
+                }
+            }
+        }
+
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Step 2: Get the specific assignment
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $quiz = $quizRef->getValue();
+
+        if (!$quiz) {
+            return abort(404, 'Quiz not found.');
+        }
+
+        $quiz['id'] = $quizId;
+
+        // Step 3: Get students/people
+        $peopleRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people");
+        $quiz['people'] = $peopleRef->getValue() ?? [];
+
+        // Step 4: Load submission for selected student
+        $selectedStudentId = request()->input('student_id');
+        $submission = null;
+
+        if ($selectedStudentId) {
+            $submissionRef = $this->database
+                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/submissions/{$selectedStudentId}");
+            $submission = $submissionRef->getValue();
+        }
+
+        $questions = isset($quiz['questions']) ? $quiz['questions'] : [];
+
+
+        return view('mio.head.student-panel', [
+            'page' => 'quiz-body',
+            'quiz' => $quiz,
+            'questions' => $quiz['questions'] ?? [],
+            'subjectId' => $subjectId,
+            'quizId' => $quizId,
+            'gradeLevelKey' => $gradeLevelKey,
+            'submission' => $submission,
+            'selectedStudentId' => $selectedStudentId,
+            'subject' => $subject,
+        ]);
+    }
+
     // ASSIGNMENTS
 
     public function showAssignment($subjectId)
@@ -510,7 +617,6 @@ class StudentController extends Controller
         'subject' => $matchedSubject,
     ]);
 }
-
 
 
 // ANNOUNCEMENTS
