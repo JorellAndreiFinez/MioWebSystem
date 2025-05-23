@@ -125,6 +125,18 @@
             </div>
 
             <div class="form-row">
+                <div class="form-group" style="max-width: 150px;">
+                    <label>Points <span style="color:red">*</span></label>
+                    <input
+                    type="number"
+                    name="questions[0][points]"
+                    step="0.01" min="0.01"
+                    class="question-points"
+                    data-index="${idx}"
+                    value=""
+                    required
+                    />
+                </div>
             <div class="form-group wide">
                 <label>Question <span style="color:red">*</span></label>
                 <input type="text" name="questions[0][question]" placeholder="Enter the question" required />
@@ -155,41 +167,86 @@
 </section>
 
 <script>
+   distributePointsEqually();
+
+    function generateUUID() {
+    return 'xxxxxxx'.replace(/[x]/g, function() {
+        return (Math.random() * 16 | 0).toString(16);
+    });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const totalPointsInput = document.querySelector('input[name="quiz[total_points]"]');
+        totalPointsInput.addEventListener('input', checkAndDistributePoints);
+
+        document.addEventListener('input', function(e) {
+            if (e.target.classList.contains('question-points')) {
+                checkAndDistributePoints();
+            }
+        });
+
+        initializeChoices(0);
+
+    });
+
+// Function to check if points exceed total and redistribute
+function checkAndDistributePoints() {
+    const totalPoints = parseFloat(document.querySelector('input[name="quiz[total_points]"]').value) || 0;
+    const pointInputs = document.querySelectorAll('.question-points');
+    const currentTotal = Array.from(pointInputs).reduce((sum, input) => {
+        return sum + (parseFloat(input.value) || 0);
+    }, 0);
+
+    if (currentTotal > totalPoints) {
+        const newPoint = (totalPoints / pointInputs.length).toFixed(2);
+        pointInputs.forEach(input => input.value = newPoint);
+    }
+}
+
   let questionIndex = 1; // next question id
   const letters = 'abcdefghijklmnopqrstuvwxyz';
 
   // Add initial 4 choices (a-d) for question 0
-  function initializeChoices(questionIdx) {
+ function initializeChoices(questionIdx) {
     const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
+    if (!container) return;
+
     for (let i = 0; i < 4; i++) {
-      addChoice(questionIdx, i);
+        addChoice(questionIdx);  // remove second param; just call with questionIdx
     }
     updateCorrectAnswerOptions(questionIdx);
-  }
+    }
 
   // Add choice input to a question
-  function addChoice(questionIdx) {
+function addChoice(questionIdx) {
   const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
   if (!container) return;
 
-  // Create empty div with temporary letter (will fix in reorder)
+    const choiceUUID = generateUUID();
+
   const div = document.createElement('div');
   div.className = 'form-group choice-block';
+  div.setAttribute('data-number', choiceUUID);
 
   div.innerHTML = `
-    <label>Option</label>
-    <div class="input-with-icon">
-      <input type="text" required />
+      <label>Option</label>
+      <div class="input-with-icon">
+      <input type="text" name="questions[${questionIdx}][options][${choiceUUID}]" required />
       <button type="button" class="icon-btn" onclick="removeChoice(${questionIdx}, this)" title="Remove Choice">
-        <i class="fas fa-times"></i>
+          <i class="fas fa-times"></i>
       </button>
-    </div>
+      </div>
   `;
 
   container.appendChild(div);
 
-  reorderChoices(questionIdx); // Fix labels and name attributes
+  // Add event listener to update correct answer dropdown on input change
+  const input = div.querySelector('input');
+  input.addEventListener('input', () => updateCorrectAnswerOptions(questionIdx));
+
+  updateCorrectAnswerOptions(questionIdx);
 }
+
 
   // Remove choice input from a question
   function removeChoice(questionIdx, btn) {
@@ -204,14 +261,13 @@
 function reorderChoices(questionIdx) {
   const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
   const blocks = container.querySelectorAll('.choice-block');
-  const lettersArr = 'abcdefghijklmnopqrstuvwxyz';
 
   blocks.forEach((block, i) => {
-    const letter = lettersArr[i];
-    block.setAttribute('data-letter', letter);
-    block.querySelector('label').textContent = `Option ${letter.toUpperCase()}`;
+    const num = i + 1; // Numbering starts at 1
+    block.setAttribute('data-number', num);
+    block.querySelector('label').textContent = `Choice`;
     const input = block.querySelector('input');
-    input.setAttribute('name', `questions[${questionIdx}][options][${letter}]`);
+    input.setAttribute('name', `questions[${questionIdx}][options][${num}]`);
   });
 
   updateCorrectAnswerOptions(questionIdx);
@@ -219,33 +275,37 @@ function reorderChoices(questionIdx) {
 
   // Update the correct answer select options based on current choices
   function updateCorrectAnswerOptions(questionIdx) {
-    const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
-    const select = document.querySelector(`select.correct-answer-select[data-question-index="${questionIdx}"]`);
-    if (!container || !select) return;
+  const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
+  const select = document.querySelector(`select.correct-answer-select[data-question-index="${questionIdx}"]`);
+  if (!container || !select) return;
 
-    // Get current choice letters
-    const letters = Array.from(container.querySelectorAll('.choice-block')).map(el => el.getAttribute('data-letter'));
+  const currentVal = select.value;
+  select.innerHTML = `<option value="">Select</option>`;
 
-    // Save currently selected value
-    const currentVal = select.value;
+  const choiceBlocks = container.querySelectorAll('.choice-block');
 
-    // Clear options
-    select.innerHTML = `<option value="">Select</option>`;
+  choiceBlocks.forEach((block) => {
+    const input = block.querySelector('input');
+    const val = input.value.trim();
+    const key = block.getAttribute('data-number'); // get the UUID key directly from choice-block div
 
-    letters.forEach(letter => {
-      const option = document.createElement('option');
-      option.value = letter;
-      option.textContent = letter.toUpperCase();
-      select.appendChild(option);
+    if (val && key) {
+        const option = document.createElement('option');
+        option.value = key; // set value to actual UUID key
+        option.textContent = val;
+        select.appendChild(option);
+    }
     });
 
-    // Restore selection if still valid
-    if (letters.includes(currentVal)) {
-      select.value = currentVal;
-    } else {
-      select.value = '';
-    }
+
+  // Keep the selected answer if it still exists
+  if ([...select.options].some(opt => opt.value === currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = '';
   }
+}
+
 
   // Add new question block
   function addQuestion() {
@@ -270,7 +330,21 @@ function reorderChoices(questionIdx) {
       </div>
     </div>
 
+
+
     <div class="form-row">
+    <div class="form-group" style="max-width: 150px;">
+        <label>Points <span style="color:red">*</span></label>
+        <input
+        type="number"
+        name="questions[${idx}][points]"
+        step="0.01" min="0.01"
+        class="question-points"
+        data-index="${idx}"
+        value=""
+        required
+        />
+    </div>
       <div class="form-group wide">
         <label>Question <span style="color:red">*</span></label>
         <input type="text" name="questions[${idx}][question]" placeholder="Enter the question" required />
@@ -299,6 +373,7 @@ function reorderChoices(questionIdx) {
 
   // Initialize default question type behavior (multiple_choice)
   handleQuestionTypeChange(idx);
+   distributePointsEqually();
 }
 
   // Remove question block
@@ -310,10 +385,49 @@ function reorderChoices(questionIdx) {
     }
   }
 
-  // Initialize first question choices on page load
-  window.onload = function () {
+  function distributePointsEqually() {
+     const totalPointsInput = document.querySelector('input[name="quiz[total_points]"]');
+        const totalPoints = parseFloat(totalPointsInput.value);
+        const pointInputs = document.querySelectorAll('.question-points');
+
+        if (!totalPoints || pointInputs.length === 0) return;
+
+        const perQuestion = (totalPoints / pointInputs.length).toFixed(2);
+
+        pointInputs.forEach(input => {
+            input.value = perQuestion;
+        });
+    }
+
+    function updateTotalPoints() {
+        let total = 0;
+
+        document.querySelectorAll('.question-points').forEach(input => {
+        const val = parseFloat(input.value);
+        if (!isNaN(val)) total += val;
+        });
+
+        const totalPointsInput = document.querySelector('input[name="quiz[total_points]"]');
+        totalPointsInput.value = total.toFixed(2);
+    }
+
+
+  // When total points input changes, redistribute points
+    document.getElementById('total-points-input').addEventListener('input', () => {
+        distributePoints();
+    });
+
+    document.addEventListener('input', function (e) {
+    if (e.target.classList.contains('question-points')) {
+      updateTotalPoints();
+    }
+  });
+
+  // Initialize points for the first question on load
+    window.onload = function () {
     initializeChoices(0);
-  };
+    distributePoints();
+    };
 </script>
 
 <script>
@@ -331,7 +445,6 @@ function handleQuestionTypeChange(index) {
 
   switch (type) {
     case 'multiple_choice':
-    case 'dropdown':
       for (let i = 0; i < 4; i++) {
         addChoice(index, i);
       }
@@ -339,6 +452,10 @@ function handleQuestionTypeChange(index) {
       if (answerContainer) answerContainer.style.display = 'block';
       if (addChoiceBtn) addChoiceBtn.style.display = 'inline-block';
       break;
+
+    // case 'dropdown':
+
+    //     break;
 
     case 'essay':
       choicesContainer.innerHTML = `
@@ -366,9 +483,9 @@ function handleQuestionTypeChange(index) {
         </div>
       `;
       break;
+
   }
 }
-
 </script>
 
 

@@ -110,7 +110,33 @@
                         </form>
 
                 </div>
+
+
+
             </div>
+
+        <div class="assignment-card">
+            @if (!empty($questions))
+                    <div class="quiz-questions mt-4">
+                        <h4>Questions</h4>
+                        @foreach ($questions as $questionId => $question)
+                            <div class="question-box mb-4 p-3 border rounded" style="background-color: #f9f9f9;">
+                                <p class="font-weight-bold mb-2">Question: {{ $question['question'] }}</p>
+
+                                <div class="options-list">
+                                    @foreach ($question['options'] as $optionKey => $optionText)
+                                        <div class="option-item p-2 mb-1 rounded"
+                                            style="background-color: {{ $optionKey === $question['answer'] ? '#d4edda' : '#f1f1f1' }};
+                                                    border-left: 5px solid {{ $optionKey === $question['answer'] ? '#28a745' : '#ccc' }};">
+                                            {{ $optionText }}
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+        </div>
 
     </main>
 

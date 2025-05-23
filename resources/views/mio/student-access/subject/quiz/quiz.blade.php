@@ -19,7 +19,7 @@
                     <div>
                         <span>Publish at</span>
                         <strong>
-                            {{ isset($quiz['published_at']) ? \Carbon\Carbon::parse($quiz['published_at'])->format('F d, Y') : '' }}
+                            {{ isset($quiz['publish_date']) ? \Carbon\Carbon::parse($quiz['publish_date'])->format('F d, Y') : '' }}
                             {{ isset($quiz['availability']['start']) && $quiz['availability']['start'] ? \Carbon\Carbon::createFromFormat('H:i', $quiz['availability']['start'])->format('g:i A') : '' }}
                         </strong>
                     </div>
@@ -35,13 +35,17 @@
                         <strong>{{ $quiz['total'] ?? '0' }}</strong>
                     </div>
                     <div>
-                        <span>Attempts</span>
+                        <span>Total Attempts</span>
+                        <strong>{{ $quiz['attempts'] ?? 0 }}</strong>
+                    </div>
+                    <div>
+                        <span>Your Attempts</span>
                         <strong>{{ $quiz['student_data']['attempts'] ?? 0 }}</strong>
                     </div>
                 </div>
 
-                <a href="{{ route('mio.subject.assignment-body', ['subjectId' => $subjectId, 'assignmentId' => $quiz['id']]) }}" class="take-quiz-btn">
-                    View Assignment
+                <a href="{{ route('mio.subject.quiz-body', ['subjectId' => $subjectId, 'quizId' => $quiz['id']]) }}" class="take-quiz-btn">
+                    Take Assignment
                 </a>
             </div>
         @empty

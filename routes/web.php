@@ -101,7 +101,12 @@ Route::prefix('mio/admin/')->middleware(
 // ----------------  PID
 
     Route::get('/PID', [CmsController::class, 'showCMS'])->name('ViewCMS');
-    Route::get('/admin/cms/{id}', [CmsController::class, 'show'])->name('cms.show');
+
+    Route::get('/PID/edit/{key}', [CmsController::class, 'editNav'])->name('cms.edit-nav');
+
+    Route::POST('/PID/cms/homepage/update', [CMSController::class, 'updateCMSHomepage'])->name('cms.homepage.update');
+
+
 
 
 //  ---------------  TEACHERS
@@ -303,6 +308,11 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
         Route::get('/{subjectId}/modules', [StudentController::class, 'showModules'])->name('modules');
         Route::get('/{subjectId}/modules/{moduleIndex}', [StudentController::class, 'showModuleBody'])->name('module-body');
 
+    // QUIZZES
+        Route::get('/{subjectId}/quiz', [StudentController::class, 'showQuizzes'])->name('quiz');
+
+         Route::get('/{subjectId}/quiz/{quizId}', [StudentController::class, 'showQuizDetails'])->name('quiz-body');
+
 
     });
 
@@ -329,7 +339,8 @@ Route::prefix('mio/teacher')->middleware(
        Route::get('/messages', [MessagingController::class, 'showTeacherInbox'])->name('mio.teacher-inbox');
 
     Route::post('/send-message', [MessagingController::class, 'sendTeacherMessage'])->name('mio.teacher-message-send');
-     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages']);
+
+     Route::get('/messages/{userId}/{contactId}', [MessagingController::class, 'getTeacherMessages'])->name('mio.teacher-inbox-message');
 
     Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
 
