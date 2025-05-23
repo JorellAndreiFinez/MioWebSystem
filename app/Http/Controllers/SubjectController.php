@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use Carbon\Carbon;
+
 
 class SubjectController extends Controller
 {
@@ -326,14 +328,14 @@ class SubjectController extends Controller
         }
     }
 
-    public function createSubjectAssignmentsApi(Request $request, string $subjectId)
+    public function createAssignmentApi(Request $request, string $subjectId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         $validated = $request->validate([
             'availability'          => 'required|array|size:2',
             'availability.start'    => 'required|string',
-            'availability.end'      => 'required|string|after:availability.start',
+            'availability.end'      => 'required|string|',
             'attempts'              => 'required|integer|min:1|max:100',
             'title'                 => 'required|string|max:250',
             'description'           => 'required|string|max:1000',
@@ -364,7 +366,7 @@ class SubjectController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Failed to create assignment: ' . $e->getMessage(),
+                'error'   => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
     }
@@ -427,13 +429,6 @@ class SubjectController extends Controller
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User grade level is missing.',
-            ], 400);
-        }
-
         $scores = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/scores")
             ->getSnapshot()
@@ -443,6 +438,146 @@ class SubjectController extends Controller
             'success' => true,
             'scores' => $scores,
         ], 200);
+    }
+
+    public function getSubjectQuizzesApi(Request $request, string $subjectId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $quizzes = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes")
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+            $filteredQuizzes = [];
+
+            if (!empty($quizzes) && is_array($quizzes)) {
+                foreach ($quizzes as $quizzesId => $item) {
+                    $filteredQuizzes[] = [
+                        'quiz_id' => $quizzesId,
+                        'total' => $item['total'],
+                        'title' => $item['title'],
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'quizzes' => $filteredQuizzes,
+                
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getSubjectQuizByIdApi(Request $request, string $subjectId, string $quizId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $quizzes = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+            if (isset($quizzes['people'])) {
+                unset($quizzes['people']);
+            }
+
+            return response()->json([
+                'success' => true,
+                'quiz' => $quizzes,
+                
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function createSubjectQuizzesApi(Request $request, string $subjectId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $validated = $request->validate([
+                'deadline'                 => 'required|string',
+                'attempts'                 => 'required|integer|min:1',
+                'description'              => 'required|string|max:1000',
+                'title'                    => 'required|string|max:255',
+                'total'                    => 'required|integer|min:1',
+                'time_limit'               => 'required|integer|min:1',
+                'publish_date'             => 'required|string',
+                'questions'                => 'required|array|min:1',
+                'questions.*.question'     => 'required|string',
+                'questions.*.answer'       => 'required|string',
+                'questions.*.type'         => 'required|string',
+                'questions.*.options'      => 'required|array|min:1',
+                'questions.*.options.*'    => 'required|string',
+            ]);
+
+            $quizId = $this->generateUniqueId('QU');
+            $date = now()->toDateTimeString();
+
+            $quizData = array_merge($validated, [
+                'created_at' => $date,
+                'updated_at' => $date,
+            ]);
+
+            $quizzes = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+            ->set($quizData);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully create quiz",
+                
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateSubjectQuizzesApi(Request $request, string $subjectId, string $quizId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $validated = $request->validate([
+                'deadline' => 'required|string',
+                'attempts' => 'required|number|min:1',
+                'description' => 'required|string|max:1000',
+                'title' => 'required|string|max:255',
+                'total_score' => 'required|number|min:1',
+                'time_limit' => 'required|number|min:1',
+                'questions' => 'required',
+            ]);
+
+
+            $quizzes = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+            ->update();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully update quiz",
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
 
