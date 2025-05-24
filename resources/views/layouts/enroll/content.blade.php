@@ -1,12 +1,15 @@
 <center>
-
+<br><br>
 <!-- FIRST PART -->
-
+<div class="mission-content">
+    <span class="highlight">Enrollment Guide</span>
+<h2>Learn How To Enroll</h2></div>
+</div>
 <div class="icon-grid">
-    <a href="{{ route('admission.enroll-guide') }}">
+    <a href="{{ route('enroll-login') }}">
     <div class="icon-card">
-        <img src="{{ asset('storage/assets/images/icons/payment-2.png') }}" alt="Payment">
-        <p>Payment</p>
+        <img src="{{ asset('storage/assets/images/icons/enrollment-2.png') }}" alt="Payment">
+        <p>Enrollment</p>
     </div>
     </a>
    <a href="{{ route('admission.assess-guide') }}">
@@ -22,6 +25,7 @@
     </div>
     </a>
 </div>
+
 
 <!-- SECOND PART -->
 

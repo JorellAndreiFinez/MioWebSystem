@@ -55,15 +55,8 @@
 
         <div class="form-row">
             <div class="form-group">
-                <label>Time Limit (in minutes)</label>
-                <input type="number" name="quiz[time_limit]" id="time-limit" min="1" value="30" />
-
-                <div style="margin-top: 5px;">
-                    <label style="font-weight: normal;">
-                    <input type="checkbox" id="no-time-limit" name="quiz[no_time_limit]" value="1" onchange="toggleTimeLimit()" />
-                    No Time Limit
-                    </label>
-                </div>
+                <label>Time Limit (in minutes) | 0 = No Time Limit</label>
+                <input type="number" name="quiz[time_limit]" id="time-limit" min="0" value="30" />
                 </div>
 
 
@@ -209,6 +202,7 @@ function checkAndDistributePoints() {
   // Add initial 4 choices (a-d) for question 0
  function initializeChoices(questionIdx) {
     const container = document.querySelector(`.choices-container[data-question-index="${questionIdx}"]`);
+
     if (!container) return;
 
     for (let i = 0; i < 4; i++) {
@@ -317,57 +311,40 @@ function reorderChoices(questionIdx) {
   block.setAttribute('data-index', idx);
 
   block.innerHTML = `
-    <div class="form-row">
+  <div class="form-row">
+    <div class="form-group">
+      <label>Question Type</label>
+      <select name="questions[${idx}][type]" class="question-type" data-index="${idx}" onchange="handleQuestionTypeChange(${idx})">
+        <option value="multiple_choice" selected>Multiple Choice</option>
+        <option value="essay">Essay</option>
+        <option value="file_upload">File Upload</option>
+        <option value="fill_blank">Fill in the Blanks</option>
+        <option value="dropdown">Dropdown</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-row">
+    <div class="form-group" style="max-width: 150px;">
+      <label>Points <span style="color:red">*</span></label>
+      <input type="number" name="questions[${idx}][points]" step="0.01" min="0.01" class="question-points" data-index="${idx}" required />
+    </div>
+    <div class="form-group wide">
+      <label>Question <span style="color:red">*</span></label>
+      <input type="text" name="questions[${idx}][question]" placeholder="Enter the question" required />
+    </div>
+  </div>
+  <div class="question-type-container" data-index="${idx}">
+    <div class="choices-container form-row" data-question-index="${idx}"></div>
+    <button type="button" class="btn add-choice-btn" onclick="addChoice(${idx})">+ Add Choice</button>
+    <div class="form-row" style="margin-top:10px;">
       <div class="form-group">
-        <label>Question Type</label>
-        <select name="questions[${idx}][type]" class="question-type" data-index="${idx}" onchange="handleQuestionTypeChange(${idx})">
-          <option value="multiple_choice" selected>Multiple Choice</option>
-          <option value="essay">Essay</option>
-          <option value="file_upload">File Upload</option>
-          <option value="fill_blank">Fill in the Blanks</option>
-          <option value="dropdown">Dropdown</option>
+        <label>Correct Answer</label>
+        <select name="questions[${idx}][answer]" class="correct-answer-select" data-question-index="${idx}">
+          <option value="">Select</option>
         </select>
       </div>
     </div>
-
-
-
-    <div class="form-row">
-    <div class="form-group" style="max-width: 150px;">
-        <label>Points <span style="color:red">*</span></label>
-        <input
-        type="number"
-        name="questions[${idx}][points]"
-        step="0.01" min="0.01"
-        class="question-points"
-        data-index="${idx}"
-        value=""
-        required
-        />
-    </div>
-      <div class="form-group wide">
-        <label>Question <span style="color:red">*</span></label>
-        <input type="text" name="questions[${idx}][question]" placeholder="Enter the question" required />
-      </div>
-    </div>
-
-    <div class="question-type-container" data-index="${idx}">
-      <div class="choices-container form-row" data-question-index="${idx}"></div>
-      <button type="button" class="btn add-choice-btn" onclick="addChoice(${idx})">+ Add Choice</button>
-
-      <div class="form-row" style="margin-top:10px;">
-        <div class="form-group">
-          <label>Correct Answer</label>
-          <select name="questions[${idx}][answer]" required class="correct-answer-select" data-question-index="${idx}">
-            <option value="">Select</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <button type="button" class="btn remove-question-btn" onclick="removeQuestion(${idx})" style="background:#e74c3c; margin-top:10px;">Remove Question</button>
-    <hr />
-  `;
+  </div>`;
 
   container.appendChild(block);
 
@@ -431,61 +408,57 @@ function reorderChoices(questionIdx) {
 </script>
 
 <script>
-function handleQuestionTypeChange(index) {
-  const type = document.querySelector(`select[name="questions[${index}][type]"]`).value;
-  const container = document.querySelector(`.question-type-container[data-index="${index}"]`);
-  const choicesContainer = container.querySelector(`.choices-container`);
-  const answerContainer = container.querySelector(`.correct-answer-select`)?.closest('.form-row');
-  const addChoiceBtn = container.querySelector('.add-choice-btn');
+function handleQuestionTypeChange(idx) {
+    const container = document.querySelector(`.question-type-container[data-index="${idx}"]`);
+    const select = document.querySelector(`select[name="questions[${idx}][type]"]`);
+    const type = select.value;
 
-  // Clear current inputs
-  choicesContainer.innerHTML = '';
-  if (answerContainer) answerContainer.style.display = 'none';
-  if (addChoiceBtn) addChoiceBtn.style.display = 'none'; // default hide
+    container.innerHTML = ''; // Clear existing fields
 
-  switch (type) {
-    case 'multiple_choice':
-      for (let i = 0; i < 4; i++) {
-        addChoice(index, i);
-      }
-      updateCorrectAnswerOptions(index);
-      if (answerContainer) answerContainer.style.display = 'block';
-      if (addChoiceBtn) addChoiceBtn.style.display = 'inline-block';
-      break;
-
-    // case 'dropdown':
-
-    //     break;
-
-    case 'essay':
-      choicesContainer.innerHTML = `
-        <div class="form-group wide">
-          <label>Answer Guide (Optional)</label>
-          <textarea name="questions[${index}][answer]" placeholder="Expected answer or notes..."></textarea>
-        </div>
-      `;
-      break;
-
-    case 'file_upload':
-      choicesContainer.innerHTML = `
-        <div class="form-group wide">
-          <label>File Instructions (Optional)</label>
-          <textarea name="questions[${index}][answer]" placeholder="e.g., Upload a PDF report..."></textarea>
-        </div>
-      `;
-      break;
-
-    case 'fill_blank':
-      choicesContainer.innerHTML = `
-        <div class="form-group wide">
-          <label>Answer (Exact Match)</label>
-          <input type="text" name="questions[${index}][answer]" placeholder="e.g., Manila" />
-        </div>
-      `;
-      break;
-
-  }
+    if (type === 'multiple_choice' || type === 'dropdown') {
+        container.innerHTML = `
+            <div class="choices-container form-row" data-question-index="${idx}"></div>
+            <button type="button" class="btn add-choice-btn" onclick="addChoice(${idx})">+ Add Choice</button>
+            <div class="form-row" style="margin-top:10px;">
+              <div class="form-group">
+                <label>Correct Answer</label>
+                <select name="questions[${idx}][answer]" class="correct-answer-select" data-question-index="${idx}">
+                  <option value="">Select</option>
+                </select>
+              </div>
+            </div>`;
+        initializeChoices(idx);
+    } else if (type === 'essay') {
+        container.innerHTML = `
+            <div class="form-row">
+              <div class="form-group wide">
+                <label>Answer Guide (Optional)</label>
+                <textarea name="questions[${idx}][answer]" placeholder="Provide a guide answer..."></textarea>
+              </div>
+            </div>`;
+    } else if (type === 'file_upload') {
+        container.innerHTML = `
+            <div class="form-row">
+              <div class="form-group wide">
+                <label>Instructions for Upload</label>
+                <input type="text" name="questions[${idx}][answer]" placeholder="Describe the file to upload..." />
+              </div>
+            </div>`;
+    } else if (type === 'fill_blank') {
+        container.innerHTML = `
+            <div class="form-row">
+              <div class="form-group wide">
+                <label>Sentence with ___ for blank</label>
+                <input type="text" name="questions[${idx}][question]" placeholder="e.g., The sun is ___." required />
+              </div>
+              <div class="form-group wide">
+                <label>Correct Answer</label>
+                <input type="text" name="questions[${idx}][answer]" placeholder="e.g., hot" required />
+              </div>
+            </div>`;
+    }
 }
+
 </script>
 
 
@@ -535,22 +508,5 @@ document.querySelector('form').addEventListener('submit', function (e) {
         alert("Please fix the following issues:\n\n" + errors.join("\n"));
     }
 });
-</script>
-
-<script>
-function toggleTimeLimit() {
-  const checkbox = document.getElementById('no-time-limit');
-  const timeInput = document.getElementById('time-limit');
-
-  if (checkbox.checked) {
-    timeInput.disabled = true;
-    timeInput.removeAttribute('required');
-    timeInput.value = '';
-  } else {
-    timeInput.disabled = false;
-    timeInput.setAttribute('required', 'required');
-    timeInput.value = 30; // Default or previous value
-  }
-}
 </script>
 

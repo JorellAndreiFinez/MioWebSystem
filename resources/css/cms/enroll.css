@@ -92,17 +92,40 @@ strong {
 
 .icon-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-    padding: 30px;
+    grid-template-columns: repeat(3, 2fr);
     justify-items: center;
+    gap: 20px;
+    margin-left: 10rem;
+    margin-right: 10rem;
+}
+
+.mission-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 20px;
+}
+
+.highlight {
+    color: #ffca28;
+    margin-top: 2rem;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mission-content h2 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #212121;
+    margin: 10px 0;
 }
 
 
 /* Individual Cards */
 
 .icon-card {
-    margin-top: 5rem;
     width: 350px;
     height: 250px;
     background-color: #fff;

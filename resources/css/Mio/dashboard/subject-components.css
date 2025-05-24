@@ -660,6 +660,9 @@
 
 /* ASSIGNMENT 2 */
 
+
+/* Activity Info */
+
 .main-assignment-content2 .activity-info2 {
     display: flex;
     flex-direction: column;
@@ -738,7 +741,7 @@
 
 /* Timer Styling */
 
-.countdown-timer2 {
+.countdown-timer {
     position: absolute;
     top: 20px;
     right: 20px;
@@ -754,7 +757,7 @@
 }
 
 @media (max-width: 768px) {
-    .countdown-timer2 {
+    .countdown-timer {
         top: 70px;
         right: 10px;
         font-size: 1rem;
@@ -778,7 +781,7 @@
     .main-assignment-content2 .details2 {
         grid-template-columns: 1fr;
     }
-    #countdown-timer {
+    #countdown-timer2 {
         font-size: 1rem;
     }
 }

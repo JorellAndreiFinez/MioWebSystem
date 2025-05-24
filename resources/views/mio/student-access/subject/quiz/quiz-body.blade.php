@@ -34,13 +34,13 @@
         Time Remaining: <span id="timer">Loading...</span>
     </div>
     <main class="main-assignment-content">
-        <div class="assignment-card">
-            <div class="activity-info">
+        <div class="assignment-card2">
+            <div class="activity-info2">
                 <h1>{{ $quiz['title'] }}</h1>
                 <h4 style="color: #444">{{ $quiz['description'] }}</h4>
             </div>
 
-            <div class="details">
+            <div class="details2">
                 <div>
                     <span>Publish Date</span>
                     <strong>{{ \Carbon\Carbon::parse($quiz['publish_date'])->format('F j, Y') }}</strong>
@@ -60,7 +60,9 @@
             </div>
 
             <!-- route('mio.subject.quiz-submit', [$subjectId, $quizId])  -->
+        </div>
 
+        <div class="assigment-card2">
             @if ($canTakeQuiz)
                 <form method="POST" action="#">
                 @csrf
@@ -68,14 +70,14 @@
                 @if (!$oneQuestionAtATime)
                     {{-- Show all questions at once --}}
                     @foreach ($quiz['questions'] as $questionId => $question)
-                        <div class="question-card" style="margin-top: 20px;">
+                        <div class="question-card2" style="margin-top: 20px;">
                             <h4>{{ $loop->iteration }}. {{ $question['question'] }}</h4>
                             @foreach ($question['options'] as $optionKey => $optionText)
-                                <div class="form-check">
+                                <div class="form-check2">
                                     <input type="radio"
                                         name="answers[{{ $questionId }}]"
                                         value="{{ $optionKey }}"
-                                        class="form-check-input"
+                                        class="form-check-input2"
                                         id="{{ $questionId }}-{{ $optionKey }}"
                                         required>
                                     <label class="form-check-label" for="{{ $questionId }}-{{ $optionKey }}">
@@ -86,14 +88,14 @@
                         </div>
                     @endforeach
 
-                    <div class="submit-btn" style="margin-top: 30px;">
-                        <button type="submit" class="btn btn-primary">Submit Quiz</button>
+                    <div class="submit-btn2" style="margin-top: 30px;">
+                        <button type="submit" class="btn2 btn-primary">Submit Quiz</button>
                     </div>
 
                 @else
                     {{-- One question at a time --}}
                     @foreach ($quiz['questions'] as $questionId => $question)
-                        <div class="question-card question-slide" style="margin-top: 20px; display: none;" data-question-index="{{ $loop->index }}">
+                        <div class="question-card2 question-slide" style="margin-top: 20px; display: none;" data-question-index="{{ $loop->index }}">
                             <h4>{{ $loop->iteration }}. {{ $question['question'] }}</h4>
                             @foreach ($question['options'] as $optionKey => $optionText)
                                 <div class="form-check">
