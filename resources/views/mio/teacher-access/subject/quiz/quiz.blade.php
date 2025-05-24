@@ -22,7 +22,7 @@
                     <div>
                         <span>Publish at</span>
                         <strong>
-                            {{ \Carbon\Carbon::parse($quiz['publish_date'] . ' ' . ($quiz['start_time'] ?? '00:00'))->format('F j, Y g:i A') }}
+                             \Carbon\Carbon::parse($quiz['publish_date'] . ' ' . ($quiz['start_time'] ?? '00:00'))->format('F j, Y g:i A')
 
                         </strong>
                     </div>

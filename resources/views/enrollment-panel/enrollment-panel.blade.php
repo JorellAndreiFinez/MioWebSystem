@@ -36,9 +36,11 @@
     @if ($page === 'enroll-login')
         @include('enrollment-panel.enroll-login')
     @elseif ($page === 'enroll-dashboard')
+        @include('enrollment-panel.sidebar')
         @include('enrollment-panel.enroll-dashboard')
-    @elseif ($page === 'send-otp')
-        @include('enrollment-panel.send-otp')
+    @elseif ($page === 'enroll-form')
+        @include('enrollment-panel.sidebar')
+        @include('enrollment-panel.enrollment-form')
     @endif
 
 

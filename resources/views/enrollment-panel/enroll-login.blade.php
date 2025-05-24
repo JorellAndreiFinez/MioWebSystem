@@ -20,16 +20,6 @@
         </ul>
     </div>
 @endif
-
-@if(session('error') == 'Please verify your email address first.')
-<form action="{{ route('resend-verification') }}" method="POST">
-    @csrf
-    <input type="hidden" name="email" value="{{ old('user_login') }}">
-    <button type="submit">Resend Verification Email</button>
-</form>
-@endif
-
-
     <div class="tabs">
         <h3 class="signup-tab">
             <a class="" href="#signup-tab-content">Sign Up</a>
@@ -46,19 +36,21 @@
         <div id="signup-tab-content" class="">
             <form class="signup-form" action="{{ route('enroll.signup') }}" method="post">
                 @csrf
-                <input type="email" name="user_email" class="input" id="user_email" autocomplete="off" placeholder="Email" required value="202210849@fit.edu.ph
+                <input type="email" name="user_email" class="input" id="user_email" autocomplete="off" placeholder="Email" required value="jorellandrei12345@fit.edu.ph
 ">
-                <input type="text" name="user_name" class="input" id="user_name" autocomplete="off" placeholder="Full name" required value="jj andrei">
+                <input type="text" name="fname" class="input" id="fname" autocomplete="off" placeholder="First Name" required value="jj">
+
+                <input type="text" name="lname" class="input" id="lname" autocomplete="off" placeholder="Last Name" required value="andrei">
 
                 <!-- Sign Up Password -->
                 <div class="password-wrap">
-                    <input type="password" name="user_pass" class="input password-input" id="user_pass" autocomplete="off" placeholder="Password" required  value="JorellAndrei">
+                    <input type="password" name="user_pass" class="input password-input" id="user_pass" autocomplete="off" placeholder="Password" required  value="">
                     <i class="fa-regular fa-eye toggle-icon" id="togglePasswordSignup"></i>
                 </div>
 
                 <!-- Sign Up Confirm Password -->
                 <div class="password-wrap">
-                    <input type="password" name="user_pass_confirmation" class="input password-input" id="user_pass_confirmation" autocomplete="off" placeholder="Confirm Password" required value="JorellAndrei">
+                    <input type="password" name="user_pass_confirmation" class="input password-input" id="user_pass_confirmation" autocomplete="off" placeholder="Confirm Password" required value="">
                     <i class="fa-regular fa-eye toggle-icon" id="toggleConfirmPassword"></i>
                 </div>
                 <input type="submit" class="button" value="Sign Up">
@@ -73,7 +65,7 @@
         <div id="login-tab-content" class="active">
             <form class="login-form" action="{{ route('enroll.login') }}" method="post">
                 @csrf
-                <input type="text" name="user_login" class="input" id="user_login" autocomplete="off" placeholder="Email or Username" required>
+                <input type="text" name="user_login" class="input" id="user_login" autocomplete="off" placeholder="Email or Username" value="jorellandrei12345@fit.edu.ph" required>
 
                 <!-- Password Input -->
                 <div class="password-wrap">
@@ -83,9 +75,7 @@
 
                 <input type="submit" class="button" value="Login">
             </form><!--.login-form-->
-            <div class="help-text">
-                <p><a href="{{ route('send-otp') }}">Forget your password?</a></p>
-            </div><!--.help-text-->
+
         </div><!--.login-tab-content-->
     </div><!--.tabs-content-->
 </div><!--.form-wrap-->

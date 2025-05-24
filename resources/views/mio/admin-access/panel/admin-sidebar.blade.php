@@ -15,6 +15,7 @@
                 ['route' => 'mio.subjects', 'icon' => 'bx bx-book-open', 'label' => 'Subjects'],
                 ['route' => 'mio.schedules', 'icon' => 'bx bx-calendar', 'label' => 'Schedule'],
                 ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
+                ['route' => 'mio.enrollment', 'icon' => 'bx bx-file', 'label' => 'Enrollment'],
             ],
             'Other' => [
                 ['route' => 'mio.ViewCMS', 'icon' => 'bx bx-chalkboard', 'label' => 'PID Website'],

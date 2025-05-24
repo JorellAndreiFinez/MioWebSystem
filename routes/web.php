@@ -67,15 +67,20 @@ Route::prefix('')->group(function () {
 
 
 Route::prefix('enrollment')->group(function () {
-    Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
 
-    Route::view('/send-otp', 'enrollment-panel.enrollment-panel', ['page' => 'send-otp'])->name('send-otp');
+    // Routes only accessible if NOT logged in
+    Route::middleware('enroll.guest')->group(function () {
+        Route::view('/login', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-login'])->name('enroll-login');
+        Route::post('/login', [EnrollController::class, 'login'])->name('enroll.login');
+        Route::post('/signup', [EnrollController::class, 'signup'])->name('enroll.signup');
+    });
 
-    Route::post('/signup', [EnrollController::class, 'signup'])->name('enroll.signup');
-    Route::post('/login', [EnrollController::class, 'login'])->name('enroll.login');
+    // Routes only accessible if logged in
+    Route::middleware('enroll.auth')->group(function () {
+        Route::get('/dashboard', [EnrollController::class, 'showDashboard'])->name('enroll-dashboard');
 
-    Route::middleware([EnrollAuthMiddleware::class])->group(function () {
-        Route::view('/dashboard', 'enrollment-panel.enrollment-panel', ['page' => 'enroll-dashboard'])->name('enroll-dashboard');
+        Route::get('/enrollment-form', [EnrollController::class, 'showEnrollmentForm'])->name('enroll-form');
+        Route::post('/enrollment-submit', [EnrollController::class, 'submitEnrollmentForm'])->name('enrollment.submit');
         Route::post('/logout', [EnrollController::class, 'logout'])->name('enroll.logout');
     });
 });
@@ -105,6 +110,12 @@ Route::prefix('mio/admin/')->middleware(
     Route::get('/PID/edit/{key}', [CmsController::class, 'editNav'])->name('cms.edit-nav');
 
     Route::POST('/PID/cms/homepage/update', [CMSController::class, 'updateCMSHomepage'])->name('cms.homepage.update');
+
+// ----------------  ENROLLMENT
+    Route::get('/enrollment', [EnrollController::class, 'showAdminEnrollment'])->name('enrollment');
+     Route::get('/enrollment/{id}', [EnrollController::class, 'viewAdminEnrollee'])->name('view-enrollee');
+    Route::delete('/enrollment/{id}', [EnrollController::class, 'deleteEnrollment'])->name('delete-enrollment');
+
 
 
 

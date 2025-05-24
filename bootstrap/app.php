@@ -4,6 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\RoleBasedAccess;
+use App\Http\Middleware\EnrollAuthMiddleware;
+use App\Http\Middleware\EnrollGuestMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,7 +17,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
         'firebase.auth' => \App\Http\Middleware\MobileAuthMiddleware::class,
-        'firebase.role' => \App\Http\Middleware\MobileRoleBasedAccessMiddleware::class
+        'firebase.role' => \App\Http\Middleware\MobileRoleBasedAccessMiddleware::class,
+        'enroll.auth' => EnrollAuthMiddleware::class,
+            'enroll.guest' => EnrollGuestMiddleware::class,
     ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
@@ -31,5 +35,8 @@ $app->middleware([
 $app->withMiddleware(function (Middleware $middleware) {
     $middleware->alias([
         'enroll.auth' => \App\Http\Middleware\EnrollAuthMiddleware::class,
+        'enroll.guest' => \App\Http\Middleware\EnrollGuestMiddleware::class,
     ]);
 });
+
+

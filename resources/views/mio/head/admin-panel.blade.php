@@ -26,6 +26,11 @@
     @elseif ($page === 'edit-teacher')
         @include('mio.admin-access.teacher.edit-teacher')
 
+    @elseif ($page === 'admin-enrollment')
+        @include('mio.admin-access.enrollment')
+    @elseif ($page === 'admin-enrollee')
+        @include('mio.admin-access.enrollment.view-enrollee')
+
     @elseif ($page === 'pid')
         @include('mio.admin-access.pid')
     @elseif ($page === 'edit-nav')

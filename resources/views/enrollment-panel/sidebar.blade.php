@@ -13,7 +13,7 @@
         $menuSections = [
             'Menu' => [
                 ['route' => 'enroll-dashboard', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
-
+                 ['route' => 'enroll-form', 'icon' => 'bx bx-file', 'label' => 'Enrollment'],
             ]
         ];
     @endphp

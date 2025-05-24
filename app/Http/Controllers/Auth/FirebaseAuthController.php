@@ -63,6 +63,8 @@ class FirebaseAuthController extends Controller
             ]);
         }
 
+
+
     // STUDENT - PAGE
         public function students() {
             // Fetch all users
