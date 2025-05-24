@@ -6,6 +6,7 @@ use App\Http\Middleware\MobileRoleBasedAccessMiddleware;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\api\StudentApiController;
 use App\Http\Controllers\api\TeacherApiController;
+use App\Http\Controllers\api\SpecializedActivityApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Session\Middleware\StartSession;
@@ -26,6 +27,8 @@ Route::middleware([
     Route::get('/subject/{subjectId}/scores', [StudentApiController::class, 'getSubjectScoresApi']);
     Route::get('/subject/{subjectId}/quizzes', [StudentApiController::class, 'getSubjectQuizzesApi']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
+    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedActivityApi::class, 'getSpeechActivities']);
+    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'getSpeechActivityById']);
 });
 
 Route::middleware([
@@ -43,4 +46,6 @@ Route::middleware([
     Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
 
     Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
+
+    Route::post('/subject/{subjectId}/specialized', [SpecializedActivityApi::class, 'createSpeechActivity']);
 });

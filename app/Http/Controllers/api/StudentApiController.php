@@ -9,6 +9,7 @@ use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use Carbon\Carbon;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Str;
 
 
 class StudentApiController extends Controller
@@ -307,6 +308,4 @@ class StudentApiController extends Controller
             ], 500);
         }
     }
-
-    
 }

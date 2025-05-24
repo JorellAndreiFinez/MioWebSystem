@@ -10,6 +10,7 @@ use Kreait\Firebase\ServiceAccount;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class TeacherApiController extends Controller
 {
@@ -309,31 +310,4 @@ class TeacherApiController extends Controller
             ], 500);
         }
     }
-
-    public function createSubjectSpecializedActivity(Request $request, string $subjectId){
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        try{
-            $validated = $request->validate([
-                'activity_type'  => ['required','in:picture,question,phrase,pronunciation'],
-                'difficulty'     => ['required','in:easy,medium,hard'],
-                'task_text'      => 'nullable|string|max:250',
-                'task_file'      => [
-                    'nullable',
-                    'file',
-                    Rule::requiredIf($request->input('activity_type') === 'picture'),
-                    'mimes:jpg,png,gif',
-                    'max:5120',
-                ],
-                'answer_text'    => 'nullable|string|max:250',
-            ]);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
 }
