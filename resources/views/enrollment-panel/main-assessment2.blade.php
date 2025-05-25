@@ -1,0 +1,233 @@
+@php
+$phrases = [
+    1 => 'cat',                        // Easy word
+    2 => 'bicycle',                   // Medium word
+    3 => 'extraordinary',             // Hard word
+    4 => 'The sun is bright.',       // Easy sentence
+    5 => 'Learning is a lifelong journey.', // Medium sentence
+];
+@endphp
+
+@php
+$auditoryAnswers = [
+    1 => 'dog',                    // Easy word
+    2 => 'helicopter',            // Medium word
+    3 => 'unbelievable',          // Hard word
+    4 => 'It is raining.',        // Easy short phrase
+    5 => 'She is my friend.',     // Easy short phrase
+];
+@endphp
+
+<section class="home-section">
+    <div class="text">Physical Evaluation</div>
+
+    <div class="evaluation-section" style="padding: 2rem; max-width: 800px; margin: auto;">
+        <h3>Reading Test</h3>
+        <p class="mb-4">Identifying words and phrases.</p>
+
+        <!-- Speech Test (5 Items) -->
+        <div class="card mb-5">
+            <h4>Speech Test</h4>
+            <p>Please speak the word or phrase shown. Your voice will be recorded.</p>
+
+            @for ($i = 1; $i <= 5; $i++)
+            <div class="speech-item">
+                <label>
+                    <strong>Item {{ $i }}:</strong>
+                    <span id="speech-phrase-{{ $i }}">{{ $phrases[$i] }}</span>
+                </label>
+                <div class="speech-controls">
+                    <div class="buttons">
+                        <button id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
+                        <button id="stop-btn-{{ $i }}" onclick="stopRecording({{ $i }})" class="btn btn-sm btn-danger" disabled>Stop</button>
+                    </div>
+                    <div id="waveform-{{ $i }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
+                    <button id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
+                </div>
+            </div>
+            @endfor
+        </div>
+
+            <!-- Auditory Test (5 Items) -->
+            <div class="card mb-5">
+                <h4>Auditory Test</h4>
+                <p>Listen to the audio and type what you hear.</p>
+
+                @for ($i = 1; $i <= 5; $i++)
+                    <div class="mb-3">
+                        <label><strong>Audio {{ $i }}:</strong></label>
+                        <div>
+                            <button onclick="playAuditory({{ $i }})" class="btn btn-sm btn-info">🔊 Play Audio</button>
+
+                           <input type="text" name="auditory_inputs[]" class="form-control mt-2" placeholder="Type what you heard...">
+
+                        </div>
+                    </div>
+                @endfor
+            </div>
+
+
+           <div style="text-align: right; margin-top: 2rem;">
+        <button id="submit-speechace" class="btn btn-primary">Submit to SpeechAce</button>
+        </div>
+    </div>
+</section>
+
+<!-- Replace with actual SpeechAce widget or API integration -->
+<script src="https://api.speechace.co/api/scoring/feedback/latest/js/speechace.min.js"></script>
+<script>
+const recordings = {}; // store audio blobs per item
+let mediaRecorder;
+let audioChunks = [];
+
+function startRecording(id) {
+    const startBtn = document.querySelector(`#start-btn-${id}`);
+    const stopBtn = document.querySelector(`#stop-btn-${id}`);
+
+    // Disable the button to prevent multiple clicks
+    startBtn.disabled = true;
+    startBtn.textContent = 'Recording...';
+    stopBtn.disabled = false;
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(stream => {
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                recordings[id] = audioBlob;
+
+                const waveformContainer = document.getElementById(`waveform-${id}`);
+                const playPauseBtn = document.getElementById(`play-pause-${id}`);
+
+                // Clear previous wavesurfer if exists
+                if (waveformContainer.wavesurfer) {
+                    waveformContainer.wavesurfer.destroy();
+                }
+
+                // Initialize Wavesurfer
+                const wavesurfer = WaveSurfer.create({
+                    container: waveformContainer,
+                    waveColor: '#4CAF50',
+                    progressColor: '#2E7D32',
+                    cursorColor: '#333',
+                    height: 80,
+                    responsive: true,
+                });
+
+                waveformContainer.wavesurfer = wavesurfer;
+
+                // Load audio blob
+                wavesurfer.loadBlob(audioBlob);
+
+                // Play/pause toggle
+                playPauseBtn.onclick = () => {
+                    wavesurfer.playPause();
+                };
+
+                // Show waveform and play button
+                waveformContainer.style.display = 'block';
+                playPauseBtn.style.display = 'inline-block';
+
+                // Reset buttons
+                const startBtn = document.querySelector(`#start-btn-${id}`);
+                const stopBtn = document.querySelector(`#stop-btn-${id}`);
+
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Recording';
+                stopBtn.disabled = true;
+                };
+
+
+            mediaRecorder.start();
+        })
+        .catch(error => {
+            alert('Microphone access denied or not supported.');
+            console.error(error);
+
+            // Re-enable button on error
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Recording';
+            stopBtn.disabled = true;
+        });
+}
+
+function stopRecording(id) {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+        mediaRecorder.stop();
+    }
+}
+
+document.getElementById('submit-speechace').addEventListener('click', () => {
+    // Check if all 5 recordings are done
+    for (let i = 1; i <= 5; i++) {
+        if (!recordings[i]) {
+            alert(`Please record phrase #${i} first.`);
+            return;
+        }
+    }
+
+    const formData = new FormData();
+
+    // Append all texts and audio files indexed, e.g. texts[1], user_audio_files[1]
+    for (let i = 1; i <= 5; i++) {
+        const audioBlob = recordings[i];
+        const text = document.getElementById('speech-phrase-' + i).textContent;
+
+        formData.append(`texts[]`, text);
+        formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
+    }
+
+    // Append all auditory answers
+    document.querySelectorAll('input[name="auditory_inputs[]"]').forEach(input => {
+    formData.append('auditory_inputs[]', input.value.trim());
+});
+
+
+    fetch('/enrollment/assessment/speechace/submit', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            // Don't set Content-Type to let browser handle multipart boundary
+        }
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log('SpeechAce batch response:', data);
+        // data is an array of results, show scores for each phrase
+        data.forEach((item, idx) => {
+            alert(`Pronunciation score for phrase #${idx + 1}: ` + (item.text_score?.speechace_score?.pronunciation ?? 'N/A'));
+        });
+    })
+    .catch(err => {
+        console.error('Error submitting batch to SpeechAce:', err);
+    });
+});
+
+
+
+
+</script>
+
+<script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+<script>
+    const auditoryTexts = {
+        1: "apple",
+        2: "helicopter",
+        3: "incredible",
+        4: "It is raining.",
+        5: "She is my friend."
+    };
+
+    function playAuditory(index) {
+        const text = auditoryTexts[index];
+        responsiveVoice.speak(text, "US English Female", { rate: 0.9 });
+    }
+</script>
+

@@ -36,19 +36,31 @@ class EnrollController extends Controller
     }
 
     public function showDashboard()
-{
-    $user = session('enrollment_user'); // existing user session data
+    {
+        $user = session('enrollment_user');
+        $enrollmentId = $user['ID'] ?? null;
 
+        $enrollStatus = $this->getEnrollStatus();
 
-    $enrollStatus = $this->getEnrollStatus();
+        $adminFeedback = null;
 
-    return view('enrollment-panel.enrollment-panel', [
-        'page' => 'enroll-dashboard',
-        'user' => $user,
-        'enrollStatus' => $enrollStatus,
-    ]);
-}
+        if ($enrollmentId) {
+            $enrolleeRef = $this->database->getReference("enrollment/enrollees/{$enrollmentId}");
+            $enrolleeSnapshot = $enrolleeRef->getSnapshot();
 
+            if ($enrolleeSnapshot->exists()) {
+                $enrolleeData = $enrolleeSnapshot->getValue();
+                $adminFeedback = $enrolleeData['feedback_admin'] ?? null;
+            }
+        }
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'enroll-dashboard',
+            'user' => $user,
+            'enrollStatus' => $enrollStatus,
+            'adminFeedback' => $adminFeedback, // 💡 pass to view
+        ]);
+    }
 
    public function getEnrollStatus()
     {
@@ -84,6 +96,77 @@ class EnrollController extends Controller
 
         // Return the enroll_status field if exists
         return $enrolleeData['enroll_status'] ?? null;
+    }
+
+    public function showAssessmentPage()
+    {
+        $user = session('enrollment_user');
+
+        if (!$user || !isset($user['ID'])) {
+            return redirect()->route('enroll-login')->with('error', 'Please log in first.');
+        }
+
+        $status = $user['enroll_status'] ?? null;
+
+        // ✅ Check if status is exactly 'Assessment'
+        if ($status !== 'Assessment') {
+            return redirect()->route('enroll-dashboard')->with('error', 'You are not yet eligible for the assessment.');
+
+        }
+
+        $assessment = $user['Assessment'] ?? null;
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'enroll-assessment',
+            'assessment' => $assessment,
+            'status' => $status,
+        ]);
+    }
+
+        public function startAssessment(Request $request)
+    {
+        // Correct session key
+        $userId = session('firebase_uid');
+
+        if (!$userId) {
+            return redirect()->back()->with('error', 'User session expired or invalid.');
+        }
+
+        $userRef = $this->database->getReference('enrollment/enrollees/' . $userId);
+        $user = $userRef->getValue();
+
+        if (!$user || ($user['enroll_status'] ?? null) !== 'Assessment') {
+            return redirect()->back()->with('error', 'You are not yet eligible for the assessment.');
+        }
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'main-assessment',
+            'user' => $user
+        ]);
+    }
+
+    public function mainAssessment2()
+    {
+        // Retrieve flash data from session (results passed from submit)
+        $speechResults = session('speech_results', []);
+        $auditoryResults = session('auditory_results', []);
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'main-assessment2',
+            'speech_results' => $speechResults,
+            'auditory_results' => $auditoryResults,
+        ]);
+    }
+
+
+
+
+    public function assessmentPhysical()
+    {
+        $userId = session('firebase_uid');
+        $user = $this->database->getReference('enrollment/enrollees/' . $userId)->getValue();
+
+        return view('enrollment-panel.pages.assessment.physical', compact('user'));
     }
 
 
@@ -410,6 +493,29 @@ public function logout(Request $request)
             'id' => $id
         ]);
     }
+
+    public function updateEnrolleeStatus(Request $request, $id)
+    {
+        $assessment = $request->input('feedback_admin');
+        $status = $request->input('enroll_status');
+
+        $enrolleeRef = $this->database->getReference('enrollment/enrollees/' . $id);
+
+        // Check if enrollee exists
+        if (!$enrolleeRef->getSnapshot()->exists()) {
+            return redirect()->route('mio.view-enrollee', ['id' => $id])->with('error', 'Enrollee not found.');
+        }
+
+        // Update fields
+        $enrolleeRef->update([
+            'feedback_admin' => $assessment,
+            'enroll_status' => $status
+        ]);
+
+        return redirect()->route('mio.view-enrollee', ['id' => $id])
+            ->with('success', 'Enrollee feedback and status updated successfully.');
+    }
+
 
 
 

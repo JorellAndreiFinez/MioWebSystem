@@ -26,7 +26,11 @@
 
     <script type="module" src="/firebase/firebase-config.js"></script>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/recorderjs/0.1.0/recorder.min.js"></script>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=TYOkBjpO"></script>
 
+
+<script src="https://unpkg.com/wavesurfer.js"></script>
 
     @include('mio.external-links')
 </head>
@@ -41,6 +45,17 @@
     @elseif ($page === 'enroll-form')
         @include('enrollment-panel.sidebar')
         @include('enrollment-panel.enrollment-form')
+    @elseif ($page === 'enroll-assessment')
+        @include('enrollment-panel.sidebar')
+        @include('enrollment-panel.enrollment-assessment')
+
+    @elseif ($page === 'main-assessment')
+        @include('enrollment-panel.sidebar')
+        @include('enrollment-panel.main-assessment')
+
+    @elseif ($page === 'main-assessment2')
+        @include('enrollment-panel.sidebar')
+        @include('enrollment-panel.main-assessment2')
     @endif
 
 

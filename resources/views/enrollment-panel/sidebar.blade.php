@@ -13,9 +13,11 @@
         $menuSections = [
             'Menu' => [
                 ['route' => 'enroll-dashboard', 'icon' => 'bx bx-grid-alt', 'label' => 'Dashboard'],
-                 ['route' => 'enroll-form', 'icon' => 'bx bx-file', 'label' => 'Enrollment'],
+                ['route' => 'enroll-form', 'icon' => 'bx bx-file', 'label' => 'Enrollment'],
+                ['route' => 'enroll-assessment', 'icon' => 'bx bx-task', 'label' => 'Assessment'],
             ]
         ];
+
     @endphp
 
     <ul class="nav-list">

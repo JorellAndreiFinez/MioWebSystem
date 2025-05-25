@@ -45,4 +45,9 @@ return [
         'measurement_id' => env('FIREBASE_MEASUREMENT_ID'),
 ],
 
+'speechace' => [
+    'key' => env('SPEECHACE_API_KEY'),
+    'endpoint' => env('SPEECHACE_API_ENDPOINT'),
+],
+
 ];
