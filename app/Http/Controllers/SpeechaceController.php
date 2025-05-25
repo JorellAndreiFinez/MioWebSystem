@@ -168,11 +168,5 @@ class SpeechaceController extends Controller
             'success' => true,
             'redirect_url' => route('enroll.assessment.reading')
         ]);
-
-
     }
-
-
-
-
-    }
+}

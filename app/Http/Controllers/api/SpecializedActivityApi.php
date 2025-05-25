@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
+use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Log;
 
 class SpecializedActivityApi extends Controller
 {
@@ -40,6 +42,50 @@ class SpecializedActivityApi extends Controller
         $announcementId = "{$prefix}{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
 
         return $announcementId;
+    }
+
+    private function pronunciationScoreApi(string $audioPath, string $word): array
+    {
+        $audioPath = Str::after($audioPath, 'public/');
+
+        if (! Storage::disk('public')->exists($audioPath)) {
+            return [];
+        }
+        $filePath = Storage::disk('public')->path($audioPath);
+
+        $client = new Client([
+            'base_uri' => 'https://api2.speechace.com',
+            'timeout'  => 30,
+        ]);
+
+        try {
+            $response = $client->request('POST', '/api/scoring/text/v9/json', [
+                'query'     => [
+                    'key'     => env('SPEECHACE_API_KEY'),
+                    'dialect' => 'en-us',
+                    'user_id' => 'XYZ-ABC-99001',
+                ],
+                'multipart' => [
+                    [
+                        'name'     => 'text',
+                        'contents' => $word,
+                    ],
+                    [
+                        'name'     => 'user_audio_file',
+                        'contents' => fopen($filePath, 'r'),
+                        'filename' => basename($filePath),
+                    ],
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+            // return the nested “score” object or an empty array
+            return $data['text_score'] ?? [];
+        } catch (RequestException $e) {
+            // log and swallow
+            Log::error('Speechace API failure', ['err' => $e->getMessage()]);
+            return [];
+        }
     }
 
     private function checkAttempts(string $gradeLevel, string $userId, string $activityId, string $activityType, string $subjectId){
@@ -240,96 +286,188 @@ class SpecializedActivityApi extends Controller
         string $attemptId,
         string $flashcardId
     ) {
-        try{
-            $gradeLevel = $request->get('firebase_user_gradeLevel');
-            $userId = $request->get('firebase_user_id');
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId     = $request->get('firebase_user_id');
 
-            $validated = $request->validate([
-                'audio_file' => ['required','file']
-            ]);
+        $request->validate([
+            'audio_file' => ['required', 'file'],
+        ]);
 
-            $file = $request->file('audio_file');
+        $file = $request->file('audio_file');
+        $uuid = (string) Str::uuid();
+        $filename = "{$uuid}.wav";
+        $path = $file->storeAs('audio_submissions', $filename, 'public');
+        $now = now()->toDateTimeString();
 
-            $uuid     = (string) Str::uuid();
-            $extension = 'wav';
-            $filename  = "{$uuid}.{$extension}";
-            $path      = $file->storeAs('audio_submissions', $filename, 'public');
-            $date  = now()->toDateTimeString();
+        $basePath = "subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}";
+        $ref = $this->database->getReference($basePath);
 
-            $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}");
-            $attempt = $ref->getSnapshot()->getValue() ?? [];
+        $attempt = $ref->getSnapshot()->getValue() ?? [];
+        $answers = $attempt['answers'] ?? [];
 
-            $answers = $attempt['answers'] ?? [];
-
-            foreach ($answers as $idx => $entry) {
-                if (isset($entry['flashcard_id']) && $entry['flashcard_id'] === $flashcardId) {
-                    $answers[$idx]['audio_path']  = $path;
-                    $answers[$idx]['updated_at']  = $date;
-                    break;
-                }
+        $found = false;
+        foreach ($answers as $idx => $entry) {
+            if ($entry['flashcard_id'] === $flashcardId) {
+                $answers[$idx]['audio_path'] = $path;
+                $answers[$idx]['updated_at'] = $now;
+                $found = true;
+                break;
             }
+        }
 
-            $ref->update([
-                'answers'     => $answers,
-                'updated_at'  => $date,
-            ]);
-
-            return response()->json([
-                'success'      => true,
-                'message' => "Successfully saved answer",
-                'file' => $validated['audio_file']
-            ], 200);
-        }catch (\Exception $e) {
+        if (!$found) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
-            ], 500);
+                'error'   => 'Flashcard not found for this attempt'
+            ], 404);
         }
+
+        $ref->getChild('answers')->set($answers);
+
+        return response()->json([
+            'success'     => true,
+            'message'     => 'Answer submitted successfully',
+            'flashcardId' => $flashcardId,
+            'audio_path'  => $path,
+        ], 200);
     }
 
     public function submitActivity(
-        Request $request, 
-        string $subjectId, 
-        string $activityType, 
-        string $difficulty, 
-        string $activityId, 
-        string $attemptId, 
-    ){
-    
+        Request $request,
+        string $subjectId,
+        string $activityType,
+        string $difficulty,
+        string $activityId,
+        string $attemptId
+    ) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId = $request->get('firebase_user_id');
+        $userId     = $request->get('firebase_user_id');
+        $now        = now()->toDateTimeString();
 
-        $date = now()->toDateTimeString();
+        $attemptPath = "subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}";
+        $attemptRef = $this->database->getReference($attemptPath);
+        $attemptRef->update([
+            'status'       => 'submitted',
+            'submitted_at' => $now,
+        ]);
 
-        $updateData = [
-            'status' => 'submitted',
-            'submitted_at' => $date
+        $flashcards = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}/flashcards")
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+        $answers = $attemptRef
+            ->getChild('answers')
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+        $totalScore  = 0;
+        $count       = count($flashcards);
+        $scoreData   = [];
+        $audio_paths = [];
+        $words       = [];
+
+        foreach ($flashcards as $idx => $card) {
+            $flashcardId = $card['flashcard_id'] ?? (string)$idx;
+            $word        = $card['word'] ?? '';
+            $audioPath   = $answers[$idx]['audio_path'] ?? null;
+
+            $words[] = $word;
+            $audio_paths[] = $audioPath;
+
+            $cardScore = 0;
+            if ($audioPath) {
+                $response = $this->pronunciationScoreApi($audioPath, $word);
+
+                if (!empty($response['word_score_list'])) {
+                    $cardScore = $response['word_score_list'][0]['quality_score'] ?? 0;
+                }
+
+                $scoreData[$flashcardId] = $response;
+            }
+
+
+            $totalScore += $cardScore;
+
+            $answers[$idx]['score'] = $cardScore;
+            $answers[$idx]['scored_at'] = $now;
+        }
+
+        $average = $count > 0 ? round($totalScore / $count, 2) : 0;
+
+        $attemptRef->getChild('answers')->set($answers);
+
+        $grades = [
+            $attemptId => [
+                'totalScore' => $totalScore,
+                'average'    => $average,
+                'count'      => $count,
+                'details'    => $scoreData,
+                'scored_at'  => $now,
+            ]
         ];
 
-        $submitAttempt =  $this->database
-        ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
-        ->update($updateData);
+        $scoresRef = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/scores/${userId}/{$activityId}");
+        $scoresRef->set($grades);
 
         return response()->json([
             'success' => true,
-            'message' => "successfully submitted",
-        ],200);
+            'message' => 'Activity scored and saved successfully.',
+            'score' => $totalScore,
+            'average' => $average,
+            'totalItems' => $count,
+            'audio_paths' => $audio_paths,
+            'words' => $words,
+        ], 200);
     }
 
-    public function scoring(Request $request){
-        $apiKey = config('services.speechace.key');
-        $url    = "https://api.speechace.co/api/scoring/text/v9/json?key={$apiKey}";
-
+    public function getActivityScore(
+        Request $request,
+        string $subjectId,
+        string $activityId,
+        string $attemptId
+    ) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId = $request->get('firebase_user_id');
+        $userId     = $request->get('firebase_user_id');
+
+        $scores = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/scores/{$userId}/{$activityId}/{$attemptId}")
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+        if (empty($scores)) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'No scores found for this attempt.'
+            ], 404);
+        }
+
+        $detailedScores = [];
+        foreach ($scores['details'] as $flashcardId => $detail) {
+            $firstWord = "";
+            $firstWordScore = 0;
+
+            if (!empty($detail['word_score_list'][0]['word'])) {
+                $firstWord = $detail['word_score_list'][0]['word'];
+            }
+            
+            if (!empty($detail['word_score_list'][0]['quality_score'])) {
+                $firstWordScore = $detail['word_score_list'][0]['quality_score'];
+            }
+
+            $detailedScores[$flashcardId] = [
+                'word' => $firstWord,
+                'pronunciation_score' => $firstWordScore
+            ];
+        }
         
-
-        $request->validate([
-            'text' => 'required|string',
-            'user_audio_file' => 'required|file|mimes:wav,mp3,webm,wav',
-        ]);
-
-        $apiKey = config('services.speechace.key');
-        $url    = "https://api.speechace.co/api/scoring/text/v9/json?key={$apiKey}";
+        return response()->json([
+            'success' => true,
+            'average' => $scores['average']   ?? 0,
+            'totalScore' => $scores['totalScore'] ?? 0,
+            'totalItems' => $scores['count']     ?? 0,
+            'detailedScores' => $detailedScores,
+        ], 200);
     }
 }
