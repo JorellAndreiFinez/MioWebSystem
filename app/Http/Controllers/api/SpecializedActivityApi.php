@@ -317,12 +317,19 @@ class SpecializedActivityApi extends Controller
     }
 
     public function scoring(Request $request){
+        $apiKey = config('services.speechace.key');
+        $url    = "https://api.speechace.co/api/scoring/text/v9/json?key={$apiKey}";
+
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
+        
 
         $request->validate([
-        'text' => 'required|string',
-        'user_audio_file' => 'required|file|mimes:wav,mp3,webm,wav',
+            'text' => 'required|string',
+            'user_audio_file' => 'required|file|mimes:wav,mp3,webm,wav',
         ]);
+
+        $apiKey = config('services.speechace.key');
+        $url    = "https://api.speechace.co/api/scoring/text/v9/json?key={$apiKey}";
     }
 }
