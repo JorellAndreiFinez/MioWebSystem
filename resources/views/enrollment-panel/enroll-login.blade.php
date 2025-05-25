@@ -65,7 +65,7 @@
         <div id="login-tab-content" class="active">
             <form class="login-form" action="{{ route('enroll.login') }}" method="post">
                 @csrf
-                <input type="text" name="user_login" class="input" id="user_login" autocomplete="off" placeholder="Email or Username" value="jorellandrei12345@fit.edu.ph" required>
+                <input type="text" name="user_login" class="input" id="user_login" autocomplete="off" placeholder="Email or Username" value="" required>
 
                 <!-- Password Input -->
                 <div class="password-wrap">

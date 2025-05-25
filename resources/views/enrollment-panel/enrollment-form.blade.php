@@ -223,7 +223,7 @@
         </form>
         </div>
 
-    @elseif($status === 'Registered')
+    @elseif($status === 'Registered' || $status === 'Assessment' || $status === 'Enrolled')
 
          <div class="form-container">
          <!-- Personal Information Section -->

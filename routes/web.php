@@ -14,6 +14,7 @@ use App\Http\Controllers\Enrollment\EnrollController;
 use App\Http\Controllers\FirebaseConnectionController;
 use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\SectionController;
+use App\Http\Controllers\SpeechaceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
@@ -82,6 +83,14 @@ Route::prefix('enrollment')->group(function () {
         Route::get('/enrollment-form', [EnrollController::class, 'showEnrollmentForm'])->name('enroll-form');
         Route::post('/enrollment-submit', [EnrollController::class, 'submitEnrollmentForm'])->name('enrollment.submit');
         Route::post('/logout', [EnrollController::class, 'logout'])->name('enroll.logout');
+
+        Route::get('/enroll-assessment', [EnrollController::class, 'showAssessmentPage'])->name('enroll-assessment');
+
+        Route::get('/start-assessment', [EnrollController::class, 'startAssessment'])->name('enroll.assessment.start');
+
+        Route::get('/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
+
+
     });
 });
 
@@ -114,7 +123,8 @@ Route::prefix('mio/admin/')->middleware(
 // ----------------  ENROLLMENT
     Route::get('/enrollment', [EnrollController::class, 'showAdminEnrollment'])->name('enrollment');
      Route::get('/enrollment/{id}', [EnrollController::class, 'viewAdminEnrollee'])->name('view-enrollee');
-    Route::delete('/enrollment/{id}', [EnrollController::class, 'deleteEnrollment'])->name('delete-enrollment');
+
+     Route::put('/enrollment/update/{id}', [EnrollController::class, 'updateEnrolleeStatus'])->name('update-enrollee');
 
 
 

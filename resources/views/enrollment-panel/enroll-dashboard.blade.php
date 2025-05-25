@@ -2,6 +2,11 @@
 <section class="home-section">
       <div class="text">Enrollment Dashboard</div>
         <main class="main-banner">
+                @if(session('error'))
+                <div class="alert alert-danger">
+                    {{ session('error') }}
+                </div>
+            @endif
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
@@ -20,36 +25,46 @@
     <div class="dashboard-grid">
 
         <div class="status-cards">
-            <div class="card revision">
-                <div class="status-indicator
-                {{  $enrollStatus === 'Registered' ? 'yellow' : '' }}
-                {{ $enrollStatus === 'Revision' ? 'red' : '' }}">
-            </div>
 
-                <div class="card-content">
-                <h3>Registration</h3>
-                <p>Enrollment Form</p>
+    <!-- Registration -->
+    <div class="card revision">
+        <div class="status-indicator
+            {{ $enrollStatus === 'Assessment' ? 'green' : '' }}
+            {{ $enrollStatus === 'Revision' ? 'yellow' : '' }}
+            {{ $enrollStatus === 'Rejected' ? 'red' : '' }}">
+        </div>
+        <div class="card-content">
+            <h3>Registration</h3>
+            <p>Enrollment Form</p>
+        </div>
+    </div>
 
-                </div>
-            </div>
-            <div class="card">
-                <div class="status-indicator"></div>
-                <div class="card-content">
-                <h3>Evaluation</h3>
-                <p>Assessment Activity</p>
-                </div>
-            </div>
-            <div class="card">
-                <div class="status-indicator"></div>
-                <div class="card-content">
-                <h3>Conclusion</h3>
-                <p>Enrollee Verification</p>
-                </div>
-            </div>
-            </div>
+    <!-- Evaluation -->
+    <div class="card">
+        <div class="status-indicator
+            {{ $enrollStatus === 'Assessment' ? 'yellow' : '' }}
+            {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
+            {{ $enrollStatus === 'Failed' ? 'red' : '' }}">
+        </div>
+        <div class="card-content">
+            <h3>Evaluation</h3>
+            <p>Assessment Activity</p>
+        </div>
+    </div>
+
+    <!-- Conclusion (Optional: Add logic here too if needed later) -->
+    <div class="card">
+        <div class="status-indicator"></div>
+        <div class="card-content">
+            <h3>Conclusion</h3>
+            <p>Enrollee Verification</p>
+        </div>
+    </div>
+</div>
+
 
             <!-- admin feedback here -->
-            <div class="admin-feedback-banner">
+            <div class="admin-feedback-banner" style="margin-bottom: 3rem;">
             <h3 style="font-weight: 700;">Enrollment Feedback</h3>
             @if(!empty($adminFeedback))
                 <p>{{ $adminFeedback }}</p>
