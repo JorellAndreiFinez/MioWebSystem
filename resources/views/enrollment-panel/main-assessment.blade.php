@@ -26,7 +26,9 @@ $auditoryAnswers = [
         <p class="mb-4">Identifying words and phrases.</p>
 
         <!-- Speech Test (5 Items) -->
-        <div class="card mb-5">
+        <form id="speech-auditory-form" action="{{ route('assessment.speechace.submit') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+                 <div class="card mb-5">
             <h4>Speech Test</h4>
             <p>Please speak the word or phrase shown. Your voice will be recorded.</p>
 
@@ -38,11 +40,11 @@ $auditoryAnswers = [
                 </label>
                 <div class="speech-controls">
                     <div class="buttons">
-                        <button id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
-                        <button id="stop-btn-{{ $i }}" onclick="stopRecording({{ $i }})" class="btn btn-sm btn-danger" disabled>Stop</button>
+                        <button type="button" id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
+                        <button type="button" id="stop-btn-{{ $i }}" onclick="stopRecording({{ $i }})" class="btn btn-sm btn-danger" disabled>Stop</button>
                     </div>
                     <div id="waveform-{{ $i }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
-                    <button id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
+                    <button type="button" id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
                 </div>
             </div>
             @endfor
@@ -57,7 +59,7 @@ $auditoryAnswers = [
                     <div class="mb-3">
                         <label><strong>Audio {{ $i }}:</strong></label>
                         <div>
-                            <button onclick="playAuditory({{ $i }})" class="btn btn-sm btn-info">🔊 Play Audio</button>
+                           <button type="button" onclick="playAuditory({{ $i }})" class="btn btn-sm btn-info">🔊 Play Audio</button>
 
                            <input type="text" name="auditory_inputs[]" class="form-control mt-2" placeholder="Type what you heard...">
 
@@ -65,11 +67,13 @@ $auditoryAnswers = [
                     </div>
                 @endfor
             </div>
-
-
-           <div style="text-align: right; margin-top: 2rem;">
-        <button id="submit-speechace" class="btn btn-primary">Next</button>
+            <div style="text-align: right; margin-top: 2rem;">
+        <button type="submit" id="submit-speechace" class="btn btn-primary">Next</button>
         </div>
+        </form>
+
+
+
     </div>
 </section>
 
@@ -163,66 +167,65 @@ function stopRecording(id) {
     }
 }
 
-document.getElementById('submit-speechace').addEventListener('click', () => {
+document.getElementById('speech-auditory-form').addEventListener('submit', function(e) {
+    e.preventDefault();
 
-    const confirmed = confirm("Are you sure your answers are final? You won't be able to go back.");
-
-    if(confirmed) {
-
-        // Disable the button to prevent multiple clicks
-        this.disabled = true;
-        this.textContent = 'Submitting...';
-
-           // Check if all 5 recordings are done
-    for (let i = 1; i <= 5; i++) {
-        if (!recordings[i]) {
-            alert(`Please record phrase #${i} first.`);
-            return;
-        }
+    if (!confirm("Are you sure your answers are final? You won't be able to go back.")) {
+        return;
     }
+
+    const submitBtn = document.getElementById('submit-speechace');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
 
     const formData = new FormData();
 
-    // Append all texts and audio files indexed, e.g. texts[1], user_audio_files[1]
+    // Append speech texts and audio blobs
     for (let i = 1; i <= 5; i++) {
         const audioBlob = recordings[i];
         const text = document.getElementById('speech-phrase-' + i).textContent;
 
         formData.append(`texts[]`, text);
-        formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
+        if (audioBlob) {
+            formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
+        } else {
+            // No recording for this item, maybe alert or handle accordingly
+            alert(`Please record phrase #${i} first.`);
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Next';
+            return;
+        }
     }
 
-    // Append all auditory answers
+    // Append auditory answers
     document.querySelectorAll('input[name="auditory_inputs[]"]').forEach(input => {
-    formData.append('auditory_inputs[]', input.value.trim());
-});
+        formData.append('auditory_inputs[]', input.value.trim());
+    });
 
-
-
-    fetch('/enrollment/assessment/speechace/submit', {
+    fetch(this.action, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            // Don't set Content-Type to let browser handle multipart boundary
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
         }
     })
     .then(res => res.json())
     .then(data => {
-        console.log('SpeechAce batch response:', data);
-        // data is an array of results, show scores for each phrase
         data.forEach((item, idx) => {
             alert(`Pronunciation score for phrase #${idx + 1}: ` + (item.text_score?.speechace_score?.pronunciation ?? 'N/A'));
         });
-        if (data.success && data.redirect_url) {
-            window.location.href = data.redirect_url;
+
+        let redirectUrl = data.redirect_url || '/enrollment/assessment/reading-test';
+        if (redirectUrl.endsWith('?')) {
+            redirectUrl = redirectUrl.slice(0, -1);
         }
+
+        window.location.href = redirectUrl;
     })
     .catch(err => {
-        console.error('Error submitting batch to SpeechAce:', err);
+        console.error('Error:', err);
+        window.location.href = '/enrollment/assessment/reading-test';
     });
-    }
-
 });
 
 

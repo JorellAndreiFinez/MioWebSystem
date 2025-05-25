@@ -162,13 +162,12 @@ class SpeechaceController extends Controller
             }
         }
 
-        return response()->json([
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'main-assessment2',
             'speech_results' => $results,
             'auditory_results' => $auditoryResults,
-            'success' => true,
-            'redirect_url' => route('enroll.assessment.reading')
-        ]);
-
+            ]);
 
     }
 
