@@ -31,6 +31,17 @@ Route::middleware([
     Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'getSpeechActivityById']);
 });
 
+
+Route::middleware([
+    StartSession::class,
+    'firebase.auth',
+    'firebase.role:student'
+])->group(function() {
+    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'takeActivity']);
+    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}/{flashcardId}', [SpecializedActivityApi::class, 'updateActivity']);
+    Route::patch('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'submitActivity']);
+});
+
 Route::middleware([
     StartSession::class,
     'firebase.auth',
