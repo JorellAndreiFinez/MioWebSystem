@@ -124,26 +124,26 @@ class EnrollController extends Controller
     }
 
         public function startAssessment(Request $request)
-    {
-        // Correct session key
-        $userId = session('firebase_uid');
+        {
+            // Correct session key
+            $userId = session('firebase_uid');
 
-        if (!$userId) {
-            return redirect()->back()->with('error', 'User session expired or invalid.');
+            if (!$userId) {
+                return redirect()->back()->with('error', 'User session expired or invalid.');
+            }
+
+            $userRef = $this->database->getReference('enrollment/enrollees/' . $userId);
+            $user = $userRef->getValue();
+
+            if (!$user || ($user['enroll_status'] ?? null) !== 'Assessment') {
+                return redirect()->back()->with('error', 'You are not yet eligible for the assessment.');
+            }
+
+            return view('enrollment-panel.enrollment-panel', [
+                'page' => 'main-assessment',
+                'user' => $user
+            ]);
         }
-
-        $userRef = $this->database->getReference('enrollment/enrollees/' . $userId);
-        $user = $userRef->getValue();
-
-        if (!$user || ($user['enroll_status'] ?? null) !== 'Assessment') {
-            return redirect()->back()->with('error', 'You are not yet eligible for the assessment.');
-        }
-
-        return view('enrollment-panel.enrollment-panel', [
-            'page' => 'main-assessment',
-            'user' => $user
-        ]);
-    }
 
     public function mainAssessment2()
     {

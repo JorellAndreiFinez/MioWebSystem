@@ -88,9 +88,15 @@ Route::prefix('enrollment')->group(function () {
 
         Route::get('/start-assessment', [EnrollController::class, 'startAssessment'])->name('enroll.assessment.start');
 
-        Route::get('/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
+        Route::get('/assessment/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
 
-
+        // ASSESSMENT ROUTES
+        Route::prefix('assessment')->name('assessment.')->group(function () {
+            Route::get('/physical', [EnrollController::class, 'assessmentPhysical'])->name('physical');
+            Route::get('/written', [EnrollController::class, 'assessmentWritten'])->name('written');
+            Route::get('/achievement', [EnrollController::class, 'assessmentAchievement'])->name('achievement');
+            Route::post('/submit', action: [SpeechaceController::class, 'submit'])->name('speechace.submit');
+        });
     });
 });
 

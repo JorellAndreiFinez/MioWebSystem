@@ -22,11 +22,13 @@ $auditoryAnswers = [
     <div class="text">Physical Evaluation</div>
 
     <div class="evaluation-section" style="padding: 2rem; max-width: 800px; margin: auto;">
-        <h3>Reading Test</h3>
+        <h3>Speech & Auditory Test</h3>
         <p class="mb-4">Identifying words and phrases.</p>
 
         <!-- Speech Test (5 Items) -->
-        <div class="card mb-5">
+        <form id="speech-auditory-form" action="{{ route('assessment.speechace.submit') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+                 <div class="card mb-5">
             <h4>Speech Test</h4>
             <p>Please speak the word or phrase shown. Your voice will be recorded.</p>
 
@@ -65,11 +67,13 @@ $auditoryAnswers = [
                     </div>
                 @endfor
             </div>
-
-
-           <div style="text-align: right; margin-top: 2rem;">
-        <button id="submit-speechace" class="btn btn-primary">Submit to SpeechAce</button>
+            <div style="text-align: right; margin-top: 2rem;">
+        <button type="submit" id="submit-speechace" class="btn btn-primary">Next</button>
         </div>
+        </form>
+
+
+
     </div>
 </section>
 
@@ -163,50 +167,64 @@ function stopRecording(id) {
     }
 }
 
-document.getElementById('submit-speechace').addEventListener('click', () => {
-    // Check if all 5 recordings are done
-    for (let i = 1; i <= 5; i++) {
-        if (!recordings[i]) {
-            alert(`Please record phrase #${i} first.`);
-            return;
-        }
+document.getElementById('speech-auditory-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    if (!confirm("Are you sure your answers are final? You won't be able to go back.")) {
+        return;
     }
+
+    const submitBtn = document.getElementById('submit-speechace');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
 
     const formData = new FormData();
 
-    // Append all texts and audio files indexed, e.g. texts[1], user_audio_files[1]
-    for (let i = 1; i <= 5; i++) {
-        const audioBlob = recordings[i];
-        const text = document.getElementById('speech-phrase-' + i).textContent;
+    // // Append speech texts and audio blobs
+    // for (let i = 1; i <= 5; i++) {
+    //     const audioBlob = recordings[i];
+    //     const text = document.getElementById('speech-phrase-' + i).textContent;
 
-        formData.append(`texts[]`, text);
-        formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
-    }
+    //     formData.append(`texts[]`, text);
+    //     if (audioBlob) {
+    //         formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
+    //     } else {
+    //         // No recording for this item, maybe alert or handle accordingly
+    //         alert(`Please record phrase #${i} first.`);
+    //         submitBtn.disabled = false;
+    //         submitBtn.textContent = 'Next';
+    //         return;
+    //     }
+    // }
 
-    // Append all auditory answers
+    // Append auditory answers
     document.querySelectorAll('input[name="auditory_inputs[]"]').forEach(input => {
-    formData.append('auditory_inputs[]', input.value.trim());
-});
+        formData.append('auditory_inputs[]', input.value.trim());
+    });
 
-
-    fetch('/enrollment/assessment/speechace/submit', {
+    fetch(this.action, {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            // Don't set Content-Type to let browser handle multipart boundary
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
         }
     })
     .then(res => res.json())
     .then(data => {
-        console.log('SpeechAce batch response:', data);
-        // data is an array of results, show scores for each phrase
         data.forEach((item, idx) => {
             alert(`Pronunciation score for phrase #${idx + 1}: ` + (item.text_score?.speechace_score?.pronunciation ?? 'N/A'));
         });
+
+        let redirectUrl = data.redirect_url || '/enrollment/assessment/reading-test';
+        if (redirectUrl.endsWith('?')) {
+            redirectUrl = redirectUrl.slice(0, -1);
+        }
+
+        window.location.href = redirectUrl;
     })
     .catch(err => {
-        console.error('Error submitting batch to SpeechAce:', err);
+        console.error('Error:', err);
+        window.location.href = '/enrollment/assessment/reading-test';
     });
 });
 

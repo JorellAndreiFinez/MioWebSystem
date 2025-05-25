@@ -7,6 +7,8 @@
     <title>Enrollment Panel</title>
 
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/1.2.2 home-pid.png/') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
 
     @vite(['resources/css/EnrollPanel/enrollment-panel.css', 'resources/css/Mio/mio-app.css'])
 
