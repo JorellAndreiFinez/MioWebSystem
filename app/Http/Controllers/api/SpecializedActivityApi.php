@@ -48,9 +48,10 @@ class SpecializedActivityApi extends Controller
     {
         $audioPath = Str::after($audioPath, 'public/');
 
-        if (! Storage::disk('public')->exists($audioPath)) {
+        if (!Storage::disk('public')->exists($audioPath)) {
             return [];
         }
+
         $filePath = Storage::disk('public')->path($audioPath);
 
         $client = new Client([
@@ -60,7 +61,7 @@ class SpecializedActivityApi extends Controller
 
         try {
             $response = $client->request('POST', '/api/scoring/text/v9/json', [
-                'query'     => [
+                'query' => [
                     'key'     => env('SPEECHACE_API_KEY'),
                     'dialect' => 'en-us',
                     'user_id' => 'XYZ-ABC-99001',
@@ -78,11 +79,37 @@ class SpecializedActivityApi extends Controller
                 ],
             ]);
 
-            $data = json_decode($response->getBody(), true);
-            // return the nested “score” object or an empty array
-            return $data['text_score'] ?? [];
+            $decoded = json_decode($response->getBody(), true);
+
+            $cleaned = [
+                'text' => $decoded['text_score']['text'] ?? '',
+                'overall_quality_score' => $decoded['text_score']['overall_quality_score'] ?? null,
+                'ending_punctuation' => $decoded['text_score']['ending_punctuation'] ?? null,
+                'ielts_pronunciation_score' => $decoded['text_score']['ielts_score']['pronunciation'] ?? null,
+                'pte_pronunciation_score' => $decoded['text_score']['pte_score']['pronunciation'] ?? null,
+                'toeic_pronunciation_score' => $decoded['text_score']['toeic_score']['pronunciation'] ?? null,
+                'cefr_pronunciation_score' => $decoded['text_score']['cefr_score']['pronunciation'] ?? null,
+                'speechace_pronunciation_score' => $decoded['text_score']['speechace_score']['pronunciation'] ?? null,
+                'version' => $decoded['version'] ?? null,
+                'request_id' => $decoded['request_id'] ?? null,
+                'words' => [],
+                'timestamp' => now()->toDateTimeString(),
+            ];
+
+            if (!empty($decoded['text_score']['word_score_list'])) {
+                foreach ($decoded['text_score']['word_score_list'] as $wordData) {
+                    $cleaned['words'][] = [
+                        'word' => $wordData['word'] ?? '',
+                        'quality_score' => $wordData['quality_score'] ?? null,
+                        'phones' => $wordData['phone_score_list'] ?? [],
+                        'syllables' => $wordData['syllable_score_list'] ?? [],
+                    ];
+                }
+            }
+
+            return $cleaned;
+
         } catch (RequestException $e) {
-            // log and swallow
             Log::error('Speechace API failure', ['err' => $e->getMessage()]);
             return [];
         }
@@ -222,9 +249,10 @@ class SpecializedActivityApi extends Controller
         $startedAt   = now()->toDateTimeString();
 
         $studentAnswers = [];
-        foreach ($flashcards as $card) {
+        foreach ($flashcards as $idx => $card) {
             $studentAnswers[$card['flashcard_id']] = [
-                'word'       => $card['word'],
+                'card_no' => $idx,
+                'word' => $card['word'],
                 'audio_path' => null,
             ];
         }
@@ -280,10 +308,14 @@ class SpecializedActivityApi extends Controller
             $path = $file->storeAs('audio_submissions', $filename, 'public');
             $now = now()->toDateTimeString();
 
+            $word = $answers[$flashcardId]['word'];
+            $pronunciation_score = $this->pronunciationScoreApi($path, );
+
             $updatedAnswer = [
-                'word'         => $answers[$flashcardId]['word'],
+                'word'         => $word,
                 'audio_path'   => $path,
                 'answered_at'  => $now,
+                'pronunciation_score' => $pronunciation_score,
             ];
 
             $answersRef
