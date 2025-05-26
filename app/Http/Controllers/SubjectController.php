@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use Carbon\Carbon;
+
 
 class SubjectController extends Controller
 {
@@ -27,6 +29,18 @@ class SubjectController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+    }
+
+    private function generateUniqueId(string $prefix): string
+    {
+        $now = now();
+        $currentYear = $now->year;
+        $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT);
+        $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT);
+        $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+        $announcementId = "{$prefix}{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+
+        return $announcementId;
     }
 
      // Fetch grade levels from Firebase and display them in the view
@@ -54,254 +68,6 @@ class SubjectController extends Controller
             'gradeLevel' => $gradeLevel
         ], compact('subjects', 'grade'));
     }
-
-    public function viewSubjectsApi(Request $request)
-    {
-        // Retrieve the Firebase user ID from the request
-        $uid = $request->get('firebase_user');
-
-        if (!$uid) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User ID is missing.',
-            ], 400);
-        }
-
-        // Fetch user data from Firebase
-        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User data or grade level not found.',
-            ], 404);
-        }
-
-        // Fetch subjects by grade level
-        $subjects = $this->database
-            ->getReference("subjects/GR" . $gradeLevel)
-            ->getSnapshot()
-            ->getValue() ?? [];
-
-        // Filter subjects by subject ID, section, title, and description
-        $filteredSubjects = [];
-        foreach ($subjects as $subjectId => $subjectData) {
-            $filteredSubjects[] = [
-                'subject_id' => $subjectId,
-                'section' => $subjectData['code'] ?? null,
-                'title' => $subjectData['title'] ?? null,
-                'description' => $subjectData['modules']['MOD00']['description'] ?? null,
-                'subjectType' => $subjectData['subjectType'] ?? null,
-            ];
-        }
-
-        // Return a RESTful API response
-        return response()->json([
-            'success' => true,
-            'subjects' => $filteredSubjects,
-        ], 200);
-    }
-
-    public function getSubjectModulesApi(Request $request, string $subjectId)
-    {
-        $uid = $request->get('firebase_user');
-
-        if (!$subjectId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Subject ID is required.',
-
-            ], 400);
-        }
-
-        if (!$uid) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User ID is missing.',
-            ], 400);
-        }
-
-        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User data or grade level not found.',
-            ], 404);
-        }
-
-
-        $modules = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/modules")
-            ->getSnapshot()
-            ->getValue()
-            ?? [];
-
-        $filteredmodules = [];
-
-        if (!empty($modules) && is_array($modules)) {
-            foreach ($modules as $key => $item) {
-                $filteredmodules[] = [
-                    'module_id' => $key,
-                    'title' => $item['title'] ?? null,
-                ];
-            }
-        }
-
-        return response()->json([
-            'success' => true,
-            'modules' => $filteredmodules,
-        ], 200);
-    }
-
-    public function getSubjectAnnouncementsApi(Request $request, string $subjectId)
-    {
-        $uid = $request->get('firebase_user');
-
-        if (!$subjectId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Subject ID is required.',
-
-            ], 400);
-        }
-
-        if (!$uid) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User ID is missing.',
-            ], 400);
-        }
-
-        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User data or grade level not found.',
-            ], 404);
-        }
-
-        $announcements = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements")
-            ->getSnapshot()
-            ->getValue();
-
-        $filteredAnnouncements = [];
-        if (!empty($announcements) && is_array($announcements)) {
-            foreach ($announcements as $key => $item) {
-                $filteredAnnouncements[] = [
-                    'announcement_id' => $key,
-                    'date_posted'     => $item['date_posted']    ?? null,
-                    'description'     => $item['description']    ?? null,
-                    'subject_id'      => $item['subject_id']     ?? null,
-                    'title'           => $item['title']          ?? null,
-                ];
-            }
-        }
-
-        return response()->json([
-            'success'       => true,
-            'announcements' => $filteredAnnouncements,
-        ], 200);
-    }
-
-    public function getSubjectAssignmentsApi(Request $request, string $subjectId)
-    {
-        $uid = $request->get('firebase_user');
-
-        if (!$subjectId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Subject ID is required.',
-
-            ], 400);
-        }
-
-        if (!$uid) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User ID is missing.',
-            ], 400);
-        }
-
-        $gradeLevel = $this->database->getReference('users/' . $uid  . "/section_grade")->getValue();
-
-        if (!$gradeLevel) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User data or grade level not found.',
-            ], 404);
-        }
-
-        $assignments = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments")
-            ->getSnapshot()
-            ->getValue();
-
-        $filteredAssignments = [];
-        if (!empty($assignments) && is_array($assignments)) {
-            foreach ($assignments as $key => $item) {
-                $filteredAssignments[] = [
-                    'assignment_id' => $key,
-                    'attempts' => $item['attempts'] ?? null,
-                    'deadline' => $item['deadline'] ?? null,
-                    'availability' => $item['availability'] ?? null,
-                    'createdAt' => $item['created_at'] ?? null,
-                    'description' => $item['description'] ?? null,
-                    'points' => $item['points'] ?? null,
-                    'title' => $item['title'] ?? null,
-                ];
-            }
-        }
-
-        return response()->json([
-            'success'       => true,
-            'assignments' => $filteredAssignments,
-        ], 200);
-    }
-
-    public function getSubjectScoresApi(Request $request, string $subjectId)
-    {
-        $uid = $request->get('firebase_user');
-
-        if (!$subjectId) {
-            return response()->json([
-                'success' => false,
-                'error' => 'Subject ID is required.',
-
-            ], 400);
-        }
-
-        if (!$uid) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User ID is missing.',
-            ], 400);
-        }
-
-        $userData = $this->database->getReference('users/' . $uid)->getValue();
-
-        if (!$userData || !isset($userData['grade_level'])) {
-            return response()->json([
-                'success' => false,
-                'error' => 'User data or grade level not found.',
-            ], 404);
-        }
-
-        $gradeLevel = $userData['grade_level'];
-
-        $scores = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/scores")
-            ->getSnapshot()
-            ->getValue();
-
-        return response()->json([
-            'success' => true,
-            'scores' => $scores,
-        ], 200);
-    }
-
 
     // Show add subject form
     public function showAddSubjectForm($grade)
