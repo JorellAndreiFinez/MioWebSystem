@@ -37,11 +37,11 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
-    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'takeActivity']);
-    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}/{flashcardId}', [SpecializedActivityApi::class, 'updateActivity']);
-    Route::patch('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'submitActivity']);
+    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'startFlashcardActivity']);
+    Route::post('/subject/{subjectId}/specialized/{activityType}/{activityId}/{attemptId}/{flashcardId}', [SpecializedActivityApi::class, 'submitFlashcardAnswer']);
+    // Route::patch('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'submitActivity']);
 
-    Route::get('/subject/{subjectId}/scores/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'getActivityScore']);
+    // Route::get('/subject/{subjectId}/scores/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'getActivityScore']);
 });
 
 Route::middleware([

@@ -124,30 +124,6 @@ class SpecializedActivityApi extends Controller
         }
     }
 
-    public function getSpeechActivityById(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId){
-
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        try{
-            $activities = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
-                ->getSnapshot()
-                ->getValue() ?? []; 
-
-            return response()->json([
-                'success' => true,
-                'activities' => $activities['flashcards'],
-                'attempts' => $activities['attempts']
-            ], 200);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function createSpeechActivity(Request $request, string $subjectId){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
@@ -230,106 +206,100 @@ class SpecializedActivityApi extends Controller
         }
     }
 
-    public function takeActivity(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId){
+    public function startFlashcardActivity(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
-        $attempts = $this->checkAttempts($gradeLevel, $userId, $activityId, $activityType, $subjectId);
-        $activity = $this->database
+        $subjectData = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
             ->getSnapshot()
             ->getValue() ?? [];
 
-        $allowedAttempts = $activity['attempts'];
+        $flashcards = $subjectData['flashcards'];
+        
+        $attemptId   = (string) Str::uuid();
+        $startedAt   = now()->toDateTimeString();
 
-        if (count($attempts) < $allowedAttempts){
-            $attemptId = (string) Str::uuid()->toString();
-            $date = now()->toDateTimeString();
-
-            $answers = [];
-            foreach ($activity['flashcards'] ?? [] as $index=> $fc) {
-                $answers[$index] = [
-                    'flashcard_id' => $fc['flashcard_id'],
-                    'audio_path' => null,
-                ];
-            }
-
-            $attemptInfo = [
-                'started_at' => $date,
-                'status' => "in-progress",
-                'answers' => $answers,
-                'score' => 0,
+        $studentAnswers = [];
+        foreach ($flashcards as $card) {
+            $studentAnswers[$card['flashcard_id']] = [
+                'word'       => $card['word'],
+                'audio_path' => null,
             ];
-
-            $check = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
-                ->set($attemptInfo);
-
-            return response()->json([
-                'success' => true,
-                'attemptId' => $attemptId
-            ],201);
         }
+        
+        $initialInfo = [
+            'answers' => $studentAnswers,
+            'started_at' => $startedAt,
+            'status'     => 'in-progress',
+        ];
+
+        $check = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+            ->set($initialInfo);
 
         return response()->json([
-            'success' => false,
-            'error'   => 'Attempt limit reached.',
-        ], 403);
+            'success' => true,
+            'attemptId' => $attemptId,
+            'flashcards' => $flashcards,
+        ],200);
     }
 
-    public function updateActivity(
+    public function submitFlashcardAnswer(
         Request $request,
         string $subjectId,
         string $activityType,
-        string $difficulty,
         string $activityId,
         string $attemptId,
         string $flashcardId
     ) {
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId     = $request->get('firebase_user_id');
+        try{
+            $gradeLevel = $request->get('firebase_user_gradeLevel');
+            $userId = $request->get('firebase_user_id');
 
-        $request->validate([
-            'audio_file' => ['required', 'file'],
-        ]);
+            $data = $request->validate([
+                'audio_file'   => 'required|file',
+            ]);
 
-        $file = $request->file('audio_file');
-        $uuid = (string) Str::uuid();
-        $filename = "{$uuid}.wav";
-        $path = $file->storeAs('audio_submissions', $filename, 'public');
-        $now = now()->toDateTimeString();
+            $answersRef = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}/answers");
 
-        $basePath = "subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}";
-        $ref = $this->database->getReference($basePath);
+            $answers = $answersRef->getSnapshot()->getValue() ?? [];
 
-        $attempt = $ref->getSnapshot()->getValue() ?? [];
-        $answers = $attempt['answers'] ?? [];
-
-        $found = false;
-        foreach ($answers as $idx => $entry) {
-            if ($entry['flashcard_id'] === $flashcardId) {
-                $answers[$idx]['audio_path'] = $path;
-                $answers[$idx]['updated_at'] = $now;
-                $found = true;
-                break;
+            if (! isset($answers[$flashcardId])) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Invalid flashcard ID for this attempt',
+                ], 400);
             }
-        }
 
-        if (!$found) {
+            $file = $request->file('audio_file');
+            $uuid = (string) Str::uuid();
+            $filename = "{$uuid}.wav";
+            $path = $file->storeAs('audio_submissions', $filename, 'public');
+            $now = now()->toDateTimeString();
+
+            $updatedAnswer = [
+                'word'         => $answers[$flashcardId]['word'],
+                'audio_path'   => $path,
+                'answered_at'  => $now,
+            ];
+
+            $answersRef
+                ->getChild($flashcardId)
+                ->update($updatedAnswer);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Answer submitted successfully',
+            ], 200);
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Flashcard not found for this attempt'
-            ], 404);
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
         }
-
-        $ref->getChild('answers')->set($answers);
-
-        return response()->json([
-            'success'     => true,
-            'message'     => 'Answer submitted successfully',
-            'flashcardId' => $flashcardId,
-            'audio_path'  => $path,
-        ], 200);
     }
 
     public function submitActivity(
@@ -367,31 +337,31 @@ class SpecializedActivityApi extends Controller
         $audio_paths = [];
         $words       = [];
 
-        foreach ($flashcards as $idx => $card) {
-            $flashcardId = $card['flashcard_id'] ?? (string)$idx;
-            $word        = $card['word'] ?? '';
-            $audioPath   = $answers[$idx]['audio_path'] ?? null;
+        // foreach ($flashcards as $idx => $card) {
+        //     $flashcardId = $card['flashcard_id'] ?? (string)$idx;
+        //     $word        = $card['word'] ?? '';
+        //     $audioPath   = $answers[$idx]['audio_path'] ?? null;
 
-            $words[] = $word;
-            $audio_paths[] = $audioPath;
+        //     $words[] = $word;
+        //     $audio_paths[] = $audioPath;
 
-            $cardScore = 0;
-            if ($audioPath) {
-                $response = $this->pronunciationScoreApi($audioPath, $word);
+        //     $cardScore = 0;
+        //     if ($audioPath) {
+        //         $response = $this->pronunciationScoreApi($audioPath, $word);
 
-                if (!empty($response['word_score_list'])) {
-                    $cardScore = $response['word_score_list'][0]['quality_score'] ?? 0;
-                }
+        //         if (!empty($response['word_score_list'])) {
+        //             $cardScore = $response['word_score_list'][0]['quality_score'] ?? 0;
+        //         }
 
-                $scoreData[$flashcardId] = $response;
-            }
+        //         $scoreData[$flashcardId] = $response;
+        //     }
 
 
-            $totalScore += $cardScore;
+        //     $totalScore += $cardScore;
 
-            $answers[$idx]['score'] = $cardScore;
-            $answers[$idx]['scored_at'] = $now;
-        }
+        //     $answers[$idx]['score'] = $cardScore;
+        //     $answers[$idx]['scored_at'] = $now;
+        // }
 
         $average = $count > 0 ? round($totalScore / $count, 2) : 0;
 
