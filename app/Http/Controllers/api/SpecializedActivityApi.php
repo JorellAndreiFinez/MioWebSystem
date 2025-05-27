@@ -232,6 +232,16 @@ class SpecializedActivityApi extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
+        /**
+         * 
+         * 
+         * 
+         * 
+         * CHECK FOR AVAILABLE PREVIOUD ATTEMPT STATUS INPROGRESS
+         * 
+         * 
+         * 
+         */
         try{
             $subjectData = $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
@@ -408,7 +418,45 @@ class SpecializedActivityApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Activity submitted successfully.',
-                'scores'  => $scores,
+                'scores'  => [
+                        '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
+                            'overall_quality_score'  => 85,
+                            'average_phoneme_score'  => 90,
+                            'phoneme_details'        => [
+                                [
+                                    'phone'           => 'k',
+                                    'quality_score'   => 100,
+                                    'sound_most_like' => 'k',
+                                ],
+                                [
+                                    'phone'           => 'ae',
+                                    'quality_score'   => 80,
+                                    'sound_most_like' => 'ah',
+                                ],
+                                [
+                                    'phone'           => 't',
+                                    'quality_score'   => 90,
+                                    'sound_most_like' => 't',
+                                ],
+                            ],
+                        ],
+                        '95c11a5c-6941-49e4-9038-b53334175cdd' => [
+                            'overall_quality_score'  => 78,
+                            'average_phoneme_score'  => 82.5,
+                            'phoneme_details'        => [
+                                [
+                                    'phone'           => 'g',
+                                    'quality_score'   => 95,
+                                    'sound_most_like' => 'g',
+                                ],
+                                [
+                                    'phone'           => 'r',
+                                    'quality_score'   => 70,
+                                    'sound_most_like' => 'r',
+                                ],
+                            ],
+                        ],
+                    ],
             ], 200);
 
         } catch (\Exception $e) {
