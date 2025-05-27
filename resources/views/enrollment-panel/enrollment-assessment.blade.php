@@ -1,3 +1,11 @@
+@php
+    $buttonText = 'Take Assessment';
+
+    if (($speechAuditoryStatus ?? null) === 'done' || ($readingStatus ?? null) === 'done') {
+        $buttonText = 'Continue Assessment';
+    }
+@endphp
+
 <section class="home-section">
     <div class="text">Enrollment Assessment</div>
 
@@ -35,7 +43,7 @@
         <div style="margin-top: 2rem; text-align: center;">
             <form action="{{ route('enroll.assessment.start') }}" method="GET">
                 <button type="submit" class="btn btn-primary" style="padding: 10px 20px; font-size: 16px;">
-                    Take Assessment
+                    {{ $buttonText }}
                 </button>
             </form>
         </div>

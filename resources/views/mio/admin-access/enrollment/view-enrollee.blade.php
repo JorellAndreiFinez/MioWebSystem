@@ -10,7 +10,7 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>First Name</label>
-                        <input type="text" name="first_name" value="{{ $enrollee['enrollment_form']['first_name'] }}" readonly />
+                        <input type="text" name="first_name" value="{{ $enrollees['first_name'] }}" readonly />
                     </div>
                     <div class="form-group">
                         <label>Last Name</label>

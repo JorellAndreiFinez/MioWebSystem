@@ -3,15 +3,30 @@
 
     <div class="teacher-container">
         <!-- HEADER CONTROLS -->
-        <div class="table-header">
-            <div class="search-container">
-                <i class="fas fa-search"></i>
-                <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
-            </div>
-            <div class="button-group">
-                <button class="btn sort-btn">Newest ⬇</button>
-            </div>
+         <div class="table-header" style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+
+        <!-- Search -->
+        <div class="search-container" style="display: flex; align-items: center;">
+            <i class="fas fa-search" style="margin-right: 0.5rem;"></i>
+            <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()" class="form-control" style="width: 200px;">
         </div>
+
+        <!-- Sort Button -->
+        <div class="button-group">
+            <button class="btn sort-btn">Newest ⬇</button>
+        </div>
+
+        <!-- Edit Assessment -->
+        <div class="edit-assessment-section" style="display: flex; align-items: center; gap: 1rem;">
+            <label for="assessmentType" style="margin-bottom: 0; font-weight: bold;">Edit Assessment:</label>
+            <select id="assessmentType" class="form-control" style="width: 200px;">
+                <option value="physical">Physical Evaluation</option>
+                <option value="written">Written Evaluation</option>
+            </select>
+            <button onclick="goToEditAssessment()" class="btn btn-success">Edit</button>
+        </div>
+    </div>
+
 
         <!-- ENROLLEE TABLE -->
         <div class="table-container">
@@ -28,18 +43,14 @@
                 </thead>
                 <tbody>
                 @forelse ($enrollees as $id => $enrollee)
-                    @php
-                        $form = $enrollee['enrollment_form'] ?? [];
-                        $fullName = $form['first_name'] . ' ' . $form['last_name'];
-                        $status = $enrollee['enroll_status'] ?? 'Pending';
-                    @endphp
+
                     <tr>
                         <td>{{ $enrollee['ID'] ?? $id }}</td>
-                        <td>{{ $fullName }}</td>
-                        <td>{{ $status }}</td>
+                        <td>{{ $enrollee['fname'] }}</td>
+                        <td>{{ $enrollee['enroll_status'] }}</td>
 
                         <td class="action-icons">
-                           <a href="{{ route('mio.view-enrollee', ['id' => $id]) }}">
+                           <a href="{{ route('mio.view-enrollee', ['id' => $enrollee['ID']]) }}">
                                 <i class="fa fa-eye"></i>
                             </a>
 
@@ -54,5 +65,19 @@
                 </tbody>
             </table>
         </div>
+
     </div>
+
 </section>
+
+<script>
+    function goToEditAssessment() {
+        const type = document.getElementById('assessmentType').value;
+
+        // Laravel-style route redirect without href
+        const url = `{{ url('mio/admin/enrollment/assessment') }}/${type}/edit`;
+        window.location.href = url;
+    }
+</script>
+
+

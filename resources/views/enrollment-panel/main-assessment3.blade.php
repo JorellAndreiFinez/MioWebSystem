@@ -1,25 +1,43 @@
 @php
-$phrases = [
-    1 => 'Look at the robot.',                           // Easy sentence (Imperative)
-    2 => 'The drone flies over the park.',               // Medium sentence (Declarative)
-    3 => 'The young inventor developed an extraordinary device.', // Hard sentence (Declarative)
-    4 => 'Clouds are white and fluffy.',                 // Easy sentence (Declarative)
-    5 => 'The biologist discovered a glowing mushroom. She carefully recorded its features.', // Hard sentence (Declarative, compound)
+$questions = [
+    1 => [
+        'sentence' => 'I need to schedule an appointment with _____',
+        'choices' => ['the dentist', 'the police', 'the janitor'],
+        'correct' => 'I need to schedule an appointment with the dentist',
+    ],
+    2 => [
+       'sentence' => 'Juan moved into _____',
+        'choices' => ['the mall', 'an apartment', 'the library'],
+        'correct' => 'Juan moved into an apartment',
+    ],
+    3 => [
+        'sentence' => 'They arrived _____ the meeting started.',
+        'choices' => ['before', 'during', 'beneath'],
+        'correct' => 'They arrived before the meeting started.',
+    ],
+    4 => [
+       'sentence' => 'He apologized _____ being late to the meeting.',
+        'choices' => ['for', 'of', 'with'],
+        'correct' => 'He apologized for being late to the meeting.',
+    ],
+    5 => [
+        'sentence' => 'He ordered _____ at the restaurant.',
+        'choices' => ['fried chicken', 'a backpack', 'a lightbulb'],
+        'correct' => 'He ordered fried chicken at the restaurant.',
+    ],
 ];
 @endphp
-
-
 
 
 <section class="home-section">
     <div class="text">Physical Evaluation</div>
 
     <div class="evaluation-section" style="padding: 2rem; max-width: 800px; margin: auto;">
-        <h3>Reading & Pronunciation Test</h3>
-        <p class="mb-4">Evaluating reading skills, pronunciation, and articulation.</p>
+        <h3>Sentence Structure Test</h3>
+        <p class="mb-4">Assessing the ability to construct proper sentences.</p>
 
         <!-- Speech Test (5 Items) -->
-        <form id="speech-auditory-form" action="{{ route('assessment.speechace.submit2') }}" method="POST" enctype="multipart/form-data">
+        <form id="speech-auditory-form" action="{{ route('assessment.speechace.submit3') }}" method="POST" enctype="multipart/form-data">
             @csrf
                  <div class="card mb-5">
             <h4>Reading Test</h4>
@@ -29,7 +47,16 @@ $phrases = [
             <div class="speech-item">
                 <label>
                     <strong>Item {{ $i }}:</strong>
-                    <span id="speech-phrase-{{ $i }}">{{ $phrases[$i] }}</span>
+                    <span id="speech-phrase-{{ $i }}">{{ $questions[$i]['sentence'] }}</span>
+                    <input type="hidden" name="texts[]" value="{{ $questions[$i]['correct'] }}">
+                    <div class="choices" style="margin-left: 1rem;">
+                        <ul>
+                            @foreach ($questions[$i]['choices'] as $choice)
+                                <li>{{ $choice }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+
                 </label>
                 <div class="speech-controls">
                     <div class="buttons">
@@ -158,7 +185,8 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     // Append speech texts and audio blobs
     for (let i = 1; i <= 5; i++) {
         const audioBlob = recordings[i];
-        const text = document.getElementById('speech-phrase-' + i).textContent;
+       const text = document.getElementsByName('texts[]')[i - 1].value;
+
 
         formData.append(`texts[]`, text);
         if (audioBlob) {
@@ -184,17 +212,9 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
         data.forEach((item, idx) => {
             alert(`Pronunciation score for phrase #${idx + 1}: ` + (item.text_score?.speechace_score?.pronunciation ?? 'N/A'));
         });
-
-        let redirectUrl = data.redirect_url || '/enrollment/reading-test';
-        if (redirectUrl.endsWith('?')) {
-            redirectUrl = redirectUrl.slice(0, -1);
-        }
-
-        window.location.href = redirectUrl;
     })
     .catch(err => {
         console.error('Error:', err);
-        window.location.href = '/enrollment/reading-test';
     });
 });
 

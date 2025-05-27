@@ -3,8 +3,8 @@ $phrases = [
     1 => 'cat',                        // Easy word
     2 => 'bicycle',                   // Medium word
     3 => 'extraordinary',             // Hard word
-    4 => 'The sun is bright.',       // Easy sentence
-    5 => 'Learning is a lifelong journey.', // Medium sentence
+    4 => 'Bright sun',              // Easy phrase
+    5 => 'Lifelong learning journey', // Medium phrase
 ];
 @endphp
 
@@ -215,7 +215,7 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
             alert(`Pronunciation score for phrase #${idx + 1}: ` + (item.text_score?.speechace_score?.pronunciation ?? 'N/A'));
         });
 
-        let redirectUrl = data.redirect_url || '/enrollment/assessment/reading-test';
+        let redirectUrl = data.redirect_url || '/enrollment/reading-test';
         if (redirectUrl.endsWith('?')) {
             redirectUrl = redirectUrl.slice(0, -1);
         }
@@ -224,7 +224,7 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     })
     .catch(err => {
         console.error('Error:', err);
-        window.location.href = '/enrollment/assessment/reading-test';
+        window.location.href = '/enrollment/reading-test';
     });
 });
 
@@ -236,9 +236,9 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 <script>
     const auditoryTexts = {
-        1: "apple",
+        1: "dog",
         2: "helicopter",
-        3: "incredible",
+        3: "unbelievable",
         4: "It is raining.",
         5: "She is my friend."
     };

@@ -108,22 +108,32 @@ class EnrollController extends Controller
 
         $status = $user['enroll_status'] ?? null;
 
-        // ✅ Check if status is exactly 'Assessment'
+        // Check if status is exactly 'Assessment'
         if ($status !== 'Assessment') {
             return redirect()->route('enroll-dashboard')->with('error', 'You are not yet eligible for the assessment.');
-
         }
 
-        $assessment = $user['Assessment'] ?? null;
+        $userId = $user['ID'];
+
+        // Fetch statuses directly from Firebase
+        $speechAuditoryStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Speech_Auditory/status');
+        $speechAuditoryStatus = $speechAuditoryStatusRef->getValue();
+
+        $readingStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Reading/status');
+        $readingStatus = $readingStatusRef->getValue();
 
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'enroll-assessment',
-            'assessment' => $assessment,
+            'assessment' => $user['Assessment'] ?? null,
             'status' => $status,
+            'speechAuditoryStatus' => $speechAuditoryStatus,
+            'readingStatus' => $readingStatus,
+            'user' => $user,
         ]);
     }
 
-        public function startAssessment(Request $request)
+
+    public function startAssessment(Request $request)
         {
             // Correct session key
             $userId = session('firebase_uid');
@@ -139,9 +149,200 @@ class EnrollController extends Controller
                 return redirect()->back()->with('error', 'You are not yet eligible for the assessment.');
             }
 
+            $speechAuditoryStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Speech_Auditory/status');
+            $speechAuditoryStatus = $speechAuditoryStatusRef->getValue();
+
+            $readingStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Reading/status');
+            $readingStatus = $readingStatusRef->getValue();
+
+            $sentenceStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Sentence/status');
+            $sentenceStatus = $sentenceStatusRef->getValue();
+
+            // Check both statuses to determine what to show next
+            if ($speechAuditoryStatus !== 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment',
+                    'user' => $user,
+                ]);
+            }
+
+            if ($readingStatus !== 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment2',
+                    'user' => $user,
+                ]);
+            }
+
+            if ($sentenceStatus !== 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment3',
+                    'user' => $user,
+                ]);
+            }
+
+             // Add your questions array here for the sentence test page:
+            $questions = [
+                // Multiple Choice (1-12)
+                1 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'She ___ to school every day.',
+                    'choices' => ['go', 'goes', 'going', 'gone'],
+                ],
+                2 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'They have ___ finished their homework.',
+                    'choices' => ['already', 'yet', 'just', 'still'],
+                ],
+                3 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'I will call you when I ___ home.',
+                    'choices' => ['get', 'got', 'will get', 'getting'],
+                ],
+                4 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'He ___ playing football now.',
+                    'choices' => ['is', 'are', 'was', 'be'],
+                ],
+                5 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'We ___ to the park yesterday.',
+                    'choices' => ['go', 'goes', 'went', 'going'],
+                ],
+                6 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'They ___ never been to Japan.',
+                    'choices' => ['have', 'has', 'had', 'having'],
+                ],
+                7 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'I ___ already eaten lunch.',
+                    'choices' => ['has', 'have', 'had', 'having'],
+                ],
+                8 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'She speaks English ___ than her sister.',
+                    'choices' => ['good', 'well', 'better', 'best'],
+                ],
+                9 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'If it ___ rain, we will cancel the picnic.',
+                    'choices' => ['will', 'is', 'does', 'did'],
+                ],
+                10 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'They ___ playing when I arrived.',
+                    'choices' => ['were', 'was', 'are', 'is'],
+                ],
+                11 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'She has been working here ___ five years.',
+                    'choices' => ['since', 'for', 'during', 'while'],
+                ],
+                12 => [
+                    'type' => 'multiple_choice',
+                    'sentence' => 'This is the ___ movie I have ever seen.',
+                    'choices' => ['good', 'better', 'best', 'well'],
+                ],
+
+                // Fill in the blanks (13-20)
+                13 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'The cat is ___ the table.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                14 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'He ___ playing football now.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                15 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'We ___ to the mall yesterday.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                16 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'They have been friends ___ childhood.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                17 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'She is better at math ___ her brother.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                18 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'I will call you when I ___ home.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                19 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'They ___ finished their work already.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+                20 => [
+                    'type' => 'fill_in_blank',
+                    'sentence' => 'Please ___ the door when you leave.',
+                    'answer_placeholder' => 'Type your answer here',
+                ],
+
+                // Sentence Ordering (21-25)
+                21 => [
+                    'type' => 'sentence_order',
+                    'words' => ['is', 'the', 'dog', 'brown'],
+                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                ],
+                22 => [
+                    'type' => 'sentence_order',
+                    'words' => ['they', 'go', 'to', 'school', 'every', 'day'],
+                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                ],
+                23 => [
+                    'type' => 'sentence_order',
+                    'words' => ['my', 'favorite', 'color', 'blue', 'is'],
+                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                ],
+                24 => [
+                    'type' => 'sentence_order',
+                    'words' => ['she', 'reading', 'is', 'book', 'a'],
+                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                ],
+                25 => [
+                    'type' => 'sentence_order',
+                    'words' => ['we', 'going', 'are', 'to', 'park', 'the'],
+                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                ],
+
+                // True/False grammar questions (26-30)
+                26 => [
+                    'type' => 'true_false',
+                    'statement' => 'The word "quickly" is an adjective.',
+                ],
+                27 => [
+                    'type' => 'true_false',
+                    'statement' => 'She don’t like apples.',
+                ],
+                28 => [
+                    'type' => 'true_false',
+                    'statement' => 'The past tense of "run" is "ran".',
+                ],
+                29 => [
+                    'type' => 'true_false',
+                    'statement' => 'We use "an" before words starting with a vowel sound.',
+                ],
+                30 => [
+                    'type' => 'true_false',
+                    'statement' => 'Adjectives describe verbs.',
+                ],
+            ];
+
+
+
+            // If both are done, go to sentence test
             return view('enrollment-panel.enrollment-panel', [
-                'page' => 'main-assessment',
-                'user' => $user
+                'page' => 'main-assessment4',
+                'user' => $user,
+                'questions' => $questions, // Pass questions to the view
             ]);
         }
 
@@ -151,6 +352,22 @@ class EnrollController extends Controller
         $speechResults = session('speech_results', []);
         $auditoryResults = session('auditory_results', []);
 
+        $uid = Session::get('firebase_uid');
+
+        if ($uid) {
+            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Reading/status");
+            $status = $statusRef->getValue();
+
+            // If already done, redirect to dashboard or another page
+            if ($status === 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment3',
+                    'speech_results' => $speechResults,
+                    'auditory_results' => $auditoryResults,
+                ]);
+            }
+        }
+
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'main-assessment2',
             'speech_results' => $speechResults,
@@ -158,8 +375,34 @@ class EnrollController extends Controller
         ]);
     }
 
+    public function mainAssessment3()
+    {
+        // Retrieve flash data from session (results passed from submit)
+        $speechResults = session('speech_results', []);
+        $auditoryResults = session('auditory_results', []);
 
+        $uid = Session::get('firebase_uid');
 
+        if ($uid) {
+            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Reading/status");
+            $status = $statusRef->getValue();
+
+            // If already done, redirect to dashboard or another page
+            if ($status === 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment4',
+                    'speech_results' => $speechResults,
+                    'auditory_results' => $auditoryResults,
+                ]);
+            }
+        }
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'main-assessment3',
+            'speech_results' => $speechResults,
+            'auditory_results' => $auditoryResults,
+        ]);
+    }
 
     public function assessmentPhysical()
     {
@@ -479,6 +722,450 @@ public function logout(Request $request)
         ]);
     }
 
+    public function editAssessment($type)
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
+        }
+
+        $speech = $this->database
+            ->getReference("enrollment/assessment_settings/$type/speech")
+            ->getValue() ?? [];
+
+        $auditory = $this->database
+            ->getReference("enrollment/assessment_settings/$type/auditory")
+            ->getValue() ?? [];
+
+        $sentence = $this->database
+            ->getReference("enrollment/assessment_settings/$type/sentences")
+            ->getValue() ?? [];
+
+        $blank = $this->database
+            ->getReference("enrollment/assessment_settings/$type/fillblanks")
+            ->getValue() ?? [];
+
+        if($type === "physical"){
+            return view('mio.head.admin-panel', [
+            'page' => 'edit-assessment',
+            'type' => $type,
+            'speech' => $speech,
+            'auditory' => $auditory,
+            'sentence' => $sentence,
+            'fillblanks' => $blank,
+        ]);
+
+        } elseif ($type === "written") {
+            return view('mio.head.admin-panel', [
+            'page' => 'edit-assessment2',
+            'type' => $type,
+            'speech' => $speech,
+            'auditory' => $auditory,
+            'sentence' => $sentence,
+            'fillblanks' => $blank,
+        ]);
+     }
+    }
+
+    public function saveSpeechPhrases(Request $request, $type)
+{
+    if (!in_array($type, ['physical', 'written'])) {
+        abort(404);
+    }
+
+    $allowedLevels = ['Easy', 'Medium', 'Hard'];
+
+    // Load existing data from Firebase
+    $existingData = $this->database
+        ->getReference("enrollment/assessment_settings/$type/speech")
+        ->getValue() ?? [];
+
+    $speech = $request->input('speech', []);
+
+    foreach ($speech as $key => $phrase) {
+        // Skip if 'text' or 'level' keys are missing to avoid undefined key error
+        if (!isset($phrase['text'], $phrase['level'])) {
+            continue;
+        }
+
+        // Skip if level is invalid
+        if (!in_array($phrase['level'], $allowedLevels)) {
+            continue;
+        }
+
+        // Keep existing created_at if available, otherwise set current timestamp
+        $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+
+        // Update or add phrase data in existingData array
+        $existingData[$key] = [
+            'text' => $phrase['text'],
+            'level' => $phrase['level'],
+            'speechID' => $key,
+            'created_at' => $createdAt,
+            'updated_at' => now()->toDateTimeString(),
+        ];
+    }
+
+    // Handle new speech phrase addition if any
+    $newPhrase = $request->input('new_speech');
+    if ($newPhrase && isset($newPhrase['text'], $newPhrase['level'])) {
+        if (in_array($newPhrase['level'], $allowedLevels)) {
+            $newKey = 'SP' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+
+            $existingData[$newKey] = [
+                'text' => $newPhrase['text'],
+                'level' => $newPhrase['level'],
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+            ];
+        }
+    }
+
+    // Process deletions and updates directly to Firebase for consistency
+    foreach ($speech as $speechID => $data) {
+        if (isset($data['_delete']) && $data['_delete'] == '1') {
+            // Delete phrase from Firebase
+            $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")->remove();
+
+            // Also remove from local array to keep it in sync
+            unset($existingData[$speechID]);
+        } else {
+            // Update phrase in Firebase (ensure keys exist before accessing)
+            if (isset($data['text'], $data['level'])) {
+                $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
+                    ->update([
+                        'text' => $data['text'],
+                        'level' => $data['level'],
+                        'updated_at' => now()->toDateTimeString(),
+                        // Preserve created_at if exists in existingData
+                        'created_at' => $existingData[$speechID]['created_at'] ?? now()->toDateTimeString(),
+                    ]);
+            }
+        }
+    }
+
+    // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
+    $this->database
+        ->getReference("enrollment/assessment_settings/$type/speech")
+        ->set($existingData);
+
+    return redirect()
+        ->back()
+        ->with('success', 'Speech phrases saved successfully!');
+}
+
+    public function saveAuditoryPhrases(Request $request, $type)
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
+        }
+
+        $allowedLevels = ['Easy', 'Medium', 'Hard'];
+
+        // Load existing auditory data from Firebase
+        $existingData = $this->database
+            ->getReference("enrollment/assessment_settings/$type/auditory")
+            ->getValue() ?? [];
+
+        $auditory = $request->input('auditory', []);
+
+        foreach ($auditory as $key => $phrase) {
+            // Skip if 'text' or 'level' keys are missing to avoid undefined key error
+            if (!isset($phrase['text'], $phrase['level'])) {
+                continue;
+            }
+
+            // Skip if level is invalid
+            if (!in_array($phrase['level'], $allowedLevels)) {
+                continue;
+            }
+
+            // Keep existing created_at if available, otherwise set current timestamp
+            $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+
+            // Update or add phrase data in existingData array
+            $existingData[$key] = [
+                'text' => $phrase['text'],
+                'level' => $phrase['level'],
+                'auditoryID' => $key,
+                'created_at' => $createdAt,
+                'updated_at' => now()->toDateTimeString(),
+            ];
+        }
+
+        // Handle new auditory phrase addition if any
+        $newPhrase = $request->input('new_auditory');
+        if ($newPhrase && isset($newPhrase['text'], $newPhrase['level'])) {
+            if (in_array($newPhrase['level'], $allowedLevels)) {
+                $newKey = 'AU' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+
+                $existingData[$newKey] = [
+                    'text' => $newPhrase['text'],
+                    'level' => $newPhrase['level'],
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                ];
+            }
+        }
+
+        // Process deletions and updates directly to Firebase for consistency
+        foreach ($auditory as $auditoryID => $data) {
+            if (isset($data['_delete']) && $data['_delete'] == '1') {
+                // Delete phrase from Firebase
+                $this->database->getReference("enrollment/assessment_settings/$type/auditory/$auditoryID")->remove();
+
+                // Also remove from local array to keep it in sync
+                unset($existingData[$auditoryID]);
+            } else {
+                // Update phrase in Firebase (ensure keys exist before accessing)
+                if (isset($data['text'], $data['level'])) {
+                    $this->database->getReference("enrollment/assessment_settings/$type/auditory/$auditoryID")
+                        ->update([
+                            'text' => $data['text'],
+                            'level' => $data['level'],
+                            'updated_at' => now()->toDateTimeString(),
+                            // Preserve created_at if exists in existingData
+                            'created_at' => $existingData[$auditoryID]['created_at'] ?? now()->toDateTimeString(),
+                        ]);
+                }
+            }
+        }
+
+        // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
+        $this->database
+            ->getReference("enrollment/assessment_settings/$type/auditory")
+            ->set($existingData);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Auditory phrases saved successfully!');
+    }
+
+    public function saveSentence(Request $request, $type)
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
+        }
+
+        $allowedLevels = ['Easy', 'Medium', 'Hard'];
+
+        // Load existing sentence data from Firebase
+        $existingData = $this->database
+            ->getReference("enrollment/assessment_settings/$type/sentences")
+            ->getValue() ?? [];
+
+        $sentences = $request->input('sentence', []);
+
+        foreach ($sentences as $key => $sentence) {
+            // Skip if 'text' or 'level' keys are missing to avoid undefined key error
+            if (!isset($sentence['text'], $sentence['level'])) {
+                continue;
+            }
+
+            // Skip if level is invalid
+            if (!in_array($sentence['level'], $allowedLevels)) {
+                continue;
+            }
+
+            // Keep existing created_at if available, otherwise set current timestamp
+            $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+
+            // Update or add sentence data in existingData array
+            $existingData[$key] = [
+                'text' => $sentence['text'],
+                'level' => $sentence['level'],
+                'sentenceID' => $key,
+                'created_at' => $createdAt,
+                'updated_at' => now()->toDateTimeString(),
+            ];
+        }
+
+        // Handle new sentence addition if any
+        $newSentence = $request->input('new_sentence');
+        if ($newSentence && isset($newSentence['text'], $newSentence['level'])) {
+            if (in_array($newSentence['level'], $allowedLevels)) {
+                $newKey = 'SN' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+
+                $existingData[$newKey] = [
+                    'text' => $newSentence['text'],
+                    'level' => $newSentence['level'],
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                ];
+            }
+        }
+
+        // Process deletions and updates directly to Firebase for consistency
+        foreach ($sentences as $sentenceID => $data) {
+            if (isset($data['_delete']) && $data['_delete'] == '1') {
+                // Delete sentence from Firebase
+                $this->database->getReference("enrollment/assessment_settings/$type/sentences/$sentenceID")->remove();
+
+                // Also remove from local array to keep it in sync
+                unset($existingData[$sentenceID]);
+            } else {
+                // Update sentence in Firebase (ensure keys exist before accessing)
+                if (isset($data['text'], $data['level'])) {
+                    $this->database->getReference("enrollment/assessment_settings/$type/sentences/$sentenceID")
+                        ->update([
+                            'text' => $data['text'],
+                            'level' => $data['level'],
+                            'updated_at' => now()->toDateTimeString(),
+                            // Preserve created_at if exists in existingData
+                            'created_at' => $existingData[$sentenceID]['created_at'] ?? now()->toDateTimeString(),
+                        ]);
+                }
+            }
+        }
+
+        // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
+        $this->database
+            ->getReference("enrollment/assessment_settings/$type/sentences")
+            ->set($existingData);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Sentences saved successfully!');
+    }
+
+    public function saveFillBlanks(Request $request, $type)
+{
+    if (!in_array($type, ['physical', 'written'])) {
+        abort(404);
+    }
+
+    $allowedLevels = ['Easy', 'Medium', 'Hard'];
+
+    // Load existing fill-in-the-blank data from Firebase
+    $existingData = $this->database
+        ->getReference("enrollment/assessment_settings/$type/fillblanks")
+        ->getValue() ?? [];
+
+    $fillblanks = $request->input('fillblanks', []);
+
+    foreach ($fillblanks as $key => $item) {
+        if (!isset($item['text'], $item['correct'], $item['a'], $item['b'], $item['c'], $item['level'])) {
+            continue;
+        }
+
+        if (!in_array($item['level'], $allowedLevels)) {
+            continue;
+        }
+
+        $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+
+        // Map correct letter to actual answer
+        $correctAnswerMap = [
+            'A' => $item['a'],
+            'B' => $item['b'],
+            'C' => $item['c'],
+        ];
+        $actualAnswer = $correctAnswerMap[$item['correct']] ?? '';
+
+        $existingData[$key] = [
+            'text' => $item['text'],
+            'correct' => $item['correct'],
+            'a' => $item['a'],
+            'b' => $item['b'],
+            'c' => $item['c'],
+            'level' => $item['level'],
+            'blankID' => $key,
+            'created_at' => $createdAt,
+            'updated_at' => now()->toDateTimeString(),
+            'full_answer' => $this->cleanFillBlankAnswer($item['text'], $actualAnswer),
+        ];
+    }
+
+    // Handle new fill-in-the-blank entry
+    $newBlank = $request->input('new_blank');
+    if ($newBlank && isset($newBlank['text'], $newBlank['correct'], $newBlank['a'], $newBlank['b'], $newBlank['c'], $newBlank['level'])) {
+        if (in_array($newBlank['level'], $allowedLevels)) {
+            $newKey = 'FB' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+
+            $correctAnswerMap = [
+                'A' => $newBlank['a'],
+                'B' => $newBlank['b'],
+                'C' => $newBlank['c'],
+            ];
+            $actualAnswer = $correctAnswerMap[$newBlank['correct']] ?? '';
+
+            $existingData[$newKey] = [
+                'text' => $newBlank['text'],
+                'correct' => $newBlank['correct'],
+                'a' => $newBlank['a'],
+                'b' => $newBlank['b'],
+                'c' => $newBlank['c'],
+                'level' => $newBlank['level'],
+                'created_at' => now()->toDateTimeString(),
+                'updated_at' => now()->toDateTimeString(),
+                'full_answer' => $this->cleanFillBlankAnswer($newBlank['text'], $actualAnswer),
+
+            ];
+        }
+    }
+
+    // Process deletions and updates
+    foreach ($fillblanks as $blankID => $data) {
+        if (isset($data['_delete']) && $data['_delete'] == '1') {
+            $this->database->getReference("enrollment/assessment_settings/$type/fillblanks/$blankID")->remove();
+            unset($existingData[$blankID]);
+        } else {
+            if (isset($data['text'], $data['correct'], $data['a'], $data['b'], $data['c'], $data['level'])) {
+                $correctAnswerMap = [
+                    'A' => $data['a'],
+                    'B' => $data['b'],
+                    'C' => $data['c'],
+                ];
+                $actualAnswer = $correctAnswerMap[$data['correct']] ?? '';
+
+                $this->database->getReference("enrollment/assessment_settings/$type/fillblanks/$blankID")
+                    ->update([
+                        'text' => $data['text'],
+                        'correct' => $data['correct'],
+                        'a' => $data['a'],
+                        'b' => $data['b'],
+                        'c' => $data['c'],
+                        'level' => $data['level'],
+                        'updated_at' => now()->toDateTimeString(),
+                        'created_at' => $existingData[$blankID]['created_at'] ?? now()->toDateTimeString(),
+                        'full_answer' => $this->cleanFillBlankAnswer($data['text'], $actualAnswer),
+
+                    ]);
+            }
+        }
+    }
+
+    // Final sync write to Firebase
+    $this->database
+        ->getReference("enrollment/assessment_settings/$type/fillblanks")
+        ->set($existingData);
+
+    return redirect()
+        ->back()
+        ->with('success', 'Fill-in-the-blank items saved successfully!');
+}
+
+    private function cleanFillBlankAnswer($text, $actualAnswer)
+    {
+        // Replace one or more underscores (blank) with the actual answer
+        $full = preg_replace('/_+/', $actualAnswer, $text);
+
+        // Optional: prevent repeated words (if answer repeats)
+        $full = preg_replace('/\b(' . preg_quote($actualAnswer, '/') . ')\1\b/i', '$1', $full);
+
+        return $full;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
     public function viewAdminEnrollee($id)
     {
         $enrollee = $this->database->getReference('enrollment/enrollees/' . $id)->getValue();
@@ -515,6 +1202,10 @@ public function logout(Request $request)
         return redirect()->route('mio.view-enrollee', ['id' => $id])
             ->with('success', 'Enrollee feedback and status updated successfully.');
     }
+
+
+
+
 
 
 

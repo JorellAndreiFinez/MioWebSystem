@@ -583,3 +583,61 @@ input[type="file"] {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+.choices {
+    margin-top: 0.5rem;
+}
+
+.choices strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+
+/* Container for the choice list */
+
+.choices ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+
+/* Each choice item */
+
+.choices ul li {
+    flex: 1 1 calc(53% - 12px);
+    background: #f9fafb;
+    border: 2px solid #4CAF50;
+    border-radius: 8px;
+    padding: 10px 36px;
+    font-size: 15px;
+    color: #2e7d32;
+    box-shadow: 0 2px 6px rgb(76 175 80 / 0.2);
+    transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    user-select: none;
+    text-align: center;
+}
+
+
+/* Responsive adjustments */
+
+@media (max-width: 768px) {
+    .choices ul li {
+        flex: 1 1 calc(50% - 12px);
+    }
+}
+
+@media (max-width: 480px) {
+    .choices ul li {
+        flex: 1 1 100%;
+    }
+}

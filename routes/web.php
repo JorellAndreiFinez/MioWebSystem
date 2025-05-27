@@ -88,14 +88,20 @@ Route::prefix('enrollment')->group(function () {
 
         Route::get('/start-assessment', [EnrollController::class, 'startAssessment'])->name('enroll.assessment.start');
 
-        Route::get('/assessment/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
+        Route::get('/reading-test', [EnrollController::class, 'mainAssessment2'])->name('enroll.assessment.reading');
+
+        Route::get('/sentence-test', [EnrollController::class, 'mainAssessment3'])->name('enroll.assessment.sentence');
 
         // ASSESSMENT ROUTES
         Route::prefix('assessment')->name('assessment.')->group(function () {
-            Route::get('/physical', [EnrollController::class, 'assessmentPhysical'])->name('physical');
-            Route::get('/written', [EnrollController::class, 'assessmentWritten'])->name('written');
-            Route::get('/achievement', [EnrollController::class, 'assessmentAchievement'])->name('achievement');
+
             Route::post('/submit', action: [SpeechaceController::class, 'submit'])->name('speechace.submit');
+
+            Route::post('/submit-reading-test', action: [SpeechaceController::class, 'submit2'])->name('speechace.submit2');
+
+            Route::post('/submit-sentence-test', action: [SpeechaceController::class, 'submit3'])->name('speechace.submit3');
+
+            Route::post('/submit-written-test', action: [SpeechaceController::class, 'submit4'])->name('written.submit');
         });
     });
 });
@@ -131,6 +137,20 @@ Route::prefix('mio/admin/')->middleware(
      Route::get('/enrollment/{id}', [EnrollController::class, 'viewAdminEnrollee'])->name('view-enrollee');
 
      Route::put('/enrollment/update/{id}', [EnrollController::class, 'updateEnrolleeStatus'])->name('update-enrollee');
+
+     Route::get('/enrollment/assessment/{type}/edit', [EnrollController::class, 'editAssessment'])->name('edit-assessment');
+
+     Route::post('/enrollment/assessment/{type}/speech/save', [EnrollController::class, 'saveSpeechPhrases'])->name('save-speech-assessment');
+
+    Route::delete('/enrollment/assessment/{type}/speech/delete/{id}', [EnrollController::class, 'deleteSpeechPhrase'])->name('mio.speech-assessment.destroy');
+
+    Route::post('/enrollment/assessment/{type}/auditory/save', [EnrollController::class, 'saveAuditoryPhrases'])->name('save-auditory-assessment');
+
+    Route::post('/enrollment/assessment/{type}/sentence/save', [EnrollController::class, 'saveSentence'])->name('save-sentence-assessment');
+
+    Route::post('/enrollment/assessment/{type}/fnblank/save', [EnrollController::class, 'saveFillBlanks'])->name('save-fnblank-assessment');
+
+    Route::get('/enrollment/assessment/{type}/edit', [EnrollController::class, 'editAssessment'])->name('edit-assessment2');
 
 
 

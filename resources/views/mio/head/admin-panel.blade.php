@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
 
     <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/1.2.2 home-pid.png/') }}">
 
@@ -30,6 +32,10 @@
         @include('mio.admin-access.enrollment')
     @elseif ($page === 'admin-enrollee')
         @include('mio.admin-access.enrollment.view-enrollee')
+    @elseif ($page === 'edit-assessment')
+        @include('mio.admin-access.enrollment.edit-assessment')
+    @elseif ($page === 'edit-assessment2')
+        @include('mio.admin-access.enrollment.edit-assessment2')
 
     @elseif ($page === 'pid')
         @include('mio.admin-access.pid')
