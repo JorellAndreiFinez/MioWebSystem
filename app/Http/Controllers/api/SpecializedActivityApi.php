@@ -362,157 +362,120 @@ class SpecializedActivityApi extends Controller
         $refPath = "subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}";
         $ref = $this->database->getReference($refPath);
 
-        $updatedActivity = [
-            'status'       => 'submitted',
-            'submitted_at' => $now,
-        ];
-
         try {
-            $ref->update($updatedActivity);
+            $ref->update([
+                'status'       => 'submitted',
+                'submitted_at' => $now,
+            ]);
 
-            $answers = $ref
-                ->getChild('answers')
-                ->getSnapshot()
-                ->getValue() ?? [];
+            $answers = $ref->getChild('answers')->getSnapshot()->getValue() ?? [];
+
+            $scores        = [];
+            $totalQuality  = 0;
+            $numCards      = count($answers);
 
             foreach ($answers as $cardId => $answer) {
-                $details = $answer['pronunciation_details'] ?? [];
-                $overallScore = $details['overall_quality_score'] ?? null;
-                $wordScoreList = $details['word_score_list'] ?? [];
+                $details   = $answer['pronunciation_details'] ?? [];
+                $wordsList = $details['words']               ?? [];
 
-                $phonemeDetails = [];
-                $phonemeSum = 0;
-                $phonemeCount = 0;
+                if (! empty($wordsList) && is_array($wordsList[0])) {
+                    $w = $wordsList[0];
 
-                foreach ($wordScoreList as $wordEntry) {
-                    $phones = $wordEntry['phone_score_list'] ?? [];
-                    foreach ($phones as $phoneEntry) {
-                        $phone = $phoneEntry['phone'] ?? null;
-                        $qualityScore = $phoneEntry['quality_score'] ?? null;
-                        $soundMostLike = $phoneEntry['sound_most_like'] ?? null;
+                    $quality = $w['quality_score'] ?? 0;
+                    $totalQuality += $quality;
 
-                        $phonemeDetails[] = [
-                            'phone' => $phone,
-                            'quality_score' => $qualityScore,
-                            'sound_most_like' => $soundMostLike,
-                        ];
-
-                        if ($qualityScore !== null) {
-                            $phonemeSum += $qualityScore;
-                            $phonemeCount ++;
-                        }
-                    }
+                    $scores[$cardId] = [
+                        'word'          => $w['word']            ?? '',
+                        'quality_score' => $quality,
+                        'phones'        => $w['phones']          ?? [],
+                        'syllables'     => $w['syllables']       ?? [],
+                        'timestamp'     => $details['timestamp'] ?? $now,
+                    ];
+                } else {
+                    $scores[$cardId] = [
+                        'word'          => '',
+                        'quality_score' => 0,
+                        'phones'        => [],
+                        'syllables'     => [],
+                        'timestamp'     => $now,
+                    ];
                 }
-
-                $averagePhoneme = $phonemeCount
-                    ? round($phonemeSum / $phonemeCount, 2)
-                    : null;
-
-                $scores[$cardId] = [
-                    'overall_quality_score' => $overallScore,
-                    'average_phoneme_score' => $averagePhoneme,
-                    'phoneme_details' => $phonemeDetails,
-                ];
             }
+
+            $overallAverage = $numCards > 0
+                ? round($totalQuality / $numCards, 2)
+                : 0;
+
+            // return response()->json([
+            //     'success'       => true,
+            //     'message'       => 'Activity submitted successfully.',
+            //     'scores'        => $scores,
+            //     'overall_score' => $overallAverage,
+            // ], 200);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Activity submitted successfully.',
                 'scores'  => [
-                        '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
-                            'overall_quality_score'  => 85,
-                            'average_phoneme_score'  => 90,
-                            'phoneme_details'        => [
-                                [
-                                    'phone'           => 'k',
-                                    'quality_score'   => 100,
-                                    'sound_most_like' => 'k',
-                                ],
-                                [
-                                    'phone'           => 'ae',
-                                    'quality_score'   => 80,
-                                    'sound_most_like' => 'ah',
-                                ],
-                                [
-                                    'phone'           => 't',
-                                    'quality_score'   => 90,
-                                    'sound_most_like' => 't',
-                                ],
-                            ],
+                    '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
+                        'word'            => 'banana',
+                        'quality_score'   => 98,
+                        'phones'          => [
+                            ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
+                            ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
+                            ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
+                            ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
+                            ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
+                            ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
                         ],
-                        '95c11a5c-6941-49e4-9038-b53334175cdd' => [
-                            'overall_quality_score'  => 78,
-                            'average_phoneme_score'  => 82.5,
-                            'phoneme_details'        => [
-                                [
-                                    'phone'           => 'g',
-                                    'quality_score'   => 95,
-                                    'sound_most_like' => 'g',
-                                ],
-                                [
-                                    'phone'           => 'r',
-                                    'quality_score'   => 70,
-                                    'sound_most_like' => 'r',
-                                ],
-                            ],
+                        'syllables'       => [
+                            ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
+                            ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
+                            ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
                         ],
                     ],
+                    '95c11a5c-6941-49e4-9038-b53334175cdd' => [
+                        'word'            => 'apple',
+                        'quality_score'   => 90,
+                        'phones'          => [
+                            ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
+                            ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
+                            ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
+                        ],
+                        'syllables'       => [
+                            ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
+                            ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
+                        ],
+                        'timestamp'       => '2025-05-27 14:35:00',
+                    ],
+                    'c4cd1987-6449-4115-8f63-8f790c679319' => [
+                        'word'            => 'orange',
+                        'quality_score'   => 95,
+                        'phones'          => [
+                            ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
+                            ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
+                            ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
+                            ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
+                        ],
+                        'syllables'       => [
+                            ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
+                            ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
+                        ],
+                    ],
+                ],
+                'overall_score' => 150
             ], 200);
 
         } catch (\Exception $e) {
+            \Log::error('finalizeFlashcardAttempt failed', [
+                'path'  => $refPath,
+                'error' => $e->getMessage(),
+            ]);
+
             return response()->json([
                 'success' => false,
                 'error'   => 'Could not update activity status.',
             ], 500);
         }
-    }
-
-    public function getActivityScore(
-        Request $request,
-        string $subjectId,
-        string $activityId,
-        string $attemptId
-    ) {
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId     = $request->get('firebase_user_id');
-
-        $scores = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/scores/{$userId}/{$activityId}/{$attemptId}")
-            ->getSnapshot()
-            ->getValue() ?? [];
-
-        if (empty($scores)) {
-            return response()->json([
-                'success' => false,
-                'error'   => 'No scores found for this attempt.'
-            ], 404);
-        }
-
-        $detailedScores = [];
-        foreach ($scores['details'] as $flashcardId => $detail) {
-            $firstWord = "";
-            $firstWordScore = 0;
-
-            if (!empty($detail['word_score_list'][0]['word'])) {
-                $firstWord = $detail['word_score_list'][0]['word'];
-            }
-            
-            if (!empty($detail['word_score_list'][0]['quality_score'])) {
-                $firstWordScore = $detail['word_score_list'][0]['quality_score'];
-            }
-
-            $detailedScores[$flashcardId] = [
-                'word' => $firstWord,
-                'pronunciation_score' => $firstWordScore
-            ];
-        }
-        
-        return response()->json([
-            'success' => true,
-            'average' => $scores['average']   ?? 0,
-            'totalScore' => $scores['totalScore'] ?? 0,
-            'totalItems' => $scores['count']     ?? 0,
-            'detailedScores' => $detailedScores,
-        ], 200);
     }
 }
