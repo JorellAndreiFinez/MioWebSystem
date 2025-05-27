@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
+use Kreait\Firebase\Contract\Storage as FirebaseStorage;
 
 class SpecializedActivityApi extends Controller
 {
@@ -30,6 +31,11 @@ class SpecializedActivityApi extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+        $this->storage = (new Factory())
+            ->withServiceAccount($path)
+            ->withDefaultStorageBucket('miolms.firebasestorage.app')
+            ->createStorage();
     }
 
     private function generateUniqueId(string $prefix): string
@@ -115,17 +121,6 @@ class SpecializedActivityApi extends Controller
         }
     }
 
-    private function checkAttempts(string $gradeLevel, string $userId, string $activityId, string $activityType, string $subjectId){
-
-        $checkAttempts =  $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}")
-            ->getSnapshot()
-            ->getValue() ?? [];
-
-        return $checkAttempts;
-
-    }
-
     public function getSpeechActivities(Request $request, string $subjectId, string $category, string $difficulty){
 
         $gradeLevel = $request->get('firebase_user_gradeLevel');
@@ -159,8 +154,6 @@ class SpecializedActivityApi extends Controller
                 'activity_type' => 'required|in:picture,question,phrase,pronunciation',
                 'difficulty' => 'required|in:easy,average,difficult,challenge',
 
-                'attempts' => 'required|integer|min:1',
-
                 'flashcard_text' => 'nullable|array',
                 'flashcard_text.*' => 'string|max:250',
 
@@ -182,28 +175,34 @@ class SpecializedActivityApi extends Controller
                 ];
             }
 
+            $bucket = $this->storage->getBucket();
+
             foreach ($validated['flashcard_file'] ?? [] as $idx => $file) {
-                $id   = Str::uuid()->toString();
-                $path = $file->store('flashcards', 'public');
-                $url = asset(Storage::disk('public')->url($path));
+                $uuid = Str::uuid()->toString();
+                $remotePath = 'images/speech/' . $uuid . $file->getClientOriginalName();
 
-                $flashcardData[$id] = [
-                    'image_path' => $path,
-                ];
+                $bucket->upload(
+                    fopen($file->getPathName(), 'r'),
+                    ['name' => $remotePath]
+                );
 
-                if (isset($answers[$idx])) {
-                    $flashcardData[$id]['answer'] = $answers[$idx];
-                }
+                $flashcardData[$uuid] = array_merge(
+                    $flashcardData[$uuid] ?? ['flashcard_id' => $uuid],
+                    [
+                        'image_path' => $remotePath,
+                        'answer'     => $answers[$idx] ?? null,
+                    ]
+                );
             }
 
             $activityType = $validated['activity_type'];
             $difficulty = $validated['difficulty'];
-            $activity_id = $this->generateUniqueId('ACT');
+            $activity_id = $this->generateUniqueId('SPE');
             $date = now()->toDateTimeString();
 
             $activityData = [
                 'flashcards'=> $flashcardData,
-                'attempts' => $validated['attempts'],
+
                 'total' => count($flashcardData),
                 'created_at' => $date,
                 'updated_at' => $date
@@ -257,8 +256,9 @@ class SpecializedActivityApi extends Controller
             foreach ($flashcards as $idx => $card) {
                 $studentAnswers[$card['flashcard_id']] = [
                     'card_no' => $idx,
-                    'word' => $card['word'],
+                    'word' => $card['word'] ?? "",
                     'audio_path' => null,
+                    'image_path' => $card['image_path'] ?? ""
                 ];
             }
             
@@ -298,7 +298,7 @@ class SpecializedActivityApi extends Controller
             $userId = $request->get('firebase_user_id');
 
             $data = $request->validate([
-                'audio_file'   => 'required|file',
+                'audio_file' => 'required|file',
             ]);
 
             $answersRef = $this->database
@@ -313,10 +313,18 @@ class SpecializedActivityApi extends Controller
                 ], 400);
             }
 
+            $bucket = $this->storage->getBucket();
+
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
             $filename = "{$uuid}.wav";
-            $path = $file->storeAs('audio_submissions', $filename, 'public');
+            $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
+
+            $bucket->upload(
+                fopen($file->getPathName(), 'r'),
+                ['name' => $remotePath]
+            );
+
             $now = now()->toDateTimeString();
 
             $word = $answers[$flashcardId]['word'];
@@ -325,7 +333,7 @@ class SpecializedActivityApi extends Controller
 
             $updatedAnswer = [
                 'word'         => $word,
-                'audio_path'   => $path,
+                'audio_path'   => $remotePath,
                 'answered_at'  => $now,
                 // 'pronunciation_details' => $pronunciation_details,
             ];
@@ -463,7 +471,7 @@ class SpecializedActivityApi extends Controller
                         ],
                     ],
                 ],
-                'overall_score' => 150
+                'overall_score' => 200
             ], 200);
 
         } catch (\Exception $e) {
