@@ -2,62 +2,383 @@
    @include('mio.dashboard.breadcrumbs')
 
     <div class="grid-container">
-        <!-- Begin Main-->
+        <button id="generateReportBtn" style="margin-bottom: 1rem;">Generate Printable Report</button>
+
+
+
         <main class="main-scores">
-            <!-- Begin Main Overview -->
+
 
             <div class="main-overview">
-                <div class="overviewcard">
-                    <div class="overviewcard__info">
-                        <!-- <h3>Scores</h3> -->
-                        <!-- Begin Table for Subjects and Scores -->
-            <div class="score-table">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Assignment Type</th>
-                            <th>Title</th>
-                            <th>Submitted</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Quiz</td>
-                            <td>Lorem Ipsum</td>
-                            <td>Submitted</td>
-                            <td>10/10</td>
-                        </tr>
-                        <tr>
-                            <td>Quiz</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                        <tr>
-                            <td>Assignment</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                        <tr>
-                            <td>Speech Activity 1</td>
-                            <td>Lorem Ipsum</td>
-                            <td>-</td>
-                            <td>-/10</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <!-- End Table for Subjects and Scores -->
+                <div class="score-table" style="max-width: 900px;">
+                    @forelse($groupedAttempts as $activityType => $attempts)
+                        <h3 >{{ ucfirst($activityType) }}</h3>
+                        <table style="margin-bottom: 5rem;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 30px;"></th> <!-- toggle arrow narrow -->
+                                    <th style="width: 180px;">Student ID</th>
+                                    <th style="width: 180px;">Answered At</th>
+                                    <th style="width: 180px;">MIÓ Score</th>
+                                    <th style="width: 300px;">Feedback</th>
 
-                    </div>
+                                </tr>
+                            </thead>
+                            <tbody>
+                               @php
+                                $attemptsByStudent = [];
+                                foreach ($attempts as $attempt) {
+                                    $attemptsByStudent[$attempt['student_id']][] = $attempt;
+                                }
+
+                                // Sort and slice attempts per student to keep only the recent attempts
+                                foreach ($attemptsByStudent as $studentId => $studentAttempts) {
+                                    // Sort by answered_at descending
+                                    usort($studentAttempts, function($a, $b) {
+                                        return strtotime($b['started_at'] ?? '') <=> strtotime($a['started_at'] ?? '');
+                                    });
+
+                                    // Keep only the top 1 recent attempt (change 1 to 3 if you want the 3 most recent)
+                                    $attemptsByStudent[$studentId] = array_slice($studentAttempts, 0, 3);
+                                }
+                            @endphp
+
+
+                                @foreach($attemptsByStudent as $studentId => $studentAttempts)
+                                    @php
+                                        // Get latest answered_at for the summary row
+                                        $latestAnsweredAt = collect($studentAttempts)->pluck('answered_at')->filter()->max();
+                                    @endphp
+
+                                    <tr class="student-summary" data-student="{{ $studentId }}">
+
+                                        <td style="cursor:pointer; user-select:none;" class="toggle-arrow">▶</td>
+
+                                        <td>{{ $studentId }}</td>
+                                        <td>{{ $latestAnsweredAt ?? '-' }}</td>
+
+                                      @php
+                                            $latestValid = collect($studentAttempts)->first(function ($attempt) {
+                                                return !empty($attempt['pronunciation_details']['speechace_pronunciation_score']);
+                                            });
+                                        @endphp
+
+                                        <td>{{ $latestValid['pronunciation_details']['speechace_pronunciation_score'] ?? '-' }}</td>
+                                        <td>{{ $latestValid['pronunciation_details']['feedback'] ?? '-' }}</td>
+
+
+                                    </tr>
+
+                                    <tr class="student-details-row" data-student="{{ $studentId }}" style="display:none; background-color: #f9f9f9;">
+                                        <td colspan="{{ $activityType === 'pronunciation' && $subject['specialized_type'] === 'speech' ? 9 : 5 }}" style="padding: 1rem;">
+                                            <div class="student-details">
+                                                <table style="width: 100%; border-collapse: collapse;">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Audio</th>
+                                                            @if($activityType === 'pronunciation' && $subject['specialized_type'] === 'speech')
+                                                                <th>Text</th>
+                                                                <th>CEFR</th>
+                                                                <th>IELTS</th>
+                                                                <th>PTE</th>
+                                                                <th>TOEIC</th>
+                                                            @endif
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach($studentAttempts as $attempt)
+                                                            <tr>
+                                                                <td>
+                                                                    @if(!empty($attempt['audio_url']))
+                                                                        <audio controls style="width: 120px; height: 30px;">
+                                                                            <source src="{{ $attempt['audio_url'] }}" type="audio/mpeg">
+                                                                            Your browser does not support the audio element.
+                                                                        </audio>
+                                                                    @else
+                                                                        -
+                                                                    @endif
+                                                                </td>
+
+                                                                @if($activityType === 'pronunciation' && $subject['specialized_type'] === 'speech')
+                                                                    <td>
+                                    @if (isset($attempt['pronunciation_details']['words']))
+                                        <p style="margin:0;">
+                                        @foreach ($attempt['pronunciation_details']['words'] as $wordIndex => $wordInfo)
+                                            <span
+                                                class="word-info"
+                                                data-word="{{ $wordInfo['word'] }}"
+                                                data-quality-score="{{ $wordInfo['quality_score'] }}"
+                                                data-syllables='@json($wordInfo['syllables'])'
+                                                style="border-bottom: 1px dotted #666; cursor: help;"
+                                            >
+                                                {{ $wordInfo['word'] }}
+                                            </span>
+                                            {{-- Add a space after each word --}}
+                                        @endforeach
+                                        </p>
+                                    @else
+                                        {{ $attempt['pronunciation_details']['text'] ?? '-' }}
+                                    @endif
+                                </td>
+
+                                                                    <td>{{ $attempt['pronunciation_details']['cefr_pronunciation_score'] ?? '-' }}</td>
+                                                                    <td>{{ $attempt['pronunciation_details']['ielts_pronunciation_score'] ?? '-' }}</td>
+                                                                    <td>{{ $attempt['pronunciation_details']['pte_pronunciation_score'] ?? '-' }}</td>
+
+                                                                    <td>{{ $attempt['pronunciation_details']['toeic_pronunciation_score'] ?? '-' }}</td>
+
+
+                                                                @endif
+                                                            </tr>
+                                                        @endforeach
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </td>
+                                    </tr>
+                           @endforeach
+                            </tbody>
+                        </table>
+                    @empty
+                        <p>No attempts found for any activity type.</p>
+                    @endforelse
                 </div>
             </div>
-            <!-- End Main Overview -->
-
-
         </main>
-        <!-- End Main -->
     </div>
+
+    <div id="printableReport" style="display:none; padding: 20px; font-family: Arial, sans-serif; max-width: 900px;">
+        <h2>MIÓ Activity Report</h2>
+        <div id="reportContent"></div>
+    </div>
+
 </section>
+<script>
+    const specializedType = @json($subject['specialized_type'] ?? null);
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggles = document.querySelectorAll('.student-summary .toggle-arrow');
+
+        toggles.forEach(toggle => {
+            toggle.addEventListener('click', () => {
+                const summaryRow = toggle.closest('.student-summary');
+                const studentId = summaryRow.dataset.student;
+
+                const detailsRow = document.querySelector(`.student-details-row[data-student="${studentId}"]`);
+
+                if (!detailsRow) return;
+
+                if (detailsRow.style.display === 'none') {
+                    detailsRow.style.display = 'table-row';
+                    toggle.textContent = '▼';
+                } else {
+                    detailsRow.style.display = 'none';
+                    toggle.textContent = '▶';
+                }
+            });
+        });
+    });
+</script>
+
+<style>
+    .student-summary:hover {
+        background-color: #eef6ff;
+    }
+
+    .student-details {
+        background-color: #f0f8ff;
+        border: 1px solid #cbdaf1;
+        padding: 1rem;
+        border-radius: 4px;
+    }
+</style>
+
+<style>
+  .tooltip {
+    position: absolute;
+    background: #f0f0f0;
+    border: 1px solid #888;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    max-width: 300px;
+    z-index: 1000;
+  }
+</style>
+
+<div id="tooltip" class="tooltip"></div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const tooltip = document.getElementById('tooltip');
+
+    function showTooltip(event, content) {
+        tooltip.innerHTML = content;
+        tooltip.style.opacity = 1;
+        tooltip.style.left = event.pageX + 15 + 'px';
+        tooltip.style.top = event.pageY + 15 + 'px';
+    }
+
+    function hideTooltip() {
+        tooltip.style.opacity = 0;
+    }
+
+    document.querySelectorAll('.word-info').forEach(el => {
+        el.addEventListener('mouseenter', (event) => {
+            const word = el.dataset.word;
+            const qualityScore = el.dataset.qualityScore;
+            const syllables = JSON.parse(el.dataset.syllables);
+
+            let syllablesHtml = '<ul>';
+            syllables.forEach(syl => {
+                syllablesHtml += `<li><strong>${syl.letters}</strong> (Quality: ${syl.quality_score}, Stress: ${syl.stress_level})</li>`;
+            });
+            syllablesHtml += '</ul>';
+
+            const content = `
+                <strong>Word:</strong> ${word}<br>
+                <strong>Quality Score:</strong> ${qualityScore}<br>
+                <strong>Syllables:</strong> ${syllablesHtml}
+            `;
+            showTooltip(event, content);
+        });
+
+        el.addEventListener('mousemove', (event) => {
+            tooltip.style.left = event.pageX + 15 + 'px';
+            tooltip.style.top = event.pageY + 15 + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            hideTooltip();
+        });
+    });
+});
+</script>
+
+<script>
+document.getElementById('generateReportBtn').addEventListener('click', () => {
+    const reportContent = document.getElementById('reportContent');
+    reportContent.innerHTML = ''; // clear old
+
+    const attemptsData = @json($groupedAttempts);
+    const specializedType = @json($subject['specialized_type'] ?? null);
+
+    for (const [activityType, attempts] of Object.entries(attemptsData)) {
+        let html = `<h3>${activityType.charAt(0).toUpperCase() + activityType.slice(1)} </h3>`;
+
+        const hasSpeechColumns = (activityType === 'pronunciation' && specializedType === 'speech');
+
+        html += `<table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; width: 100%; margin-bottom: 2rem;">
+                    <thead>
+                        <tr>
+                            <th>Student ID</th>
+                            <th>Answered At</th>
+                            <th>MIÓ Score</th>
+                            <th>Feedback</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+
+        // Group attempts by student id
+        const attemptsByStudent = {};
+        attempts.forEach(attempt => {
+            if (!attemptsByStudent[attempt.student_id]) {
+                attemptsByStudent[attempt.student_id] = [];
+            }
+            attemptsByStudent[attempt.student_id].push(attempt);
+        });
+
+        for (const studentId in attemptsByStudent) {
+            const studentAttempts = attemptsByStudent[studentId];
+
+            // Sort by answered_at descending
+            studentAttempts.sort((a, b) => new Date(b.answered_at) - new Date(a.answered_at));
+
+            const latestAnsweredAt = studentAttempts.length > 0 ? studentAttempts[0].answered_at : '-';
+            const latestValid = studentAttempts.find(attempt => attempt.pronunciation_details?.speechace_pronunciation_score) || {};
+
+            html += `<tr>
+                        <td>${studentId}</td>
+                        <td>${latestAnsweredAt || '-'}</td>
+                        <td>${latestValid.pronunciation_details?.speechace_pronunciation_score ?? '-'}</td>
+                        <td>${latestValid.pronunciation_details?.feedback ?? '-'}</td>
+                    </tr>`;
+
+            const colspan = hasSpeechColumns ? 5 : 4; // Adjust colspan for detail row
+
+            html += `<tr style="background-color:#f9f9f9;">
+                        <td colspan="${colspan}" style="padding: 1rem;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead>
+                                    <tr>`;
+
+            // Remove Audio column header entirely
+            // if hasSpeechColumns, only include text and scores columns
+            if (hasSpeechColumns) {
+                html += `
+                                        <th>Text</th>
+                                        <th>CEFR</th>
+                                        <th>IELTS</th>
+                                        <th>PTE</th>
+                                        <th>TOEIC</th>`;
+            }
+
+            html += `          </tr>
+                                </thead>
+                                <tbody>`;
+
+            for (const attempt of studentAttempts) {
+                // Remove audio cell, so just start with empty string if no speech columns,
+                // else start the row with nothing (because no audio column)
+                html += `<tr>`;
+
+                if (hasSpeechColumns) {
+                    let textContent = '-';
+                    if (attempt.pronunciation_details?.words) {
+                        textContent = attempt.pronunciation_details.words.map(w => w.word).join(' ');
+                    } else if (attempt.pronunciation_details?.text) {
+                        textContent = attempt.pronunciation_details.text;
+                    }
+
+                    html += `<td>${textContent}</td>
+                             <td>${attempt.pronunciation_details?.cefr_pronunciation_score ?? '-'}</td>
+                             <td>${attempt.pronunciation_details?.ielts_pronunciation_score ?? '-'}</td>
+                             <td>${attempt.pronunciation_details?.pte_pronunciation_score ?? '-'}</td>
+                             <td>${attempt.pronunciation_details?.toeic_pronunciation_score ?? '-'}</td>`;
+                }
+
+                html += `</tr>`;
+            }
+
+            html += `       </tbody>
+                            </table>
+                        </td>
+                    </tr>`;
+        }
+
+        html += `   </tbody>
+                </table>`;
+
+        reportContent.innerHTML += html;
+    }
+
+    // Show printable section and print
+    const printableReport = document.getElementById('printableReport');
+    printableReport.style.display = 'block';
+
+    window.print();
+
+    // Optionally hide printable report after print (for UX)
+    printableReport.style.display = 'none';
+});
+
+</script>
+
+
+
+

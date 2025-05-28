@@ -438,6 +438,12 @@ Route::prefix('mio/teacher')->middleware(
     // SCORES
         Route::get('/{subjectId}/scores', [TeacherController::class, 'showScores'])->name('scores');
 
+        Route::get('/{subjectId}/scores/report', [TeacherController::class, 'generateReport'])->name('scores-pdf');
+
+
+
+
+    // people
 
         Route::get('/{subjectId}/people', [TeacherController::class, 'showPeople'])->name('people');
 

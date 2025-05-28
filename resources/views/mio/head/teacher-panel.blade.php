@@ -77,6 +77,9 @@
 
     @elseif ($page === 'scores')
         @include('mio.teacher-access.subject.score.score')
+    @elseif ($page === "scores-pdf")
+        @include('mio.teacher-access.subject.score.scores-pdf')
+
 
     @elseif ($page === 'attendance')
         @include('mio.teacher-access.subject.attendance.attendance')

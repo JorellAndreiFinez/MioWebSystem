@@ -11,12 +11,20 @@ use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Google\Cloud\Storage\StorageClient;
+use Google\Cloud\Storage\Bucket;
+use Google\Cloud\Storage\StorageObject;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 class TeacherController extends Controller
 {
 
     protected $database;
+    protected $storageClient;
+    protected $bucketName;
+
+
 
     public function __construct()
     {
@@ -30,7 +38,207 @@ class TeacherController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+        // Create Google Cloud Storage client
+        $this->storageClient = new StorageClient([
+            'keyFilePath' => $path,
+        ]);
+
+        // Your Firebase Storage bucket name
+        $this->bucketName = 'miolms.firebasestorage.app';
     }
+
+    public function showScores($subjectId)
+    {
+
+        // 1. Get active school year
+        $schoolYearsRef = $this->database->getReference('schoolyears');
+        $schoolYears = $schoolYearsRef->getValue() ?? [];
+        $activeSchoolYear = null;
+
+        foreach ($schoolYears as $schoolYear) {
+            if ($schoolYear['status'] === 'active') {
+                $activeSchoolYear = $schoolYear['schoolyearid'];
+                break;
+            }
+        }
+
+        if (!$activeSchoolYear) {
+            return redirect()->route('mio.teacher-panel')->with('error', 'No active school year found.');
+        }
+
+        // 2. Get subject and grade level
+        $subjectsRef = $this->database->getReference('subjects');
+        $subjectsData = $subjectsRef->getValue() ?? [];
+
+        $subject = null;
+        $gradeLevelFound = null;
+
+        foreach ($subjectsData as $gradeLevel => $subjectList) {
+            foreach ($subjectList as $subj) {
+                if ($subj['subject_id'] === $subjectId) {
+                    $subject = $subj;
+                    $gradeLevelFound = $gradeLevel;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$subject || !$gradeLevelFound) {
+            return redirect()->route('mio.teacher-panel')->with('error', 'Subject not found.');
+        }
+
+        // 3. Define activity types (hardcoded)
+        $activityTypes = [
+            'pronunciation', 'picture', 'question', 'phrase',
+            'bingo', 'matching', 'fill', 'talk2me', 'homonyms'
+        ];
+
+        $groupedAttempts = [];
+
+        foreach ($activityTypes as $activityType) {
+        $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
+        $students = $activityRef->getValue() ?? [];
+
+        foreach ($students as $activitySetId => $studentSet) {
+            foreach ($studentSet as $studentId => $studentAttempts) {
+                foreach ($studentAttempts as $attemptId => $attemptDetails) {
+                    if (!isset($attemptDetails['answers'])) continue;
+
+                    foreach ($attemptDetails['answers'] as $answerId => $answerData) {
+                        $attempt = [
+                            'student_id' => $studentId,
+                            'attempt_id' => $attemptId,
+                            'answer_id' => $answerId,
+                            'answered_at' => $answerData['answered_at'] ?? null,
+                            'audio_path' => $answerData['audio_path'] ?? null,
+                            'card_no' => $answerData['card_no'] ?? null,
+                        ];
+
+                        if (!empty($attempt['audio_path'])) {
+                            $signedUrl = $this->getAudioDownloadUrl($attempt['audio_path']);
+                            $attempt['audio_url'] = $signedUrl ?? null;
+                        } else {
+                            $attempt['audio_url'] = null;
+                        }
+
+                        // If specialized type is speech and pronunciation_details exist
+                        if (($subject['specialized_type'] ?? null) === 'speech' && isset($answerData['pronunciation_details'])) {
+                            $attempt['pronunciation_details'] = $answerData['pronunciation_details'];
+
+                            $speechaceScore = $answerData['pronunciation_details']['speechace_pronunciation_score'] ?? null;
+
+                            if ($speechaceScore !== null) {
+                                $feedback = $this->getPronunciationFeedback((int)$speechaceScore);
+                                $attempt['pronunciation_details']['ielts_pronunciation_score'] = $feedback['ielts'];
+                                $attempt['pronunciation_details']['cefr_pronunciation_score'] = $feedback['cefr'];
+                                $attempt['pronunciation_details']['pte_pronunciation_score'] = $feedback['pte'];
+                                $attempt['pronunciation_details']['feedback'] = $feedback['feedback'];
+                            }
+                        }
+
+                        $groupedAttempts[$activityType][] = $attempt;
+                    }
+                }
+            }
+        }
+    }
+
+    Log::info("Signed URL: {$signedUrl}");
+
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'scores',
+            'subject' => $subject,
+            'groupedAttempts' => $groupedAttempts,
+        ]);
+    }
+
+
+
+
+    protected function getAudioDownloadUrl($objectPath)
+        {
+            try {
+                $bucket = $this->storageClient->bucket($this->bucketName);
+                $object = $bucket->object($objectPath);
+
+                // Signed URL valid for 1 hour (3600 seconds)
+                $url = $object->signedUrl(
+                    new \DateTime('1 hour'),
+                    [
+                        'version' => 'v4',
+                    ]
+                );
+
+                return $url;
+
+            } catch (\Exception $e) {
+                // Log error or handle exception
+                Log::error("Failed to generate signed URL for: {$objectPath}, error: " . $e->getMessage());
+                return null;
+            }
+    }
+
+    public static function getPronunciationFeedback($score)
+    {
+        // Speechace -> IELTS, CEFR, PTE based on the table
+        $bands = [
+            ['range' => [97, 100], 'ielts' => '9.0', 'cefr' => 'C2', 'pte' => '90'],
+            ['range' => [92, 96], 'ielts' => '8.5', 'cefr' => 'C2', 'pte' => '90'],
+            ['range' => [86, 91], 'ielts' => '8.0', 'cefr' => 'C1+', 'pte' => '85'],
+            ['range' => [81, 85], 'ielts' => '7.5', 'cefr' => 'C1', 'pte' => '76'],
+            ['range' => [75, 80], 'ielts' => '7.0', 'cefr' => 'B2', 'pte' => '68'],
+            ['range' => [69, 74], 'ielts' => '6.5', 'cefr' => 'B1+', 'pte' => '59'],
+            ['range' => [64, 68], 'ielts' => '6.0', 'cefr' => 'B1', 'pte' => '51'],
+            ['range' => [58, 63], 'ielts' => '5.5', 'cefr' => 'A2+', 'pte' => '42'],
+            ['range' => [53, 57], 'ielts' => '5.0', 'cefr' => 'A2', 'pte' => '34'],
+            ['range' => [47, 52], 'ielts' => '4.5', 'cefr' => 'A1+', 'pte' => '25'],
+            ['range' => [42, 46], 'ielts' => '4.0', 'cefr' => 'A1', 'pte' => '20'],
+            ['range' => [0, 41], 'ielts' => '0-3.5', 'cefr' => 'A0', 'pte' => '10'],
+        ];
+
+        foreach ($bands as $band) {
+            [$min, $max] = $band['range'];
+            if ($score >= $min && $score <= $max) {
+                return [
+                    'ielts' => $band['ielts'],
+                    'cefr' => $band['cefr'],
+                    'pte' => $band['pte'],
+                    'feedback' => self::getFeedbackComment($band['cefr'])
+                ];
+            }
+        }
+
+        return [
+            'ielts' => '-',
+            'cefr' => '-',
+            'pte' => '-',
+            'feedback' => 'Score not available.'
+        ];
+    }
+
+    protected static function getFeedbackComment($cefr)
+    {
+        $feedback = [
+            'C2' => 'Excellent pronunciation. Near-native fluency.',
+            'C1+' => 'Very good. You sound clear and confident.',
+            'C1' => 'Good job! Slight improvements needed.',
+            'B2' => 'Fairly good, but work on consistency.',
+            'B1+' => 'Understandable, some pronunciation errors.',
+            'B1' => 'Needs improvement in intonation and clarity.',
+            'A2+' => 'Basic level. Keep practicing common words.',
+            'A2' => 'Work on articulation and rhythm.',
+            'A1+' => 'Beginner level. Start with simple phrases.',
+            'A1' => 'Struggling with pronunciation. Practice daily.',
+            'A0' => 'Needs foundational work in speech sounds.',
+        ];
+
+        return $feedback[$cefr] ?? 'No feedback available.';
+    }
+
+
+
 
    public function showDashboard()
     {
@@ -249,76 +457,79 @@ class TeacherController extends Controller
         ]);
     }
 
+    // TEACHER SCORES
+
+
 
     // TEACHER ATTENDANCE
    public function showAttendance(Request $request, $subjectId)
-{
-    $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
+    {
+        $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
 
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
 
-    $subjectData = null;
-    $gradeLevelKey = null;
+        $subjectData = null;
+        $gradeLevelKey = null;
 
-    foreach ($allSubjects as $grade => $subjects) {
-        if (isset($subjects[$subjectId])) {
-            $subjectData = $subjects[$subjectId];
-            $gradeLevelKey = $grade;
-            break;
-        }
-    }
-
-    if (!$subjectData) {
-        return response()->json(['error' => 'Subject not found'], 404);
-    }
-
-    // Find attendance ID for the given date if exists
-    $attendanceId = null;
-    $attendanceData = [];
-
-    if (!empty($subjectData['attendance'])) {
-        foreach ($subjectData['attendance'] as $id => $record) {
-            if (($record['date'] ?? '') === $attendanceDate) {
-                $attendanceId = $id;
-                $attendanceData = $record;
+        foreach ($allSubjects as $grade => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $subjectData = $subjects[$subjectId];
+                $gradeLevelKey = $grade;
                 break;
             }
         }
-    }
 
-    // Filter out teachers from the people list
-    $students = [];
-    if (!empty($subjectData['people'])) {
-        foreach ($subjectData['people'] as $personId => $person) {
-            if (
-                (isset($person['role']) && strtolower($person['role']) === 'student') ||
-                (!isset($person['role']) && !isset($person['teacher_id'])) // maybe treat as student if no role and no teacher_id
-            ) {
-                $students[$personId] = $person;
+        if (!$subjectData) {
+            return response()->json(['error' => 'Subject not found'], 404);
+        }
+
+        // Find attendance ID for the given date if exists
+        $attendanceId = null;
+        $attendanceData = [];
+
+        if (!empty($subjectData['attendance'])) {
+            foreach ($subjectData['attendance'] as $id => $record) {
+                if (($record['date'] ?? '') === $attendanceDate) {
+                    $attendanceId = $id;
+                    $attendanceData = $record;
+                    break;
+                }
             }
         }
+
+        // Filter out teachers from the people list
+        $students = [];
+        if (!empty($subjectData['people'])) {
+            foreach ($subjectData['people'] as $personId => $person) {
+                if (
+                    (isset($person['role']) && strtolower($person['role']) === 'student') ||
+                    (!isset($person['role']) && !isset($person['teacher_id'])) // maybe treat as student if no role and no teacher_id
+                ) {
+                    $students[$personId] = $person;
+                }
+            }
+        }
+
+
+
+
+        foreach ($subjectData['people'] as $personId => $person) {
+            Log::info("Person role: " . ($person['role'] ?? 'no role'));
+        }
+
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'attendance',
+            'subjectId' => $subjectId,
+            'attendanceId' => $attendanceId,
+            'attendance' => $attendanceData,
+            'subject' => $subjectData,
+            'people' => $students,
+            'attendanceDate' => $attendanceDate,
+            'gradeLevelKey' => $gradeLevelKey,
+        ]);
     }
-
-
-
-
-    foreach ($subjectData['people'] as $personId => $person) {
-    Log::info("Person role: " . ($person['role'] ?? 'no role'));
-}
-
-
-    return view('mio.head.teacher-panel', [
-        'page' => 'attendance',
-        'subjectId' => $subjectId,
-        'attendanceId' => $attendanceId,
-        'attendance' => $attendanceData,
-        'subject' => $subjectData,
-        'people' => $students,
-        'attendanceDate' => $attendanceDate,
-        'gradeLevelKey' => $gradeLevelKey,
-    ]);
-}
 
     public function updateAttendance(Request $request, $subjectId)
 {
@@ -654,7 +865,7 @@ class TeacherController extends Controller
     // Step 10: Redirect
     return redirect()->route('mio.subject-teacher.quiz', $subjectId)
         ->with('success', 'Quiz successfully created.');
-}
+    }
 
 
 
