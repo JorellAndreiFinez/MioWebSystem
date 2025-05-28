@@ -6,7 +6,8 @@ use App\Http\Middleware\MobileRoleBasedAccessMiddleware;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\api\StudentApiController;
 use App\Http\Controllers\api\TeacherApiController;
-use App\Http\Controllers\api\SpecializedActivityApi;
+use App\Http\Controllers\api\SpecializedSpeechApi;
+use App\Http\Controllers\api\SpecializedAuditoryApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Session\Middleware\StartSession;
@@ -27,8 +28,7 @@ Route::middleware([
     Route::get('/subject/{subjectId}/scores', [StudentApiController::class, 'getSubjectScoresApi']);
     Route::get('/subject/{subjectId}/quizzes', [StudentApiController::class, 'getSubjectQuizzesApi']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
-    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedActivityApi::class, 'getSpeechActivities']);
-    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'getSpeechActivityById']);
+    Route::get('/subject/{subjectId}/speech/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
 });
 
 
@@ -37,9 +37,15 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
-    Route::post('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedActivityApi::class, 'startFlashcardActivity']);
-    Route::post('/subject/{subjectId}/specialized/{activityType}/{activityId}/{attemptId}/{flashcardId}', [SpecializedActivityApi::class, 'submitFlashcardAnswer']);
-    Route::patch('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedActivityApi::class, 'finalizeFlashcardAttempt']);
+    // speech 
+
+    Route::post('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'startFlashcardActivity']);
+    Route::post('/subject/{subjectId}/speech/{activityType}/{activityId}/{attemptId}/{flashcardId}', [SpecializedSpeechApi::class, 'submitFlashcardAnswer']);
+    Route::patch('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedSpeechApi::class, 'finalizeFlashcardAttempt']);
+
+    // auditory
+    Route::post('/subject/{subjectId}/auditory/{activityType}/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startAuditoryActivity']);
+    Route::patch('/subject/{subjectId}/auditory/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeAuditoryAttempt']);
 });
 
 Route::middleware([
@@ -58,5 +64,8 @@ Route::middleware([
 
     Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
 
-    Route::post('/subject/{subjectId}/specialized', [SpecializedActivityApi::class, 'createSpeechActivity']);
+    Route::post('/subject/{subjectId}/specialized/speech', [SpecializedSpeechApi::class, 'createSpeechActivity']);
+    Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
+    Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createBingoActivity']);
+    // Route::post('/subject/{subjectId}/specialized/language', [SpecializedSpeechApi::class, 'createLanguageActivity']);
 });

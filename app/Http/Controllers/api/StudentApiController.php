@@ -58,6 +58,7 @@ class StudentApiController extends Controller
                 'title' => $subjectData['title'] ?? null,
                 'description' => $subjectData['modules']['MOD00']['description'] ?? null,
                 'subjectType' => $subjectData['subjectType'] ?? null,
+                'specialized_type' => $subjectData['specialized_type'] ?? null,
             ];
         }
 
@@ -308,4 +309,6 @@ class StudentApiController extends Controller
             ], 500);
         }
     }
+
+    
 }
