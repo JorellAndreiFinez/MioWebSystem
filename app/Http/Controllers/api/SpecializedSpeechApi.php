@@ -17,7 +17,7 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 use Kreait\Firebase\Contract\Storage as FirebaseStorage;
 
-class SpecializedActivityApi extends Controller
+class SpecializedSpeechApi extends Controller
 {
     public function __construct()
     {
@@ -190,7 +190,7 @@ class SpecializedActivityApi extends Controller
                     $flashcardData[$uuid] ?? ['flashcard_id' => $uuid],
                     [
                         'image_path' => $remotePath,
-                        'answer'     => $answers[$idx] ?? null,
+                        'answer' => $answers[$idx] ?? null,
                     ]
                 );
             }
@@ -202,10 +202,8 @@ class SpecializedActivityApi extends Controller
 
             $activityData = [
                 'flashcards'=> $flashcardData,
-
                 'total' => count($flashcardData),
                 'created_at' => $date,
-                'updated_at' => $date
             ];
 
             $this->database
@@ -242,21 +240,28 @@ class SpecializedActivityApi extends Controller
          * 
          */
         try{
-            $subjectData = $this->database
+            $activityData = $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
-            $flashcards = $subjectData['flashcards'];
+            if (! $activityData || ! isset($activityData['flashcards'])) {
+                return response()->json([
+                    'success' => false,
+                    'error'   => 'Activity not found.'
+                ], 404);
+            }
+
+            $flashcards = $activityData['flashcards'];
             
-            $attemptId   = (string) Str::uuid();
+            $attemptId = $this->generateUniqueId("ATTM");
             $startedAt   = now()->toDateTimeString();
 
             $studentAnswers = [];
             foreach ($flashcards as $idx => $card) {
                 $studentAnswers[$card['flashcard_id']] = [
                     'card_no' => $idx,
-                    'word' => $card['word'] ?? "",
+                    'word' => $card['word'] ?? $card['answer'] ?? "",
                     'audio_path' => null,
                     'image_path' => $card['image_path'] ?? ""
                 ];
@@ -268,7 +273,7 @@ class SpecializedActivityApi extends Controller
                 'status'     => 'in-progress',
             ];
 
-            $check = $this->database
+            $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
                 ->set($initialInfo);
 
@@ -313,38 +318,40 @@ class SpecializedActivityApi extends Controller
                 ], 400);
             }
 
-            $bucket = $this->storage->getBucket();
-
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
             $filename = "{$uuid}.wav";
+            $path = $file->storeAs('audio_submissions', $filename, 'public');
+
             $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
 
+            $bucket = $this->storage->getBucket();
             $bucket->upload(
                 fopen($file->getPathName(), 'r'),
                 ['name' => $remotePath]
             );
 
             $now = now()->toDateTimeString();
-
             $word = $answers[$flashcardId]['word'];
-            // for pronunciation api
-            // $pronunciation_details = $this->pronunciationScoreApi($path, $word);
+            $pronunciation_details = $this->pronunciationScoreApi($path, $word);
 
             $updatedAnswer = [
                 'word'         => $word,
                 'audio_path'   => $remotePath,
                 'answered_at'  => $now,
-                // 'pronunciation_details' => $pronunciation_details,
+                'pronunciation_details' => $pronunciation_details,
             ];
 
             $answersRef
                 ->getChild($flashcardId)
                 ->update($updatedAnswer);
 
+            Storage::disk('public')->delete($path);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Answer submitted successfully',
+                'pronunciation_details' => $pronunciation_details
             ], 200);
 
         } catch (\Exception $e) {
@@ -364,26 +371,25 @@ class SpecializedActivityApi extends Controller
         string $attemptId
     ) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId     = $request->get('firebase_user_id');
-        $now        = now()->toDateTimeString();
+        $userId = $request->get('firebase_user_id');
+        $now = now()->toDateTimeString();
 
-        $refPath = "subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}";
-        $ref = $this->database->getReference($refPath);
+        $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}");
 
         try {
             $ref->update([
-                'status'       => 'submitted',
+                'status' => 'submitted',
                 'submitted_at' => $now,
             ]);
 
             $answers = $ref->getChild('answers')->getSnapshot()->getValue() ?? [];
 
-            $scores        = [];
-            $totalQuality  = 0;
-            $numCards      = count($answers);
+            $scores = [];
+            $totalQuality = 0;
+            $numCards = count($answers);
 
             foreach ($answers as $cardId => $answer) {
-                $details   = $answer['pronunciation_details'] ?? [];
+                $details = $answer['pronunciation_details'] ?? [];
                 $wordsList = $details['words']               ?? [];
 
                 if (! empty($wordsList) && is_array($wordsList[0])) {
@@ -393,19 +399,19 @@ class SpecializedActivityApi extends Controller
                     $totalQuality += $quality;
 
                     $scores[$cardId] = [
-                        'word'          => $w['word']            ?? '',
+                        'word' => $w['word'] ?? '',
                         'quality_score' => $quality,
-                        'phones'        => $w['phones']          ?? [],
-                        'syllables'     => $w['syllables']       ?? [],
-                        'timestamp'     => $details['timestamp'] ?? $now,
+                        'phones' => $w['phones'] ?? [],
+                        'syllables' => $w['syllables'] ?? [],
+                        'timestamp' => $details['timestamp'] ?? $now,
                     ];
                 } else {
                     $scores[$cardId] = [
-                        'word'          => '',
+                        'word' => '',
                         'quality_score' => 0,
-                        'phones'        => [],
-                        'syllables'     => [],
-                        'timestamp'     => $now,
+                        'phones' => [],
+                        'syllables' => [],
+                        'timestamp' => $now,
                     ];
                 }
             }
@@ -414,65 +420,65 @@ class SpecializedActivityApi extends Controller
                 ? round($totalQuality / $numCards, 2)
                 : 0;
 
-            // return response()->json([
-            //     'success'       => true,
-            //     'message'       => 'Activity submitted successfully.',
-            //     'scores'        => $scores,
-            //     'overall_score' => $overallAverage,
-            // ], 200);
-
             return response()->json([
-                'success' => true,
-                'message' => 'Activity submitted successfully.',
-                'scores'  => [
-                    '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
-                        'word'            => 'banana',
-                        'quality_score'   => 98,
-                        'phones'          => [
-                            ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
-                            ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
-                            ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
-                            ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
-                            ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
-                            ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
-                        ],
-                        'syllables'       => [
-                            ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
-                            ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
-                            ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
-                        ],
-                    ],
-                    '95c11a5c-6941-49e4-9038-b53334175cdd' => [
-                        'word'            => 'apple',
-                        'quality_score'   => 90,
-                        'phones'          => [
-                            ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
-                            ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
-                            ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
-                        ],
-                        'syllables'       => [
-                            ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
-                            ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
-                        ],
-                        'timestamp'       => '2025-05-27 14:35:00',
-                    ],
-                    'c4cd1987-6449-4115-8f63-8f790c679319' => [
-                        'word'            => 'orange',
-                        'quality_score'   => 95,
-                        'phones'          => [
-                            ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
-                            ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
-                            ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
-                            ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
-                        ],
-                        'syllables'       => [
-                            ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
-                            ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
-                        ],
-                    ],
-                ],
-                'overall_score' => 200
+                'success'       => true,
+                'message'       => 'Activity submitted successfully.',
+                'scores'        => $scores,
+                'overall_score' => $overallAverage,
             ], 200);
+
+            // return response()->json([
+            //     'success' => true,
+            //     'message' => 'Activity submitted successfully.',
+            //     'scores'  => [
+            //         '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
+            //             'word'            => 'banana',
+            //             'quality_score'   => 98,
+            //             'phones'          => [
+            //                 ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
+            //                 ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
+            //                 ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
+            //                 ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
+            //                 ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
+            //                 ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
+            //             ],
+            //             'syllables'       => [
+            //                 ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
+            //                 ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
+            //                 ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
+            //             ],
+            //         ],
+            //         '95c11a5c-6941-49e4-9038-b53334175cdd' => [
+            //             'word'            => 'apple',
+            //             'quality_score'   => 90,
+            //             'phones'          => [
+            //                 ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
+            //                 ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
+            //                 ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
+            //             ],
+            //             'syllables'       => [
+            //                 ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
+            //                 ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
+            //             ],
+            //             'timestamp'       => '2025-05-27 14:35:00',
+            //         ],
+            //         'c4cd1987-6449-4115-8f63-8f790c679319' => [
+            //             'word'            => 'orange',
+            //             'quality_score'   => 95,
+            //             'phones'          => [
+            //                 ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
+            //                 ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
+            //                 ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
+            //                 ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
+            //             ],
+            //             'syllables'       => [
+            //                 ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
+            //                 ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
+            //             ],
+            //         ],
+            //     ],
+            //     'overall_score' => 200
+            // ], 200);
 
         } catch (\Exception $e) {
             \Log::error('finalizeFlashcardAttempt failed', [
