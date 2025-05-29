@@ -96,49 +96,77 @@ class TeacherController extends Controller
 
         $groupedAttempts = [];
 
-        foreach ($activityTypes as $activityType) {
+    foreach ($activityTypes as $activityType) {
+        if ($activityType !== 'pronunciation') continue; // Only load pronunciation
+
         $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
         $students = $activityRef->getValue() ?? [];
 
         foreach ($students as $activitySetId => $studentSet) {
             foreach ($studentSet as $studentId => $studentAttempts) {
-                foreach ($studentAttempts as $attemptId => $attemptDetails) {
-                    if (!isset($attemptDetails['answers'])) continue;
+                // Sort attempts by submitted_at descending
+                uasort($studentAttempts, function ($a, $b) {
+                    return strtotime($b['submitted_at'] ?? '') <=> strtotime($a['submitted_at'] ?? '');
+                });
 
-                    foreach ($attemptDetails['answers'] as $answerId => $answerData) {
-                        $attempt = [
-                            'student_id' => $studentId,
-                            'attempt_id' => $attemptId,
-                            'answer_id' => $answerId,
-                            'answered_at' => $answerData['answered_at'] ?? null,
-                            'audio_path' => $answerData['audio_path'] ?? null,
-                            'card_no' => $answerData['card_no'] ?? null,
-                        ];
+                // Get the most recent attempt only
+                $recentAttempt = reset($studentAttempts);
 
-                        if (!empty($attempt['audio_path'])) {
-                            $signedUrl = $this->getAudioDownloadUrl($attempt['audio_path']);
-                            $attempt['audio_url'] = $signedUrl ?? null;
-                        } else {
-                            $attempt['audio_url'] = null;
-                        }
+                if (!isset($recentAttempt['answers'])) continue;
 
-                        // If specialized type is speech and pronunciation_details exist
-                        if (($subject['specialized_type'] ?? null) === 'speech' && isset($answerData['pronunciation_details'])) {
-                            $attempt['pronunciation_details'] = $answerData['pronunciation_details'];
+                foreach ($recentAttempt['answers'] as $answerId => $answerData) {
+                    $attempt = [
+                        'student_id' => $studentId,
+                        'attempt_id' => key($studentAttempts),
+                        'answer_id' => $answerId,
+                        'answered_at' => $answerData['answered_at'] ?? null,
+                        'started_at' => $recentAttempt['started_at'] ?? null,
+                        'submitted_at' => $recentAttempt['submitted_at'] ?? null,
+                        'audio_path' => $answerData['audio_path'] ?? null,
+                        'card_no' => $answerData['card_no'] ?? null,
+                    ];
 
-                            $speechaceScore = $answerData['pronunciation_details']['speechace_pronunciation_score'] ?? null;
-
-                            if ($speechaceScore !== null) {
-                                $feedback = $this->getPronunciationFeedback((int)$speechaceScore);
-                                $attempt['pronunciation_details']['ielts_pronunciation_score'] = $feedback['ielts'];
-                                $attempt['pronunciation_details']['cefr_pronunciation_score'] = $feedback['cefr'];
-                                $attempt['pronunciation_details']['pte_pronunciation_score'] = $feedback['pte'];
-                                $attempt['pronunciation_details']['feedback'] = $feedback['feedback'];
-                            }
-                        }
-
-                        $groupedAttempts[$activityType][] = $attempt;
+                    if (!empty($attempt['audio_path'])) {
+                        $signedUrl = $this->getAudioDownloadUrl($attempt['audio_path']);
+                        $attempt['audio_url'] = $signedUrl ?? null;
+                    } else {
+                        $attempt['audio_url'] = null;
                     }
+
+                    if (($subject['specialized_type'] ?? null) === 'speech' && isset($answerData['pronunciation_details'])) {
+                    $attempt['pronunciation_details'] = $answerData['pronunciation_details'];
+                    $speechaceScore = $answerData['pronunciation_details']['speechace_pronunciation_score'] ?? null;
+
+                    if ($speechaceScore !== null) {
+                        $feedback = $this->getPronunciationFeedback((int)$speechaceScore);
+                        $attempt['pronunciation_details']['ielts_pronunciation_score'] = $feedback['ielts'];
+                        $attempt['pronunciation_details']['cefr_pronunciation_score'] = $feedback['cefr'];
+                        $attempt['pronunciation_details']['pte_pronunciation_score'] = $feedback['pte'];
+                        $attempt['pronunciation_details']['feedback'] = $feedback['feedback'];
+                    }
+
+                    // 🟡 Calculate general MIÓ score from words' quality_score
+                    $words = $answerData['pronunciation_details']['words'] ?? [];
+                    $totalScore = 0;
+                    $wordCount = 0;
+
+                    foreach ($words as $word) {
+                        if (isset($word['quality_score'])) {
+                            $totalScore += $word['quality_score'];
+                            $wordCount++;
+                        }
+                    }
+
+                    if ($wordCount > 0) {
+                        $mioScore = round($totalScore / $wordCount, 2); // 🎯 Average score of words
+                        $attempt['mio_score'] = $mioScore;
+                    } else {
+                        $attempt['mio_score'] = null;
+                    }
+                }
+
+
+                    $groupedAttempts[$activityType][] = $attempt;
                 }
             }
         }

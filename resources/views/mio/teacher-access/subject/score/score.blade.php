@@ -1,15 +1,44 @@
 <section class="home-section">
-   @include('mio.dashboard.breadcrumbs')
+   <div class="text">Scores</div>
+     <!-- HEADER CONTROLS -->
 
-    <div class="grid-container">
-        <button id="generateReportBtn" style="margin-bottom: 1rem;">Generate Printable Report</button>
+    <div class="teacher-container">
+
+
+
+        <!-- Legend Section -->
+
+
+        <div class="search-legend-container">
+            <div class="search-bar">
+                 <div class="table-header">
+                    <div class="search-container">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
+                    </div>
+                    <div class="button-group">
+                    <button id="generateReportBtn" class="primary-btn btn" style="margin-bottom: 1rem; margin-left: 3rem">Generate Printable Report</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="score-legend">
+                <h5>Score Legend</h5>
+            <ul class="legend-list">
+                <li><strong>CEFR</strong>: A0 to C2 scale assessing language proficiency.</li>
+                <li><strong>IELTS</strong>: 0–9.0 band scores reflecting English skills.</li>
+                <li><strong>PTE</strong>: 10–90 scale focusing on fluency and clarity.</li>
+                <li><strong>TOEIC</strong>: 0-200 scale determining speaking in professional settings.</li>
+                <li><strong>MIÓ </strong>: 0-100 scale evaluating overall speech for assessment</li>
+
+            </ul>
+            </div>
+        </div>
 
 
 
         <main class="main-scores">
-
-
-            <div class="main-overview">
+            <div class="table-container">
                 <div class="score-table" style="max-width: 900px;">
                     @forelse($groupedAttempts as $activityType => $attempts)
                         <h3 >{{ ucfirst($activityType) }}</h3>
@@ -25,29 +54,28 @@
                                 </tr>
                             </thead>
                             <tbody>
-                               @php
+                              @php
                                 $attemptsByStudent = [];
                                 foreach ($attempts as $attempt) {
                                     $attemptsByStudent[$attempt['student_id']][] = $attempt;
-                                }
-
-                                // Sort and slice attempts per student to keep only the recent attempts
-                                foreach ($attemptsByStudent as $studentId => $studentAttempts) {
-                                    // Sort by answered_at descending
-                                    usort($studentAttempts, function($a, $b) {
-                                        return strtotime($b['started_at'] ?? '') <=> strtotime($a['started_at'] ?? '');
-                                    });
-
-                                    // Keep only the top 1 recent attempt (change 1 to 3 if you want the 3 most recent)
-                                    $attemptsByStudent[$studentId] = array_slice($studentAttempts, 0, 3);
                                 }
                             @endphp
 
 
                                 @foreach($attemptsByStudent as $studentId => $studentAttempts)
-                                    @php
-                                        // Get latest answered_at for the summary row
-                                        $latestAnsweredAt = collect($studentAttempts)->pluck('answered_at')->filter()->max();
+                                     @php
+                                        // Sort descending by answered_at
+                                        usort($studentAttempts, function ($a, $b) {
+                                            return strtotime($b['answered_at']) - strtotime($a['answered_at']);
+                                        });
+
+                                        $recentAttempt = $studentAttempts[0];
+                                        $latestAnsweredAt = $recentAttempt['answered_at'] ?? '-';
+
+                                        // Find latest attempt with valid pronunciation score (for feedback)
+                                        $latestValid = collect($studentAttempts)->first(function ($attempt) {
+                                            return !empty($attempt['pronunciation_details']['speechace_pronunciation_score']);
+                                        }) ?? [];
                                     @endphp
 
                                     <tr class="student-summary" data-student="{{ $studentId }}">
@@ -63,7 +91,7 @@
                                             });
                                         @endphp
 
-                                        <td>{{ $latestValid['pronunciation_details']['speechace_pronunciation_score'] ?? '-' }}</td>
+                                        <td>{{ isset($recentAttempt['mio_score']) ? number_format($recentAttempt['mio_score'], 2) : 'N/A' }}</td>
                                         <td>{{ $latestValid['pronunciation_details']['feedback'] ?? '-' }}</td>
 
 
@@ -182,35 +210,6 @@
     });
 </script>
 
-<style>
-    .student-summary:hover {
-        background-color: #eef6ff;
-    }
-
-    .student-details {
-        background-color: #f0f8ff;
-        border: 1px solid #cbdaf1;
-        padding: 1rem;
-        border-radius: 4px;
-    }
-</style>
-
-<style>
-  .tooltip {
-    position: absolute;
-    background: #f0f0f0;
-    border: 1px solid #888;
-    padding: 10px;
-    border-radius: 4px;
-    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.2s ease-in-out;
-    max-width: 300px;
-    z-index: 1000;
-  }
-</style>
-
 <div id="tooltip" class="tooltip"></div>
 
 <script>
@@ -300,14 +299,16 @@ document.getElementById('generateReportBtn').addEventListener('click', () => {
             studentAttempts.sort((a, b) => new Date(b.answered_at) - new Date(a.answered_at));
 
             const latestAnsweredAt = studentAttempts.length > 0 ? studentAttempts[0].answered_at : '-';
+            const recentAttempt = studentAttempts[0]; // most recent
             const latestValid = studentAttempts.find(attempt => attempt.pronunciation_details?.speechace_pronunciation_score) || {};
 
             html += `<tr>
                         <td>${studentId}</td>
                         <td>${latestAnsweredAt || '-'}</td>
-                        <td>${latestValid.pronunciation_details?.speechace_pronunciation_score ?? '-'}</td>
+                        <td>${typeof recentAttempt.mio_score !== 'undefined' ? recentAttempt.mio_score.toFixed(2) : 'N/A'}</td>
                         <td>${latestValid.pronunciation_details?.feedback ?? '-'}</td>
                     </tr>`;
+
 
             const colspan = hasSpeechColumns ? 5 : 4; // Adjust colspan for detail row
 
