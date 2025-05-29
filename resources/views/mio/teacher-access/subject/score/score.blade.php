@@ -47,6 +47,7 @@
                                 <tr>
                                     <th style="width: 30px;"></th> <!-- toggle arrow narrow -->
                                     <th style="width: 180px;">Student ID</th>
+                                    <th style="width: 180px;">Name</th>
                                     <th style="width: 180px;">Answered At</th>
                                     <th style="width: 180px;">MIÓ Score</th>
                                     <th style="width: 300px;">Feedback</th>
@@ -76,6 +77,9 @@
                                         $latestValid = collect($studentAttempts)->first(function ($attempt) {
                                             return !empty($attempt['pronunciation_details']['speechace_pronunciation_score']);
                                         }) ?? [];
+
+                                        $studentFirstName = $studentAttempts[0]['student_first_name'] ?? '';
+                                        $studentLastName = $studentAttempts[0]['student_last_name'] ?? '';
                                     @endphp
 
                                     <tr class="student-summary" data-student="{{ $studentId }}">
@@ -83,6 +87,7 @@
                                         <td style="cursor:pointer; user-select:none;" class="toggle-arrow">▶</td>
 
                                         <td>{{ $studentId }}</td>
+                                        <td>{{ $studentFirstName }} {{ $studentLastName }}</td>
                                         <td>{{ $latestAnsweredAt ?? '-' }}</td>
 
                                       @php
@@ -276,6 +281,7 @@ document.getElementById('generateReportBtn').addEventListener('click', () => {
                     <thead>
                         <tr>
                             <th>Student ID</th>
+                            <th>Name</th>
                             <th>Answered At</th>
                             <th>MIÓ Score</th>
                             <th>Feedback</th>
@@ -302,12 +308,17 @@ document.getElementById('generateReportBtn').addEventListener('click', () => {
             const recentAttempt = studentAttempts[0]; // most recent
             const latestValid = studentAttempts.find(attempt => attempt.pronunciation_details?.speechace_pronunciation_score) || {};
 
+            const firstName = studentAttempts[0]?.student_first_name || '';
+            const lastName = studentAttempts[0]?.student_last_name || '';
+            const studentName = firstName + ' ' + lastName;
+
             html += `<tr>
-                        <td>${studentId}</td>
-                        <td>${latestAnsweredAt || '-'}</td>
-                        <td>${typeof recentAttempt.mio_score !== 'undefined' ? recentAttempt.mio_score.toFixed(2) : 'N/A'}</td>
-                        <td>${latestValid.pronunciation_details?.feedback ?? '-'}</td>
-                    </tr>`;
+                    <td>${studentId}</td>
+                    <td>${studentName}</td>
+                    <td>${studentAttempts[0]?.answered_at || '-'}</td>
+                    <td>${studentAttempts[0]?.mio_score ? studentAttempts[0].mio_score.toFixed(2) : 'N/A'}</td>
+                    <td>${studentAttempts[0]?.pronunciation_details?.feedback || '-'}</td>
+                </tr>`;
 
 
             const colspan = hasSpeechColumns ? 5 : 4; // Adjust colspan for detail row

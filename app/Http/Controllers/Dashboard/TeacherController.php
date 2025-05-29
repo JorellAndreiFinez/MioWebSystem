@@ -56,6 +56,8 @@ class TeacherController extends Controller
         $schoolYears = $schoolYearsRef->getValue() ?? [];
         $activeSchoolYear = null;
 
+
+
         foreach ($schoolYears as $schoolYear) {
             if ($schoolYear['status'] === 'active') {
                 $activeSchoolYear = $schoolYear['schoolyearid'];
@@ -87,6 +89,9 @@ class TeacherController extends Controller
         if (!$subject || !$gradeLevelFound) {
             return redirect()->route('mio.teacher-panel')->with('error', 'Subject not found.');
         }
+
+        $peopleRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/people");
+        $people = $peopleRef->getValue() ?? [];
 
         // 3. Define activity types (hardcoded)
         $activityTypes = [
@@ -124,6 +129,9 @@ class TeacherController extends Controller
                         'submitted_at' => $recentAttempt['submitted_at'] ?? null,
                         'audio_path' => $answerData['audio_path'] ?? null,
                         'card_no' => $answerData['card_no'] ?? null,
+                        // Add names here:
+                        'student_first_name' => $people[$studentId]['first_name'] ?? '',
+                        'student_last_name' => $people[$studentId]['last_name'] ?? '',
                     ];
 
                     if (!empty($attempt['audio_path'])) {
