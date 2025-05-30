@@ -457,52 +457,59 @@ class SpecializedAuditoryApi extends Controller
             ], 422);
         }
 
-        $activityData = $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}/items")
-            ->getSnapshot()
-            ->getValue() ?? [];
+        try{
+            $activityData = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}/items")
+                ->getSnapshot()
+                ->getValue() ?? [];
 
-        $score = 0;
-        $total = count($validated['answers']);
+            $score = 0;
+            $total = count($validated['answers']);
 
-        $answerKeyMap = [];
-        foreach ($activityData as $item) {
-            $key = $item['audio_id'] . '|' . $item['image_id'];
-            $answerKeyMap[$key] = true;
-        }
-
-        $score = 0;
-        $items = [];
-
-        foreach ($validated['answers'] as $answer) {
-            $key = $answer['audio_id'] . '|' . $answer['image_id'];
-            $isCorrect = isset($answerKeyMap[$key]);
-
-            if ($isCorrect) {
-                $score++;
+            $answerKeyMap = [];
+            foreach ($activityData as $item) {
+                $key = $item['audio_id'] . '|' . $item['image_id'];
+                $answerKeyMap[$key] = true;
             }
 
-            $items[] = [
-                'audio_id' => $answer['audio_id'],
-                'image_id' => $answer['image_id'],
-                'correct' => $isCorrect,
-            ];
-        }
+            $score = 0;
+            $items = [];
 
-        $date = now()->toDateTimeString();
+            foreach ($validated['answers'] as $answer) {
+                $key = $answer['audio_id'] . '|' . $answer['image_id'];
+                $isCorrect = isset($answerKeyMap[$key]);
+
+                if ($isCorrect) {
+                    $score++;
+                }
+
+                $items[] = [
+                    'audio_id' => $answer['audio_id'],
+                    'image_id' => $answer['image_id'],
+                    'correct' => $isCorrect,
+                ];
+            }
+
+            $date = now()->toDateTimeString();
 
 
-        $this->database
-            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/matching/{$activityId}/{$userId}/{$attemptId}")
-            ->update([
-                'submitted_at' => $date,
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/matching/{$activityId}/{$userId}/{$attemptId}")
+                ->update([
+                    'submitted_at' => $date,
+                    'score' => $score,
+                    'items' => $items,
+                ]);
+
+            return response()->json([
+                'success' => true,
                 'score' => $score,
-                'items' => $items,
             ]);
-
-        return response()->json([
-            'success' => true,
-            'score' => $score,
-        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
