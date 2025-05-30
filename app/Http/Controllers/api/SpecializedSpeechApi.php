@@ -320,7 +320,7 @@ class SpecializedSpeechApi extends Controller
 
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
-            $filename = "{$uuid}.wav";
+            $filename = "{$uuid}.mp3";
             $path = $file->storeAs('audio_submissions', $filename, 'public');
 
             $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
@@ -377,11 +377,6 @@ class SpecializedSpeechApi extends Controller
         $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}");
 
         try {
-            $ref->update([
-                'status' => 'submitted',
-                'submitted_at' => $now,
-            ]);
-
             $answers = $ref->getChild('answers')->getSnapshot()->getValue() ?? [];
 
             $scores = [];
@@ -420,63 +415,69 @@ class SpecializedSpeechApi extends Controller
                 ? round($totalQuality / $numCards, 2)
                 : 0;
 
+            $ref->update([
+                'status' => 'submitted',
+                'overall_score' => $overallAverage,
+                'submitted_at' => $now,
+            ]);
+
             return response()->json([
                 'success'       => true,
                 'message'       => 'Activity submitted successfully.',
-                'scores'        => $scores,
+                'scores'        => $scores, // remove from the frontend // for teahcer only
                 'overall_score' => $overallAverage,
             ], 200);
 
             // return response()->json([
             //     'success' => true,
             //     'message' => 'Activity submitted successfully.',
-            //     'scores'  => [
-            //         '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
-            //             'word'            => 'banana',
-            //             'quality_score'   => 98,
-            //             'phones'          => [
-            //                 ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
-            //                 ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
-            //                 ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
-            //                 ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
-            //                 ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
-            //                 ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
-            //             ],
-            //             'syllables'       => [
-            //                 ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
-            //                 ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
-            //                 ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
-            //             ],
-            //         ],
-            //         '95c11a5c-6941-49e4-9038-b53334175cdd' => [
-            //             'word'            => 'apple',
-            //             'quality_score'   => 90,
-            //             'phones'          => [
-            //                 ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
-            //                 ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
-            //                 ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
-            //             ],
-            //             'syllables'       => [
-            //                 ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
-            //                 ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
-            //             ],
-            //             'timestamp'       => '2025-05-27 14:35:00',
-            //         ],
-            //         'c4cd1987-6449-4115-8f63-8f790c679319' => [
-            //             'word'            => 'orange',
-            //             'quality_score'   => 95,
-            //             'phones'          => [
-            //                 ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
-            //                 ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
-            //                 ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
-            //                 ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
-            //             ],
-            //             'syllables'       => [
-            //                 ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
-            //                 ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
-            //             ],
-            //         ],
-            //     ],
+                // 'scores'  => [
+                //     '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
+                //         'word'            => 'banana',
+                //         'quality_score'   => 98,
+                //         'phones'          => [
+                //             ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
+                //             ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
+                //             ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
+                //             ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
+                //             ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
+                //             ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
+                //         ],
+                //         'syllables'       => [
+                //             ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
+                //             ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
+                //             ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
+                //         ],
+                //     ],
+                //     '95c11a5c-6941-49e4-9038-b53334175cdd' => [
+                //         'word'            => 'apple',
+                //         'quality_score'   => 90,
+                //         'phones'          => [
+                //             ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
+                //             ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
+                //             ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
+                //         ],
+                //         'syllables'       => [
+                //             ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
+                //             ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
+                //         ],
+                //         'timestamp'       => '2025-05-27 14:35:00',
+                //     ],
+                //     'c4cd1987-6449-4115-8f63-8f790c679319' => [
+                //         'word'            => 'orange',
+                //         'quality_score'   => 95,
+                //         'phones'          => [
+                //             ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
+                //             ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
+                //             ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
+                //             ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
+                //         ],
+                //         'syllables'       => [
+                //             ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
+                //             ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
+                //         ],
+                //     ],
+                // ],
             //     'overall_score' => 200
             // ], 200);
 
