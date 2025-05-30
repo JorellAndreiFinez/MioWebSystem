@@ -44,8 +44,10 @@ Route::middleware([
     Route::patch('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedSpeechApi::class, 'finalizeFlashcardAttempt']);
 
     // auditory
-    Route::post('/subject/{subjectId}/auditory/{activityType}/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startAuditoryActivity']);
-    Route::patch('/subject/{subjectId}/auditory/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeAuditoryAttempt']);
+    Route::post('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startBingoActivity']);
+    Route::post('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startMatchingActivity']);
+    Route::patch('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
+    Route::patch('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeMatchingAttempt']);
 });
 
 Route::middleware([
@@ -66,6 +68,6 @@ Route::middleware([
 
     Route::post('/subject/{subjectId}/specialized/speech', [SpecializedSpeechApi::class, 'createSpeechActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
-    Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createBingoActivity']);
+    Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createMatchingCardsActivity']);
     // Route::post('/subject/{subjectId}/specialized/language', [SpecializedSpeechApi::class, 'createLanguageActivity']);
 });

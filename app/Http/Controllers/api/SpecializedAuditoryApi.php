@@ -61,14 +61,14 @@ class SpecializedAuditoryApi extends Controller
             'activity.*.image' => 'required|file|image|mimes:jpg,png|max:5120',
             'activity.*.is_answer'=> 'required|string',
 
-            'answer' => 'required|array|min:1',
-            'answer.*.audio_file' => 'required|file'
+            'audio' => 'required|array|min:1',
+            'audio.*.audio_file' => 'required|file'
         ]);
 
         try{
-
             $bucket = $this->storage->getBucket();
             $items  = [];
+            $correct_answers = [];
 
             foreach($validated['activity'] as $index => $bingo){
                 $image_file = $bingo['image'];
@@ -80,33 +80,46 @@ class SpecializedAuditoryApi extends Controller
                     ['name' => $remoteImagePath]
                 );
 
+                $image_id = (string) Str::uuid()->toString();
+
                 $items[] = [
-                    'image_no' => $index,
+                    'image_id' => $image_id,
                     'image_path' => $remoteImagePath,
                     'is_answer'=> $bingo['is_answer'],
                 ];
+
+                if($bingo['is_answer'] === "true"){
+                    $correct_answers[] = ['image_id' => $image_id];
+                }
             }
 
-            $audio_files = [];
+            $audio_paths = [];
 
-            foreach ($validated['answer'] as $audio) {
+            foreach ($validated['audio'] as $audio) {
+                $audio_file = $audio['audio_file'];
                 $uuid = (string) Str::uuid();
                 $filename = "{$uuid}.mp3";
                 $remoteAudioPath = "audio/auditory/" . $filename;
 
                 $bucket->upload(
-                    fopen($audio->getPathName(), 'r'),
+                    fopen($audio_file->getPathName(), 'r'),
                     ['name' => $remoteAudioPath]
                 );
 
-                $audio_files[] = ['audio_path' => $remoteAudioPath];
+                $audio_id = (string) Str::uuid();
+
+                $audio_paths[] = [
+                    'audio_id' => $audio_id,
+                    'audio_path' => $remoteAudioPath
+                ];
             }
 
             $date = now()->toDateTimeString();
 
             $activityData = [
                 'items' => $items,
-                'audio_files' => $audio_files,
+                'audio_paths' => $audio_paths,
+                'correct_answers' => $correct_answers,
                 'total' => count($items),
                 'created_at' => $date,
             ];
@@ -121,7 +134,7 @@ class SpecializedAuditoryApi extends Controller
 
             return response()->json([
                 'success' => true,
-                'data'    => $activityData,
+                'data' => $activityData,
             ], 201);
 
         } catch (\Exception $e) {
@@ -141,10 +154,7 @@ class SpecializedAuditoryApi extends Controller
 
             'activity' => 'required|array|min:3|max:5',
             'activity.*.image' => 'required|file|image|mimes:jpg,png|max:5120',
-            'activity.*.is_answer'=> 'required|string',
-
-            'answer' => 'required|array|min:1',
-            'answer.*.audio_file' => 'required|file'
+            'activity.*.audio' => 'required|file'
         ]);
 
         try{
@@ -152,45 +162,46 @@ class SpecializedAuditoryApi extends Controller
             $bucket = $this->storage->getBucket();
             $items  = [];
 
-            foreach($validated['activity'] as $index => $bingo){
-                $image_file = $bingo['image'];
-                $uuid = (string) Str::uuid()->toString();
-                $remoteImagePath = 'images/auditory/' . $uuid . $image_file->getClientOriginalName();
+            foreach($validated['activity'] as $index => $activity){
+                $image_file = $activity['image'];
+                $audio_file = $activity['audio'];
+
+
+                $imageUuid = (string) Str::uuid();
+                $remoteImagePath = 'images/auditory/' . $imageUuid . $image_file->getClientOriginalName();
+
+                $audioUuid = (string) Str::uuid();
+                $audioFilename = "{$audioUuid}.mp3";
+                $remoteAudioPath = "audio/auditory/" . $audioFilename;
+
+                $bucket->upload(
+                    fopen($audio_file->getPathName(), 'r'),
+                    ['name' => $remoteAudioPath]
+                );
 
                 $bucket->upload(
                     fopen($image_file->getPathName(), 'r'),
                     ['name' => $remoteImagePath]
                 );
 
+                $image_id = (string) Str::uuid();
+                $audio_id = (string) Str::uuid();
+
                 $items[] = [
                     'image_no' => $index,
+                    'image_id' => $image_id,
                     'image_path' => $remoteImagePath,
-                    'is_answer'=> $bingo['is_answer'],
+                    'audio_id' => $audio_id,
+                    'audio_path' => $remoteAudioPath
                 ];
-            }
-
-            $audio_files = [];
-
-            foreach ($validated['answer'] as $audio) {
-                $uuid = (string) Str::uuid();
-                $filename = "{$uuid}.wav";
-                $remoteAudioPath = "audio/auditory/{$filename}";
-
-                $bucket->upload(
-                    fopen($audio->getPathName(), 'r'),
-                    ['name' => $remoteAudioPath]
-                );
-
-                $audio_files[] = ['audio_path' => $remoteAudioPath];
             }
 
             $date = now()->toDateTimeString();
 
             $activityData = [
                 'items' => $items,
-                'audio_files' => $audio_files,
-                'total' => count($items),
-                'created_at' => $date,
+                'total' => count($validated['activity']),
+                'created_at' => now()->toDateTimeString(),
             ];
 
             $activity_id = $this->generateUniqueId('SPE');
@@ -214,10 +225,9 @@ class SpecializedAuditoryApi extends Controller
         }
     }
 
-    public function startAuditoryActivity(
+    public function startBingoActivity(
         Request $request,
         string $subjectId,
-        string $activityType,
         string $difficulty,
         string $activityId
     ){
@@ -226,30 +236,26 @@ class SpecializedAuditoryApi extends Controller
 
         try{
             $activityData = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue();
 
-            if (! $activityData || ! isset($activityData['items'])) {
+            if (! $activityData) {
                 return response()->json([
                     'success' => false,
                     'error'   => 'Activity not found.'
                 ], 404);
             }
 
-            $answers = [];
-            foreach ($activityData['items'] as $index => $item) {
-                $answers[] = [
-                    'image_no'   => $index,
-                    'image_path' => $item['image_path'],
-                    'answer'     => null,
-                ];
-            }
+            $bucket = $this->storage->getBucket();
 
-            $audio_files = [];
-            foreach ($activityData['audio_files'] as $index => $item) {
-                $audio_files[] = [
-                    'audio_files' => $item['audio_path'],
+            $items = [];
+            foreach ($activityData['items'] as $index => $item) {
+                $image = $bucket->object($item['image_path'])->signedUrl(now()->addMinutes(15));
+                
+                $items[] = [
+                    'image_url' => $image,
+                    'image_id' => $item['image_id'],
                 ];
             }
 
@@ -257,21 +263,21 @@ class SpecializedAuditoryApi extends Controller
             $startedAt   = now()->toDateTimeString();
 
             $initialInfo = [
-                'answers' => $answers,
-                'audio_files' => $audio_files,
+                'items' => $items,
                 'started_at' => $startedAt,
                 'status' => 'in-progress',
             ];
 
             $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/bingo/{$activityId}/{$userId}/{$attemptId}")
                 ->set($initialInfo);
 
             return response()->json([
-                'success'    => true,
-                'attemptId'  => $attemptId,
-                'activity' => $answers,
-                'audio_files' => $audio_files
+                'success' => true,
+                'attemptId' => $attemptId,
+                'items' => $items,
+                'audio_paths' => $activityData['audio_paths'],
+                'total' => count($items)
             ], 201);
 
         } catch (\Exception $e) {
@@ -282,76 +288,61 @@ class SpecializedAuditoryApi extends Controller
         }
     }
 
-    public function finalizeAuditoryAttempt(
+    public function startMatchingActivity(
         Request $request,
         string $subjectId,
-        string $activityType,
         string $difficulty,
-        string $activityId,
-        string $attemptId
+        string $activityId
     ){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId = $request->get('firebase_user_id');
-
-        $validated = $request->validate([
-            'activity' => 'required|array',
-            'activity.*.image_no' => 'required|integer',
-            'activity.*.answer'=> 'required|string',
-        ]);
+        $userId = $request->get('firebase_user_id'); 
 
         try{
-            $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}");
-            
-            $correctData = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
+            $activityData = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}")
                 ->getSnapshot()
-                ->getValue() ?? [];
+                ->getValue();
 
-            if (!isset($correctData['items'])) {
+            if (! $activityData) {
                 return response()->json([
                     'success' => false,
-                    'error'   => 'Activity data not found.'
+                    'error'   => 'Activity not found.'
                 ], 404);
             }
 
-            $studentAnswers = $validated['activity'];
-            $attemptResult = [];
+            $bucket = $this->storage->getBucket();
 
-            $correctMap = [];
-            foreach ($correctData['items'] as $correct) {
-                $key = $correct['image_no'];
-                $correctMap[$key] = $correct['is_answer'];
-            }
-
-            $total_score = 0;
-
-            foreach ($studentAnswers as $ans) {
-                $key = $ans['image_no'];
-                $is_correct = isset($correctMap[$key])
-                            && $correctMap[$key] === $ans['answer'];
-
-                if($is_correct) $total_score += 1;
-
-                $attemptResult[] = [
-                    'image_no'   => $ans['image_no'],
-                    'is_correct' => $is_correct,
+            $items = [];
+            foreach ($activityData['items'] as $index => $item) {
+                $image = $bucket->object($item['image_path'])->signedUrl(now()->addMinutes(15));
+                
+                $items[] = [
+                    'image_url' => $image,
+                    'audio_path' => $item['audio_path'],
+                    'audio_ids' => $item['audio_id'],
+                    'image_ids' => $item['image_id'],
                 ];
             }
 
-            $now = now()->toDateTimeString();
+            $attemptId   = (string) Str::uuid();
+            $startedAt   = now()->toDateTimeString();
 
-            $ref->getChild('answers')->set($attemptResult);
-            $ref->update([
-                'score' => $total_score,
-                'completed_at' => $now,
-            ]);
+            $initialInfo = [
+                'items' => $items,
+                'started_at' => $startedAt,
+                'status' => 'in-progress',
+            ];
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/matching/{$activityId}/{$userId}/{$attemptId}")
+                ->set($initialInfo);
 
             return response()->json([
                 'success' => true,
-                'message' => "Submitted Successfully",
-                'score' => $total_score,
-                'results' => $attemptResult,
-            ], 200);
+                'attemptId' => $attemptId,
+                'items' => $items,
+                'total' => count($items)
+            ], 201);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -359,5 +350,159 @@ class SpecializedAuditoryApi extends Controller
                 'error'   => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function finalizeBingoAttempt(
+        Request $request,
+        string $subjectId,
+        string $difficulty,
+        string $activityId,
+        string $attemptId
+    ) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        $validated = $request->validate([
+            'answers' => 'required|array',
+            'answers.*.image_id' => 'required|string',
+        ]);
+
+        try {
+            $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/bingo/{$activityId}/{$userId}/{$attemptId}");
+
+            $activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (!isset($activity['items']) || !isset($activity['correct_answers'])) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Activity data not found.',
+                ], 404);
+            }
+
+            $correctMap = [];
+            foreach ($activity['correct_answers'] as $correct) {
+                $correctMap[$correct['image_id']] = true;
+            }
+
+            $submittedMap = [];
+            foreach ($validated['answers'] as $answer) {
+                $submittedMap[$answer['image_id']] = true;
+            }
+
+            $score = 0;
+            $attemptResult = [];
+
+            foreach ($activity['items'] as $item) {
+                $imageId = $item['image_id'];
+
+                if (isset($submittedMap[$imageId]) && !isset($correctMap[$imageId])) {
+                    $attemptResult[] = [
+                        'image_id' => $imageId,
+                        'is_correct' => false,
+                    ];
+                } else {
+                    $score++;
+                    $attemptResult[] = [
+                        'image_id' => $imageId,
+                        'is_correct' => true,
+                    ];
+                }
+            }
+
+            $now = now()->toDateTimeString();
+
+            $ref->update([
+                'items' => $attemptResult,
+                'score' => $score,
+                'completed_at' => $now,
+                'status' => "submitted",
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Submitted Successfully",
+                'score' => $score,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function finalizeMatchingAttempt(
+        Request $request,
+        string $subjectId,
+        string $difficulty,
+        string $activityId,
+        string $attemptId
+    ) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        $validated = $request->validate([
+            'answers' => 'required|array',
+            'answers.*.image_id' => 'required|string',
+            'answers.*.audio_id' => 'required|string'
+        ]);
+
+        if (count($validated['answers']) === 0) {
+            return response()->json([
+                'message' => 'No answers submitted.'
+            ], 422);
+        }
+
+        $activityData = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}/items")
+            ->getSnapshot()
+            ->getValue() ?? [];
+
+        $score = 0;
+        $total = count($validated['answers']);
+
+        $answerKeyMap = [];
+        foreach ($activityData as $item) {
+            $key = $item['audio_id'] . '|' . $item['image_id'];
+            $answerKeyMap[$key] = true;
+        }
+
+        $score = 0;
+        $items = [];
+
+        foreach ($validated['answers'] as $answer) {
+            $key = $answer['audio_id'] . '|' . $answer['image_id'];
+            $isCorrect = isset($answerKeyMap[$key]);
+
+            if ($isCorrect) {
+                $score++;
+            }
+
+            $items[] = [
+                'audio_id' => $answer['audio_id'],
+                'image_id' => $answer['image_id'],
+                'correct' => $isCorrect,
+            ];
+        }
+
+        $date = now()->toDateTimeString();
+
+
+        $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/matching/{$activityId}/{$userId}/{$attemptId}")
+            ->update([
+                'submitted_at' => $date,
+                'score' => $score,
+                'items' => $items,
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'score' => $score,
+        ]);
     }
 }
