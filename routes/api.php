@@ -8,6 +8,7 @@ use App\Http\Controllers\api\StudentApiController;
 use App\Http\Controllers\api\TeacherApiController;
 use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
+use App\Http\Controllers\api\SpecializedLanguageApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Session\Middleware\StartSession;
@@ -28,7 +29,7 @@ Route::middleware([
     Route::get('/subject/{subjectId}/scores', [StudentApiController::class, 'getSubjectScoresApi']);
     Route::get('/subject/{subjectId}/quizzes', [StudentApiController::class, 'getSubjectQuizzesApi']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
-    Route::get('/subject/{subjectId}/speech/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
+    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
 });
 
 
@@ -48,6 +49,12 @@ Route::middleware([
     Route::post('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startMatchingActivity']);
     Route::patch('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
     Route::patch('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeMatchingAttempt']);
+
+    Route::post('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeHomonymActivity']);
+    Route::patch('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeHomonymsAttempt']);
+
+    Route::post('/subject/{subjectId}/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeFillActivity']);
+    Route::patch('/subject/{subjectId}/language/fill/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeFillAttempt']);
 });
 
 Route::middleware([
@@ -69,5 +76,9 @@ Route::middleware([
     Route::post('/subject/{subjectId}/specialized/speech', [SpecializedSpeechApi::class, 'createSpeechActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createMatchingCardsActivity']);
-    // Route::post('/subject/{subjectId}/specialized/language', [SpecializedSpeechApi::class, 'createLanguageActivity']);
+
+
+    Route::post('/subject/{subjectId}/specialized/language/homonyms', [SpecializedLanguageApi::class, 'createHomonymsActivity']);
+    Route::post('/subject/{subjectId}/specialized/language/fill', [SpecializedLanguageApi::class, 'createFillActivity']);
+    // Route::post('/subject/{subjectId}/specialized/language/talk2Me', [SpecializedLanguageApi::class, 'createTalk2MeActivity']);
 });

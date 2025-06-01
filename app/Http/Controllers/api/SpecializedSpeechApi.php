@@ -303,7 +303,7 @@ class SpecializedSpeechApi extends Controller
             $userId = $request->get('firebase_user_id');
 
             $data = $request->validate([
-                'audio_file' => 'required|file',
+                'audio_file' => 'required|file|mimetypes:video/mp4,audio/mp3',
             ]);
 
             $answersRef = $this->database
@@ -320,9 +320,8 @@ class SpecializedSpeechApi extends Controller
 
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
-            $filename = "{$uuid}.mp3";
-            $path = $file->storeAs('audio_submissions', $filename, 'public');
-
+            $filename = $uuid . $file->getClientOriginalName();
+            $path = $file->storeAs('audio_submissions', $file->getClientOriginalName() , 'public');
             $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
 
             $bucket = $this->storage->getBucket();
@@ -336,9 +335,9 @@ class SpecializedSpeechApi extends Controller
             $pronunciation_details = $this->pronunciationScoreApi($path, $word);
 
             $updatedAnswer = [
-                'word'         => $word,
-                'audio_path'   => $remotePath,
-                'answered_at'  => $now,
+                'word' => $word,
+                'audio_path' => $remotePath,
+                'answered_at' => $now,
                 'pronunciation_details' => $pronunciation_details,
             ];
 
@@ -351,7 +350,8 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Answer submitted successfully',
-                'pronunciation_details' => $pronunciation_details
+                'pronunciation_details' => $pronunciation_details,
+                'type' => $request->file('audio_file')->getMimeType()
             ], 200);
 
         } catch (\Exception $e) {

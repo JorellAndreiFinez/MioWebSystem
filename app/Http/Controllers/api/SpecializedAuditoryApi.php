@@ -98,7 +98,7 @@ class SpecializedAuditoryApi extends Controller
             foreach ($validated['audio'] as $audio) {
                 $audio_file = $audio['audio_file'];
                 $uuid = (string) Str::uuid();
-                $filename = "{$uuid}.mp3";
+                $filename = $uuid . $file->getClientOriginalName();
                 $remoteAudioPath = "audio/auditory/" . $filename;
 
                 $bucket->upload(
@@ -154,7 +154,7 @@ class SpecializedAuditoryApi extends Controller
 
             'activity' => 'required|array|min:3|max:5',
             'activity.*.image' => 'required|file|image|mimes:jpg,png|max:5120',
-            'activity.*.audio' => 'required|file'
+            'activity.*.audio' => 'required|file|mimetypes:video/mp4,audio/mp3'
         ]);
 
         try{
@@ -171,7 +171,7 @@ class SpecializedAuditoryApi extends Controller
                 $remoteImagePath = 'images/auditory/' . $imageUuid . $image_file->getClientOriginalName();
 
                 $audioUuid = (string) Str::uuid();
-                $audioFilename = "{$audioUuid}.mp3";
+                $audioFilename = $audioUuid . $file->getClientOriginalName();
                 $remoteAudioPath = "audio/auditory/" . $audioFilename;
 
                 $bucket->upload(
@@ -259,7 +259,7 @@ class SpecializedAuditoryApi extends Controller
                 ];
             }
 
-            $attemptId   = (string) Str::uuid();
+            $attemptId   = $this->generateUniqueId("ATTM");
             $startedAt   = now()->toDateTimeString();
 
             $initialInfo = [
@@ -324,7 +324,7 @@ class SpecializedAuditoryApi extends Controller
                 ];
             }
 
-            $attemptId   = (string) Str::uuid();
+            $attemptId   = $this->generateUniqueId("ATTM");
             $startedAt   = now()->toDateTimeString();
 
             $initialInfo = [
