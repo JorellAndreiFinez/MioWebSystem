@@ -126,7 +126,7 @@ class SectionController extends Controller
         'teacherid' => $validated['teacherid'] ?? null,
         'section_grade' => $validated['section_grade'],
         'students' => [],  // Initialize empty students array
-        'schoolyear_id' => $activeSchoolYear,  // Include active school year
+        'schoolyearid' => $activeSchoolYear,  // Include active school year
         'created_at' => Carbon::now()->toDateTimeString(),
         'updated_at' => Carbon::now()->toDateTimeString(),
     ];
@@ -136,7 +136,6 @@ class SectionController extends Controller
 
     return redirect()->route('mio.ViewSection')->with('success', 'Section added successfully.');
 }
-
 
 
     // DISPLAY EDIT TEACHER
@@ -206,6 +205,23 @@ class SectionController extends Controller
             return redirect()->back()->with('status', 'Section ID already exists!')->withInput();
         }
 
+        // Fetch the active school year from Firebase
+        $activeSchoolYearRef = $this->database->getReference('schoolyears');
+        $schoolYears = $activeSchoolYearRef->getValue() ?? [];
+        $activeSchoolYear = null;
+
+        // Find the active school year
+        foreach ($schoolYears as $schoolYear) {
+            if ($schoolYear['status'] === 'active') {
+                $activeSchoolYear = $schoolYear['schoolyearid'];
+                break;
+            }
+        }
+
+        if (!$activeSchoolYear) {
+            return back()->with('status', 'No active school year found!')->withInput();
+        }
+
         // Prepare updated data
         $postData = [
             'sectionid' => $newKey,
@@ -218,6 +234,7 @@ class SectionController extends Controller
             'students' => $sectionsRef[$oldKey]['students'] ?? [],  // Keep existing students array
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
+            'schoolyearid' => $activeSchoolYear,
         ];
 
         // If section ID changed, remove old key and create new one

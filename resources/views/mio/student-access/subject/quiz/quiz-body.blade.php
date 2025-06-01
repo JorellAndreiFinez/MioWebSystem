@@ -1,3 +1,4 @@
+
 <section class="home-section">
     <div class="text">
         <div class="breadcrumb-item">
@@ -15,13 +16,30 @@
 
     @php
         $studentId = session('firebase_user.uid');
+        session(['quiz_start_time' => now()]);
+
+        $currentIndex = session('current_question_index', 0);
+
+        if (request()->input('action') === 'next') {
+            session(['current_question_index' => $currentIndex + 1]);
+        } elseif (request()->input('action') === 'prev') {
+            session(['current_question_index' => max(0, $currentIndex - 1)]);
+        }
+
+
         $maxAttempts = (int) ($quiz['attempts'] ?? 0);
         $studentAttempts = (int) ($quiz['people'][$studentId]['attempts'] ?? 0);
         $hasReachedLimit = $studentAttempts >= $maxAttempts;
 
-        $deadlineDateTime = \Carbon\Carbon::parse($quiz['deadline'] . ' ' . ($quiz['end_time'] ?? '23:59'));
-        $now = \Carbon\Carbon::now();
-        $isBeforeDeadline = $now->lte($deadlineDateTime);
+        $hasDeadline = !empty($quiz['deadline_date']);
+
+        if ($hasDeadline) {
+            $deadlineDateTime = \Carbon\Carbon::parse($quiz['deadline_date'] . ' ' . ($quiz['end_time'] ?: '23:59'));
+            $now = \Carbon\Carbon::now();
+            $isBeforeDeadline = $now->lte($deadlineDateTime);
+        } else {
+            $isBeforeDeadline = true; // No deadline means quiz is always available
+        }
 
         $canTakeQuiz = !$hasReachedLimit && $isBeforeDeadline;
 
@@ -31,7 +49,7 @@
 
      <!-- 🕒 Timer Moved Here -->
     <div id="countdown-timer" class="countdown-timer">
-        Time Remaining: <span id="timer">Loading...</span>
+        Time: <span id="timer">Loading...</span>
     </div>
     <main class="main-assignment-content">
         <div class="assignment-card2">
@@ -46,47 +64,81 @@
                     <strong>{{ \Carbon\Carbon::parse($quiz['publish_date'])->format('F j, Y') }}</strong>
                 </div>
                 <div>
-                    <span>Deadline</span>
-                    <strong>{{ \Carbon\Carbon::parse($quiz['deadline'] . ' ' . $quiz['end_time'])->format('F j, Y g:i A') }}</strong>
-                </div>
+                <span>Deadline</span>
+                @if (!empty($quiz['deadline_date']))
+                    <strong>{{ \Carbon\Carbon::parse($quiz['deadline_date'] . ' ' . ($quiz['end_time'] ?: '23:59'))->format('F j, Y g:i A') }}</strong>
+                @else
+                    <strong>No due date</strong>
+                @endif
+            </div>
                 <div>
                     <span>Attempts Allowed</span>
                     <strong>{{ $quiz['attempts'] }}</strong>
                 </div>
+                @if (!($quiz['no_time_limit'] ?? false))
                 <div>
                     <span>Time Limit</span>
                     <strong>{{ $quiz['time_limit'] }} minutes</strong>
                 </div>
+            @else
+                <div>
+                    <span>Time Limit</span>
+                    <strong>No time limit</strong>
+                </div>
+            @endif
             </div>
 
             <!-- route('mio.subject.quiz-submit', [$subjectId, $quizId])  -->
         </div>
 
+
+
         <div class="assigment-card2">
             @if ($canTakeQuiz)
-                <form method="POST" action="#">
+                <form method="POST" action="{{ route('mio.subject.quiz-submit', [$subject['subject_id'], $quiz['quiz_id']]) }}" enctype="multipart/form-data">
                 @csrf
 
                 @if (!$oneQuestionAtATime)
                     {{-- Show all questions at once --}}
                     @foreach ($quiz['questions'] as $questionId => $question)
-                        <div class="question-card2" style="margin-top: 20px;">
+                        <div class="question-card2 question-slide" style="margin-top: 20px; display: none;" data-question-index="{{ $loop->index }}">
                             <h4>{{ $loop->iteration }}. {{ $question['question'] }}</h4>
-                            @foreach ($question['options'] as $optionKey => $optionText)
-                                <div class="form-check2">
-                                    <input type="radio"
-                                        name="answers[{{ $questionId }}]"
-                                        value="{{ $optionKey }}"
-                                        class="form-check-input2"
-                                        id="{{ $questionId }}-{{ $optionKey }}"
-                                        required>
-                                    <label class="form-check-label" for="{{ $questionId }}-{{ $optionKey }}">
-                                        {{ $optionText }}
-                                    </label>
-                                </div>
-                            @endforeach
+
+                            {{-- MULTIPLE CHOICE --}}
+                            @if (isset($question['type']) && $question['type'] === 'multiple_choice' && isset($question['options']))
+                                @foreach ($question['options'] as $optionKey => $optionText)
+                                    <div class="form-check">
+                                        <input type="radio"
+                                            name="answers[{{ $questionId }}]"
+                                            value="{{ $optionKey }}"
+                                            class="form-check-input"
+                                            id="{{ $questionId }}-{{ $optionKey }}"
+                                            required>
+                                        <label class="form-check-label" for="{{ $questionId }}-{{ $optionKey }}">
+                                            {{ $optionText }}
+                                        </label>
+                                    </div>
+                                @endforeach
+
+                            {{-- ESSAY --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'essay')
+                                <textarea name="answers[{{ $questionId }}]" rows="4" class="form-control" required></textarea>
+
+                            {{-- FILE UPLOAD --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'file_upload')
+                                <input type="file" name="answers[{{ $questionId }}]" class="form-control-file" required>
+
+                            {{-- FILL IN THE BLANK --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'fill_in_the_blank')
+                                <input type="text" name="answers[{{ $questionId }}]" class="form-control" required>
+
+                            {{-- DEFAULT (optional fallback) --}}
+                            @else
+                                <p style="color: red;">Unknown question type or missing data.</p>
+                            @endif
                         </div>
                     @endforeach
+
 
                     <div class="submit-btn2" style="margin-top: 30px;">
                         <button type="submit" class="btn2 btn-primary">Submit Quiz</button>
@@ -97,19 +149,39 @@
                     @foreach ($quiz['questions'] as $questionId => $question)
                         <div class="question-card2 question-slide" style="margin-top: 20px; display: none;" data-question-index="{{ $loop->index }}">
                             <h4>{{ $loop->iteration }}. {{ $question['question'] }}</h4>
-                            @foreach ($question['options'] as $optionKey => $optionText)
-                                <div class="form-check">
-                                    <input type="radio"
-                                        name="answers[{{ $questionId }}]"
-                                        value="{{ $optionKey }}"
-                                        class="form-check-input"
-                                        id="{{ $questionId }}-{{ $optionKey }}"
-                                        required>
-                                    <label class="form-check-label" for="{{ $questionId }}-{{ $optionKey }}">
-                                        {{ $optionText }}
-                                    </label>
-                                </div>
-                            @endforeach
+
+                            {{-- MULTIPLE CHOICE --}}
+                            @if (isset($question['type']) && $question['type'] === 'multiple_choice' && isset($question['options']))
+                                @foreach ($question['options'] as $optionKey => $optionText)
+                                    <div class="form-check">
+                                        <input type="radio"
+                                            name="answers[{{ $questionId }}]"
+                                            value="{{ $optionKey }}"
+                                            class="form-check-input"
+                                            id="{{ $questionId }}-{{ $optionKey }}"
+                                            required>
+                                        <label class="form-check-label" for="{{ $questionId }}-{{ $optionKey }}">
+                                            {{ $optionText }}
+                                        </label>
+                                    </div>
+                                @endforeach
+
+                            {{-- ESSAY --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'essay')
+                                <textarea name="answers[{{ $questionId }}]" rows="4" class="form-control" required>SADSAD</textarea>
+
+                            {{-- FILE UPLOAD --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'file_upload')
+                                <input type="file" name="answers[{{ $questionId }}]" class="form-control-file" required>
+
+                            {{-- FILL IN THE BLANK --}}
+                            @elseif (isset($question['type']) && $question['type'] === 'fill_in_the_blank')
+                                <input type="text" name="answers[{{ $questionId }}]" class="form-control" required>
+
+                            {{-- DEFAULT (fallback) --}}
+                            @else
+                                <p style="color: red;">Unknown question type or missing data.</p>
+                            @endif
                         </div>
                     @endforeach
 
@@ -136,48 +208,6 @@
     </main>
 
 </section>
-
-<script>
-    window.addEventListener("beforeunload", function (e) {
-        e.preventDefault();
-        e.returnValue = '';
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        const timeLimitMinutes = {{ $quiz['time_limit'] ?? 0 }};
-        const quizKey = 'quiz_timer_{{ $quiz["id"] }}';
-        const now = Date.now();
-        const quizForm = document.querySelector("form");
-        const timerDisplay = document.getElementById("timer");
-
-        // Load or initialize quiz start time
-        let startTime = localStorage.getItem(quizKey);
-        if (!startTime) {
-            startTime = now;
-            localStorage.setItem(quizKey, startTime);
-        }
-
-        const endTime = parseInt(startTime) + (timeLimitMinutes * 60 * 1000);
-
-        function updateTimer() {
-            const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
-            const minutes = Math.floor(remaining / 60);
-            const seconds = remaining % 60;
-
-            timerDisplay.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-
-            if (remaining <= 0) {
-                clearInterval(timerInterval);
-                localStorage.removeItem(quizKey); // Clear timer state
-                alert("Time is up! Your quiz will be submitted automatically.");
-                quizForm.submit();
-            }
-        }
-
-        updateTimer();
-        const timerInterval = setInterval(updateTimer, 1000);
-    });
-</script>
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -212,6 +242,7 @@
             }
         }
 
+
         if (slides.length > 0) {
             showSlide(currentIndex);
         }
@@ -237,3 +268,60 @@
 });
 
 </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const timeLimitMinutes = {{ $quiz['time_limit'] ?? 0 }};
+    const hasNoTimeLimit = {{ $quiz['no_time_limit'] ?? false ? 'true' : 'false' }};
+    const quizId = '{{ $quiz["quiz_id"] }}';
+    const quizKey = 'quiz_timer_' + quizId;
+    const timerDisplay = document.getElementById("timer");
+    const quizForm = document.querySelector("form");
+
+    if (hasNoTimeLimit || timeLimitMinutes <= 0 || !timerDisplay || !quizForm) {
+        timerDisplay.textContent = "No time limit";
+        return;
+    }
+
+    let startTime = localStorage.getItem(quizKey);
+    if (!startTime) {
+        startTime = Date.now();
+        localStorage.setItem(quizKey, startTime);
+    } else {
+        startTime = parseInt(startTime);
+    }
+
+    const timeLimitMillis = timeLimitMinutes * 60 * 1000;
+    const endTime = startTime + timeLimitMillis;
+
+    function updateTimer() {
+        const now = Date.now();
+        const remaining = endTime - now;
+
+        if (remaining <= 0) {
+            timerDisplay.textContent = "Time's up!";
+            localStorage.removeItem(quizKey);
+            quizForm.submit();
+            return;
+        }
+
+        const minutes = Math.floor((remaining / 1000 / 60));
+        const seconds = Math.floor((remaining / 1000) % 60);
+
+        timerDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    updateTimer();
+    const intervalId = setInterval(updateTimer, 1000);
+});
+
+
+</script>
+
+
+
+
+
+
+
+

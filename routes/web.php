@@ -152,6 +152,11 @@ Route::prefix('mio/admin/')->middleware(
 
     Route::get('/enrollment/assessment/{type}/edit', [EnrollController::class, 'editAssessment'])->name('edit-assessment2');
 
+    Route::post('/enrollment/assessment/{type}/edit/written-question/save', [EnrollController::class, 'saveQuestion'])->name('save-question');
+
+    Route::put('/enrollment/assessment/{type}/update/{id}', [EnrollController::class, 'updateQuestion'])->name('update-question');
+
+    Route::delete('/enrollment/assessment/{type}/delete/{id}', [EnrollController::class, 'deleteQuestion'])->name('delete-question');
 
 
 
@@ -257,6 +262,7 @@ Route::prefix('mio/admin/')->middleware(
     Route::post('/AddDepartment', [DepartmentController::class, 'addDepartment'])->name('StoreDepartment');
 
     Route::get('/EditDepartment/{id}', [DepartmentController::class, 'showEditDepartment'])->name('EditDepartment');
+
     Route::put('/UpdateDepartment/{id}', [DepartmentController::class, 'editDepartment'])->name('UpdateDepartment');
 
     Route::delete('/DeleteDepartment/{id}', [DepartmentController::class, 'deleteDepartment'])->name('DeleteDepartment');
@@ -360,6 +366,12 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
          Route::get('/{subjectId}/quiz/{quizId}', [StudentController::class, 'showQuizDetails'])->name('quiz-body');
 
+         Route::post('/{subjectId}/quiz/{quizId}/submit', [StudentController::class, 'submitQuiz'])->name('quiz-submit');
+
+         Route::post('/{subjectId}/quiz/{quizId}/save-answer/{questionId}', [StudentController::class, 'saveAnswer']) ->name('quiz-save-answer');
+
+
+
 
     });
 
@@ -433,6 +445,10 @@ Route::prefix('mio/teacher')->middleware(
         Route::put('/{subjectId}/quiz/{quizId}/update-quiz', [TeacherController::class, 'updateAcadsQuiz'])->name('update-acads-quiz');
 
          Route::get('/{subjectId}/quiz/{quizId}', [TeacherController::class, 'showQuizDetails'])->name('quiz-body');
+
+          Route::post('/{subjectId}/quiz/{quizId}/attempt/update', [TeacherController::class, 'updateEditAttempt'])->name('updateAttempt');
+
+
 
 
     // SCORES

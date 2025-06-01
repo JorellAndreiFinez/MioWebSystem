@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Kreait\Firebase\Database;
 use Kreait\Firebase\Factory;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class DepartmentController extends Controller
 {
@@ -28,6 +29,7 @@ class DepartmentController extends Controller
 
     public function departments()
     {
+
         // Fetch sections from the database
         $departments = $this->database->getReference($this->table)->getValue() ?? [];
 
@@ -73,10 +75,11 @@ class DepartmentController extends Controller
         $validated = $request->validate([
             'departmentid' => 'required|string|max:20',
             'department_name' => 'required|string|max:255',
-            'department_type' => 'required|string|in:academic,admin_support',
+            'department_type' => 'required|string|in:academic,admin_support,specialized',
             'department_code' => 'required|string|max:50',
             'description' => 'nullable|string|max:1000',
             'teacherid' => 'nullable|string|max:50',
+            'status' => 'required|in:active,inactive',
         ]);
 
         $departmentIdKey = $request->input('departmentid');
@@ -85,6 +88,25 @@ class DepartmentController extends Controller
         $existingDepartment = $this->database->getReference('departments')->getValue();
         if (!empty($existingDepartment) && array_key_exists($departmentIdKey, $existingDepartment)) {
             return back()->with('status', 'Department ID already exists!')->withInput();
+        }
+
+        // Get the active school year
+        $schoolYears = $this->database->getReference('schoolyears')->getValue();
+        Log::info($schoolYears);
+        $activeSchoolYearId = null;
+
+        if (!empty($schoolYears)) {
+            foreach ($schoolYears as $key => $sy) {
+            if (isset($sy['status']) && $sy['status'] === 'active') {
+                $activeSchoolYearId = $key; // use the key as schoolyearid
+                break;
+            }
+        }
+
+        }
+
+        if (!$activeSchoolYearId) {
+            return back()->with('status', 'No active school year found. Please set an active school year first.')->withInput();
         }
 
         // Prepare data to store
@@ -97,6 +119,8 @@ class DepartmentController extends Controller
             'teacherid' => $validated['teacherid'] ?? null,
             'created_at' => Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
+            'schoolyearid' => $activeSchoolYearId,
+            'status' => $validated['status'],
         ];
 
         // Save to Firebase
@@ -167,10 +191,11 @@ class DepartmentController extends Controller
        $validated = $request->validate([
             'departmentid' => 'required|string|max:20',
             'department_name' => 'required|string|max:255',
-            'department_type' => 'required|string|in:academic,admin_support',
+            'department_type' => 'required|string|in:academic,admin_support,specialized',
             'department_code' => 'required|string|max:50',
             'description' => 'nullable|string|max:1000',
             'teacherid' => 'nullable|string|max:50',
+            'status' => 'required|in:active,inactive',
         ]);
 
         // Reference to Firebase
@@ -180,6 +205,24 @@ class DepartmentController extends Controller
         if ($oldKey !== $newKey && !empty($departmentsRef) && array_key_exists($newKey, $departmentsRef)) {
             return redirect()->back()->with('status', 'Department ID already exists!')->withInput();
         }
+
+        // Fetch the active school year from Firebase
+        $activeSchoolYearRef = $this->database->getReference('schoolyears');
+        $schoolYears = $activeSchoolYearRef->getValue() ?? [];
+        $activeSchoolYear = null;
+
+        // Find the active school year
+        foreach ($schoolYears as $schoolYear) {
+            if ($schoolYear['status'] === 'active') {
+                $activeSchoolYear = $schoolYear['schoolyearid'];
+                break;
+            }
+        }
+
+        if (!$activeSchoolYear) {
+            return back()->with('status', 'No active school year found!')->withInput();
+        }
+
 
         // Prepare updated data
         $postData = [
@@ -191,6 +234,8 @@ class DepartmentController extends Controller
             'teacherid' => $validated['teacherid'] ?? null,
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
+            'status' => $validated['status'],
+            'schoolyearid' => $activeSchoolYear
         ];
 
         // If section ID changed, remove old key and create new one

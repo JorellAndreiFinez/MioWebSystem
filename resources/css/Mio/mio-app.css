@@ -45,6 +45,70 @@
     margin: 0;
 }
 
+#correctAnswerOptions,
+#editCorrectAnswerOptions {
+    border: none;
+    padding: 1rem;
+    display: flex;
+    gap: 1.2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    background: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+#correctAnswerOptions .form-check,
+#editCorrectAnswerOptions .form-check {
+    background: white;
+    border: 1.5px solid #ccc;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: border-color 0.3s, background-color 0.3s;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    min-width: 120px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+#correctAnswerOptions .form-check:hover,
+#editCorrectAnswerOptions.form-check:hover {
+    border-color: #007bff;
+    background-color: #e9f2ff;
+}
+
+#correctAnswerOptions input[type="radio"],
+#correctAnswerOptions input[type="checkbox"],
+#editCorrectAnswerOptions input[type="checkbox"],
+#editCorrectAnswerOptions input[type="radio"] {
+    margin-right: 0.5rem;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+}
+
+#correctAnswerOptions input[type="radio"]:checked+label,
+#correctAnswerOptions input[type="checkbox"]:checked+label,
+#editCorrectAnswerOptions input[type="checkbox"]:checked+label,
+#editCorrectAnswerOptions input[type="radio"]:checked+label {
+    font-weight: 600;
+    color: #007bff;
+}
+
+#correctAnswerOptions label,
+#editCorrectAnswerOptions label {
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+    font-size: 1rem;
+    line-height: 1.3;
+    flex-grow: 1;
+}
+
 
 /* Hide arrows in Firefox */
 

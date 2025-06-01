@@ -11,7 +11,7 @@
       <div class="table-header">
         <div class="search-container" style="background: transparent;"></div>
         <div class="button-group">
-          <button type="button" class="btn cancel-btn"><a href="{{ url()->previous() }}">Cancel</a></button>
+          <button type="button" class="btn cancel-btn"><a href="{{ route("mio.ViewSection") }}">Cancel</a></button>
           <button type="submit" class="btn add-btn">
             <span class="icon">+</span> Add Section
           </button>
@@ -32,13 +32,6 @@
               <input type="text" name="section_name" required />
             </div>
           </div>
-
-          <div class="form-row">
-          <div class="form-group">
-            <label>Section Grade <span style="color: red; font-weight:700">*</span></label>
-            <input type="number" name="section_grade" min="1" max="10" placeholder="Enter section grade" required />
-          </div>
-        </div>
 
           <div class="form-row">
             <div class="form-group">
@@ -62,6 +55,11 @@
                 <label>Max Number of Students <span style="color: red; font-weight:700">*</span></label>
                 <input type="number" name="max_students" min="1" required />
             </div>
+
+            <div class="form-group">
+            <label>Section Grade <span style="color: red; font-weight:700">*</span></label>
+            <input type="number" name="section_grade" min="1" max="10" placeholder="Enter section grade" required />
+          </div>
           </div>
 
           <div class="form-row">

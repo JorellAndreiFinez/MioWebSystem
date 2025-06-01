@@ -31,7 +31,7 @@
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
         </div>
         <div class="button-group">
-            <button class="btn sort-btn">Newest ⬇</button>
+            <button class="btn sort-btn" id="sortButton" onclick="toggleSort()">Newest ⬇</button>
             <button class="btn add-btn"><a href="{{ route('mio.AddSection') }}">+ New Section</a></button>
         </div>
     </div>
@@ -48,25 +48,6 @@
             </tr>
         </thead>
         <tbody>
-        @forelse ($sections as $section)
-        <tr>
-            <td>{{ $section['sectionid'] }}</td>
-            <td>{{ $section['section_name'] }}</td>
-            <td>{{ $section['teacherid'] ?? 'TBA' }} </td>
-            <td class="action-icons">
-                <a href="{{ route('mio.EditSection', ['id' => $section['sectionid']]) }}"><i class="fa fa-pencil"></i></a>
-
-                <button onclick="openModal('{{ url('mio/admin/DeleteSection/'.$section['sectionid']) }}', '{{ $section['section_name'] }}')"
-                    class="open-btn">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="4" class="no-data">No sections found.</td>
-        </tr>
-        @endforelse
 
         </tbody>
     </table>
@@ -90,3 +71,68 @@ function closeModal() {
     document.getElementById("confirmModal").style.display = "none";
 }
 </script>
+
+<script>
+function searchCards() {
+    let input = document.getElementById('searchBar').value.toLowerCase();
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let rowText = row.innerText.toLowerCase();
+        if (rowText.includes(input)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+
+<script>
+    const originalSections = Object.values(@json($sections));
+</script>
+<script>
+     window.addEventListener('DOMContentLoaded', () => {
+        renderSections();
+    });
+let currentSort = 'newest';
+
+document.querySelector('#sortButton').addEventListener('click', () => {
+    currentSort = currentSort === 'newest' ? 'oldest' : 'newest';
+    document.querySelector('#sortButton').textContent = currentSort === 'newest' ? 'Newest ⬇' : 'Oldest ⬆';
+    renderSections();
+});
+
+function renderSections() {
+    const sortedSections = [...originalSections].sort((a, b) => {
+        const dateA = new Date(a.created_at || '2000-01-01');
+        const dateB = new Date(b.created_at || '2000-01-01');
+        return currentSort === 'oldest' ? dateA - dateB : dateB - dateA;
+    });
+
+    const tbody = document.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (sortedSections.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="no-data">No sections found.</td></tr>`;
+        return;
+    }
+
+    sortedSections.forEach(sect => {
+        const teacher = sect.teacherid ?? 'TBA';
+        tbody.innerHTML += `
+        <tr>
+            <td>${sect.sectionid}</td>
+            <td>${sect.section_name}</td>
+            <td>${teacher}</td>
+            <td class="action-icons">
+                <a href="/mio/admin/EditSection/${sect.sectionid}"><i class="fa fa-pencil"></i></a>
+                <button onclick="openModal('/mio/admin/DeleteSection/${sect.sectionid}', '${sect.section_name}')" class="open-btn">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+}
+</script>
+

@@ -17,6 +17,8 @@ use Kreait\Firebase\Exception\Auth\InvalidPassword;
 use Kreait\Firebase\Exception\Auth\UserNotFound;
 use Kreait\Firebase\Exception\Auth\InvalidArgument;
 use Illuminate\Support\Str;
+use Kreait\Firebase\Storage;
+use Illuminate\Support\Facades\Storage as LocalStorage;
 
 use function Illuminate\Log\log;
 
@@ -24,16 +26,31 @@ class EnrollController extends Controller
 {
     protected $database;
     protected $auth;
+    protected $storage;
+    protected $bucket;
+
+
 
     public function __construct()
     {
+        $path = base_path('storage/firebase/firebase.json');
+
         $factory = (new Factory)
             ->withServiceAccount(base_path('storage/firebase/firebase.json'))
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com');
 
         $this->database = $factory->createDatabase();
         $this->auth = $factory->createAuth(); // Firebase Auth instance
+
+        $this->storage = (new Factory())
+            ->withServiceAccount(base_path('storage/firebase/firebase.json'))
+            ->withDefaultStorageBucket('miolms.firebasestorage.app')
+            ->createStorage();
+
     }
+
+
+
 
     public function showDashboard()
     {
@@ -744,6 +761,24 @@ public function logout(Request $request)
             ->getReference("enrollment/assessment_settings/$type/fillblanks")
             ->getValue() ?? [];
 
+        $written_questions = $this->database
+            ->getReference("enrollment/assessment_settings/$type/questions")
+            ->getValue() ?? [];
+
+        $mcqs = [];
+
+        foreach ($written_questions as $key => $question) {
+            $level = $question['level'] ?? 'unknown';
+            if (!isset($mcqs[$level])) {
+                $mcqs[$level] = [];
+            }
+
+            // Use question_id from the question itself if available, otherwise use the key
+            $questionID = $question['question_id'] ?? $key;
+            $mcqs[$level][$questionID] = $question;
+        }
+
+
         if($type === "physical"){
             return view('mio.head.admin-panel', [
             'page' => 'edit-assessment',
@@ -758,100 +793,148 @@ public function logout(Request $request)
             return view('mio.head.admin-panel', [
             'page' => 'edit-assessment2',
             'type' => $type,
-            'speech' => $speech,
-            'auditory' => $auditory,
-            'sentence' => $sentence,
-            'fillblanks' => $blank,
+            'questions' => $written_questions,
+            'mcqs' => $mcqs,
         ]);
      }
     }
 
     public function saveSpeechPhrases(Request $request, $type)
-{
-    if (!in_array($type, ['physical', 'written'])) {
-        abort(404);
-    }
-
-    $allowedLevels = ['Easy', 'Medium', 'Hard'];
-
-    // Load existing data from Firebase
-    $existingData = $this->database
-        ->getReference("enrollment/assessment_settings/$type/speech")
-        ->getValue() ?? [];
-
-    $speech = $request->input('speech', []);
-
-    foreach ($speech as $key => $phrase) {
-        // Skip if 'text' or 'level' keys are missing to avoid undefined key error
-        if (!isset($phrase['text'], $phrase['level'])) {
-            continue;
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
         }
 
-        // Skip if level is invalid
-        if (!in_array($phrase['level'], $allowedLevels)) {
-            continue;
-        }
+        $allowedLevels = ['Easy', 'Medium', 'Hard'];
 
-        // Keep existing created_at if available, otherwise set current timestamp
-        $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+        // Load existing data from Firebase
+        $existingData = $this->database
+            ->getReference("enrollment/assessment_settings/$type/speech")
+            ->getValue() ?? [];
 
-        // Update or add phrase data in existingData array
-        $existingData[$key] = [
-            'text' => $phrase['text'],
-            'level' => $phrase['level'],
-            'speechID' => $key,
-            'created_at' => $createdAt,
-            'updated_at' => now()->toDateTimeString(),
-        ];
-    }
+        $speech = $request->input('speech', []);
 
-    // Handle new speech phrase addition if any
-    $newPhrase = $request->input('new_speech');
-    if ($newPhrase && isset($newPhrase['text'], $newPhrase['level'])) {
-        if (in_array($newPhrase['level'], $allowedLevels)) {
-            $newKey = 'SP' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+        foreach ($speech as $key => $phrase) {
+            // Skip if 'text' or 'level' keys are missing to avoid undefined key error
+            if (!isset($phrase['text'], $phrase['level'])) {
+                continue;
+            }
 
-            $existingData[$newKey] = [
-                'text' => $newPhrase['text'],
-                'level' => $newPhrase['level'],
-                'created_at' => now()->toDateTimeString(),
+            // Skip if level is invalid
+            if (!in_array($phrase['level'], $allowedLevels)) {
+                continue;
+            }
+
+            // Keep existing created_at if available, otherwise set current timestamp
+            $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
+
+            // Update or add phrase data in existingData array
+            $existingData[$key] = [
+                'text' => $phrase['text'],
+                'level' => $phrase['level'],
+                'speechID' => $key,
+                'created_at' => $createdAt,
                 'updated_at' => now()->toDateTimeString(),
             ];
         }
-    }
 
-    // Process deletions and updates directly to Firebase for consistency
-    foreach ($speech as $speechID => $data) {
-        if (isset($data['_delete']) && $data['_delete'] == '1') {
-            // Delete phrase from Firebase
-            $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")->remove();
 
-            // Also remove from local array to keep it in sync
-            unset($existingData[$speechID]);
-        } else {
-            // Update phrase in Firebase (ensure keys exist before accessing)
-            if (isset($data['text'], $data['level'])) {
-                $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
-                    ->update([
-                        'text' => $data['text'],
-                        'level' => $data['level'],
-                        'updated_at' => now()->toDateTimeString(),
-                        // Preserve created_at if exists in existingData
-                        'created_at' => $existingData[$speechID]['created_at'] ?? now()->toDateTimeString(),
-                    ]);
+        $newPhrase = $request->input('new_speech');
+        if ($newPhrase && isset($newPhrase['text'], $newPhrase['level'])) {
+            if (in_array($newPhrase['level'], $allowedLevels)) {
+                $newKey = 'SP' . now()->format('Ymd') . str_pad(count($existingData) + 1, 3, '0', STR_PAD_LEFT);
+
+                $imageUrl = null;
+
+
+
+                // Upload image if present
+                if ($request->hasFile('new_speech.image') || isset($request->file('new_speech')['image'])) {
+                    $image = $request->file('new_speech')['image'];
+                    $imagePath = "images/enrollment/assessment_settings/{$type}_{$newKey}_" . time() . '.' . $image->getClientOriginalExtension();
+
+                    $bucket = $this->storage->getBucket();
+                    $bucket->upload(
+                        fopen($image->getRealPath(), 'r'),
+                        ['name' => $imagePath]
+                    );
+
+                    $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
+                }
+
+                $existingData[$newKey] = [
+                    'text' => $newPhrase['text'],
+                    'level' => $newPhrase['level'],
+                    'speechID' => $newKey,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'image_url' => $imageUrl,
+                ];
+
+                // Save immediately to Firebase
+                $this->database
+                    ->getReference("enrollment/assessment_settings/$type/speech/$newKey")
+                    ->set($existingData[$newKey]);
             }
         }
+
+
+
+        // Process deletions and updates directly to Firebase for consistency
+        foreach ($speech as $speechID => $data) {
+            if (isset($data['_delete']) && $data['_delete'] == '1') {
+                // Delete phrase from Firebase
+                $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")->remove();
+
+                // Also remove from local array to keep it in sync
+                unset($existingData[$speechID]);
+            } else {
+                // Update phrase in Firebase (ensure keys exist before accessing)
+                if (isset($data['text'], $data['level'])) {
+                    $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
+                        ->update([
+                            'text' => $data['text'],
+                            'level' => $data['level'],
+                            'updated_at' => now()->toDateTimeString(),
+                            // Preserve created_at if exists in existingData
+                            'created_at' => $existingData[$speechID]['created_at'] ?? now()->toDateTimeString(),
+                        ]);
+                }
+                if ($request->hasFile("speech.$speechID.image")) {
+                    $image = $request->file("speech.$speechID.image");
+                    $imagePath = "images/enrollment/assessment_settings/{$type}_{$speechID}_" . time() . '.' . $image->getClientOriginalExtension();
+
+                    $bucket = $this->storage->getBucket();
+
+                    // Upload to Firebase Storage
+                    $bucket->upload(
+                        fopen($image->getRealPath(), 'r'),
+                        ['name' => $imagePath]
+                    );
+
+                    // Get public URL
+                    $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
+                    $newData['image_url'] = $imageUrl;
+
+                    // Save to local data array and update Firebase
+                    $existingData[$speechID]['image_url'] = $imageUrl;
+
+                    $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
+                        ->update(['image_url' => $imageUrl]);
+                }
+
+            }
+        }
+
+        // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
+        $this->database
+            ->getReference("enrollment/assessment_settings/$type/speech")
+            ->set($existingData);
+
+        return redirect()
+            ->back()
+            ->with('success', 'Speech phrases saved successfully!');
     }
-
-    // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
-    $this->database
-        ->getReference("enrollment/assessment_settings/$type/speech")
-        ->set($existingData);
-
-    return redirect()
-        ->back()
-        ->with('success', 'Speech phrases saved successfully!');
-}
 
     public function saveAuditoryPhrases(Request $request, $type)
     {
@@ -1155,10 +1238,207 @@ public function logout(Request $request)
         return $full;
     }
 
+    public function saveQuestion(Request $request, $type)
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
+        }
+
+        $data = $request->input('new_mcq', []);
+        Log::info('Form data:', $data);
+
+        $typeRule = $data['type'] ?? null;
+
+        // Base rules
+        $rules = [
+            'new_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,match_pair',
+            'new_mcq.question' => 'required|string|max:255',
+            'new_mcq.level' => 'required|in:kinder,elementary,highschool,seniorhigh',
+        ];
+
+        // Conditional rules based on question type
+        if (in_array($typeRule, ['multiple_single', 'multiple_multiple'])) {
+            $rules['new_mcq.options'] = 'required|array|min:2';
+            $rules['new_mcq.options.*'] = 'required|string';
+
+            // Allowed keys for correct answer(s)
+            $optionKeys = [];
+            if (!empty($data['options'])) {
+                foreach (array_keys($data['options']) as $index) {
+                    $optionKeys[] = chr(65 + $index); // A, B, C ...
+                }
+            }
+            if ($typeRule === 'multiple_single') {
+                $rules['new_mcq.correct'] = ['required', 'string', 'in:' . implode(',', $optionKeys)];
+            } else {
+                $rules['new_mcq.correct'] = ['required', 'array'];
+                $rules['new_mcq.correct.*'] = ['string', 'in:' . implode(',', $optionKeys)];
+            }
+        } elseif ($typeRule === 'fill_blank') {
+            $rules['new_mcq.correct'] = 'required|string|max:255';
+        } elseif ($typeRule === 'match_pair') {
+            $rules['new_mcq.pair_a'] = 'required|array|min:1';
+            $rules['new_mcq.pair_b'] = 'required|array|min:1';
+            $rules['new_mcq.pair_a.*'] = 'required|string';
+            $rules['new_mcq.pair_b.*'] = 'required|string';
+        }
+
+        try {
+            $validated = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed:', $e->errors());
+            throw $e; // Let it redirect back with errors
+        }
+
+        // Prepare options in a keyed way: 'A' => optionText, 'B' => optionText ...
+        $options = null;
+        if (!empty($validated['new_mcq']['options'])) {
+            $options = [];
+            foreach ($validated['new_mcq']['options'] as $i => $opt) {
+                $key = chr(65 + $i);
+                $options[$key] = $opt;
+            }
+        }
+
+        // For 'correct' multiple choice, we keep keys (A, B, etc), otherwise it's string or array as is
+        $correct = $validated['new_mcq']['correct'] ?? null;
+
+        $newData = [
+            'type' => $validated['new_mcq']['type'],
+            'question' => $validated['new_mcq']['question'],
+            'level' => $validated['new_mcq']['level'],
+            'options' => $options,
+            'correct' => $correct,
+            'pair_a' => $validated['new_mcq']['pair_a'] ?? null,
+            'pair_b' => $validated['new_mcq']['pair_b'] ?? null,
+        ];
+
+        // Handle image upload if present
+        if ($request->hasFile('new_mcq.image')) {
+            $image = $request->file('new_mcq.image');
+            $imagePath = "images/enrollment/assessment_settings/{$type}_" . time() . '.' . $image->getClientOriginalExtension();
+
+            $bucket = $this->storage->getBucket();
+            $bucket->upload(fopen($image->getRealPath(), 'r'), ['name' => $imagePath]);
+
+            $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
+            $newData['image_url'] = $imageUrl;
+        }
+
+        // Save to Firebase
+        $date = now()->format('Ymd'); // e.g. 20250601
+        $randomDigits = str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT); // e.g. 042
+        $customId = 'ENQ' . $date . $randomDigits;
+
+        $refPath = "enrollment/assessment_settings/$type/questions/$customId";
+        $this->database->getReference($refPath)->set($newData);
 
 
+        return redirect()->back()->with('success', 'Question saved successfully!');
+    }
+
+    public function deleteQuestion($type, $id)
+    {
+        $refPath = "enrollment/assessment_settings/$type/questions/$id";
+        $this->database->getReference($refPath)->remove();
+
+        return redirect()->back()->with('success', 'Question deleted successfully!');
+    }
 
 
+    public function updateQuestion(Request $request, $type, $id)
+    {
+        if (!in_array($type, ['physical', 'written'])) {
+            abort(404);
+        }
+
+        $data = $request->input('edit_mcq', []);
+        Log::info('Update form data:', $data);
+
+        $typeRule = $data['type'] ?? null;
+
+        // Base rules
+        $rules = [
+            'edit_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,match_pair',
+            'edit_mcq.question' => 'required|string|max:255',
+            'edit_mcq.level' => 'required|in:kinder,elementary,highschool,seniorhigh',
+        ];
+
+        // Conditional rules based on question type
+        if (in_array($typeRule, ['multiple_single', 'multiple_multiple'])) {
+            $rules['edit_mcq.options'] = 'required|array|min:2';
+            $rules['edit_mcq.options.*'] = 'required|string';
+
+            // Allowed keys for correct answer(s)
+            $optionKeys = [];
+            if (!empty($data['options'])) {
+                foreach (array_keys($data['options']) as $index) {
+                    $optionKeys[] = chr(65 + $index); // A, B, C ...
+                }
+            }
+            if ($typeRule === 'multiple_single') {
+                $rules['edit_mcq.correct'] = ['required', 'string', 'in:' . implode(',', $optionKeys)];
+            } else {
+                $rules['edit_mcq.correct'] = ['required', 'array'];
+                $rules['edit_mcq.correct.*'] = ['string', 'in:' . implode(',', $optionKeys)];
+            }
+        } elseif ($typeRule === 'fill_blank') {
+            $rules['edit_mcq.correct'] = 'required|string|max:255';
+        } elseif ($typeRule === 'match_pair') {
+            $rules['edit_mcq.pair_a'] = 'required|array|min:1';
+            $rules['edit_mcq.pair_b'] = 'required|array|min:1';
+            $rules['edit_mcq.pair_a.*'] = 'required|string';
+            $rules['edit_mcq.pair_b.*'] = 'required|string';
+        }
+
+        try {
+            $validated = $request->validate($rules);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed during update:', $e->errors());
+            throw $e; // Redirect back with errors
+        }
+
+        // Prepare options in keyed way: 'A' => optionText, 'B' => optionText ...
+        $options = null;
+        if (!empty($validated['edit_mcq']['options'])) {
+            $options = [];
+            foreach ($validated['edit_mcq']['options'] as $i => $opt) {
+                $key = chr(65 + $i);
+                $options[$key] = $opt;
+            }
+        }
+
+        // For 'correct' multiple choice, keep keys (A, B, etc), otherwise string or array as is
+        $correct = $validated['edit_mcq']['correct'] ?? null;
+
+        $updateData = [
+            'type' => $validated['edit_mcq']['type'],
+            'question' => $validated['edit_mcq']['question'],
+            'level' => $validated['edit_mcq']['level'],
+            'options' => $options,
+            'correct' => $correct,
+            'pair_a' => $validated['edit_mcq']['pair_a'] ?? null,
+            'pair_b' => $validated['edit_mcq']['pair_b'] ?? null,
+        ];
+
+        // Handle image upload if present
+        if ($request->hasFile('edit_mcq.image')) {
+            $image = $request->file('edit_mcq.image');
+            $imagePath = "images/enrollment/assessment_settings/{$type}_" . time() . '.' . $image->getClientOriginalExtension();
+
+            $bucket = $this->storage->getBucket();
+            $bucket->upload(fopen($image->getRealPath(), 'r'), ['name' => $imagePath]);
+
+            $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
+            $updateData['image_url'] = $imageUrl;
+        }
+
+        // Update existing question at given id
+        $refPath = "enrollment/assessment_settings/$type/questions/$id";
+        $this->database->getReference($refPath)->update($updateData);
+
+        return redirect()->back()->with('success', 'Question updated successfully!');
+    }
 
 
 

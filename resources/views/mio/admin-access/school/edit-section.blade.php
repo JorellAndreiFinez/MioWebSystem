@@ -10,7 +10,7 @@
             </div>
 
             <div class="button-group">
-            <button type="button" class="btn cancel-btn"><a href="{{ url()->previous() }}">Cancel</a>
+            <button type="button" class="btn cancel-btn"><a href="{{ route("mio.ViewSection") }}">Cancel</a>
             </button>
             <button class="btn add-btn">
                 <span class="icon">✔</span> Save Changes
@@ -33,6 +33,8 @@
             </div>
           </div>
 
+
+
           <div class="form-row">
             <div class="form-group">
               <label>Status <span style="color: red; font-weight:700">*</span></label>
@@ -54,6 +56,11 @@
             <div class="form-group">
                 <label>Max Number of Students <span style="color: red; font-weight:700">*</span></label>
                 <input type="number" name="max_students" min="1" max="100" value="{{ $editdata['max_students'] }}" required />
+            </div>
+
+            <div class="form-group">
+                <label>Section Grade <span style="color: red; font-weight:700">*</span></label>
+                <input type="number" name="section_grade" min="1" max="10" placeholder="Enter section grade" required value="{{ $editdata['section_grade'] }}" />
             </div>
           </div>
 

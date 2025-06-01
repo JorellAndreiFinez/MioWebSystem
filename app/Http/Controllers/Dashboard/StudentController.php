@@ -352,6 +352,212 @@ class StudentController extends Controller
         ]);
     }
 
+
+
+    public function submitQuiz(Request $request, $subjectId, $quizId)
+    {
+    Log::info('All request data:', $request->all());
+
+        $startTime = session('quiz_start_time');
+        $endTime = now();
+
+        $timeDiff = $startTime ? $endTime->diff($startTime) : null;
+
+        $formattedTimeSpent = $timeDiff ? $timeDiff->format('%H:%I:%S') : null;
+        $hours = $timeDiff ? $timeDiff->h : null;
+        $minutes = $timeDiff ? $timeDiff->i : null;
+        $seconds = $timeDiff ? $timeDiff->s : null;
+
+        $studentId = session('firebase_user.uid');
+        $studentName = session('firebase_user.first_name') . ' ' . session('firebase_user.last_name');
+
+        if (!$studentId) {
+            return back()->with('error', 'Session expired. Please login again.');
+        }
+
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectKey = null;
+
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if ($subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
+            }
+        }
+
+
+        if (!$gradeLevelKey || !$subjectKey) {
+            return back()->with('error', 'Subject not found.');
+        }
+
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $quiz = $quizRef->getValue();
+
+        if (!$quiz) {
+            return back()->with('error', 'Quiz not found.');
+        }
+
+        $maxAttempts = (int) ($quiz['attempts'] ?? 1);
+        $studentAttempts = (int) ($quiz['people'][$studentId]['total_student_attempts'] ?? 0);
+
+
+        if ($studentAttempts >= $maxAttempts) {
+            return back()->with('error', 'Maximum attempts reached.');
+        }
+
+        // Answers submitted by student
+        $answers = $request->input('answers', []);
+        // Files submitted by student for file_upload questions
+        Log::info('Submitted answers:', ['answers' => $answers]);
+
+
+        $files = $request->file('answers', []);
+        $questions = $quiz['questions'] ?? [];
+
+        $score = 0;
+        $totalPoints = 0;
+        $submissionData = [];
+
+
+
+        foreach ($questions as $questionId => $question) {
+            $studentAnswer = $answers[$questionId] ?? null;
+            $correctAnswer = $question['answer'] ?? '';
+            $points = (float) ($question['points'] ?? 0);
+
+            $totalPoints += $points;
+
+            $isCorrect = null; // Default for non-auto-gradable or essay/file_upload questions
+
+            $type = $question['type'] ?? '';
+
+            if ($type === 'file_upload') {
+                // Handle file upload question
+                if (isset($files[$questionId]) && $files[$questionId]->isValid()) {
+                    // Store the file and save the path as answer
+                    $uploadedFilePath = $files[$questionId]->store('quiz_uploads', 'public');
+                    $studentAnswer = $uploadedFilePath;
+                } else {
+                    $studentAnswer = null;
+                }
+            }
+
+            Log::info("Question ID: {$questionId}, Type: {$type}, Student answer:", ['answer' => $studentAnswer]);
+
+            // Auto-grade multiple choice and fill_in_the_blank
+            if ($type === 'multiple_choice') {
+                $isCorrect = ($studentAnswer === $correctAnswer);
+                if ($isCorrect) {
+                    $score += $points;
+                }
+            } elseif ($type === 'fill_in_the_blank') {
+                // Case-insensitive trim compare
+                $isCorrect = (strtolower(trim($studentAnswer)) === strtolower(trim($correctAnswer)));
+                if ($isCorrect) {
+                    $score += $points;
+                }
+            } elseif ($type === 'essay') {
+                // No auto-grading: is_correct remains null, score not affected
+                $isCorrect = null;
+            } elseif ($type === 'file_upload') {
+                // No auto-grading, is_correct remains null
+                $isCorrect = null;
+            } else {
+                // For any unknown type, don't auto-grade
+                $isCorrect = null;
+            }
+
+            $submissionData[$questionId] = [
+                'question_id' => $questionId,
+                'question' => $question['question'],
+                'student_answer' => $studentAnswer,
+                'correct_answer' => $correctAnswer,
+                'is_correct' => $isCorrect,
+                'points' => $points,
+            ];
+        }
+
+
+        $attemptNumber = $studentAttempts + 1;
+        $attemptId = 'ATTM' . now()->format('Ymd') . str_pad($attemptNumber, 3, '0', STR_PAD_LEFT);
+
+        // Save the submission data
+        $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people/{$studentId}/{$attemptId}")
+            ->set([
+                'submitted_at' => now()->format('Y-m-d H:i:s'),
+                'time_spent' => [
+                    'formatted' => $formattedTimeSpent,
+                    'hours' => $hours,
+                    'minutes' => $minutes,
+                    'seconds' => $seconds,
+                ],
+                'score' => $score,
+                'total_points' => $totalPoints,
+                'answers' => $submissionData,
+            ]);
+
+        // Update student's attempt count and status
+        $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people/{$studentId}")
+            ->update([
+                'status' => 'submitted',
+                'total_student_attempts' => $attemptNumber,
+                'name' => $studentName,
+            ]);
+
+        // Clear quiz start time session
+        session()->forget('quiz_start_time');
+
+
+        return redirect()->route('mio.subject.quiz', ['subjectId' => $subjectId])
+            ->with('success', 'Quiz submitted successfully.');
+    }
+
+
+    public function saveAnswer(Request $request, $subjectId, $quizId, $questionId)
+    {
+        $studentId = session('firebase_user.uid');
+        if (!$studentId) {
+            return response()->json(['error' => 'Session expired'], 401);
+        }
+
+
+
+        $answer = $request->input('answer');
+        $currentIndex = (int) $request->input('current_question_index', 0);
+
+        // Find gradeLevelKey and subjectKey as in your submitQuiz function...
+
+        // Save the answer and mark question as answered
+        $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people/{$studentId}/answers/{$questionId}")
+            ->set([
+                'answer' => $answer,
+                'status' => 'answered',
+                'answered_at' => now()->format('Y-m-d H:i:s'),
+            ]);
+
+        // Save current question index so you can resume
+        $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/people/{$studentId}")
+            ->update([
+                'current_question_index' => $currentIndex,
+                'status' => 'in_progress',
+            ]);
+
+        return response()->json(['message' => 'Answer saved']);
+    }
+
+
+
+
+
+
+
+
     // ASSIGNMENTS
 
     public function showAssignment($subjectId)

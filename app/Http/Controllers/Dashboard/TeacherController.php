@@ -50,13 +50,10 @@ class TeacherController extends Controller
 
     public function showScores($subjectId)
     {
-
         // 1. Get active school year
         $schoolYearsRef = $this->database->getReference('schoolyears');
         $schoolYears = $schoolYearsRef->getValue() ?? [];
         $activeSchoolYear = null;
-
-
 
         foreach ($schoolYears as $schoolYear) {
             if ($schoolYear['status'] === 'active') {
@@ -90,10 +87,11 @@ class TeacherController extends Controller
             return redirect()->route('mio.teacher-panel')->with('error', 'Subject not found.');
         }
 
+        // 3. Get student names
         $peopleRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/people");
         $people = $peopleRef->getValue() ?? [];
 
-        // 3. Define activity types (hardcoded)
+        // 4. Define activity types
         $activityTypes = [
             'pronunciation', 'picture', 'question', 'phrase',
             'bingo', 'matching', 'fill', 'talk2me', 'homonyms'
@@ -101,94 +99,106 @@ class TeacherController extends Controller
 
         $groupedAttempts = [];
 
-    foreach ($activityTypes as $activityType) {
-        if ($activityType !== 'pronunciation') continue; // Only load pronunciation
+        foreach ($activityTypes as $activityType) {
+            $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
+            $students = $activityRef->getValue() ?? [];
 
-        $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
-        $students = $activityRef->getValue() ?? [];
+            foreach ($students as $activitySetId => $studentSet) {
+                if (!is_array($studentSet)) continue;
 
-        foreach ($students as $activitySetId => $studentSet) {
-            foreach ($studentSet as $studentId => $studentAttempts) {
-                // Sort attempts by submitted_at descending
-                uasort($studentAttempts, function ($a, $b) {
-                    return strtotime($b['submitted_at'] ?? '') <=> strtotime($a['submitted_at'] ?? '');
-                });
+                foreach ($studentSet as $studentId => $studentAttempts) {
+                    if (!is_array($studentAttempts)) continue;
 
-                // Get the most recent attempt only
-                $recentAttempt = reset($studentAttempts);
+                    // Sort attempts by submitted_at descending
+                    uasort($studentAttempts, function ($a, $b) {
+                        return strtotime($b['submitted_at'] ?? '') <=> strtotime($a['submitted_at'] ?? '');
+                    });
 
-                if (!isset($recentAttempt['answers'])) continue;
+                    // Get the most recent attempt
+                    $recentAttempt = reset($studentAttempts);
+                    $attemptId = key($studentAttempts);
+                    if (!isset($recentAttempt['answers'])) continue;
 
-                foreach ($recentAttempt['answers'] as $answerId => $answerData) {
-                    $attempt = [
-                        'student_id' => $studentId,
-                        'attempt_id' => key($studentAttempts),
-                        'answer_id' => $answerId,
-                        'answered_at' => $answerData['answered_at'] ?? null,
-                        'started_at' => $recentAttempt['started_at'] ?? null,
-                        'submitted_at' => $recentAttempt['submitted_at'] ?? null,
-                        'audio_path' => $answerData['audio_path'] ?? null,
-                        'card_no' => $answerData['card_no'] ?? null,
-                        // Add names here:
-                        'student_first_name' => $people[$studentId]['first_name'] ?? '',
-                        'student_last_name' => $people[$studentId]['last_name'] ?? '',
-                    ];
+                    foreach ($recentAttempt['answers'] as $answerId => $answerData) {
+                        $attempt = [
+                            'student_id' => $studentId,
+                            'attempt_id' => $attemptId,
+                            'answer_id' => $answerId,
+                            'answered_at' => $answerData['answered_at'] ?? null,
+                            'started_at' => $recentAttempt['started_at'] ?? null,
+                            'submitted_at' => $recentAttempt['submitted_at'] ?? null,
+                            'audio_path' => $answerData['audio_path'] ?? null,
+                            'card_no' => $answerData['card_no'] ?? null,
+                            'student_first_name' => $people[$studentId]['first_name'] ?? '',
+                            'student_last_name' => $people[$studentId]['last_name'] ?? '',
+                        ];
 
-                    if (!empty($attempt['audio_path'])) {
-                        $signedUrl = $this->getAudioDownloadUrl($attempt['audio_path']);
-                        $attempt['audio_url'] = $signedUrl ?? null;
-                    } else {
-                        $attempt['audio_url'] = null;
-                    }
-
-                    if (($subject['specialized_type'] ?? null) === 'speech' && isset($answerData['pronunciation_details'])) {
-                    $attempt['pronunciation_details'] = $answerData['pronunciation_details'];
-                    $speechaceScore = $answerData['pronunciation_details']['speechace_pronunciation_score'] ?? null;
-
-                    if ($speechaceScore !== null) {
-                        $feedback = $this->getPronunciationFeedback((int)$speechaceScore);
-                        $attempt['pronunciation_details']['ielts_pronunciation_score'] = $feedback['ielts'];
-                        $attempt['pronunciation_details']['cefr_pronunciation_score'] = $feedback['cefr'];
-                        $attempt['pronunciation_details']['pte_pronunciation_score'] = $feedback['pte'];
-                        $attempt['pronunciation_details']['feedback'] = $feedback['feedback'];
-                    }
-
-                    // 🟡 Calculate general MIÓ score from words' quality_score
-                    $words = $answerData['pronunciation_details']['words'] ?? [];
-                    $totalScore = 0;
-                    $wordCount = 0;
-
-                    foreach ($words as $word) {
-                        if (isset($word['quality_score'])) {
-                            $totalScore += $word['quality_score'];
-                            $wordCount++;
+                        // Generate signed audio URL
+                        if (!empty($attempt['audio_path'])) {
+                            $signedUrl = $this->getAudioDownloadUrl($attempt['audio_path']);
+                            $attempt['audio_url'] = $signedUrl ?? null;
+                            Log::info("Signed URL: {$signedUrl}");
+                        } else {
+                            $attempt['audio_url'] = null;
                         }
+
+                        // Pronunciation specific logic
+                        if (($subject['specialized_type'] ?? null) === 'speech' && isset($answerData['pronunciation_details'])) {
+                            $attempt['pronunciation_details'] = $answerData['pronunciation_details'];
+                            $speechaceScore = $answerData['pronunciation_details']['speechace_pronunciation_score'] ?? null;
+
+                            if ($speechaceScore !== null) {
+                                $feedback = $this->getPronunciationFeedback((int)$speechaceScore);
+                                $attempt['pronunciation_details']['ielts_pronunciation_score'] = $feedback['ielts'];
+                                $attempt['pronunciation_details']['cefr_pronunciation_score'] = $feedback['cefr'];
+                                $attempt['pronunciation_details']['pte_pronunciation_score'] = $feedback['pte'];
+                                $attempt['pronunciation_details']['feedback'] = $feedback['feedback'];
+                            }
+
+                            // Calculate MIÓ Score
+                            $words = $answerData['pronunciation_details']['words'] ?? [];
+                            $totalScore = 0;
+                            $wordCount = 0;
+
+                            foreach ($words as $word) {
+                                if (isset($word['quality_score'])) {
+                                    $totalScore += $word['quality_score'];
+                                    $wordCount++;
+                                }
+                            }
+
+                            $attempt['mio_score'] = $wordCount > 0 ? round($totalScore / $wordCount, 2) : null;
+                        }
+
+                        $groupedAttempts[$activityType][] = $attempt;
                     }
-
-                    if ($wordCount > 0) {
-                        $mioScore = round($totalScore / $wordCount, 2); // 🎯 Average score of words
-                        $attempt['mio_score'] = $mioScore;
-                    } else {
-                        $attempt['mio_score'] = null;
-                    }
-                }
-
-
-                    $groupedAttempts[$activityType][] = $attempt;
                 }
             }
         }
+
+        $subjectTypeRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/subjectType");
+        $subjectType = $subjectTypeRef->getValue() ?? [];
+
+        $specializedTypeRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/specialized_type");
+        $specializedType = $specializedTypeRef->getValue() ?? [];
+
+        if($subjectType === 'specialized') {
+            if($specializedType === 'speech') {
+                return view('mio.head.teacher-panel', [
+                'page' => 'scores',
+                'subject' => $subject,
+                'groupedAttempts' => $groupedAttempts,
+            ]);
+            }
+        } else {
+            return view('mio.head.teacher-panel', [
+                'page' => 'scores-academics',
+                'subject' => $subject,
+                'groupedAttempts' => $groupedAttempts,
+            ]);
+        }
     }
 
-    Log::info("Signed URL: {$signedUrl}");
-
-
-        return view('mio.head.teacher-panel', [
-            'page' => 'scores',
-            'subject' => $subject,
-            'groupedAttempts' => $groupedAttempts,
-        ]);
-    }
 
 
 
@@ -765,8 +775,9 @@ class TeacherController extends Controller
         'quiz.description' => 'nullable|string',
         'quiz.publish_date' => 'required|date',
         'quiz.start_time' => 'required',
-        'quiz.deadline_date' => 'nullable|date',
-        'quiz.end_time' => 'nullable',
+        'quiz.no_deadline' => 'nullable|boolean',
+        'quiz.deadline_date' => 'nullable|required_without:quiz.no_deadline|date',
+        'quiz.end_time' => 'nullable|required_without:quiz.no_deadline',
         'quiz.time_limit' => 'nullable|integer|min:0',
         'quiz.no_time_limit' => 'nullable|boolean',
         'quiz.total_points' => 'required|integer|min:0',
@@ -782,8 +793,27 @@ class TeacherController extends Controller
         'questions.*.points' => 'required|numeric|min:0.01',
     ]);
 
+
     $quizData = $request->input('quiz');
     $questions = $request->input('questions');
+
+    $noDeadline = isset($quizData['no_deadline']) && $quizData['no_deadline'];
+
+        if ($noDeadline) {
+            $quizData['deadline_date'] = '';
+            $quizData['end_time'] = '';
+        }
+
+
+    // Additional validation: if one of deadline_date or end_time is filled, the other must be required
+    $deadlineDate = $request->input('quiz.deadline_date');
+    $endTime = $request->input('quiz.end_time');
+
+    if (($deadlineDate && !$endTime) || (!$deadlineDate && $endTime)) {
+        return back()
+            ->withInput()
+            ->withErrors(['deadline' => 'Both Deadline Date and End Time are required if either is provided.']);
+    }
 
     // Step 3: Generate unique quiz ID
     $today = Carbon::now()->format('Ymd');
@@ -834,12 +864,8 @@ class TeacherController extends Controller
     }
 
     // Step 6: Determine time limit
-    $timeLimit = 0;
-    if (!empty($quizData['no_time_limit']) && $quizData['no_time_limit'] == 1) {
-        $timeLimit = 0;
-    } elseif (isset($quizData['time_limit']) && is_numeric($quizData['time_limit'])) {
-        $timeLimit = (int)$quizData['time_limit'];
-    }
+    $timeLimit = isset($quizData['time_limit']) ? (int)$quizData['time_limit'] : 0;
+    $noTimeLimit = $timeLimit === 0;
 
     // ✅ Step 7: Build questions array with UUIDs, handling all types
     $questionMap = [];
@@ -877,8 +903,8 @@ class TeacherController extends Controller
         'start_time' => $quizData['start_time'],
         'deadline_date' => $quizData['deadline_date'] ?? null,
         'end_time' => $quizData['end_time'] ?? null,
-        'time_limit' => $quizData['time_limit'] ?? null,
-        'no_time_limit' => isset($quizData['no_time_limit']),
+        'time_limit' => $timeLimit,
+        'no_time_limit' => $noTimeLimit,
         'total_points' => (int) $quizData['total_points'],
         'attempts' => (int) $quizData['attempts'],
         'access_code' => $quizData['access_code'] ?? '',
@@ -902,8 +928,6 @@ class TeacherController extends Controller
     return redirect()->route('mio.subject-teacher.quiz', $subjectId)
         ->with('success', 'Quiz successfully created.');
     }
-
-
 
 
     public function deleteQuiz($subjectId, $quizId)
@@ -977,11 +1001,30 @@ class TeacherController extends Controller
         $selectedStudentId = request()->input('student_id');
         $submission = null;
 
-        if ($selectedStudentId) {
-            $submissionRef = $this->database
-                ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/submissions/{$selectedStudentId}");
-            $submission = $submissionRef->getValue();
+        $studentAttempts = [];
+
+    if ($selectedStudentId) {
+        // Path: submissions > student_id
+        $submissionRef = $this->database
+            ->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}/submissions/{$selectedStudentId}");
+
+        $submissionData = $submissionRef->getValue();
+
+        // Check if multiple attempts exist (ATTM keys)
+        if (is_array($submissionData)) {
+            foreach ($submissionData as $attemptKey => $attemptData) {
+                if (str_starts_with($attemptKey, 'ATTM')) {
+                    $studentAttempts[$attemptKey] = $attemptData;
+                }
+            }
+
+            // Default: pick the latest attempt (by key) or allow frontend to choose
+            end($studentAttempts);
+            $latestAttemptKey = key($studentAttempts);
+            $submission = $studentAttempts[$latestAttemptKey] ?? null;
         }
+    }
+
 
         $questions = isset($quiz['questions']) ? $quiz['questions'] : [];
 
@@ -996,6 +1039,7 @@ class TeacherController extends Controller
             'submission' => $submission,
             'selectedStudentId' => $selectedStudentId,
             'subject' => $subject,
+            'studentAttempts' => $studentAttempts,
         ]);
     }
 
@@ -1141,6 +1185,44 @@ class TeacherController extends Controller
                         ->with('success', 'Quiz updated successfully.');
     }
 
+    public function updateAttempt(Request $request, $subjectId, $quizId)
+{
+    $studentId = $request->input('student_id');
+    $attemptId = $request->input('attempt_id');
+    $score = $request->input('score');
+    $answers = $request->input('answers');
+
+    // Validate data here as needed
+
+    // Build updated data structure
+    $updatedAttempt = [
+        'score' => $score,
+        'answers' => [],
+        // Other fields like submitted_at, total_points should be preserved or recalculated
+    ];
+
+    foreach ($answers as $qid => $answerData) {
+        $updatedAttempt['answers'][$qid] = [
+            'student_answer' => $answerData['student_answer'],
+            'points' => floatval($answerData['points']),
+            // You might want to keep correct_answer and question from old data
+        ];
+    }
+
+    // Fetch existing attempt data from Firebase (optional)
+
+    // Update the Firebase document:
+    // Use your Firebase PHP SDK or REST API to update the student's attempt at:
+    // path like: quizzes/{quizId}/people/{studentId}/ATTM{attemptId}
+
+    // Example (pseudocode):
+    // $firebase = app('firebase.database');
+    // $ref = $firebase->getReference("quizzes/{$quizId}/people/{$studentId}/{$attemptId}");
+    // $ref->update($updatedAttempt);
+
+    // Redirect back with success message
+    return redirect()->back()->with('message', 'Attempt updated successfully.');
+}
 
 
 

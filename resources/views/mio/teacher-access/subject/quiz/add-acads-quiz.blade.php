@@ -7,6 +7,11 @@
     </main>
 
     <main class="main-content">
+        @if ($errors->has('deadline'))
+            <div class="error" style="color:red; margin-top:5px;">
+                {{ $errors->first('deadline') }}
+            </div>
+        @endif
       <form method="POST" enctype="multipart/form-data"action="{{ route('mio.subject-teacher.store-acads-quiz', ['subjectId' => $subjectId]) }}" id="quiz-form">
         @csrf
 
@@ -43,10 +48,12 @@
             <label>Start Time <span style="color:red">*</span></label>
             <input type="time" name="quiz[start_time]" value="" required />
             </div>
+
             <div class="form-group">
             <label>Deadline Date (Optional)</label>
             <input type="date" name="quiz[deadline_date]" value="{{ date('Y-m-d', strtotime('+1 day')) }}" />
             </div>
+
             <div class="form-group">
             <label>End Time (Optional)</label>
             <input type="time" name="quiz[end_time]" value="17:00" />
@@ -94,6 +101,15 @@
                 <span class="slider round"></span>
             </label>
         </div>
+        <div class="form-group" >
+            <label>No Deadline</label>
+                <label class="switch">
+                    <input type="checkbox" id="no-deadline-checkbox" name="quiz[no_deadline]" value="1" />
+                    <span class="slider round"></span>
+
+                </label>
+                </div>
+
         </div>
 
         </div>
@@ -461,7 +477,6 @@ function handleQuestionTypeChange(idx) {
 
 </script>
 
-
 <script>
 document.querySelector('form').addEventListener('submit', function (e) {
     const form = e.target;
@@ -508,5 +523,28 @@ document.querySelector('form').addEventListener('submit', function (e) {
         alert("Please fix the following issues:\n\n" + errors.join("\n"));
     }
 });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const noDeadlineCheckbox = document.getElementById("no-deadline-checkbox");
+    const deadlineDateInput = document.querySelector('input[name="quiz[deadline_date]"]');
+    const endTimeInput = document.querySelector('input[name="quiz[end_time]"]');
+
+    function toggleDeadlineFields() {
+      if (noDeadlineCheckbox.checked) {
+        deadlineDateInput.value = "";
+        deadlineDateInput.disabled = true;
+        endTimeInput.value = "";
+        endTimeInput.disabled = true;
+      } else {
+        deadlineDateInput.disabled = false;
+        endTimeInput.disabled = false;
+      }
+    }
+
+    noDeadlineCheckbox.addEventListener("change", toggleDeadlineFields);
+    toggleDeadlineFields(); // Call on load in case checkbox is pre-checked
+  });
 </script>
 

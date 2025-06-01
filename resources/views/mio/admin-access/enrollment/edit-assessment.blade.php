@@ -1,14 +1,20 @@
 <section class="home-section">
+     <div class="text">
+            <div class="breadcrumb-item">
+                <a href="{{ route('mio.enrollment') }}">
+                    Enrollment
+                </a>
+            </div>
+
+            <div class="breadcrumb-item active">
+                Edit Assessment - Physical
+            </div>
+        </div>
   <div class="teacher-container">
-    <main class="main-banner">
-      <div class="banner">
-        <h2>Edit Enrollment - Physical Evaluation</h2>
-      </div>
-    </main>
 
     <main class="main-content">
         <!-- SPEECH FORM -->
-        <form method="POST" action="{{ route('mio.save-speech-assessment', $type) }}">
+        <form method="POST" action="{{ route('mio.save-speech-assessment', $type) }}" enctype="multipart/form-data">
     @csrf
 
     <h3>Speech and Auditory Test</h3>
@@ -18,6 +24,7 @@
             <th>ID</th>
             <th>Text</th>
             <th>Level</th>
+            <th>Image</th>
             <th>Action</th>
         </tr>
         </thead>
@@ -28,6 +35,15 @@
             <td>{{ $speechID }}</td>
             <td class="phrase-text">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
             <td class="phrase-level">{{ $phrase['level'] ?? '' }}</td>
+
+            <td>
+            @if (!empty($phrase['image_url']))
+                <a href="#" onclick="showImageModal('{{ $phrase['image_url'] }}'); return false;">
+                    <i class="fas fa-image fa-2x text-primary"></i> <!-- Font Awesome icon -->
+                </a>
+            @endif
+            </td>
+
             <td class="phrase-actions">
                 <input type="hidden" name="speech[{{ $speechID }}][_delete]" class="delete-flag" value="0">
                 <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
@@ -56,6 +72,10 @@
             <option value="Hard">Hard</option>
             </select>
         </td>
+        <td>
+            <input type="file" name="new_speech[image]" class="form-control">
+        </td>
+
         <td>
             <button type="button" class="btn btn-sm btn-success" onclick="saveSpeech()">Add</button>
             <button type="button" class="btn btn-sm btn-secondary" onclick="cancelAddSpeech()">Cancel</button>
@@ -282,10 +302,32 @@
   </div>
 </section>
 
+<!-- IMAGE MODAL -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="imageModalLabel">Image Preview</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="Full Image" class="img-fluid" style="width: 500px; height: 500px; object-fit: cover; border-radius: 10px;">
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
   const csrfToken = '{{ csrf_token() }}';
   const assessmentType = '{{ $type }}'; // pass PHP variable to JS
+
+      function showImageModal(imageUrl) {
+    const modalImg = document.getElementById('modalImage');
+    modalImg.src = imageUrl;
+    const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+    modal.show();
+}
 </script>
 
 <!-- FILL IN THE BLANK -->
@@ -617,6 +659,7 @@ function markDelete(button) {
     const id = document.getElementById('new-speech-id').value;
     const text = document.querySelector('input[name="new_speech[text]"]').value.trim();
     const level = document.querySelector('select[name="new_speech[level]"]').value;
+    const imageInput = document.querySelector('input[name="new_speech[image]"]');
 
     if (!text) {
         alert('Please enter a phrase.');
@@ -638,13 +681,26 @@ function markDelete(button) {
             <option value="Hard"${level === 'Hard' ? ' selected' : ''}>Hard</option>
         </select>
         </td>
+        <td>
+        <input type="file" name="speech[${id}][image]" class="form-control">
+        </td>
         <td><button type="button" class="btn btn-sm btn-danger" onclick="removeSpeech(this)">Remove</button></td>
     `;
 
-    tableBody.insertBefore(newRow, document.getElementById('new-speech-row'));
-
-    cancelAddSpeech();
+    // Transfer file from temporary input to the new row input
+    const newImageInput = newRow.querySelector(`input[name="speech[${id}][image]"]`);
+    if (imageInput && imageInput.files.length > 0) {
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(imageInput.files[0]);
+        newImageInput.files = dataTransfer.files;
+        // Clear the original file input to avoid duplication or confusion
+        imageInput.value = '';
     }
+
+    tableBody.insertBefore(newRow, document.getElementById('new-speech-row'));
+    cancelAddSpeech();
+}
+
 
     function editSpeechRow(button) {
         const row = button.closest('tr');
@@ -654,6 +710,7 @@ function markDelete(button) {
         const textCell = row.querySelector('.phrase-text');
         const levelCell = row.querySelector('.phrase-level');
         const actionsCell = row.querySelector('.phrase-actions');
+         const imageCell = row.querySelector('td:nth-child(4)');
 
         const currentText = textCell.textContent.trim();
         const currentLevel = levelCell.textContent.trim();
@@ -669,42 +726,95 @@ function markDelete(button) {
             <option value="Hard" ${currentLevel === 'Hard' ? 'selected' : ''}>Hard</option>
             </select>`;
 
+            // Replace image cell content with file input and existing image if any
+            let existingImg = '';
+            const imgTag = imageCell.querySelector('img');
+            if (imgTag) {
+                existingImg = `<img src="${imgTag.src}" width="50" alt="Image" style="display:block; margin-bottom:5px;">`;
+            }
+            imageCell.innerHTML = `
+                ${existingImg}
+                <input type="file" name="speech[${key}][image]" class="form-control">
+            `;
+
         // Replace action buttons with Save and Delete
         actionsCell.innerHTML = `
             <button type="submit" class="btn btn-sm btn-success" onclick="saveSpeechRow(this)">Save</button>
         `;
     }
 
+    // Save changes for the row, toggle inputs back to text and level
     function saveSpeechRow(button) {
-        // For now, just revert the inputs back to plain text and update text/level cells
-        // You can enhance this to submit via AJAX or form submit
+    const row = button.closest('tr');
+    const key = row.getAttribute('data-key');
 
-        const row = button.closest('tr');
-        const key = row.getAttribute('data-key');
+    const textInput = row.querySelector(`input[name="speech[${key}][text]"]`);
+    const levelSelect = row.querySelector(`select[name="speech[${key}][level]"]`);
+    const actionsCell = row.querySelector('.phrase-actions');
+    const textCell = row.querySelector('.phrase-text');
+    const levelCell = row.querySelector('.phrase-level');
 
-        const textInput = row.querySelector(`input[name="speech[${key}][text]"]`);
-        const levelSelect = row.querySelector(`select[name="speech[${key}][level]"]`);
-        const actionsCell = row.querySelector('.phrase-actions');
-        const textCell = row.querySelector('.phrase-text');
-        const levelCell = row.querySelector('.phrase-level');
-
-        if (!textInput.value.trim()) {
-            alert('Please enter a phrase.');
-            return;
-        }
-
-        form.submit();
-
-        // Update cells with new values as plain text
-        textCell.textContent = textInput.value.trim();
-        levelCell.textContent = levelSelect.value;
-
-        // Restore the action buttons (Edit only)
-        actionsCell.innerHTML = `
-        <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
-        `;
+    if (!textInput.value.trim()) {
+        alert('Please enter a phrase.');
+        return;
     }
 
+    // Update cells with new values as plain text
+    textCell.textContent = textInput.value.trim();
+    levelCell.textContent = levelSelect.value;
+
+    // Keep existing image and file input as is (file input remains to allow upload)
+    // Or you can reset imageCell content if you want (optional)
+
+    // Restore action buttons
+    actionsCell.innerHTML = `
+        <input type="hidden" name="speech[${key}][_delete]" class="delete-flag" value="0">
+        <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
+    `;
+
+    showSubmitButton();
+    }
+
+    // Cancel editing, revert to original display
+    function cancelEdit(button) {
+    const row = button.closest('tr');
+    const key = row.getAttribute('data-key');
+
+    // Revert text cell
+    const textCell = row.querySelector('.phrase-text');
+    const textInput = textCell.querySelector('input');
+    const originalText = textInput ? textInput.defaultValue || textInput.value : '';
+
+    // Revert level cell
+    const levelCell = row.querySelector('.phrase-level');
+    const levelSelect = levelCell.querySelector('select');
+    const originalLevel = levelSelect ? levelSelect.querySelector('option[selected]')?.value || levelSelect.value : '';
+
+    // Revert image cell
+    const imageCell = row.querySelector('td:nth-child(4)');
+    // Check if there is an image preview
+    const fileInput = imageCell.querySelector('input[type="file"]');
+    let imgUrl = '';
+    if (fileInput && fileInput.previousElementSibling && fileInput.previousElementSibling.tagName === 'IMG') {
+        imgUrl = fileInput.previousElementSibling.src;
+    } else {
+        // fallback: try to find img src from old data attribute or something if you store it
+    }
+
+    textCell.textContent = originalText;
+    levelCell.textContent = originalLevel;
+    imageCell.innerHTML = imgUrl ? `<img src="${imgUrl}" width="50" alt="Image"> <input type="file" name="speech[${key}][image]" class="form-control" style="margin-top:5px;">`
+                                    : `<input type="file" name="speech[${key}][image]" class="form-control">`;
+
+    // Revert action buttons
+    const actionsCell = row.querySelector('.phrase-actions');
+    actionsCell.innerHTML = `
+        <input type="hidden" name="speech[${key}][_delete]" class="delete-flag" value="0">
+        <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
+    `;
+    }
 </script>
 
 
@@ -893,3 +1003,5 @@ function maybeHideSubmitButton() {
 
 </script>
 
+<!-- Bootstrap Bundle includes Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

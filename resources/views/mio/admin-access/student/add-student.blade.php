@@ -142,7 +142,7 @@
             </div>
             <div class="form-group">
               <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="grade_level" value="10" required />
+              <input type="number" name="previous_grade_level" value="10" required />
             </div>
           </div>
         </div>

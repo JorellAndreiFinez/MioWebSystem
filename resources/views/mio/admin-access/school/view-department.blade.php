@@ -21,6 +21,8 @@
   </div>
 </div>
 
+
+
 <section class="home-section">
 <div class="text">Departments</div>
 <div class="teacher-container">
@@ -31,7 +33,8 @@
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
         </div>
         <div class="button-group">
-            <button class="btn sort-btn">Newest ⬇</button>
+            <button class="btn sort-btn" id="sortButton" onclick="toggleSort()">Newest ⬇</button>
+
             <button class="btn add-btn"><a href="{{ route('mio.AddDepartment') }}">+ New Department</a></button>
         </div>
     </div>
@@ -48,25 +51,7 @@
             </tr>
         </thead>
         <tbody>
-        @forelse ($departments as $department)
-        <tr>
-            <td>{{ $department['departmentid'] }}</td>
-            <td>{{ $department['department_name'] }}</td>
-            <td>{{ $department['teacherid'] ?? 'TBA' }} </td>
-            <td class="action-icons">
-                <a href="{{ route('mio.EditDepartment', ['id' => $department['departmentid']]) }}"><i class="fa fa-pencil"></i></a>
 
-                <button onclick="openModal('{{ url('mio/admin/DeleteDepartment/'.$department['departmentid']) }}', '{{ $department['department_name'] }}')"
-                    class="open-btn">
-                    <i class="fa fa-trash"></i>
-                </button>
-            </td>
-        </tr>
-        @empty
-        <tr>
-            <td colspan="4" class="no-data">No departments found.</td>
-        </tr>
-        @endforelse
 
         </tbody>
     </table>
@@ -90,3 +75,70 @@ function closeModal() {
     document.getElementById("confirmModal").style.display = "none";
 }
 </script>
+
+<script>
+function searchCards() {
+    let input = document.getElementById('searchBar').value.toLowerCase();
+    let rows = document.querySelectorAll('tbody tr');
+
+    rows.forEach(row => {
+        let rowText = row.innerText.toLowerCase();
+        if (rowText.includes(input)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+</script>
+
+<script>
+    const originalDepartments = Object.values(@json($departments));
+</script>
+<script>
+     window.addEventListener('DOMContentLoaded', () => {
+        renderDepartments();
+    });
+let currentSort = 'newest';
+
+document.querySelector('#sortButton').addEventListener('click', () => {
+    currentSort = currentSort === 'newest' ? 'oldest' : 'newest';
+    document.querySelector('#sortButton').textContent = currentSort === 'newest' ? 'Newest ⬇' : 'Oldest ⬆';
+    renderDepartments();
+});
+
+function renderDepartments() {
+    const sortedDepartments = [...originalDepartments].sort((a, b) => {
+        const dateA = new Date(a.created_at || '2000-01-01');
+        const dateB = new Date(b.created_at || '2000-01-01');
+        return currentSort === 'oldest' ? dateA - dateB : dateB - dateA;
+    });
+
+    const tbody = document.querySelector('tbody');
+    tbody.innerHTML = '';
+
+    if (sortedDepartments.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="no-data">No departments found.</td></tr>`;
+        return;
+    }
+
+    sortedDepartments.forEach(dept => {
+        const teacher = dept.teacherid ?? 'TBA';
+        tbody.innerHTML += `
+        <tr>
+            <td>${dept.departmentid}</td>
+            <td>${dept.department_name}</td>
+            <td>${teacher}</td>
+            <td class="action-icons">
+                <a href="/mio/admin/EditDepartment/${dept.departmentid}"><i class="fa fa-pencil"></i></a>
+                <button onclick="openModal('/mio/admin/DeleteDepartment/${dept.departmentid}', '${dept.department_name}')" class="open-btn">
+                    <i class="fa fa-trash"></i>
+                </button>
+            </td>
+        </tr>`;
+    });
+}
+</script>
+
+
+

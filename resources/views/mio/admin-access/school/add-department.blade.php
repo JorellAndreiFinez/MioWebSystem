@@ -11,7 +11,7 @@
       <div class="table-header">
         <div class="search-container" style="background: transparent;"></div>
         <div class="button-group">
-          <button type="button" class="btn cancel-btn"><a href="{{ url()->previous() }}">Cancel</a></button>
+          <button type="button" class="btn cancel-btn"><a href="{{ route("mio.ViewDepartment") }}">Cancel</a></button>
           <button type="submit" class="btn add-btn">
             <span class="icon">+</span> Add Department
           </button>
@@ -43,9 +43,19 @@
                 <label>Department Type <span style="color: red; font-weight:700">*</span></label>
                 <select name="department_type" required>
                     <option value="" disabled selected>Select Type</option>
-                    <option value="academic" >Academic</option>
+                    <option value="academic" >Academics</option>
+                    <option value="specialized" >Specialized</option>
                     <option value="admin_support">Administrative and Support</option>
                 </select>
+            </div>
+
+            <div class="form-group">
+              <label>Status <span style="color: red; font-weight:700">*</span></label>
+              <select name="status" required>
+                <option value="" disabled selected>Select Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
             </div>
 
           </div>

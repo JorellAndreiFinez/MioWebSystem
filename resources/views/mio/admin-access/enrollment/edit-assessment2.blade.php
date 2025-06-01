@@ -1,895 +1,699 @@
-<section class="home-section">
-  <div class="teacher-container">
-    <main class="main-banner">
-      <div class="banner">
-        <h2>Edit Enrollment - Written Evaluation</h2>
-      </div>
-    </main>
 
-    <main class="main-content">
-        <!-- SPEECH FORM -->
-        <form method="POST" action="{{ route('mio.save-speech-assessment', $type) }}">
-    @csrf
+<!-- Modal overlay -->
+<div class="modal-overlay" id="confirmModal" style="display: none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Delete Question</span>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMessage">Are you sure you want to remove this question?</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn cancel-btn" onclick="closeModal()">Cancel</button>
 
-    <h3>Speech and Auditory Test</h3>
-    <table class="table table-bordered" id="speech-table">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Text</th>
-            <th>Level</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-    <tbody>
-        @if(count($speech) > 0)
-            @foreach ($speech as $speechID => $phrase)
-            <tr data-key="{{ $speechID }}">
-            <td>{{ $speechID }}</td>
-            <td class="phrase-text">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
-            <td class="phrase-level">{{ $phrase['level'] ?? '' }}</td>
-            <td class="phrase-actions">
-                <input type="hidden" name="speech[{{ $speechID }}][_delete]" class="delete-flag" value="0">
-                <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
-            </td>
-            </tr>
-            @endforeach
-        @else
-            <tr>
-            <td colspan="4" class="text-center">No speech phrases found. Please add some.</td>
-            </tr>
-        @endif
-
-        <!-- ADD NEW SPEECH PHRASE ROW (hidden by default) -->
-        <tr id="new-speech-row" style="display:none;">
-        <td>
-            <input type="text" id="new-speech-id" name="new_speech[id]" readonly class="form-control-plaintext">
-        </td>
-        <td>
-            <input type="text" name="new_speech[text]" class="form-control" placeholder="Enter new phrase">
-        </td>
-        <td>
-            <select name="new_speech[level]" class="form-control">
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-            </select>
-        </td>
-        <td>
-            <button type="button" class="btn btn-sm btn-success" onclick="saveSpeech()">Add</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelAddSpeech()">Cancel</button>
-        </td>
-        </tr>
-    </tbody>
-
-
-    </table>
-
-    <button type="button" class="btn btn-secondary mb-3" onclick="showAddSpeech()">+ Add Speech Phrase</button>
-
-    <button type="submit" id="submit-all-btn" class="btn btn-primary" style="display:none;">Submit All Changes</button>
-    </form>
-    <br>
-    <br>
-
-    <!-- AUDITORY FORM -->
-    <form method="POST" action="{{ route('mio.save-auditory-assessment', $type) }}">
-    @csrf
-
-        <table class="table table-bordered" id="auditory-table">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Text</th>
-            <th>Level</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-    <tbody>
-        @if(count($auditory) > 0)
-            @foreach ($auditory as $auditoryID => $phrase)
-            <tr data-key="{{ $auditoryID }}">
-            <td>{{ $auditoryID }}</td>
-            <td class="phrase-text2">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
-            <td class="phrase-level2">{{ $phrase['level'] ?? '' }}</td>
-            <td class="phrase-actions2">
-                <input type="hidden" name="auditory[{{ $auditoryID }}][_delete]" class="delete-flag2" value="0">
-                <button type="button" class="btn btn-sm btn-primary" onclick="editAuditoryRow(this)">Edit</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="markDelete2(this)">Remove</button>
-            </td>
-            </tr>
-            @endforeach
-        @else
-            <tr>
-            <td colspan="4" class="text-center">No auditory phrases found. Please add some.</td>
-            </tr>
-        @endif
-
-        <!-- ADD NEW SPEECH PHRASE ROW (hidden by default) -->
-        <tr id="new-auditory-row" style="display:none;">
-        <td>
-            <input type="text" id="new-auditory-id" name="new_auditory[id]" readonly class="form-control-plaintext">
-        </td>
-        <td>
-            <input type="text" name="new_auditory[text]" class="form-control" placeholder="Enter new phrase">
-        </td>
-        <td>
-            <select name="new_auditory[level]" class="form-control">
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-            </select>
-        </td>
-        <td>
-            <button type="button" class="btn btn-sm btn-success" onclick="saveAuditory()">Add</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelAddAuditory()">Cancel</button>
-        </td>
-        </tr>
-    </tbody>
-
-
-    </table>
-
-    <button type="button" class="btn btn-secondary mb-3" onclick="showAddAuditory()">+ Add Auditory Text</button>
-
-    <button type="submit" id="submit-all-btn2" class="btn btn-primary" style="display:none;">Submit All Changes</button>
-    </form>
-
-      <hr class="my-5">
-
-    <!-- SENTENCE FORM -->
-    <form method="POST" action="{{ route('mio.save-sentence-assessment', $type) }}">
-    @csrf
-
-    <h3>Sentence Test</h3>
-    <table class="table table-bordered" id="sentence-table">
-        <thead>
-        <tr>
-            <th>ID</th>
-            <th>Text</th>
-            <th>Level</th>
-            <th>Action</th>
-        </tr>
-        </thead>
-    <tbody>
-        @if(count($sentence) > 0)
-            @foreach ($sentence as $sentenceID => $phrase)
-            <tr data-key="{{ $sentenceID }}">
-            <td>{{ $sentenceID }}</td>
-            <td class="phrase-text3">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
-            <td class="phrase-level3">{{ $phrase['level'] ?? '' }}</td>
-            <td class="phrase-actions3">
-                <input type="hidden" name="sentence[{{ $sentenceID }}][_delete]" class="delete-flag3" value="0">
-                <button type="button" class="btn btn-sm btn-primary" onclick="editSentenceRow(this)">Edit</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="markDelete3(this)">Remove</button>
-            </td>
-            </tr>
-            @endforeach
-        @else
-            <tr>
-            <td colspan="4" class="text-center">No sentence test phrases found. Please add some.</td>
-            </tr>
-        @endif
-
-        <!-- ADD NEW SENTENCE PHRASE ROW (hidden by default) -->
-        <tr id="new-sentence-row" style="display:none;">
-        <td>
-            <input type="text" id="new-sentence-id" name="new_sentence[id]" readonly class="form-control-plaintext">
-        </td>
-        <td>
-            <input type="text" name="new_sentence[text]" class="form-control" placeholder="Enter new sentence">
-        </td>
-        <td>
-            <select name="new_sentence[level]" class="form-control">
-            <option value="Easy">Easy</option>
-            <option value="Medium">Medium</option>
-            <option value="Hard">Hard</option>
-            </select>
-        </td>
-        <td>
-            <button type="button" class="btn btn-sm btn-success" onclick="saveSentence()">Add</button>
-            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelAddSentence()">Cancel</button>
-        </td>
-        </tr>
-    </tbody>
-    </table>
-
-    <button type="button" class="btn btn-secondary mb-3" onclick="showAddSentence()">+ Add Sentence Phrase</button>
-
-    <button type="submit" id="submit-all-btn3" class="btn btn-primary" style="display:none;">Submit All Changes</button>
-    </form>
-
-    <hr class="my-5">
-
-    <!-- FILL IN THE BLANK -->
-    <form method="POST" action="{{ route('mio.save-fnblank-assessment', $type) }}">
+     <form id="deleteForm" method="POST">
         @csrf
+        @method('DELETE')
+        <button type="submit" class="btn confirm-btn" style="background-color: #e74c3c; color: #fff; border: none; padding: 8px 16px; border-radius: 4px;">Delete</button>
+      </form>
 
-        <h3>Fill in the Blanks Test</h3>
-        <table class="table table-bordered" id="fillblanks-table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Text</th>
-                <th>Correct</th>
-                <th>A</th>
-                <th>B</th>
-                <th>C</th>
-                <th>Level</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-        <tbody>
-            @if(count($fillblanks) > 0)
-                @foreach ($fillblanks as $itemID => $item)
-                <tr data-key="{{ $itemID }}">
-                    <td>{{ $itemID }}</td>
-                    <td class="text-blank">{{ $item['text'] ?? '' }}</td>
-                    <td class="correct-blank">{{ $item['correct'] ?? '' }}</td>
-                    <td class="choiceA">{{ $item['a'] ?? '' }}</td>
-                    <td class="choiceB">{{ $item['b'] ?? '' }}</td>
-                    <td class="choiceC">{{ $item['c'] ?? '' }}</td>
-                    <td class="level-blank">{{ $item['level'] ?? '' }}</td>
-                    <td class="actions-blank">
-                        <input type="hidden" name="fillblanks[{{ $itemID }}][_delete]" class="delete-flag-blank" value="0">
-                        <button type="button" class="btn btn-sm btn-primary" onclick="editBlankRow(this)">Edit</button>
-                        <button type="button" class="btn btn-sm btn-danger" onclick="markDeleteBlank(this)">Remove</button>
-                    </td>
-                </tr>
-                @endforeach
-            @else
-                <tr><td colspan="8" class="text-center">No fill-in-the-blank items found.</td></tr>
-            @endif
-
-            <!-- Hidden Row for New Entry -->
-            <tr id="new-blank-row" style="display:none;">
-                <td><input type="text" id="new-blank-id" name="new_blank[id]" readonly class="form-control-plaintext"></td>
-                <td><input type="text" name="new_blank[text]" class="form-control" placeholder="e.g. The dog ___ the ball."></td>
-                <td>
-                    <select name="new_blank[correct]" id="new-blank-correct" class="form-control">
-                        <option value="">Select correct answer</option>
-                        <option value="A">A: <span id="choiceA-text"></span></option>
-                        <option value="B">B: <span id="choiceB-text"></span></option>
-                        <option value="C">C: <span id="choiceC-text"></span></option>
-                    </select>
-                    </td>
-
-                <td><input type="text" name="new_blank[a]" class="form-control" placeholder="Choice A"></td>
-                <td><input type="text" name="new_blank[b]" class="form-control" placeholder="Choice B"></td>
-                <td><input type="text" name="new_blank[c]" class="form-control" placeholder="Choice C"></td>
-                <td>
-                    <select name="new_blank[level]" class="form-control">
-                        <option value="Easy">Easy</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Hard">Hard</option>
-                    </select>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-success" onclick="saveBlank()">Add</button>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelAddBlank()">Cancel</button>
-                </td>
-            </tr>
-        </tbody>
-        </table>
-
-        <button type="button" class="btn btn-secondary mb-3" onclick="showAddBlank()">+ Add Fill-in-the-Blank</button>
-        <button type="submit" id="submit-all-blank" class="btn btn-primary" style="display:none;">Submit All Changes</button>
-        </form>
-
-
-    </main>
+    </div>
   </div>
+</div>
+
+<section class="home-section">
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.enrollment') }}">
+                Enrollment
+            </a>
+        </div>
+        <div class="breadcrumb-item active">
+            Edit Assessment - Physical
+        </div>
+    </div>
+
+    <div class="teacher-container">
+        @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        <main class="main-content">
+            @php
+                $levels = ['kinder' => 'Kinder', 'elementary' => 'Elementary', 'highschool' => 'High School', 'seniorhigh' => 'Senior High School'];
+            @endphp
+            <!-- Add Question Button -->
+            <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn primary-btn" data-toggle="modal" data-target="#addQuestionModal">
+                    + Add Question
+                </button>
+            </div>
+
+            @foreach($levels as $levelKey => $levelLabel)
+            <h4 class="mt-4">{{ $levelLabel }}</h4>
+
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Type</th>
+                        <th>Question</th>
+                        <th>Level</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                   @if(!empty($mcqs[$levelKey]) && count($mcqs[$levelKey]) > 0)
+                        @foreach($mcqs[$levelKey] as $itemID => $item)
+                            <tr data-key="{{ $itemID }}">
+                                <td>{{ $itemID }}</td>
+                                <td>{{ ucfirst(str_replace('_', ' ', $item['type'] ?? '')) }}</td>
+                                <td>
+                                    <strong>{{ $item['question'] ?? '' }}</strong>
+                                    @if(isset($item['type']) && strpos($item['type'], 'multiple') !== false)
+                                        <ul style="padding-left: 15px; margin-top:5px;">
+                                            @foreach($item['options'] ?? [] as $key => $option)
+                                                <li @if($item['correct'] == $key || (is_array($item['correct']) && in_array($key, $item['correct']))) style="font-weight: bold; color: green;" @endif>
+                                                    {{ $key }}. {{ $option }}
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @elseif($item['type'] == 'fill_blank')
+                                        <div style="margin-top:5px;"><em>Answer:</em> {{ $item['correct'] ?? '' }}</div>
+                                    @endif
+                                </td>
+                                <td>{{ ucfirst($item['level'] ?? '') }}</td>
+                                <td>
+                                    <button
+                                        class="btn btn-primary btn-sm"
+                                        data-question='@json($item)'
+                                        data-update-url="{{ route('mio.update-question', ['type' => $type, 'id' => $itemID]) }}"
+                                        onclick="handleEditQuestion(this)">
+                                        Edit
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    @else
+                        <tr><td colspan="5" class="text-center">No questions for {{ $levelLabel }}.</td></tr>
+                    @endif
+
+                </tbody>
+            </table>
+            <hr class="my-5">
+
+        @endforeach
+
+        </main>
+    </div>
 </section>
 
+<!-- Edit Question Modal -->
+<div class="modal fade" id="editQuestionModal" tabindex="-1" role="dialog" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <form method="POST" action="" enctype="multipart/form-data" id="editQuestionForm">
+      @csrf
+      @method('PUT')  <!-- Use PUT for update -->
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Question</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close" onclick="$('#editQuestionModal').modal('hide')">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
 
-<script>
-  const csrfToken = '{{ csrf_token() }}';
-  const assessmentType = '{{ $type }}'; // pass PHP variable to JS
-</script>
+        <div class="modal-body">
 
-<!-- FILL IN THE BLANK -->
-
-<script>
-function showAddBlank() {
-    document.getElementById('new-blank-row').style.display = '';
-    document.getElementById('new-blank-id').value = generateID('FB');
-    document.getElementById('submit-all-blank').style.display = 'inline-block';
-}
-
-function cancelAddBlank() {
-    document.getElementById('new-blank-row').style.display = 'none';
-    ['text', 'correct', 'a', 'b', 'c'].forEach(field =>
-        document.querySelector(`input[name="new_blank[${field}]"]`).value = ''
-    );
-    document.querySelector('select[name="new_blank[level]"]').value = 'Easy';
-}
-
-function saveBlank() {
-    const id = document.getElementById('new-blank-id').value;
-    const text = document.querySelector('input[name="new_blank[text]"]').value.trim();
-    const a = document.querySelector('input[name="new_blank[a]"]').value.trim();
-    const b = document.querySelector('input[name="new_blank[b]"]').value.trim();
-    const c = document.querySelector('input[name="new_blank[c]"]').value.trim();
-    const correctLetter = document.querySelector('select[name="new_blank[correct]"]').value;
-    let correct = '';
-    if (correctLetter === 'A') correct = a;
-    if (correctLetter === 'B') correct = b;
-    if (correctLetter === 'C') correct = c;
-    const level = document.querySelector('select[name="new_blank[level]"]').value;
-
-    if (!text || !correct || !a || !b || !c || !correctLetter) {
-        alert('Please complete all fields.');
-        return;
-    }
-
-
-    const tableBody = document.querySelector('#fillblanks-table tbody');
-    const noDataRow = tableBody.querySelector('tr td[colspan="8"]');
-    if (noDataRow) noDataRow.parentElement.remove();
-
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-        <td>${id}</td>
-        <td><input type="text" name="fillblanks[${id}][text]" class="form-control" value="${text}"></td>
-        <td>
-        <select name="fillblanks[${id}][correct]" class="form-control">
-            <option value="A"${correctLetter === 'A' ? ' selected' : ''}>A: ${a}</option>
-            <option value="B"${correctLetter === 'B' ? ' selected' : ''}>B: ${b}</option>
-            <option value="C"${correctLetter === 'C' ? ' selected' : ''}>C: ${c}</option>
-        </select>
-        </td>
-
-        <td><input type="text" name="fillblanks[${id}][a]" class="form-control" value="${a}"></td>
-        <td><input type="text" name="fillblanks[${id}][b]" class="form-control" value="${b}"></td>
-        <td><input type="text" name="fillblanks[${id}][c]" class="form-control" value="${c}"></td>
-        <td>
-            <select name="fillblanks[${id}][level]" class="form-control">
-                <option value="Easy"${level === 'Easy' ? ' selected' : ''}>Easy</option>
-                <option value="Medium"${level === 'Medium' ? ' selected' : ''}>Medium</option>
-                <option value="Hard"${level === 'Hard' ? ' selected' : ''}>Hard</option>
+          <div class="form-group">
+            <label for="editQuestionTypeSelect">Question Type</label>
+            <select name="edit_mcq[type]" id="editQuestionTypeSelect" class="form-control" required>
+                <option value="" disabled selected hidden>Select a type</option>
+                <option value="multiple_single">Multiple Choice (Single Answer)</option>
+                <option value="multiple_multiple">Multiple Choice (Multiple Answers)</option>
+                <option value="fill_blank">Fill in the Blank</option>
             </select>
-        </td>
-        <td><button type="button" class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">Remove</button></td>
-    `;
-    tableBody.insertBefore(newRow, document.getElementById('new-blank-row'));
-    cancelAddBlank();
-}
+          </div>
 
-function markDeleteBlank(button) {
-    const row = button.closest('tr');
-    const input = row.querySelector('.delete-flag-blank');
-    if (input) {
-        input.value = "1";
-        row.style.display = 'none';
-        document.getElementById('submit-all-blank').style.display = 'inline-block';
-    }
-}
+          <div class="form-group">
+            <label for="editQuestionText">Question</label>
+            <textarea name="edit_mcq[question]" id="editQuestionText" class="form-control" rows="4" required style="resize: none;"></textarea>
+          </div>
 
-function editBlankRow(button) {
-    const row = button.closest('tr');
-    const key = row.getAttribute('data-key');
+          <div class="form-group">
+            <label>Optional Image for Question</label>
+            <input type="file" name="edit_mcq[image]" accept="image/*" class="form-control-file">
+            <div id="currentImagePreview" class="mt-2"></div>
+          </div>
 
-    const cells = {
-        text: row.querySelector('.text-blank'),
-        correct: row.querySelector('.correct-blank'),
-        a: row.querySelector('.choiceA'),
-        b: row.querySelector('.choiceB'),
-        c: row.querySelector('.choiceC'),
-        level: row.querySelector('.level-blank'),
-        actions: row.querySelector('.actions-blank')
-    };
+          <!-- Multiple Choice (Single or Multiple) -->
+          <div id="editMultipleFields" class="question-type">
+            <label>Options</label>
+            <div id="editOptionContainer">
+                <!-- Options will be dynamically injected -->
+            </div>
+            <button type="button" class="btn btn-sm btn-success mt-2" id="editAddOptionBtn">+ Add Option</button>
 
-    const current = {
-        text: cells.text.textContent.trim(),
-        correct: cells.correct.textContent.trim(),
-        a: cells.a.textContent.trim(),
-        b: cells.b.textContent.trim(),
-        c: cells.c.textContent.trim(),
-        level: cells.level.textContent.trim()
-    };
+            <div class="mt-3" id="editCorrectAnswerSelection">
+                <label class="form-label">Correct Answer</label>
+                <div id="editCorrectAnswerOptions" class="form-group d-flex flex-wrap gap-3"></div>
+            </div>
+          </div>
 
-    cells.text.innerHTML = `<input type="text" name="fillblanks[${key}][text]" class="form-control" value="${current.text}">`;
-    cells.correct.innerHTML = `
-    <select name="fillblanks[${key}][correct]" class="form-control">
-        <option value="A"${current.correct === current.a ? ' selected' : ''}>A: ${current.a}</option>
-        <option value="B"${current.correct === current.b ? ' selected' : ''}>B: ${current.b}</option>
-        <option value="C"${current.correct === current.c ? ' selected' : ''}>C: ${current.c}</option>
-    </select>
-    `;
+          <!-- Fill in the Blank -->
+          <div id="editFillBlankFields" class="question-type d-none">
+            <label for="editFillBlankCorrect">Correct Answer</label>
+            <input type="text" name="edit_mcq[correct]" id="editFillBlankCorrect" class="form-control" placeholder="Correct word or phrase" required>
+          </div>
 
-    cells.a.innerHTML = `<input type="text" name="fillblanks[${key}][a]" class="form-control" value="${current.a}">`;
-    cells.b.innerHTML = `<input type="text" name="fillblanks[${key}][b]" class="form-control" value="${current.b}">`;
-    cells.c.innerHTML = `<input type="text" name="fillblanks[${key}][c]" class="form-control" value="${current.c}">`;
-    cells.level.innerHTML = `
-        <select name="fillblanks[${key}][level]" class="form-control">
-            <option value="Easy" ${current.level === 'Easy' ? 'selected' : ''}>Easy</option>
-            <option value="Medium" ${current.level === 'Medium' ? 'selected' : ''}>Medium</option>
-            <option value="Hard" ${current.level === 'Hard' ? 'selected' : ''}>Hard</option>
-        </select>
-    `;
-    cells.actions.innerHTML = `<button type="submit" class="btn btn-sm btn-success">Save</button>`;
-}
+          <div class="form-group mt-3">
+            <label>Level</label>
+            <select name="edit_mcq[level]" id="editLevelSelect" class="form-control" required>
+                @foreach($levels as $key => $label)
+                <option value="{{ $key }}">{{ $label }}</option>
+                @endforeach
+            </select>
+          </div>
 
-document.querySelector('input[name="new_blank[a]"]').addEventListener('input', e => {
-    document.querySelector('#new-blank-correct option[value="A"]').textContent = 'A: ' + e.target.value;
-});
-document.querySelector('input[name="new_blank[b]"]').addEventListener('input', e => {
-    document.querySelector('#new-blank-correct option[value="B"]').textContent = 'B: ' + e.target.value;
-});
-document.querySelector('input[name="new_blank[c]"]').addEventListener('input', e => {
-    document.querySelector('#new-blank-correct option[value="C"]').textContent = 'C: ' + e.target.value;
-});
+        </div>
 
-</script>
+        <div class="modal-footer">
+          <button type="submit" class="btn primary-btn">Update Question</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="$('#editQuestionModal').modal('hide')">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
-
-<!-- SENTENCE ACTIVITY -->
+<!-- EDIT MODAL -->
 <script>
-  // Reuse padNumber and generateID helpers
-  function padNumber(num, size) {
-    let s = "000" + num;
-    return s.substr(s.length - size);
-  }
+    function handleEditQuestion(button) {
+        const question = JSON.parse(button.getAttribute('data-question'));
+        const updateUrl = button.getAttribute('data-update-url');
 
-  function generateID(prefix) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = padNumber(now.getMonth() + 1, 2);
-    const day = padNumber(now.getDate(), 2);
-    const randomDigits = padNumber(Math.floor(Math.random() * 1000), 3);
-    return prefix + year + month + day + randomDigits;
-  }
+        // Elements inside edit modal
+        const modal = $('#editQuestionModal');
+        const form = document.getElementById('editQuestionForm');
+        const questionTypeSelect = document.getElementById('editQuestionTypeSelect');
+        const questionText = document.getElementById('editQuestionText');
+        const currentImagePreview = document.getElementById('currentImagePreview');
+        const optionContainer = document.getElementById('editOptionContainer');
+        const correctAnswerOptions = document.getElementById('editCorrectAnswerOptions');
+        const multipleFields = document.getElementById('editMultipleFields');
+        const fillBlankFields = document.getElementById('editFillBlankFields');
+        const fillBlankInput = document.getElementById('editFillBlankCorrect');
+        const levelSelect = document.getElementById('editLevelSelect');
 
-  // Show submit button for Sentence form
-  function showSubmitButton3() {
-    document.getElementById('submit-all-btn3').style.display = 'inline-block';
-  }
+        // Clear previous options and correct answers
+        optionContainer.innerHTML = '';
+        correctAnswerOptions.innerHTML = '';
+        currentImagePreview.innerHTML = '';
 
-  // Show add sentence row and generate new ID
-  function showAddSentence() {
-    document.getElementById('new-sentence-row').style.display = '';
-    document.getElementById('new-sentence-id').value = generateID('SN');
-    showSubmitButton3();
-  }
+        // Set form action
+        form.action = updateUrl;
 
-  // Mark a sentence row for deletion (hide it, mark hidden input)
-  function markDelete3(button) {
-    const row = button.closest('tr');
-    const deleteInput = row.querySelector('.delete-flag3');
-    if (deleteInput) {
-      deleteInput.value = "1"; // mark for deletion
-      row.style.display = 'none'; // hide row
-    }
-    showSubmitButton3();
-  }
+        // Set question type
+        questionTypeSelect.value = question.type || '';
 
-  // Remove sentence row from table completely (used on new rows before save)
-  function removeSentence(btn) {
-    btn.closest('tr').remove();
-  }
+        // Set question text
+        questionText.value = question.question || '';
 
-  // Save new sentence (add to table)
-  function saveSentence() {
-    const id = document.getElementById('new-sentence-id').value;
-    const text = document.querySelector('input[name="new_sentence[text]"]').value.trim();
-    const level = document.querySelector('select[name="new_sentence[level]"]').value;
-
-    if (!text) {
-      alert('Please enter a sentence.');
-      return;
-    }
-
-    const tableBody = document.querySelector('#sentence-table tbody');
-    const noDataRow = tableBody.querySelector('tr td[colspan="4"]');
-    if (noDataRow) noDataRow.parentElement.remove();
-
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-      <td>${id}</td>
-      <td><input type="text" name="sentence[${id}][text]" class="form-control" value="${text}"></td>
-      <td>
-        <select name="sentence[${id}][level]" class="form-control">
-          <option value="Easy"${level === 'Easy' ? ' selected' : ''}>Easy</option>
-          <option value="Medium"${level === 'Medium' ? ' selected' : ''}>Medium</option>
-          <option value="Hard"${level === 'Hard' ? ' selected' : ''}>Hard</option>
-        </select>
-      </td>
-      <td><button type="button" class="btn btn-sm btn-danger" onclick="removeSentence(this)">Remove</button></td>
-    `;
-
-    tableBody.insertBefore(newRow, document.getElementById('new-sentence-row'));
-    cancelAddSentence();
-  }
-
-  // Cancel adding new sentence (hide add row and clear inputs)
-  function cancelAddSentence() {
-    document.getElementById('new-sentence-row').style.display = 'none';
-    document.querySelector('input[name="new_sentence[text]"]').value = '';
-    document.querySelector('select[name="new_sentence[level]"]').value = 'Easy';
-  }
-
-  // Edit existing sentence row — convert text and level cells to input/select
-  function editSentenceRow(button) {
-    const row = button.closest('tr');
-    const key = row.getAttribute('data-key');
-
-    const textCell = row.querySelector('.phrase-text3');
-    const levelCell = row.querySelector('.phrase-level3');
-    const actionsCell = row.querySelector('.phrase-actions3');
-
-    const currentText = textCell.textContent.trim();
-    const currentLevel = levelCell.textContent.trim();
-
-    textCell.innerHTML = `<input type="text" name="sentence[${key}][text]" class="form-control" value="${currentText}">`;
-    levelCell.innerHTML = `
-      <select name="sentence[${key}][level]" class="form-control">
-        <option value="Easy" ${currentLevel === 'Easy' ? 'selected' : ''}>Easy</option>
-        <option value="Medium" ${currentLevel === 'Medium' ? 'selected' : ''}>Medium</option>
-        <option value="Hard" ${currentLevel === 'Hard' ? 'selected' : ''}>Hard</option>
-      </select>
-    `;
-
-    actionsCell.innerHTML = `
-      <button type="submit" class="btn btn-sm btn-success" onclick="saveSentenceRow(this)">Save</button>
-    `;
-  }
-
-  // Save edited sentence row (revert input/select back to text and update display)
-  function saveSentenceRow(button) {
-    const row = button.closest('tr');
-    const key = row.getAttribute('data-key');
-
-    const textInput = row.querySelector(`input[name="sentence[${key}][text]"]`);
-    const levelSelect = row.querySelector(`select[name="sentence[${key}][level]"]`);
-    const actionsCell = row.querySelector('.phrase-actions3');
-    const textCell = row.querySelector('.phrase-text3');
-    const levelCell = row.querySelector('.phrase-level3');
-
-    if (!textInput.value.trim()) {
-      alert('Please enter a sentence.');
-      return;
-    }
-
-    // You might want to submit your form here or handle AJAX save
-
-    // Update cells with new values as plain text
-    textCell.textContent = textInput.value.trim();
-    levelCell.textContent = levelSelect.value;
-
-    // Restore the action buttons (Edit only)
-    actionsCell.innerHTML = `
-      <button type="button" class="btn btn-sm btn-primary" onclick="editSentenceRow(this)">Edit</button>
-    `;
-  }
-</script>
-
-
-<!-- SPEECH ACTIVITY  -->
-<script>
-  function padNumber(num, size) {
-    let s = "000" + num;
-    return s.substr(s.length - size);
-  }
-
-
-
-  function generateID(prefix) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = padNumber(now.getMonth() + 1, 2);
-    const day = padNumber(now.getDate(), 2);
-    const randomDigits = padNumber(Math.floor(Math.random() * 1000), 3);
-    return prefix + year + month + day + randomDigits;
-  }
-
-// ---------- SPEECH FUNCTIONS ----------
-
-  function showSubmitButton() {
-  document.getElementById('submit-all-btn').style.display = 'inline-block';
-}
-
-function showAddSpeech() {
-  document.getElementById('new-speech-row').style.display = '';
-  document.getElementById('new-speech-id').value = generateID('SP');
-  showSubmitButton();  // Show submit button here
-}
-
-function markDelete(button) {
-  const row = button.closest('tr');
-  const deleteInput = row.querySelector('.delete-flag');
-  if (deleteInput) {
-    deleteInput.value = "1";  // mark for deletion
-    row.style.display = 'none'; // visually hide row from user
-  }
-  showSubmitButton();  // Show submit button here
-}
-
-
-  // Example remove functions (adjust with your form or AJAX logic)
-  function removeSpeech(btn) {
-    btn.closest('tr').remove();
-  }
-
-
-  // Example save functions (you'll need to implement real save logic)
-  function saveSpeech() {
-    const id = document.getElementById('new-speech-id').value;
-    const text = document.querySelector('input[name="new_speech[text]"]').value.trim();
-    const level = document.querySelector('select[name="new_speech[level]"]').value;
-
-    if (!text) {
-        alert('Please enter a phrase.');
-        return;
-    }
-
-    const tableBody = document.querySelector('#speech-table tbody');
-    const noDataRow = tableBody.querySelector('tr td[colspan="4"]');
-    if (noDataRow) noDataRow.parentElement.remove();
-
-    const newRow = document.createElement('tr');
-    newRow.innerHTML = `
-        <td>${id}</td>
-        <td><input type="text" name="speech[${id}][text]" class="form-control" value="${text}"></td>
-        <td>
-        <select name="speech[${id}][level]" class="form-control">
-            <option value="Easy"${level === 'Easy' ? ' selected' : ''}>Easy</option>
-            <option value="Medium"${level === 'Medium' ? ' selected' : ''}>Medium</option>
-            <option value="Hard"${level === 'Hard' ? ' selected' : ''}>Hard</option>
-        </select>
-        </td>
-        <td><button type="button" class="btn btn-sm btn-danger" onclick="removeSpeech(this)">Remove</button></td>
-    `;
-
-    tableBody.insertBefore(newRow, document.getElementById('new-speech-row'));
-
-    cancelAddSpeech();
-    }
-
-    function editSpeechRow(button) {
-        const row = button.closest('tr');
-        const key = row.getAttribute('data-key');
-
-        // Get current phrase text and level
-        const textCell = row.querySelector('.phrase-text');
-        const levelCell = row.querySelector('.phrase-level');
-        const actionsCell = row.querySelector('.phrase-actions');
-
-        const currentText = textCell.textContent.trim();
-        const currentLevel = levelCell.textContent.trim();
-
-        // Replace text with input
-        textCell.innerHTML = `<input type="text" name="speech[${key}][text]" class="form-control" value="${currentText}">`;
-
-        // Replace level with select dropdown
-        levelCell.innerHTML = `
-            <select name="speech[${key}][level]" class="form-control">
-            <option value="Easy" ${currentLevel === 'Easy' ? 'selected' : ''}>Easy</option>
-            <option value="Medium" ${currentLevel === 'Medium' ? 'selected' : ''}>Medium</option>
-            <option value="Hard" ${currentLevel === 'Hard' ? 'selected' : ''}>Hard</option>
-            </select>`;
-
-        // Replace action buttons with Save and Delete
-        actionsCell.innerHTML = `
-            <button type="submit" class="btn btn-sm btn-success" onclick="saveSpeechRow(this)">Save</button>
-        `;
-    }
-
-    function saveSpeechRow(button) {
-        // For now, just revert the inputs back to plain text and update text/level cells
-        // You can enhance this to submit via AJAX or form submit
-
-        const row = button.closest('tr');
-        const key = row.getAttribute('data-key');
-
-        const textInput = row.querySelector(`input[name="speech[${key}][text]"]`);
-        const levelSelect = row.querySelector(`select[name="speech[${key}][level]"]`);
-        const actionsCell = row.querySelector('.phrase-actions');
-        const textCell = row.querySelector('.phrase-text');
-        const levelCell = row.querySelector('.phrase-level');
-
-        if (!textInput.value.trim()) {
-            alert('Please enter a phrase.');
-            return;
+        // Set level
+        if (question.level) {
+            levelSelect.value = question.level;
+        } else {
+            levelSelect.selectedIndex = 0;
         }
 
-        form.submit();
+        // Show/hide fields based on type
+        function showFieldsForType(type) {
+            if (type === 'fill_blank') {
+                multipleFields.classList.add('d-none');
+                fillBlankFields.classList.remove('d-none');
+                fillBlankInput.required = true;
+                fillBlankInput.disabled = false;
 
-        // Update cells with new values as plain text
-        textCell.textContent = textInput.value.trim();
-        levelCell.textContent = levelSelect.value;
+                // Disable multiple choice correct inputs
+                correctAnswerOptions.innerHTML = '';
+                optionContainer.innerHTML = '';
 
-        // Restore the action buttons (Edit only)
-        actionsCell.innerHTML = `
-        <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
-        `;
+            } else if (type === 'multiple_single' || type === 'multiple_multiple') {
+                multipleFields.classList.remove('d-none');
+                fillBlankFields.classList.add('d-none');
+                fillBlankInput.required = false;
+                fillBlankInput.disabled = true;
+
+                // Enable add option button
+                document.getElementById('editAddOptionBtn').disabled = false;
+            }
+        }
+
+        showFieldsForType(questionTypeSelect.value);
+
+        // Load options if multiple choice
+        if (question.type === 'multiple_single' || question.type === 'multiple_multiple') {
+            const optionsObj = question.options || {};
+            const options = Object.values(optionsObj);
+
+            const correct = question.correct;
+
+            options.forEach((opt, index) => {
+                const optionKey = String.fromCharCode(65 + index);
+
+                // Create option input wrapper
+                const optionDiv = document.createElement('div');
+                optionDiv.classList.add('form-row', 'mb-2', 'option-item');
+
+
+
+                optionDiv.innerHTML = `
+                    <div class="col">
+                        <input type="text" name="edit_mcq[options][]" class="form-control option-input" placeholder="Option ${optionKey}" required value="${opt}">
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                    </div>
+                `;
+                optionContainer.appendChild(optionDiv);
+            });
+
+            // Generate correct answer inputs (radio or checkbox)
+            correctAnswerOptions.innerHTML = '';
+
+            const isMultipleCorrect = question.type === 'multiple_multiple';
+            const correctValues = Array.isArray(correct) ? correct : [correct];
+
+            options.forEach((opt, index) => {
+                const optionKey = String.fromCharCode(65 + index);
+
+                if (!opt.trim()) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('form-check', 'mr-3');
+
+                const inputEl = document.createElement('input');
+                inputEl.type = isMultipleCorrect ? 'checkbox' : 'radio';
+                inputEl.name = isMultipleCorrect ? 'edit_mcq[correct][]' : 'edit_mcq[correct]';
+                inputEl.value = optionKey;
+                inputEl.id = `edit_correct_${optionKey}`;
+                inputEl.classList.add('form-check-input');
+
+                if (correctValues.includes(optionKey)) {
+                    inputEl.checked = true;
+                }
+
+                const labelEl = document.createElement('label');
+                labelEl.htmlFor = inputEl.id;
+                labelEl.textContent = `${optionKey}. ${opt}`;
+
+                wrapper.appendChild(inputEl);
+                wrapper.appendChild(labelEl);
+                correctAnswerOptions.appendChild(wrapper);
+            });
+
+            // Attach remove option button listener (delegated)
+            optionContainer.querySelectorAll('.remove-option').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    e.target.closest('.option-item').remove();
+                    // Trigger update of correct answers UI if needed here
+                });
+            });
+
+        } else if (question.type === 'fill_blank') {
+            fillBlankInput.value = question.correct || '';
+        }
+
+        // Show image preview if exists
+        if (question.image_url) {
+            currentImagePreview.innerHTML = `
+                <img src="${question.image_url}" alt="Current Question Image" style="max-width: 100%; max-height: 150px; border: 1px solid #ddd; padding: 3px; border-radius: 3px;" />
+                <br>
+                <small class="text-muted">Current image</small>
+            `;
+        }
+
+        // Finally, show the modal
+        modal.modal('show');
+    }
+
+    // Also add listener for the Add Option button inside the edit modal:
+   document.getElementById('editAddOptionBtn').addEventListener('click', () => {
+    const optionContainer = document.getElementById('editOptionContainer');
+    const correctAnswerOptions = document.getElementById('editCorrectAnswerOptions');
+    const optionCount = optionContainer.querySelectorAll('.option-item').length;
+
+    if (optionCount >= 6) return; // max 6 options
+
+    const newOptionKey = String.fromCharCode(65 + optionCount);
+    const questionType = document.getElementById('editQuestionTypeSelect').value;
+    const isMultipleCorrect = questionType === 'multiple_multiple';
+
+    // Create new option input
+    const newOption = document.createElement('div');
+    newOption.classList.add('form-row', 'mb-2', 'option-item');
+    const inputId = `edit_correct_${newOptionKey}`;
+
+    newOption.innerHTML = `
+        <div class="col">
+            <input type="text" name="edit_mcq[options][]" class="form-control option-input" placeholder="Option ${newOptionKey}" required oninput="document.getElementById('${inputId}_label').textContent = '${newOptionKey}. ' + this.value;">
+        </div>
+        <div class="col-auto">
+            <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+        </div>
+    `;
+    optionContainer.appendChild(newOption);
+
+    // Create matching correct answer input
+    const correctWrapper = document.createElement('div');
+    correctWrapper.classList.add('form-check', 'mr-3');
+
+    const inputEl = document.createElement('input');
+    inputEl.type = isMultipleCorrect ? 'checkbox' : 'radio';
+    inputEl.name = isMultipleCorrect ? 'edit_mcq[correct][]' : 'edit_mcq[correct]';
+    inputEl.value = newOptionKey;
+    inputEl.id = inputId;
+    inputEl.classList.add('form-check-input');
+
+    const labelEl = document.createElement('label');
+    labelEl.htmlFor = inputEl.id;
+    labelEl.id = `${inputId}_label`;
+    labelEl.textContent = `${newOptionKey}. `;
+
+    correctWrapper.appendChild(inputEl);
+    correctWrapper.appendChild(labelEl);
+    correctAnswerOptions.appendChild(correctWrapper);
+
+    // Attach remove event
+    newOption.querySelector('.remove-option').addEventListener('click', e => {
+        const optionItem = e.target.closest('.option-item');
+        const index = [...optionContainer.children].indexOf(optionItem);
+
+        // Remove the option and the corresponding correct answer input
+        optionItem.remove();
+        correctAnswerOptions.removeChild(correctAnswerOptions.children[index]);
+
+        // Re-index keys (optional: to update A, B, C... letters)
+        updateOptionKeys(optionContainer, correctAnswerOptions, questionType);
+        });
+    });
+
+    // Helper function to update letters (optional, but improves UX if options are removed)
+    function updateOptionKeys(optionContainer, correctAnswerOptions, questionType) {
+        const isMultipleCorrect = questionType === 'multiple_multiple';
+        const options = optionContainer.querySelectorAll('.option-item');
+
+        options.forEach((item, index) => {
+            const key = String.fromCharCode(65 + index);
+            const input = item.querySelector('.option-input');
+            input.placeholder = `Option ${key}`;
+
+            const id = `edit_correct_${key}`;
+            const labelId = `${id}_label`;
+            input.setAttribute('oninput', `document.getElementById('${labelId}').textContent = '${key}. ' + this.value;`);
+
+            // Also update the corresponding correct answer input
+            const correctInput = correctAnswerOptions.children[index].querySelector('input');
+            const correctLabel = correctAnswerOptions.children[index].querySelector('label');
+
+            correctInput.value = key;
+            correctInput.id = id;
+            correctInput.name = isMultipleCorrect ? 'edit_mcq[correct][]' : 'edit_mcq[correct]';
+            correctLabel.setAttribute('for', id);
+            correctLabel.id = labelId;
+            correctLabel.textContent = `${key}. ${input.value}`;
+        });
     }
 
 </script>
 
 
-<!-- AUDITORY ACTIVITY  -->
+<!-- Add Question Modal -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1" role="dialog" aria-labelledby="addQuestionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <form method="POST" action="{{ route('mio.save-question', $type) }}" enctype="multipart/form-data" id="addQuestionForm">
+      @csrf
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Add New Question</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+
+          <div class="form-group">
+            <label for="questionTypeSelect">Question Type</label>
+            <select name="new_mcq[type]" id="questionTypeSelect" class="form-control" required>
+                <option value="" disabled selected hidden>Select a type</option>
+                <option value="multiple_single">Multiple Choice (Single Answer)</option>
+                <option value="multiple_multiple">Multiple Choice (Multiple Answers)</option>
+                <option value="fill_blank">Fill in the Blank</option>
+                {{-- Removed Connect the Answer (match_pair) option --}}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="questionText">Question</label>
+            <textarea name="new_mcq[question]" id="questionText" class="form-control" rows="4" required style="resize: none;"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Optional Image for Question</label>
+            <input type="file" name="new_mcq[image]" accept="image/*" class="form-control-file">
+            <small class="form-text text-muted">Upload an optional image to accompany the question.</small>
+          </div>
+
+          <!-- Multiple Choice (Single or Multiple) -->
+          <div id="multipleFields" class="question-type">
+            <label>Options</label>
+            <div id="optionContainer">
+                <!-- Initial options -->
+                <div class="form-row mb-2 option-item">
+                    <div class="col">
+                        <input type="text" name="new_mcq[options][]" class="form-control option-input" placeholder="Option A" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                    </div>
+                </div>
+                <div class="form-row mb-2 option-item">
+                    <div class="col">
+                        <input type="text" name="new_mcq[options][]" class="form-control option-input" placeholder="Option B" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                    </div>
+                </div>
+                <div class="form-row mb-2 option-item">
+                    <div class="col">
+                        <input type="text" name="new_mcq[options][]" class="form-control option-input" placeholder="Option C" required>
+                    </div>
+                    <div class="col-auto">
+                        <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-success mt-2" id="addOptionBtn">+ Add Option</button>
+
+            <div class="mt-3" id="correctAnswerSelection">
+                <label class="form-label">Correct Answer</label>
+                <div id="correctAnswerOptions" class="form-group d-flex flex-wrap gap-3"></div>
+            </div>
+          </div>
+
+          <!-- Fill in the Blank -->
+          <div id="fillBlankFields" class="question-type d-none">
+            <label for="fillBlankCorrect">Correct Answer</label>
+            <input type="text" name="new_mcq[correct]" id="fillBlankCorrect" class="form-control" placeholder="Correct word or phrase" required>
+          </div>
+
+          {{-- Removed Connect the Answer fields --}}
+
+          <div class="form-group mt-3">
+            <label>Level</label>
+            <select name="new_mcq[level]" class="form-control" required>
+                @foreach($levels as $key => $label)
+                <option value="{{ $key }}">{{ $label }}</option>
+                @endforeach
+            </select>
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn primary-btn">Save Question</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
 <script>
-  function padNumber(num, size) {
-    let s = "000" + num;
-    return s.substr(s.length - size);
-  }
+    document.addEventListener('DOMContentLoaded', () => {
+        const questionTypeSelect = document.getElementById('questionTypeSelect');
+        const multipleFields = document.getElementById('multipleFields');
+        const fillBlankFields = document.getElementById('fillBlankFields');
+        const correctAnswerOptions = document.getElementById('correctAnswerOptions');
+        const optionContainer = document.getElementById('optionContainer');
+        const addOptionBtn = document.getElementById('addOptionBtn');
 
+        function updateCorrectAnswerInputs() {
+            correctAnswerOptions.innerHTML = '';
+            const options = optionContainer.querySelectorAll('.option-input');
+            const type = questionTypeSelect.value;
 
+            options.forEach((input, index) => {
+                const optionKey = String.fromCharCode(65 + index); // A, B, C, ...
+                if (!input.value.trim()) return;
 
-  function generateID(prefix) {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = padNumber(now.getMonth() + 1, 2);
-    const day = padNumber(now.getDate(), 2);
-    const randomDigits = padNumber(Math.floor(Math.random() * 1000), 3);
-    return prefix + year + month + day + randomDigits;
-  }
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('form-check', 'mr-3');
 
-// ---------- AUDITORY FUNCTIONS ----------
+                const inputEl = document.createElement('input');
+                inputEl.type = type === 'multiple_multiple' ? 'checkbox' : 'radio';
+                inputEl.name = 'new_mcq[correct]' + (type === 'multiple_multiple' ? '[]' : '');
+                inputEl.value = optionKey;
+                inputEl.id = `correct_${optionKey}`;
+                inputEl.classList.add('form-check-input');
+                if (index === 0 && type !== 'multiple_multiple') inputEl.checked = true;
 
-function showSubmitButton2() {
-  document.getElementById('submit-all-btn2').style.display = 'inline-block';
-}
+                const labelEl = document.createElement('label');
+                labelEl.htmlFor = `correct_${optionKey}`;
+                labelEl.textContent = `${optionKey}. ${input.value}`;
 
-function showAddAuditory() {
-  document.getElementById('new-auditory-row').style.display = '';
-  document.getElementById('new-auditory-id').value = generateID('AU');
-  showSubmitButton2();
-}
+                wrapper.appendChild(inputEl);
+                wrapper.appendChild(labelEl);
+                correctAnswerOptions.appendChild(wrapper);
+            });
+        }
 
-function markDelete2(button) {
-  const row = button.closest('tr');
-  const deleteInput = row.querySelector('.delete-flag2');
-  if (deleteInput) {
-    deleteInput.value = "1"; // mark for deletion
-    row.style.display = 'none';
-  }
-  showSubmitButton2();
-}
+    questionTypeSelect.addEventListener('change', () => {
+        const selected = questionTypeSelect.value;
+        if (selected === 'fill_blank') {
+            multipleFields.classList.add('d-none');
+            fillBlankFields.classList.remove('d-none');
 
-function removeAuditory(btn) {
-  btn.closest('tr').remove();
-}
+            // Enable required for fillBlankCorrect and enable input
+            const fillBlankInput = document.getElementById('fillBlankCorrect');
+            fillBlankInput.required = true;
+            fillBlankInput.disabled = false;
 
-function cancelAddAuditory() {
-  document.getElementById('new-auditory-row').style.display = 'none';
-  // Clear inputs
-  document.querySelector('input[name="new_auditory[text]"]').value = '';
-  document.querySelector('select[name="new_auditory[level]"]').selectedIndex = 0;
-}
+            // Disable multiple choice correct inputs (radio/checkbox)
+            document.querySelectorAll('#correctAnswerOptions input').forEach(input => {
+                input.required = false;
+                input.disabled = true;
+            });
 
-function saveAuditory() {
-  const id = document.getElementById('new-auditory-id').value;
-  const text = document.querySelector('input[name="new_auditory[text]"]').value.trim();
-  const level = document.querySelector('select[name="new_auditory[level]"]').value;
+            // Disable and remove required from options inputs
+            document.querySelectorAll('#optionContainer input.option-input').forEach(input => {
+                input.required = false;
+                input.disabled = true;
+            });
 
-  if (!text) {
-    alert('Please enter a phrase.');
-    return;
-  }
+            // Also disable the "Add Option" button so no new options can be added
+            addOptionBtn.disabled = true;
 
-  const tableBody = document.querySelector('#auditory-table tbody');
-  const noDataRow = tableBody.querySelector('tr td[colspan="4"]');
-  if (noDataRow) noDataRow.parentElement.remove();
+        } else {
+            multipleFields.classList.remove('d-none');
+            fillBlankFields.classList.add('d-none');
 
-  const newRow = document.createElement('tr');
-  newRow.innerHTML = `
-    <td>${id}</td>
-    <td><input type="text" name="auditory[${id}][text]" class="form-control" value="${text}"></td>
-    <td>
-      <select name="auditory[${id}][level]" class="form-control">
-        <option value="Easy"${level === 'Easy' ? ' selected' : ''}>Easy</option>
-        <option value="Medium"${level === 'Medium' ? ' selected' : ''}>Medium</option>
-        <option value="Hard"${level === 'Hard' ? ' selected' : ''}>Hard</option>
-      </select>
-    </td>
-    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeAuditory(this)">Remove</button></td>
-  `;
+            // Disable fillBlankCorrect required & disable input
+            const fillBlankInput = document.getElementById('fillBlankCorrect');
+            fillBlankInput.required = false;
+            fillBlankInput.disabled = true;
 
-  tableBody.insertBefore(newRow, document.getElementById('new-auditory-row'));
+            // Enable multiple choice correct inputs
+            document.querySelectorAll('#correctAnswerOptions input').forEach(input => {
+                input.required = true;
+                input.disabled = false;
+            });
 
-  cancelAddAuditory();
-  showSubmitButton2();
-}
+            // Enable options inputs and add required
+            document.querySelectorAll('#optionContainer input.option-input').forEach(input => {
+                input.required = true;
+                input.disabled = false;
+            });
 
-function editAuditoryRow(button) {
-  const row = button.closest('tr');
-  const key = row.getAttribute('data-key');
+            // Enable the Add Option button
+            addOptionBtn.disabled = false;
+        }
+    });
 
-  // Get current phrase text and level
-  const textCell = row.querySelector('.phrase-text2');
-  const levelCell = row.querySelector('.phrase-level2');
-  const actionsCell = row.querySelector('.phrase-actions2');
+        addOptionBtn.addEventListener('click', () => {
+            const optionCount = optionContainer.querySelectorAll('.option-item').length;
+            if (optionCount >= 6) return; // Max 6 options
+            const newOption = document.createElement('div');
+            newOption.classList.add('form-row', 'mb-2', 'option-item');
+            newOption.innerHTML = `
+            <div class="col">
+                <input type="text" name="new_mcq[options][]" class="form-control option-input" placeholder="Option ${String.fromCharCode(65 + optionCount)}" required>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-danger btn-sm remove-option">×</button>
+            </div>
+            `;
+            optionContainer.appendChild(newOption);
+            updateCorrectAnswerInputs();
+        });
 
-  const currentText = textCell.textContent.trim();
-  const currentLevel = levelCell.textContent.trim();
+        optionContainer.addEventListener('input', (e) => {
+            if (e.target.classList.contains('option-input')) {
+                updateCorrectAnswerInputs();
+            }
+        });
 
-  // Replace text with input
-  textCell.innerHTML = `<input type="text" name="auditory[${key}][text]" class="form-control" value="${currentText}">`;
+        optionContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-option')) {
+                const optionItem = e.target.closest('.option-item');
+                optionItem.remove();
+                updateCorrectAnswerInputs();
+            }
+        });
 
-  // Replace level with select dropdown
-  levelCell.innerHTML = `
-    <select name="auditory[${key}][level]" class="form-control">
-      <option value="Easy" ${currentLevel === 'Easy' ? 'selected' : ''}>Easy</option>
-      <option value="Medium" ${currentLevel === 'Medium' ? 'selected' : ''}>Medium</option>
-      <option value="Hard" ${currentLevel === 'Hard' ? 'selected' : ''}>Hard</option>
-    </select>`;
-
-  // Replace action buttons with Save button
-  actionsCell.innerHTML = `
-    <button type="submit" class="btn btn-sm btn-success" onclick="saveAuditoryRow(this)">Save</button>
-  `;
-}
-
-function saveAuditoryRow(button) {
-  const row = button.closest('tr');
-  const key = row.getAttribute('data-key');
-
-  const textInput = row.querySelector(`input[name="auditory[${key}][text]"]`);
-  const levelSelect = row.querySelector(`select[name="auditory[${key}][level]"]`);
-  const actionsCell = row.querySelector('.phrase-actions2');
-  const textCell = row.querySelector('.phrase-text2');
-  const levelCell = row.querySelector('.phrase-level2');
-
-  if (!textInput.value.trim()) {
-    alert('Please enter a phrase.');
-    return;
-  }
-
-  // Optional: form.submit(); or AJAX submit here if you want immediate saving
-
-  // Update cells with new values as plain text
-  textCell.textContent = textInput.value.trim();
-  levelCell.textContent = levelSelect.value;
-
-  // Restore the action buttons (Edit only)
-  actionsCell.innerHTML = `
-    <button type="button" class="btn btn-sm btn-primary" onclick="editAuditoryRow(this)">Edit</button>
-    <button type="button" class="btn btn-sm btn-danger" onclick="markDelete2(this)">Remove</button>
-  `;
-
-  showSubmitButton2();
-}
-
-function cancelAddSpeech() {
-    // Hide new row
-    document.getElementById('new-speech-row').style.display = 'none';
-
-    // Clear input fields
-    document.getElementById('new-speech-id').value = '';
-    document.querySelector('input[name="new_speech[text]"]').value = '';
-    document.querySelector('select[name="new_speech[level]"]').value = 'Easy';
-
-    // Check if any changes exist before hiding submit button
-    maybeHideSubmitButton();
-}
-
-function cancelAddAuditory() {
-    // Hide new row
-    document.getElementById('new-auditory-row').style.display = 'none';
-
-    // Clear input fields
-    document.getElementById('new-auditory-id').value = '';
-    document.querySelector('input[name="new_auditory[text]"]').value = '';
-    document.querySelector('select[name="new_auditory[level]"]').value = 'Easy';
-
-    // Check if any changes exist before hiding submit button
-    maybeHideSubmitButton();
-}
-
-function maybeHideSubmitButton() {
-    const hasSpeechChanges = document.querySelectorAll('input[name^="speech["], select[name^="speech["], input.delete-flag[value="1"]').length > 0;
-    const hasAuditoryChanges = document.querySelectorAll('input[name^="auditory["], select[name^="auditory["], input.delete-flag2[value="1"]').length > 0;
-    const hasNewSpeech = document.getElementById('new-speech-row').style.display !== 'none';
-    const hasNewAuditory = document.getElementById('new-auditory-row').style.display !== 'none';
-
-    // Hide buttons only if nothing is being added or changed
-    if (!hasSpeechChanges && !hasAuditoryChanges && !hasNewSpeech && !hasNewAuditory) {
-        document.getElementById('submit-all-btn').style.display = 'none';
-        document.getElementById('submit-all-btn2').style.display = 'none';
-    }
-}
-
+        // Initialize form state
+        questionTypeSelect.dispatchEvent(new Event('change'));
+    });
 </script>
+
+
+
+<script>
+function openModal(deleteUrl, itemName = 'this item', itemType = 'item') {
+    const modal = document.getElementById("confirmModal");
+    modal.style.display = "flex";
+
+    // Set delete URL
+    document.getElementById("deleteForm").action = deleteUrl;
+
+    // Set message and title
+    document.getElementById("confirmMessage").textContent = `Are you sure you want to delete "${itemName}" from your ${itemType}?`;
+    document.getElementById("modalTitle").textContent = `Delete ${capitalizeFirstLetter(itemType)}`;
+}
+
+function closeModal() {
+    document.getElementById("confirmModal").style.display = "none";
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+}
+</script>
+
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <!-- Bootstrap 4 JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
 
