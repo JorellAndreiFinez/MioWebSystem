@@ -146,53 +146,92 @@ class SpecializedSpeechApi extends Controller
         }
     }
 
-    public function createSpeechActivity(Request $request, string $subjectId){
+    public function getActivityPictureById(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        try{
-            $validated = $request->validate([
-                'activity_type' => 'required|in:picture,question,phrase,pronunciation',
-                'difficulty' => 'required|in:easy,average,difficult,challenge',
+        try {
+            $activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
 
-                'flashcard_text' => 'nullable|array',
-                'flashcard_text.*' => 'string|max:250',
-
-                'flashcard_file' => 'nullable|array|required_if:activity_type,picture',
-                'flashcard_file.*' => 'file|mimes:jpg,png|max:5120',
-
-                'flashcard_answer' => 'nullable|array',
-                'flashcard_answer.*' => 'string|max:250|required_if:activity_type,picture',
-            ]);
-
-            $flashcardData = [];
-            $answers = $validated['flashcard_answer'] ?? [];
-
-            foreach ($validated['flashcard_text'] ?? [] as $index => $text) {
-                $id = (string) Str::uuid()->toString();
-                $flashcardData[$index] = [
-                    'flashcard_id' => $id,
-                    'word'=> $text,
-                ];
+            if (empty($activity)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Activity not found',
+                ], 404);
             }
+
+            $flashcards = [];
 
             $bucket = $this->storage->getBucket();
 
-            foreach ($validated['flashcard_file'] ?? [] as $idx => $file) {
-                $uuid = Str::uuid()->toString();
-                $remotePath = 'images/speech/' . $uuid . $file->getClientOriginalName();
+            foreach($activity['items'] as $index => $item){
+                if($item['image_path'] ?? false){
+                    $image = $bucket->object($item['image_path'])->signedUrl(now()->addMinutes(30));
+
+                    $flashcards[$index] = [
+                        'flashcard_id' => $item['flashcard_id'],
+                        'image_path' => $image,
+                        'firebase_path' => $item['image_path'],
+                        'text' => $item['text']
+                    ];
+                }else{
+                    $flashcards[$index] = [
+                        'flashcard_id' => $item['flashcard_id'],
+                        'text' => $item['text']
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activity retrieved successfully',
+                'flashcards' => $flashcards
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function createSpeechPictureActivity(Request $request, string $subjectId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'activity_type' => 'required|in:picture',
+            'difficulty' => 'required|in:easy,average,difficult,challenge',
+
+            'flashcards' => 'required|array|min:1',
+            'flashcards.*.text' => 'required|string|min:1|max:250',
+            'flashcards.*.image' => 'required|file|mimes:jpg,png',
+        ]);
+
+        try {
+            $activity_data = [];
+            $bucket = $this->storage->getBucket();
+
+            foreach ($validated['flashcards'] as $index => $flashcard) {
+                $flashcard_id = (string) Str::uuid();
+                $file = $flashcard['image'];
+                $text = $flashcard['text'];
+                $remotePath = 'images/speech/' . $flashcard_id . '_' . $file->getClientOriginalName();
 
                 $bucket->upload(
-                    fopen($file->getPathName(), 'r'),
+                    fopen($file->getPathname(), 'r'),
                     ['name' => $remotePath]
                 );
 
-                $flashcardData[$uuid] = array_merge(
-                    $flashcardData[$uuid] ?? ['flashcard_id' => $uuid],
-                    [
-                        'image_path' => $remotePath,
-                        'answer' => $answers[$idx] ?? null,
-                    ]
-                );
+                $activity_data[$index] = [
+                    'flashcard_id' => $flashcard_id,
+                    'text' => $text,
+                    'image_path' => $remotePath,
+                ];
             }
 
             $activityType = $validated['activity_type'];
@@ -201,8 +240,59 @@ class SpecializedSpeechApi extends Controller
             $date = now()->toDateTimeString();
 
             $activityData = [
-                'flashcards'=> $flashcardData,
-                'total' => count($flashcardData),
+                'items' => $activity_data,
+                'total' => count($activity_data),
+                'created_at' => $date,
+            ];
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activity_id}")
+                ->set($activityData);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Activity created successfully",
+                'activity' => $activityData,
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function createSpeechActivity(Request $request, string $subjectId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'activity_type' => 'required|in:question,phrase,pronunciation',
+            'difficulty' => 'required|in:easy,average,difficult,challenge',
+
+            'flashcards' => 'required|array',
+            'flashcards.*.text' => 'required|string|min:1|max:250',
+        ]);
+
+        try{
+            $activity_data = [];
+
+            foreach ($validated['flashcards'] as $index => $flashcard) {
+                $id = (string) Str::uuid();
+                $activity_data[$index] = [
+                    'flashcard_id' => $id,
+                    'text' => $flashcard['text'],
+                ];
+            }
+
+            $activityType = $validated['activity_type'];
+            $difficulty = $validated['difficulty'];
+            $activity_id = $this->generateUniqueId('SPE');
+            $date = now()->toDateTimeString();
+
+            $activityData = [
+                'items'=> $activity_data,
+                'total' => count($activity_data),
                 'created_at' => $date,
             ];
 
@@ -224,46 +314,252 @@ class SpecializedSpeechApi extends Controller
         }
     }
 
+    public function editSpeechPictureActivity(Request $request, string $subjectId, string $difficulty, string $activityId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'flashcards' => 'required|array|min:1',
+            'flashcards.*.text' => 'required|string|min:1|max:250',
+            'flashcards.*.flashcard_id' => 'nullable|string|min:1',
+            'flashcards.*.image' => 'nullable|file|mimes:jpg,png|max:5120',
+            'flashcards.*.remotePath' => 'nullable|string|min:1',
+        ]);
+
+        try {
+            $existing_activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/picture/{$difficulty}/{$activityId}")
+                ->getSnapshot()
+                ->getValue();
+
+            if (empty($existing_activity)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Activity not found"
+                ], 404);
+            }
+
+            $total = $existing_activity['total'];
+
+            $bucket = $this->storage->getBucket();
+
+            $mapped_existing = [];
+            foreach ($existing_activity['items'] as $item) {
+                $key = $item['flashcard_id'];
+                $mapped_existing[$key] = [
+                    'image_path' => $item['image_path'],
+                ];
+            }
+
+            $updated_items = [];
+            foreach ($validated['flashcards'] as $flashcard) {
+                if (empty($flashcard['flashcard_id'])) {
+                    $flashcard_id = (string) Str::uuid();
+
+                    $image = $flashcard['image'] ?? null;
+                    if (empty($image)) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Image file is required for new flashcard.',
+                        ], 422);
+                    }
+
+                    $image_id = (string) Str::uuid();
+                    $remotePath = 'images/speech/' . $image_id . '_' . $image->getClientOriginalName();
+
+                    $bucket->upload(
+                        fopen($image->getPathname(), 'r'),
+                        ['name' => $remotePath]
+                    );
+
+                    $updated_items[] = [
+                        'flashcard_id' => $flashcard_id,
+                        'text' => $flashcard['text'],
+                        'image_path' => $remotePath,
+                    ];
+                    $total++;
+                }
+                else {
+                    $flashcard_id = $flashcard['flashcard_id'];
+                    $oldPath = $mapped_existing[$flashcard_id]['image_path'] ?? null;
+                    $newPath = $flashcard['remotePath'] ?? null;
+                    $image = $flashcard['image'] ?? null;
+
+                    if($image !== null){
+                        $bucket->object($oldPath)->delete();
+
+                        $image_id = (string) Str::uuid();
+                        $remotePath = 'images/speech/' . $image_id . '_' . $image->getClientOriginalName();
+
+                        $bucket->upload(
+                            fopen($image->getPathname(), 'r'),
+                            ['name' => $remotePath]
+                        );
+
+                        $updated_items[] = [
+                            'flashcard_id' => $flashcard_id,
+                            'text' => $flashcard['text'],
+                            'image_path' => $remotePath,
+                        ];
+                    }else{
+                        if ($oldPath === $newPath) {
+                            $updated_items[] = [
+                                'flashcard_id' => $flashcard_id,
+                                'text' => $flashcard['text'],
+                                'image_path' => $oldPath,
+                            ];
+                        }else{
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Image file is required when changing image for flashcard_id: $flashcard_id",
+                            ], 422);
+                        }
+                    }
+                }
+            }
+
+            $existingIds = [];
+            foreach ($updated_items as $item) {
+                if (in_array($item['flashcard_id'], $existingIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Duplicate flashcard_id detected: ' . $item['flashcard_id'],
+                    ], 422);
+                }
+                $existingIds[] = $item['flashcard_id'];
+            }
+
+            $date = now()->toDateTimeString();
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/picture/{$difficulty}/{$activityId}")
+                ->update([
+                    'items' => $updated_items,
+                    'total' => $total,
+                    'updated_at' => $date,
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activity updated successfully',
+                'data' => $updated_items
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function editSpeechActivity(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'flashcards' => 'required|array|min:1',
+            'flashcards.*.flashcard_id' => 'nullable|string|min:1',
+            'flashcards.*.text' => 'required|string|min:1|max:250',
+        ]);
+
+        try {
+            $existing_activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($existing_activity)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Activity not found"
+                ], 404);
+            }
+
+            $total = $existing_activity['total'];
+
+            $updated_items = [];
+            foreach ($validated['flashcards'] as $flashcard) {
+                if (empty($flashcard['flashcard_id'])) {
+                    $flashcard_id = (string) Str::uuid();
+
+                    $updated_items[] = [
+                        'flashcard_id' => $flashcard_id,
+                        'text' => $flashcard['text'],
+                    ];
+
+                    $total++;
+                } else {
+                    $updated_items[] = [
+                        'flashcard_id' => $flashcard['flashcard_id'],
+                        'text' => $flashcard['text'],
+                    ];
+                }
+            }
+
+            $existingIds = [];
+            foreach ($updated_items as $item) {
+                if (in_array($item['flashcard_id'], $existingIds)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Duplicate flashcard_id detected: ' . $item['flashcard_id'],
+                    ], 422);
+                }
+                $existingIds[] = $item['flashcard_id'];
+            }
+
+            $date = now()->toDateTimeString();
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
+                ->update([
+                    'items' => $updated_items,
+                    'total' => $total,
+                    'updated_at' => $date,
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Activity updated successfully',
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function startFlashcardActivity(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
-        /**
-         * 
-         * 
-         * 
-         * 
-         * CHECK FOR AVAILABLE PREVIOUD ATTEMPT STATUS INPROGRESS
-         * 
-         * 
-         * 
-         */
         try{
             $activityData = $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
-            if (! $activityData || ! isset($activityData['flashcards'])) {
+            if (!$activityData) {
                 return response()->json([
                     'success' => false,
                     'error'   => 'Activity not found.'
                 ], 404);
             }
 
-            $flashcards = $activityData['flashcards'];
+            $flashcards = $activityData['items'];
             
             $attemptId = $this->generateUniqueId("ATTM");
-            $startedAt   = now()->toDateTimeString();
+            $startedAt = now()->toDateTimeString();
 
             $studentAnswers = [];
-            foreach ($flashcards as $idx => $card) {
-                $studentAnswers[$card['flashcard_id']] = [
+            foreach ($flashcards as $idx => $item) {
+                $studentAnswers[$item['flashcard_id']] = [
                     'card_no' => $idx,
-                    'word' => $card['word'] ?? $card['answer'] ?? "",
-                    'audio_path' => null,
-                    'image_path' => $card['image_path'] ?? ""
+                    'text' => $item['text'],
+                    'image_path' => $item['image_path'] ?? ""
                 ];
             }
             
@@ -282,6 +578,7 @@ class SpecializedSpeechApi extends Controller
                 'attemptId' => $attemptId,
                 'flashcards' => $flashcards,
             ],201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -311,7 +608,7 @@ class SpecializedSpeechApi extends Controller
 
             $answers = $answersRef->getSnapshot()->getValue() ?? [];
 
-            if (! isset($answers[$flashcardId])) {
+            if (!isset($answers[$flashcardId])) {
                 return response()->json([
                     'success' => false,
                     'error'   => 'Invalid flashcard ID for this attempt',
@@ -321,7 +618,7 @@ class SpecializedSpeechApi extends Controller
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
             $filename = $uuid . $file->getClientOriginalName();
-            $path = $file->storeAs('audio_submissions', $file->getClientOriginalName() , 'public');
+            $path = $file->storeAs('audio_submissions', $filename , 'public');
             $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
 
             $bucket = $this->storage->getBucket();
@@ -331,11 +628,10 @@ class SpecializedSpeechApi extends Controller
             );
 
             $now = now()->toDateTimeString();
-            $word = $answers[$flashcardId]['word'];
+            $word = $answers[$flashcardId]['text'];
             $pronunciation_details = $this->pronunciationScoreApi($path, $word);
 
             $updatedAnswer = [
-                'word' => $word,
                 'audio_path' => $remotePath,
                 'answered_at' => $now,
                 'pronunciation_details' => $pronunciation_details,
@@ -350,8 +646,9 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Answer submitted successfully',
-                'pronunciation_details' => $pronunciation_details,
-                'type' => $request->file('audio_file')->getMimeType()
+                // 'pronunciation_details' => $pronunciation_details,
+                'type' => $request->file('audio_file')->getMimeType(),
+                'word' => $word
             ], 200);
 
         } catch (\Exception $e) {
@@ -385,7 +682,7 @@ class SpecializedSpeechApi extends Controller
 
             foreach ($answers as $cardId => $answer) {
                 $details = $answer['pronunciation_details'] ?? [];
-                $wordsList = $details['words']               ?? [];
+                $wordsList = $details['words'] ?? [];
 
                 if (! empty($wordsList) && is_array($wordsList[0])) {
                     $w = $wordsList[0];
@@ -428,65 +725,7 @@ class SpecializedSpeechApi extends Controller
                 'overall_score' => $overallAverage,
             ], 200);
 
-            // return response()->json([
-            //     'success' => true,
-            //     'message' => 'Activity submitted successfully.',
-                // 'scores'  => [
-                //     '664aef4a-ccb0-419a-9d6d-565e19321c9e' => [
-                //         'word'            => 'banana',
-                //         'quality_score'   => 98,
-                //         'phones'          => [
-                //             ['phone' => 'b',  'quality_score' => 98.7,  'sound_most_like' => 'bae',  'extent' => [59, 68]],
-                //             ['phone' => 'ah', 'quality_score' => 97.5,  'sound_most_like' => 'ah', 'extent' => [68, 74]],
-                //             ['phone' => 'n',  'quality_score' => 98.0,  'sound_most_like' => 'n',  'extent' => [74, 83]],
-                //             ['phone' => 'ae', 'quality_score' => 100.0, 'sound_most_like' => 'ae', 'extent' => [83, 95]],
-                //             ['phone' => 'n',  'quality_score' => 98.75, 'sound_most_like' => 'ae',  'extent' => [95, 107]],
-                //             ['phone' => 'ah', 'quality_score' => 97.0,  'sound_most_like' => 'ah', 'extent' => [107, 119]],
-                //         ],
-                //         'syllables'       => [
-                //             ['letters' => 'ba',  'quality_score' => 98, 'extent' => [59, 74]],
-                //             ['letters' => 'nan', 'quality_score' => 99, 'extent' => [74, 107]],
-                //             ['letters' => 'a',   'quality_score' => 97, 'extent' => [107, 119]],
-                //         ],
-                //     ],
-                //     '95c11a5c-6941-49e4-9038-b53334175cdd' => [
-                //         'word'            => 'apple',
-                //         'quality_score'   => 90,
-                //         'phones'          => [
-                //             ['phone' => 'ae', 'quality_score' => 91.0, 'sound_most_like' => 'ae', 'extent' => [10, 20]],
-                //             ['phone' => 'p',  'quality_score' => 89.5, 'sound_most_like' => 'p',  'extent' => [20, 30]],
-                //             ['phone' => 'l',  'quality_score' => 90.2, 'sound_most_like' => 'll',  'extent' => [30, 40]],
-                //         ],
-                //         'syllables'       => [
-                //             ['letters' => 'ap',  'quality_score' => 90, 'extent' => [10, 30]],
-                //             ['letters' => 'ple', 'quality_score' => 90, 'extent' => [30, 40]],
-                //         ],
-                //         'timestamp'       => '2025-05-27 14:35:00',
-                //     ],
-                //     'c4cd1987-6449-4115-8f63-8f790c679319' => [
-                //         'word'            => 'orange',
-                //         'quality_score'   => 95,
-                //         'phones'          => [
-                //             ['phone' => 'ao', 'quality_score' => 96.0, 'sound_most_like' => 'ao', 'extent' => [5, 15]],
-                //             ['phone' => 'r',  'quality_score' => 94.5, 'sound_most_like' => 'r',  'extent' => [15, 25]],
-                //             ['phone' => 'n',  'quality_score' => 95.2, 'sound_most_like' => 'nn',  'extent' => [25, 35]],
-                //             ['phone' => 'j',  'quality_score' => 95.0, 'sound_most_like' => 'j',  'extent' => [35, 45]],
-                //         ],
-                //         'syllables'       => [
-                //             ['letters' => 'or',    'quality_score' => 95, 'extent' => [5, 25]],
-                //             ['letters' => 'ange',  'quality_score' => 95, 'extent' => [25, 45]],
-                //         ],
-                //     ],
-                // ],
-            //     'overall_score' => 200
-            // ], 200);
-
         } catch (\Exception $e) {
-            \Log::error('finalizeFlashcardAttempt failed', [
-                'path'  => $refPath,
-                'error' => $e->getMessage(),
-            ]);
-
             return response()->json([
                 'success' => false,
                 'error'   => 'Could not update activity status.',

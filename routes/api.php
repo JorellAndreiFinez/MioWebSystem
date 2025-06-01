@@ -38,8 +38,8 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
-    // speech 
 
+    // speech 
     Route::post('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'startFlashcardActivity']);
     Route::post('/subject/{subjectId}/speech/{activityType}/{activityId}/{attemptId}/{flashcardId}', [SpecializedSpeechApi::class, 'submitFlashcardAnswer']);
     Route::patch('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}/{attemptId}', [SpecializedSpeechApi::class, 'finalizeFlashcardAttempt']);
@@ -47,12 +47,10 @@ Route::middleware([
     // auditory
     Route::post('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startBingoActivity']);
     Route::post('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startMatchingActivity']);
-    Route::patch('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
-    Route::patch('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeMatchingAttempt']);
 
+    //language
     Route::post('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeHomonymActivity']);
     Route::patch('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeHomonymsAttempt']);
-
     Route::post('/subject/{subjectId}/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeFillActivity']);
     Route::patch('/subject/{subjectId}/language/fill/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeFillAttempt']);
 });
@@ -73,7 +71,13 @@ Route::middleware([
 
     Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
 
+    //speech
+    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'getActivityPictureById']);
     Route::post('/subject/{subjectId}/specialized/speech', [SpecializedSpeechApi::class, 'createSpeechActivity']);
+    Route::post('/subject/{subjectId}/specialized/speech/picture', [SpecializedSpeechApi::class, 'createSpeechPictureActivity']);
+    Route::put('/subject/{subjectId}/specialized/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'editSpeechActivity']);
+    Route::post('/subject/{subjectId}/specialized/speech/picture/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'editSpeechPictureActivity']);
+
     Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createMatchingCardsActivity']);
 
