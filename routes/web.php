@@ -16,6 +16,7 @@ use App\Http\Controllers\SchoolYearController;
 use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SpeechaceController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\admin\AdminController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
@@ -123,6 +124,11 @@ Route::prefix('mio/admin/')->middleware(
 )->name('mio.')->group(function () {
 
     Route::get('/dashboard', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
+
+// ----------------  ANALYTICS
+
+    Route::get('/data-analytics', [AdminController::class, 'showDataAnalytics'])->name('ViewDataAnalytics');
+
 
 // ----------------  PID
 

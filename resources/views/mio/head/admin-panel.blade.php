@@ -20,8 +20,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 
 
-
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     @include('mio.external-links')
 </head>
@@ -137,6 +136,9 @@
 
     @elseif ($page === 'emergency')
         @include('mio.admin-access.emergency')
+
+     @elseif ($page === 'admin-analytics')
+        @include('mio.admin-access.admin-analytics')
     @endif
 
     <script>
