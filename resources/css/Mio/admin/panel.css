@@ -685,6 +685,7 @@
     input[type="date"],
     input[type="number"],
     input[type="time"],
+    input[type="url"],
     select {
         background-color: #f0f0f0;
         border: 1px solid #ddd;
@@ -1194,7 +1195,7 @@
         display: flex;
         gap: 2rem;
         flex-wrap: wrap;
-        margin: 3rem;
+        margin: 1rem;
     }
 
     .summary-card {
@@ -1225,4 +1226,25 @@
         color: #22c55e;
         font-weight: bold;
         float: right;
+    }
+
+    .analytics-card-2 {
+        display: flex;
+        justify-content: space-between;
+        padding-bottom: 10px;
+        margin: 1rem 2rem 0 .7rem;
+        gap: 2rem;
+    }
+
+    .analytics-card-2 h2 {
+        font-weight: 700;
+    }
+
+    .analytics-card-2 .card {
+        width: 100%;
+        max-width: 920px;
+        min-height: 150px;
+        padding: 25px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        gap: 2rem;
     }

@@ -24,8 +24,6 @@ class TeacherController extends Controller
     protected $storageClient;
     protected $bucketName;
 
-
-
     public function __construct()
     {
         $path = base_path('storage/firebase/firebase.json');
@@ -200,9 +198,6 @@ class TeacherController extends Controller
     }
 
 
-
-
-
     protected function getAudioDownloadUrl($objectPath)
         {
             try {
@@ -282,9 +277,6 @@ class TeacherController extends Controller
 
         return $feedback[$cefr] ?? 'No feedback available.';
     }
-
-
-
 
    public function showDashboard()
     {
@@ -578,105 +570,105 @@ class TeacherController extends Controller
     }
 
     public function updateAttendance(Request $request, $subjectId)
-{
-    $attendanceDate = $request->input('attendance_date');
-    $peopleInput = $request->input('people', []);
-
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
-
-    $gradeLevelKey = null;
-    $subjectData = null;
-
-    // Find grade level and subject data
-    foreach ($allSubjects as $grade => $subjects) {
-        if (isset($subjects[$subjectId])) {
-            $gradeLevelKey = $grade;
-            $subjectData = $subjects[$subjectId];
-            break;
-        }
-    }
-
-    if (!$subjectData) {
-        return abort(404, 'Subject not found.');
-    }
-
-    // Format attendance ID, e.g., ATT20250520_TUE
-    $date = \Carbon\Carbon::parse($attendanceDate);
-    $attendanceId = 'ATT' . $date->format('Ymd') . '_' . strtoupper($date->format('D'));
-
-    // Build student names lookup from subject people
-    $studentNames = [];
-    if (!empty($subjectData['people'])) {
-        foreach ($subjectData['people'] as $personId => $person) {
-            // Check if this person is a student by role
-            if (isset($person['role']) && $person['role'] === 'student') {
-                $first = trim($person['first_name'] ?? '');
-                $last = trim($person['last_name'] ?? '');
-                $fullName = trim($first . ' ' . $last);
-                if ($fullName === '') {
-                    $fullName = '(No Name)';
-                }
-                $studentNames[$personId] = $fullName;
-            }
-        }
-
-    }
-
-    // Prepare people attendance array with status, timestamp, and name
-    $attendancePeople = [];
-        foreach ($peopleInput as $personId => $person) {
-            if (isset($studentNames[$personId])) {
-                $attendancePeople[$personId] = [
-                    'status' => $person['status'] ?? 'absent',
-                    'timestamp' => now()->format('Y-m-d H:i:s'),
-                    'name' => $studentNames[$personId],
-                    'student_id' => $personId,
-                ];
-            }
-        }
-
-
-
-
-
-    // Get existing attendance if any
-    $existingAttendance = $subjectData['attendance'][$attendanceId] ?? null;
-
-    $attendanceRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/attendance/{$attendanceId}");
-
-    if ($existingAttendance) {
-        // Update existing attendance record
-        $attendanceRef->update([
-            'date' => $attendanceDate,
-            'people' => $attendancePeople,
-            'date_updated' => now()->format('Y-m-d H:i:s'),
-        ]);
-    } else {
-        // Create new attendance record
-        $attendanceRef->set([
-            'date' => $attendanceDate,
-            'people' => $attendancePeople,
-            'date_created' => now()->format('Y-m-d H:i:s'),
-        ]);
-    }
-
-    return redirect()->route('mio.subject-teacher.attendance', [
-        'subjectId' => $subjectId,
-        'attendance_date' => $attendanceDate,
-    ])->with('success', 'Attendance saved.');
-}
-
-
-    public function storeAttendance(Request $request, $subjectId)
     {
+        $attendanceDate = $request->input('attendance_date');
+        $peopleInput = $request->input('people', []);
 
-        return $this->updateAttendance($request, $subjectId);
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
+
+        $gradeLevelKey = null;
+        $subjectData = null;
+
+        // Find grade level and subject data
+        foreach ($allSubjects as $grade => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $gradeLevelKey = $grade;
+                $subjectData = $subjects[$subjectId];
+                break;
+            }
+        }
+
+        if (!$subjectData) {
+            return abort(404, 'Subject not found.');
+        }
+
+        // Format attendance ID, e.g., ATT20250520_TUE
+        $date = \Carbon\Carbon::parse($attendanceDate);
+        $attendanceId = 'ATT' . $date->format('Ymd') . '_' . strtoupper($date->format('D'));
+
+        // Build student names lookup from subject people
+        $studentNames = [];
+        if (!empty($subjectData['people'])) {
+            foreach ($subjectData['people'] as $personId => $person) {
+                // Check if this person is a student by role
+                if (isset($person['role']) && $person['role'] === 'student') {
+                    $first = trim($person['first_name'] ?? '');
+                    $last = trim($person['last_name'] ?? '');
+                    $fullName = trim($first . ' ' . $last);
+                    if ($fullName === '') {
+                        $fullName = '(No Name)';
+                    }
+                    $studentNames[$personId] = $fullName;
+                }
+            }
+
+        }
+
+        // Prepare people attendance array with status, timestamp, and name
+        $attendancePeople = [];
+            foreach ($peopleInput as $personId => $person) {
+                if (isset($studentNames[$personId])) {
+                    $attendancePeople[$personId] = [
+                        'status' => $person['status'] ?? 'absent',
+                        'timestamp' => now()->format('Y-m-d H:i:s'),
+                        'name' => $studentNames[$personId],
+                        'student_id' => $personId,
+                    ];
+                }
+            }
+
+
+
+
+
+        // Get existing attendance if any
+        $existingAttendance = $subjectData['attendance'][$attendanceId] ?? null;
+
+        $attendanceRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/attendance/{$attendanceId}");
+
+        if ($existingAttendance) {
+            // Update existing attendance record
+            $attendanceRef->update([
+                'date' => $attendanceDate,
+                'people' => $attendancePeople,
+                'date_updated' => now()->format('Y-m-d H:i:s'),
+            ]);
+        } else {
+            // Create new attendance record
+            $attendanceRef->set([
+                'date' => $attendanceDate,
+                'people' => $attendancePeople,
+                'date_created' => now()->format('Y-m-d H:i:s'),
+            ]);
+        }
+
+        return redirect()->route('mio.subject-teacher.attendance', [
+            'subjectId' => $subjectId,
+            'attendance_date' => $attendanceDate,
+        ])->with('success', 'Attendance saved.');
     }
 
 
-    // TEACHER QUIZZES
-    public function showQuizzes($subjectId)
+        public function storeAttendance(Request $request, $subjectId)
+        {
+
+            return $this->updateAttendance($request, $subjectId);
+        }
+
+
+        // TEACHER QUIZZES
+        public function showQuizzes($subjectId)
     {
         // Find grade level key
         $subjectsRef = $this->database->getReference('subjects');

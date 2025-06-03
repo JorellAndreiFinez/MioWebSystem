@@ -125,6 +125,9 @@ Route::prefix('mio/admin/')->middleware(
 
     Route::get('/dashboard', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
 
+    Route::post('/verify-password', [AdminController::class, 'verifyPassword'])->name('verify-admin-password');
+
+
 // ----------------  ANALYTICS
 
     Route::get('/data-analytics', [AdminController::class, 'showDataAnalytics'])->name('ViewDataAnalytics');

@@ -50,9 +50,14 @@
             </div>
 
             <div class="form-group">
-                <br>
-                <span id="studentNameDisplay" style="margin-top: 10px; margin-left: 10px; font-weight: bold; color: gray"></span>
-                <span id="gradeLevelDisplay" style="margin-left: 10px; font-weight: light; color: gray"></span>
+                <label>Student Name </label>
+
+                <div class="student-preview-info" style="border: 1px dashed gray; height: 55px; padding: 5px;">
+                    <span id="studentNameDisplay" style=" font-weight: bold; color: gray"></span>
+                    <br>
+                <span id="gradeLevelDisplay" style="font-weight: light; color: gray"></span>
+                </div>
+
                 </div>
 
             </div>
@@ -62,90 +67,99 @@
 
         <!-- Personal Information Section -->
         <div class="section-header">Personal Information</div>
-        <!-- CHECKBOX HERE -->
-        <div class="section-content">
-          <div class="form-row">
-            <div class="form-group">
-              <label>First Name <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="first_name" placeholder="First Name" value="{{ $editdata['fname'] }}" required />
-            </div>
-            <div class="form-group">
-              <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="last_name" placeholder="Last Name" value="{{ $editdata['lname'] }}" required />
-            </div>
-            <div class="form-group">
-              <label>Gender <span style="color: red; font-weight:700">*</span></label>
-              <select name="gender" required>
-                <option value="Male" {{ $editdata['gender'] == 'Male' ? 'selected' : '' }}>Male</option>
-                <option value="Female" {{ $editdata['gender'] == 'Female' ? 'selected' : '' }}>Female</option>
-                <option value="Other" {{ $editdata['gender'] == 'Other' ? 'selected' : '' }}>Other</option>
-              </select>
+            <!-- CHECKBOX HERE -->
+            <div class="section-content">
+            <div class="form-row">
+                <div class="form-group">
+                <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="first_name" placeholder="First Name" value="{{ $editdata['fname'] }}" required />
+                </div>
+                <div class="form-group">
+                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="last_name" placeholder="Last Name" value="{{ $editdata['lname'] }}" required />
+                </div>
+                <div class="form-group">
+                <label>Gender <span style="color: red; font-weight:700">*</span></label>
+                <select name="gender" required>
+                    <option value="Male" {{ $editdata['gender'] == 'Male' ? 'selected' : '' }}>Male</option>
+                    <option value="Female" {{ $editdata['gender'] == 'Female' ? 'selected' : '' }}>Female</option>
+                    <option value="Other" {{ $editdata['gender'] == 'Other' ? 'selected' : '' }}>Other</option>
+                </select>
+                </div>
+
+                <div class="form-group">
+                <label>Age <span style="color: red; font-weight:700">*</span></label>
+                <input type="number" name="age" placeholder="Age" value="{{ $editdata['age'] }}" required />
+                </div>
+                <div class="form-group">
+                <label>Birthday <span style="color: red; font-weight:700">*</span></label>
+                <input type="date" name="birthday" value="{{ $editdata['bday'] }}" required />
+                </div>
             </div>
 
-            <div class="form-group">
-              <label>Age <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="age" placeholder="Age" value="{{ $editdata['age'] }}" required />
+            <!-- Dynamic Address Fields -->
+            <div class="form-row">
+            <div class="form-group wide">
+                <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
+                <select id="region" name="region" data-selected="{{ $editdata['region'] }}" required>
+                <option value="">Select Region</option>
+                </select>
             </div>
-            <div class="form-group">
-              <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-              <input type="date" name="birthday" value="{{ $editdata['bday'] }}" required />
+
+            <div class="form-group wide">
+                <label for="province">Province <span style="color: red; font-weight:700">*</span></label>
+                <select id="province" name="province" data-selected="{{ $editdata['province'] }}" required>
+                <option value="">Select Province</option>
+                </select>
             </div>
+
+            <div class="form-group wide">
+                <label for="city">City/Municipality <span style="color: red; font-weight:700">*</span></label>
+                <select id="city" name="city" data-selected="{{ $editdata['city'] }}" required>
+                <option value="">Select City/Municipality</option>
+                </select>
+            </div>
+
+            <div class="form-group wide">
+                <label for="barangay">Barangay <span style="color: red; font-weight:700">*</span></label>
+                <select id="barangay" name="barangay" data-selected="{{ $editdata['barangay'] }}" required>
+                <option value="">Select Barangay</option>
+                </select>
+            </div>
+            </div>
+
+            <div class="form-row">
+
+            <div class="form-group wide">
+                <label>Building/House No., Street <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="address" placeholder="Home Address" value="{{ $editdata['address'] }}" required />
+                </div>
+
+                <div class="form-group wide">
+                <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
+                <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" value="{{ $editdata['zip_code'] }}" maxlength="4" required />
+                </div>
           </div>
 
-          <div class="form-row">
-            <div class="form-group wide">
-              <label>Street Name, Building, House No. <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="address" placeholder="Street, Building, House No." value="{{ $editdata['address'] }}" required />
+            <!-- Checkbox to Copy Information from Student -->
+            <div class="form-group checkbox-container" id="sameToChildContainer" style="display: none;">
+            <label><input type="checkbox" id="sameToChild" /> Same as Child's Address</label>
             </div>
-            <div class="form-group wide">
-              <label>Barangay <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="barangay" placeholder="Barangay" value="{{ $editdata['barangay'] }}" required />
-            </div>
-            <div class="form-group wide">
-              <label for="region">Region *</label>
-              <select id="region" name="region" required>
-                <option value="NCR" {{ $editdata['region'] == 'NCR' ? 'selected' : '' }}>National Capital Region (NCR)</option>
-                <option value="CAR" {{ $editdata['region'] == 'CAR' ? 'selected' : '' }}>Cordillera Administrative Region (CAR)</option>
-                <!-- More options here -->
-              </select>
-            </div>
-          </div>
 
-
-          <div class="form-row">
-            <div class="form-group wide">
-              <label>Province <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="province" placeholder="Province" value="{{ $editdata['province'] }}"required />
+            <div class="form-row">
+                <div class="form-group">
+                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
+                </div>
+                <div class="form-group wide">
+                <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="emergency_contact" value="{{ $editdata['emergency_contact'] }}" required />
+                </div>
+                <div class="form-group">
+                <label>Email <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="email" value="{{ $editdata['email'] }}" required />
+                </div>
             </div>
-            <div class="form-group wide">
-              <label>City <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="city" placeholder="City" value="{{ $editdata['city'] }}" required />
-            </div>
-            <div class="form-group wide">
-              <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" value="{{ $editdata['zip_code'] }}" maxlength="4" required />
-            </div>
-          </div>
-
-          <!-- Checkbox to Copy Information from Student -->
-        <div class="form-group checkbox-container" style="display: none;">
-        <label><input type="checkbox" id="sameToChild" /> Same as Child's Address</label>
-        </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
-            </div>
-            <div class="form-group wide">
-              <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="emergency_contact" value="{{ $editdata['emergency_contact'] }}" required />
-            </div>
-            <div class="form-group">
-              <label>Email <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="email" value="{{ $editdata['email'] }}" required />
-            </div>
-          </div>
         </div>
 
         <!-- Account Information Section -->
@@ -193,47 +207,224 @@
   </div>
 </section>
 
+
+<!-- ----- SCRIPTS ----- -->
 <script>
-  let scheduleCount = 0;
+    document.addEventListener("DOMContentLoaded", function () {
+    const regionSelect = document.getElementById("region");
+    const provinceSelect = document.getElementById("province");
+    const citySelect = document.getElementById("city");
+    const barangaySelect = document.getElementById("barangay");
+    const addressInput = document.querySelector('input[name="address"]');
+    const zipInput = document.querySelector('input[name="zip_code"]');
+    const studentIDInput = document.getElementById('studentID');
+    const sameToChildCheckbox = document.getElementById('sameToChild');
+    const checkboxContainer = document.getElementById('sameToChildContainer'); // Make sure this exists
+    const studentNameDisplay = document.getElementById('studentNameDisplay'); // Make sure this exists
+    const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');   // Make sure this exists
 
-  function addScheduleField() {
-    const section = document.getElementById("schedule-section");
-    const inputsPerRow = 4;
+    // Load Regions
+    fetch("https://psgc.gitlab.io/api/regions/")
+        .then(res => res.json())
+        .then(regions => {
+        regions.forEach(region => {
+            const option = new Option(region.name, region.code);
+            regionSelect.add(option);
+        });
+        });
 
-    // Find all current rows
-    let currentRows = section.getElementsByClassName("form-row");
+    // On Region Change
+    regionSelect.addEventListener("change", function () {
+        provinceSelect.innerHTML = `<option disabled selected>Loading...</option>`;
+        citySelect.innerHTML = `<option disabled selected>Select City/Municipality</option>`;
+        barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
+        provinceSelect.disabled = true;
+        citySelect.disabled = true;
+        barangaySelect.disabled = true;
 
-    // Check the last row
-    let lastRow = currentRows[currentRows.length - 1];
+        fetch(`https://psgc.gitlab.io/api/regions/${this.value}/provinces/`)
+        .then(res => res.json())
+        .then(provinces => {
+            provinceSelect.innerHTML = `<option disabled selected>Select Province</option>`;
+            provinces.forEach(province => {
+            const option = new Option(province.name, province.code);
+            provinceSelect.add(option);
+            });
+            provinceSelect.disabled = false;
+        });
+    });
 
-    // If no row exists or last row has 4 children, create a new row
-    if (!lastRow || lastRow.children.length >= inputsPerRow) {
-      lastRow = document.createElement("div");
-      lastRow.className = "form-row";
-      section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
+    // On Province Change
+    provinceSelect.addEventListener("change", function () {
+        citySelect.innerHTML = `<option disabled selected>Loading...</option>`;
+        barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
+        citySelect.disabled = true;
+        barangaySelect.disabled = true;
+
+        fetch(`https://psgc.gitlab.io/api/provinces/${this.value}/cities-municipalities/`)
+        .then(res => res.json())
+        .then(cities => {
+            citySelect.innerHTML = `<option disabled selected>Select City/Municipality</option>`;
+            cities.forEach(city => {
+            const option = new Option(city.name, city.code);
+            citySelect.add(option);
+            });
+            citySelect.disabled = false;
+        });
+    });
+
+    // On City Change
+    citySelect.addEventListener("change", function () {
+        barangaySelect.innerHTML = `<option disabled selected>Loading...</option>`;
+        barangaySelect.disabled = true;
+
+        fetch(`https://psgc.gitlab.io/api/cities-municipalities/${this.value}/barangays/`)
+        .then(res => res.json())
+        .then(barangays => {
+            barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
+            barangays.forEach(barangay => {
+            const option = new Option(barangay.name, barangay.code);
+            barangaySelect.add(option);
+            });
+            barangaySelect.disabled = false;
+        });
+    });
+
+    // Student ID input event
+    studentIDInput.addEventListener('input', function () {
+        const studentID = this.value;
+
+        if (studentID && studentID.length > 0) {
+        checkboxContainer.style.display = 'block';
+
+        fetch(`/mio/admin/get-student/${studentID}`)
+            .then(response => response.json())
+            .then(data => {
+            if (data) {
+                studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
+                gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
+                window.studentData = data;
+
+                if (sameToChildCheckbox.checked) {
+                autofillAddress(data);
+                }
+            }
+            })
+            .catch(error => {
+            studentNameDisplay.textContent = '';
+            gradeLevelDisplay.textContent = '';
+            alert("Student data could not be fetched.");
+            });
+        } else {
+        studentNameDisplay.textContent = '';
+        gradeLevelDisplay.textContent = '';
+        checkboxContainer.style.display = 'none';
+        }
+    });
+
+    // Checkbox: Same to Child
+    sameToChildCheckbox.addEventListener('change', function () {
+        if (this.checked && window.studentData) {
+        autofillAddress(window.studentData);
+        } else {
+        clearAddressFields();
+    }
+    });
+
+    function clearAddressFields() {
+        regionSelect.value = '';
+        provinceSelect.innerHTML = '<option value="">Select Province</option>';
+        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+        addressInput.value = '';
+        zipInput.value = '';
     }
 
-    // Create the form-group
-    const formGroup = document.createElement("div");
-    formGroup.className = "form-group";
-    formGroup.style.flex = "1"; // Responsive width
 
-    // Create label and input
-    const label = document.createElement("label");
-    label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
+    async function autofillAddress(data) {
+        if (!regionSelect || !provinceSelect || !citySelect || !barangaySelect) {
+        console.warn("One or more address fields are missing from the DOM.");
+        return;
+        }
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = "schedule[]";
-    input.placeholder = "Schedule ID";
+        if (addressInput) addressInput.value = data.address || "";
+        if (zipInput) zipInput.value = data.zip_code || "";
 
-    // Append label and input to formGroup
-    formGroup.appendChild(label);
-    formGroup.appendChild(input);
+        try {
+        regionSelect.value = data.region;
+        regionSelect.dispatchEvent(new Event("change"));
 
-    // Append formGroup to the lastRow
-    lastRow.appendChild(formGroup);
-  }
+        await waitForOptions(provinceSelect, data.province);
+        provinceSelect.value = data.province;
+        provinceSelect.dispatchEvent(new Event("change"));
+
+        await waitForOptions(citySelect, data.city);
+        citySelect.value = data.city;
+        citySelect.dispatchEvent(new Event("change"));
+
+        await waitForOptions(barangaySelect, data.barangay);
+        barangaySelect.value = data.barangay;
+        } catch (err) {
+        console.warn("Address autofill failed:", err);
+        }
+    }
+
+    function waitForOptions(selectElement, targetValue, timeout = 3000) {
+        return new Promise((resolve, reject) => {
+        const start = Date.now();
+        const check = () => {
+            const optionExists = Array.from(selectElement.options).some(opt => opt.value == targetValue);
+            if (optionExists) return resolve();
+            if (Date.now() - start > timeout) return reject("Timeout waiting for options to load: " + selectElement.id);
+            setTimeout(check, 100);
+        };
+        check();
+        });
+    }
+    });
+</script>
+
+<script>
+    let scheduleCount = 0;
+
+    function addScheduleField() {
+        const section = document.getElementById("schedule-section");
+        const inputsPerRow = 4;
+
+        // Find all current rows
+        let currentRows = section.getElementsByClassName("form-row");
+
+        // Check the last row
+        let lastRow = currentRows[currentRows.length - 1];
+
+        // If no row exists or last row has 4 children, create a new row
+        if (!lastRow || lastRow.children.length >= inputsPerRow) {
+        lastRow = document.createElement("div");
+        lastRow.className = "form-row";
+        section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
+        }
+
+        // Create the form-group
+        const formGroup = document.createElement("div");
+        formGroup.className = "form-group";
+        formGroup.style.flex = "1"; // Responsive width
+
+        // Create label and input
+        const label = document.createElement("label");
+        label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "schedule[]";
+        input.placeholder = "Schedule ID";
+
+        // Append label and input to formGroup
+        formGroup.appendChild(label);
+        formGroup.appendChild(input);
+
+        // Append formGroup to the lastRow
+        lastRow.appendChild(formGroup);
+    }
 </script>
 
 <script>
@@ -267,83 +458,6 @@ const parentID = `PA${currentYear}${String(currentWeek).padStart(2, '0')}${Strin
 document.getElementById('parentID').value = parentID;
 </script>
 
-<script>
-// Function to fetch and display student data based on student ID
-function fetchStudentData(studentID) {
-  const studentNameDisplay = document.getElementById('studentNameDisplay');
-  const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');
-  const checkboxContainer = document.querySelector('.form-group.checkbox-container');
-
-  if (studentID && studentID.length > 0) {
-    checkboxContainer.style.display = 'block';
-
-    // Fetch student data immediately when a valid student ID is typed or already exists
-    fetch(`/mio/admin/get-student/${studentID}`)
-      .then(response => response.json())
-      .then(data => {
-        if (data) {
-          // Display student name and grade level
-          studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
-          gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
-
-          // Store student data globally for autofill functionality
-          window.studentData = data;
-
-          // Autofill parent information if the checkbox is already checked
-          if (document.getElementById('sameToChild').checked) {
-            autofillAddress(data);
-          }
-        } else {
-          studentNameDisplay.textContent = 'Student not found';
-          gradeLevelDisplay.textContent = '';
-          alert("Student data could not be fetched.");
-        }
-      })
-      .catch(error => {
-        studentNameDisplay.textContent = 'Error fetching student data';
-        gradeLevelDisplay.textContent = '';
-        alert("Student data could not be fetched.");
-      });
-  } else {
-    studentNameDisplay.textContent = '';
-    gradeLevelDisplay.textContent = '';
-    checkboxContainer.style.display = 'none';
-  }
-}
-
-// Listen for input changes in student ID field
-document.getElementById('studentID').addEventListener('input', function () {
-  const studentID = this.value;
-  fetchStudentData(studentID); // Fetch student data when input changes
-});
-
-// Autofill address fields if the checkbox is checked
-document.getElementById('sameToChild').addEventListener('change', function () {
-  if (this.checked && window.studentData) {
-    autofillAddress(window.studentData);
-  }
-});
-
-// Function to autofill address fields
-function autofillAddress(data) {
-  document.querySelector('input[name="address"]').value = data.address || '';
-  document.querySelector('input[name="barangay"]').value = data.barangay || '';
-  document.querySelector('select[name="region"]').value = data.region || '';
-  document.querySelector('input[name="province"]').value = data.province || '';
-  document.querySelector('input[name="city"]').value = data.city || '';
-  document.querySelector('input[name="zip_code"]').value = data.zip_code || '';
-}
-
-// Automatically fetch and display student data when the page loads if the student ID field is pre-filled
-window.addEventListener('load', function () {
-  const studentID = document.getElementById('studentID').value;
-  if (studentID) {
-    fetchStudentData(studentID); // Fetch student data if student ID is pre-filled on page load
-  }
-});
-
-
-</script>
 
 <script>
 // Function to update account username and password fields

@@ -14,6 +14,8 @@ use Kreait\Firebase\Exception\Auth\UserNotFound;
 use Kreait\Firebase\Auth as FirebaseAuth;
 use Carbon\Carbon;
 use Kreait\Firebase\Exception\Auth\EmailExists;
+use Illuminate\Support\Facades\Session;
+use Kreait\Firebase\Exception\AuthException;
 
 class AdminController extends Controller
 {
@@ -148,6 +150,32 @@ class AdminController extends Controller
             // You could pass all specialized subjects or some aggregate info if needed
             'subjects' => $specializedSubjects,
         ]);
+    }
+
+    public function verifyPassword(Request $request)
+    {
+        $email = $request->input('email');
+        $password = $request->input('password');
+
+        try {
+            $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
+            $firebaseUser = $signInResult->data();
+
+            // Confirm it's actually an admin
+            $uid = $firebaseUser['localId'];
+            $userData = $this->database->getReference('users/' . $uid)->getValue();
+
+            if (strtolower($userData['role'] ?? '') !== 'admin') {
+                return response()->json(['error' => 'Not authorized.'], 403);
+            }
+
+            return response()->json(['success' => true]);
+
+        } catch (AuthException $e) {
+            return response()->json(['error' => 'Invalid credentials.'], 401);
+        } catch (\Throwable $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
 

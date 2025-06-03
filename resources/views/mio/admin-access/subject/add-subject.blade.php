@@ -30,12 +30,36 @@
                 </div>
                 <div class="form-group">
                     <label>Subject Code <span style="color: red">*</span></label>
-                    <input type="text" name="code" value="SA0001" placeholder="Enter Subject Code" required />
+                    <input type="text" name="code" placeholder="Enter Subject Code" required />
                 </div>
                 <div class="form-group">
                     <label>Subject Title <span style="color: red">*</span></label>
-                    <input type="text" name="title" value="SAMPLE1" placeholder="Enter Subject Title" required />
+                    <input type="text" name="title" placeholder="Enter Subject Title" required />
                 </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Subject Type <span style="color: red">*</span></label>
+                    <select name="subjectType" required>
+                        <option value="">Select Subject Type</option>
+                        <option value="academics">Academics</option>
+                        <option value="specialized">Specialized</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="specializedTypeGroup" style="display: none;">
+                <label>Specialized Type <span style="color: red">*</span></label>
+                <select name="specialized_type" required>
+                        <option value="">Select Specialized Type</option>
+                        <option value="speech">Speech</option>
+                        <option value="auditory">Auditory</option>
+                        <option value="language">Language</option>
+
+                    </select>
+            </div>
+
+
             </div>
 
             <div class="form-row">
@@ -60,14 +84,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="form-group">
-                    <label>Subject Type <span style="color: red">*</span></label>
-                    <select name="subjectType" required>
-                        <option value="">Select Subject Type</option>
-                        <option value="academics">Academics</option>
-                        <option value="specialized">Specialized</option>
-                    </select>
-                </div>
+
 
             </div>
         </div>
@@ -81,22 +98,65 @@
                     <label>Module Title <span style="color: red">*</span></label>
                     <input type="text" name="modules[0][title]" placeholder="e.g. Module 1: Introduction" required />
                 </div>
+            </div>
+
+            <div class="form-row module-row" data-index="0">
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="modules[0][description]" placeholder="Optional module description"></textarea>
                 </div>
             </div>
 
+            <!-- Preview Area -->
+            <div class="form-row">
+                <div class="form-group wide">
+                    <label>File Previews</label>
+                    <div id="file-preview-0" class="file-preview-area"></div>
+                </div>
+            </div>
+
+            <!-- Upload + Link -->
             <div class="form-row">
                 <div class="form-group custom-file-upload">
-                    <label>Upload File</label>
+                    <label>Upload Files</label>
                     <label for="file-upload-0" class="file-label">
-                        <span class="upload-icon">📁</span> Choose File
+                        <span class="upload-icon">📁</span> Choose Files
                     </label>
-                    <input type="file" name="modules[0][file]" id="file-upload-0" class="file-input" accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip"/>
+                    <input
+                        type="file"
+                        name="modules[0][files][]"
+                        id="file-upload-0"
+                        class="file-input"
+                        multiple
+                        accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.heic,.heif"
+                    />
                     <span class="file-name" id="file-name-0">No file chosen</span>
                 </div>
             </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Or Provide External Link</label>
+                    <input
+                        type="url"
+                        name="modules[0][external_link]"
+                        placeholder="https://example.com/file.pdf"
+                    />
+                </div>
+            </div>
+
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>Or Provide External Link (Image/Video/File)</label>
+                <input
+                    type="url"
+                    name="modules[0][external_link]"
+                    placeholder="https://example.com/resource.pdf"
+                />
+            </div>
+        </div>
+
 
             <!-- Add Module Button -->
             <button type="button" class="btn add-btn" onclick="addModuleField()">+ Add Module</button>
@@ -143,6 +203,47 @@
 </section>
 
 
+<!-- -------- SCRIPTS -------- -->
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.file-input').forEach((input, index) => {
+        input.addEventListener('change', function () {
+            const filePreview = document.getElementById(`file-preview-${index}`);
+            const fileNameSpan = document.getElementById(`file-name-${index}`);
+
+            fileNameSpan.textContent = input.files.length > 0 ? `${input.files.length} file(s) selected` : 'No file chosen';
+
+            // Clear previous previews
+            filePreview.innerHTML = '';
+
+            Array.from(input.files).forEach(file => {
+                const fileType = file.type;
+                const reader = new FileReader();
+
+                reader.onload = function (e) {
+                    const previewElement = document.createElement('div');
+                    previewElement.classList.add('file-preview-item');
+
+                    if (fileType.startsWith('image/')) {
+                        previewElement.innerHTML = `<img src="${e.target.result}" alt="preview" style="max-width: 100px; max-height: 100px;">`;
+                    } else if (fileType.startsWith('video/')) {
+                        previewElement.innerHTML = `<video src="${e.target.result}" controls style="max-width: 120px; max-height: 100px;"></video>`;
+                    } else {
+                        previewElement.textContent = file.name;
+                    }
+
+                    filePreview.appendChild(previewElement);
+                };
+
+                reader.readAsDataURL(file);
+            });
+        });
+    });
+});
+</script>
+
 
 <!-- ADD MODULE SECTION -->
 <script>
@@ -163,6 +264,8 @@ function addModuleField() {
                 <label>Module Title <span style="color: red">*</span></label>
                 <input type="text" name="modules[${moduleCount}][title]" placeholder="e.g. Module ${moduleCount + 1}" required />
             </div>
+        </div>
+        <div class="form-row">
             <div class="form-group">
                 <label>Description</label>
                 <textarea name="modules[${moduleCount}][description]" placeholder="Optional module description"></textarea>
@@ -204,6 +307,22 @@ function removeModuleField(button) {
     moduleBlock.remove();
 }
 
+</script>
+
+<!-- SPECIALIZED TYPE INPUT -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const subjectTypeSelect = document.querySelector('select[name="subjectType"]');
+        const specializedGroup = document.getElementById('specializedTypeGroup');
+
+        subjectTypeSelect.addEventListener('change', function () {
+            if (this.value === 'specialized') {
+                specializedGroup.style.display = 'block';
+            } else {
+                specializedGroup.style.display = 'none';
+            }
+        });
+    });
 </script>
 
 
@@ -267,7 +386,7 @@ document.getElementById('teacherID').addEventListener('blur', function () {
 });
 </script>
 
-<!-- TEACHER ID -->
+<!-- SECTION ID -->
 <script>
 document.getElementById('sectionID').addEventListener('blur', function () {
     const teacherID = this.value.trim();
@@ -290,12 +409,7 @@ document.getElementById('sectionID').addEventListener('blur', function () {
 });
 </script>
 
-<!-- FILE DISPLAY NAME -->
-<script>
-document.getElementById('file-upload-0').addEventListener('change', function () {
-    const fileName = this.files.length ? this.files[0].name : 'No file chosen';
-    document.getElementById('file-name-0').textContent = fileName;
-});
-</script>
+
+
 
 

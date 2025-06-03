@@ -11,7 +11,7 @@
       <div class="table-header">
         <div class="search-container" style="background: transparent;"></div>
         <div class="button-group">
-          <button type="button" class="btn cancel-btn"><a href="{{ url()->previous() }}">Cancel</a></button>
+          <button type="button" class="btn cancel-btn"><a href="{{ route(("mio.students")) }}">Cancel</a></button>
           <button type="submit" class="btn add-btn">
             <span class="icon">+</span> New Teacher
           </button>
@@ -22,7 +22,8 @@
         <!-- Teacher Information Section -->
         <div class="section-header">Teacher Information</div>
         <div class="section-content">
-          <div class="form-row" >
+         <label>Teacher Category<span style="color: red; font-weight:700;">*</span></label>
+          <div class="form-row" style="margin-left: 1rem;">
             <div class="form-group">
               <label><input type="radio" name="category" value="new" required checked> New</label>
             </div>
@@ -58,11 +59,11 @@
           <div class="form-row">
             <div class="form-group">
               <label>First Name <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="first_name" value="Jorell Andrei" required />
+              <input type="text" name="first_name" placeholder="First Name" required />
             </div>
             <div class="form-group">
               <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="last_name" value="Finez" required />
+              <input type="text" name="last_name" placeholder="Last Name"  required />
             </div>
             <div class="form-group">
             <label>Gender <span style="color: red; font-weight:700">*</span></label>
@@ -73,81 +74,143 @@
                 <option value="Other">Other</option>
             </select>
             </div>
-            <div class="form-group">
-              <label>Age <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="age" value="17" required />
+           <div class="form-group">
+            <label>Age <span style="color: red; font-weight:700">*</span></label>
+            <input type="number" id="age" name="age" placeholder="Enter Age" required min="1" max="100"/>
             </div>
+
             <div class="form-group">
-              <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-              <input type="date" name="birthday" value="2008-04-01" required />
-            </div>
+            <label>Birthday <span style="color: red; font-weight:700">*</span></label>
+            <input
+                type="date"
+                id="birthday"
+                name="birthday"
+                required
+                min="1900-01-01"
+                max="{{ \Carbon\Carbon::now()->subYears(18)->format('Y-m-d') }}"
+                />
+
           </div>
 
           <div class="form-row">
-            <div class="form-group wide">
-              <label>Street Name, Building, House No. <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="address" value="13 Blk Lot 8, Camella Homes, Valenzuela City" required />
-            </div>
-            <div class="form-group wide">
-              <label>Barangay <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="barangay" value="Brgy. Lapuk" required />
-            </div>
-            <div class="form-group wide">
-              <label for="region">Region *</label>
+
+             <div class="form-group wide">
+              <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
               <select id="region" name="region" required>
-                <option value="" disabled selected>Select a Region</option>
-                <option value="NCR">National Capital Region (NCR)</option>
-                <option value="CAR">Cordillera Administrative Region (CAR)</option>
-                <!-- More options here -->
-              </select>
+                    <option value="" disabled selected>Select Region</option>
+                </select>
             </div>
-          </div>
 
-          <div class="form-row">
             <div class="form-group wide">
               <label>Province <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="province" value="Metro Manila" required />
+              <select id="province" name="province" required disabled>
+              <option value="" disabled selected>Select Province</option>
+            </select>
             </div>
+
             <div class="form-group wide">
-              <label>City <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="city" value="Valenzuela City" required />
+              <label>City/ Municipality <span style="color: red; font-weight:700">*</span></label>
+               <select id="city" name="city" required disabled>
+                <option value="" disabled selected>Select City/Municipality</option>
+              </select>
             </div>
+
             <div class="form-group wide">
+              <label>Barangay <span style="color: red; font-weight:700">*</span> </label>
+               <select id="barangay" name="barangay"  required disabled>
+                <option value="" disabled selected>Select Barangay</option>
+            </select>
+            </div>
+
+          </div>
+
+          <div class="form-row">
+
+          <div class="form-group wide">
+              <label>Building/House No., Street <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="address" placeholder="Home Address" required />
+            </div>
+
+            <div class="form-group">
               <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="zip_code" value="3333" minlength="4" maxlength="4" required />
+              <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" maxlength="4" required />
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
               <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="contact_number" value="09053622382" required />
+              <input type="text" name="contact_number" placeholder="Contact Number" required />
             </div>
             <div class="form-group wide">
               <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="emergency_contact" value="09053622382" required />
+              <input type="text" name="emergency_contact" placeholder="Emergency Contact Number" required />
             </div>
             <div class="form-group">
               <label>Email <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="email" value="jorellandrei23@gmail.com" required />
+              <input type="text" name="email" placeholder="Email Address" required />
             </div>
           </div>
+        </div>
         </div>
 
-        <!-- Academic Information Section -->
-        <div class="section-header">Academic Information</div>
+        <!-- Educational Attainment Section -->
+        <div class="section-header">Educational Attainment</div>
         <div class="section-content">
-          <div class="form-row">
+        <div class="form-row">
             <div class="form-group wide">
-              <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="previous_school" value="Blah blah High school" required />
+            <label>Highest Educational Attainment <span style="color: red; font-weight:700">*</span></label>
+            <select name="educational_attainment" required>
+                <option value="" disabled selected>Select Attainment</option>
+                <option value="Bachelor's Degree">Bachelor's Degree</option>
+                <option value="Master's Degree">Master's Degree</option>
+                <option value="Doctorate Degree">Doctorate Degree</option>
+                <option value="Post-graduate Diploma">Post-graduate Diploma</option>
+                <option value="Vocational Course">Vocational Course</option>
+            </select>
             </div>
             <div class="form-group">
-              <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="grade_level" value="10" required />
+            <label>Course / Major <span style="color: red; font-weight:700">*</span></label>
+            <input type="text" name="course" placeholder="e.g., Major in English / Information Technology" required />
             </div>
-          </div>
         </div>
+
+        <div class="form-row">
+            <div class="form-group wide">
+                <label>School / University Attended <span style="color: red; font-weight:700">*</span></label>
+                <select id="universitySelect" name="university" required>
+                    <option value="">Select School</option>
+                    <!-- Populated by JavaScript -->
+                    <option value="Other">Other</option>
+                </select>
+                </div>
+
+                <div class="form-group wide" id="customUniversityGroup" style="display: none;">
+                <label>Enter School / University Name <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" id="customUniversity" name="custom_university" placeholder="Enter school name here" />
+                </div>
+
+            <div class="form-group">
+                <label>Year Graduated <span style="color: red; font-weight:700">*</span></label>
+                <select name="year_graduated" required>
+                    <option value="" disabled selected>Select Year</option>
+                    <!-- Example: dynamically generate years via JS -->
+                    <!-- JS will populate this -->
+                </select>
+                </div>
+            <div class="form-group">
+                <label>LET Passer?</label>
+                <select name="let_passer">
+                    <option value="" disabled selected>Select</option>
+                    <option value="Yes" @if (isset($editdata['let_passer']) && $editdata['let_passer'] == 'Yes') selected @endif>Yes</option>
+                    <option value="No" @if (isset($editdata['let_passer']) && $editdata['let_passer'] == 'No') selected @endif>No</option>
+                </select>
+        </div>
+        </div>
+
+
+        </div>
+
 
         <!-- Account Information Section -->
         <div class="section-header">Account Information</div>
@@ -179,59 +242,229 @@
         <div class="section-content" id="schedule-section">
           <div class="form-row" id="schedule-container">
             <div class="form-group">
-              <label>Schedule ID<span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" required />
+              <label>Schedule ID</label>
+              <input type="text" name="schedule[]" placeholder="Schedule ID" />
             </div>
           </div>
           <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
         </div>
 
       </div>
+
     </form>
   </div>
 </section>
 
-<script>
-  let scheduleCount = 0;
+<!-- BDAY -->
+ <script>
+  const ageInput = document.getElementById('age');
+  const birthdayInput = document.getElementById('birthday');
 
-  function addScheduleField() {
-    const section = document.getElementById("schedule-section");
-    const inputsPerRow = 4;
+  // Recalculate age when birthday is changed
+  birthdayInput.addEventListener('change', function () {
+    const birthDate = new Date(this.value);
+    const today = new Date();
 
-    // Find all current rows
-    let currentRows = section.getElementsByClassName("form-row");
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
 
-    // Check the last row
-    let lastRow = currentRows[currentRows.length - 1];
-
-    // If no row exists or last row has 4 children, create a new row
-    if (!lastRow || lastRow.children.length >= inputsPerRow) {
-      lastRow = document.createElement("div");
-      lastRow.className = "form-row";
-      section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
     }
 
-    // Create the form-group
-    const formGroup = document.createElement("div");
-    formGroup.className = "form-group";
-    formGroup.style.flex = "1"; // Responsive width
+    if (age > 0) {
+      ageInput.value = age;
+    } else {
+      ageInput.value = '';
+      alert('Invalid birthdate. Age must be at least 1.');
+    }
+  });
 
-    // Create label and input
-    const label = document.createElement("label");
-    label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
+  // Block negative or zero manually entered age
+  ageInput.addEventListener('input', function () {
+    if (parseInt(this.value) <= 0 || isNaN(this.value)) {
+      alert('Age must be a positive number.');
+      this.value = '';
+    }
+  });
 
-    const input = document.createElement("input");
-    input.type = "text";
-    input.name = "schedule[]";
-    input.placeholder = "Schedule ID";
+  // Optional: Prevent paste of invalid values
+  ageInput.addEventListener('paste', function (e) {
+    const pasted = (e.clipboardData || window.clipboardData).getData('text');
+    if (parseInt(pasted) <= 0 || isNaN(pasted)) {
+      e.preventDefault();
+      alert('Only positive numbers are allowed.');
+    }
+  });
+</script>
 
-    // Append label and input to formGroup
-    formGroup.appendChild(label);
-    formGroup.appendChild(input);
+<!-- PH ADDRESS -->
+<script>
+const apiBase = "https://psgc.gitlab.io/api";
 
-    // Append formGroup to the lastRow
-    lastRow.appendChild(formGroup);
-  }
+const regionNameMap = {
+  "010000000": "Region I - Ilocos Region",
+  "020000000": "Region II - Cagayan Valley",
+  "030000000": "Region III - Central Luzon",
+  "040000000": "Region IV-A - CALABARZON",
+  "170000000": "MIMAROPA Region",
+  "050000000": "Region V - Bicol Region",
+  "060000000": "Region VI - Western Visayas",
+  "070000000": "Region VII - Central Visayas",
+  "080000000": "Region VIII - Eastern Visayas",
+  "090000000": "Region IX - Zamboanga Peninsula",
+  "100000000": "Region X - Northern Mindanao",
+  "110000000": "Region XI - Davao Region",
+  "120000000": "Region XII - SOCCSKSARGEN",
+  "160000000": "CARAGA",
+  "140000000": "CAR - Cordillera Administrative Region",
+  "150000000": "BARMM - Bangsamoro Autonomous Region",
+  "130000000": "NCR - National Capital Region"
+};
+
+async function fetchData(url) {
+  const res = await fetch(url);
+  return res.json();
+}
+
+function populateSelect(selectEl, data, placeholder, customMap = null) {
+  selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+  data.forEach(item => {
+    const option = document.createElement("option");
+    option.value = item.code;
+    option.text = customMap ? customMap[item.code] || item.name : item.name;
+    selectEl.appendChild(option);
+  });
+  selectEl.disabled = false;
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const regionSelect = document.getElementById("region");
+  const provinceSelect = document.getElementById("province");
+  const citySelect = document.getElementById("city");
+  const barangaySelect = document.getElementById("barangay");
+
+  const regions = await fetchData(`${apiBase}/regions/`);
+  populateSelect(regionSelect, regions, "Select Region", regionNameMap);
+
+  regionSelect.addEventListener("change", async () => {
+    provinceSelect.innerHTML = '';
+    citySelect.innerHTML = '';
+    barangaySelect.innerHTML = '';
+    provinceSelect.disabled = citySelect.disabled = barangaySelect.disabled = true;
+
+    const selectedRegion = regionSelect.value;
+
+    const provinces = await fetchData(`${apiBase}/regions/${selectedRegion}/provinces/`);
+
+    if (provinces.length === 0) {
+        // Region has no provinces: disable province dropdown but keep it visible
+        provinceSelect.innerHTML = `<option value="" disabled selected>Not Applicable</option>`;
+        provinceSelect.disabled = true;
+
+        // Load cities/municipalities under the region
+        const cities = await fetchData(`${apiBase}/regions/${selectedRegion}/cities-municipalities/`);
+        populateSelect(citySelect, cities, "Select City/Municipality");
+    } else {
+        // Region has provinces
+        populateSelect(provinceSelect, provinces, "Select Province");
+        provinceSelect.disabled = false;
+    }
+    });
+
+
+  provinceSelect.addEventListener("change", async () => {
+    citySelect.innerHTML = '';
+    barangaySelect.innerHTML = '';
+    citySelect.disabled = barangaySelect.disabled = true;
+
+    const provinceCode = provinceSelect.value;
+    const cities = await fetchData(`${apiBase}/provinces/${provinceCode}/cities-municipalities/`);
+    populateSelect(citySelect, cities, "Select City/Municipality");
+  });
+
+  citySelect.addEventListener("change", async () => {
+    barangaySelect.innerHTML = '';
+    barangaySelect.disabled = true;
+
+    const barangays = await fetchData(`${apiBase}/cities-municipalities/${citySelect.value}/barangays/`);
+    populateSelect(barangaySelect, barangays, "Select Barangay");
+  });
+});
+</script>
+
+<!-- SCHOOLS -->
+<script>
+  // Fetch and populate PH universities
+  fetch('http://universities.hipolabs.com/search?country=Philippines')
+    .then(response => response.json())
+    .then(data => {
+      const select = document.getElementById('universitySelect');
+
+      // Add each university to the select dropdown
+      data.forEach(univ => {
+        const option = document.createElement('option');
+        option.value = univ.name;
+        option.textContent = univ.name;
+        select.insertBefore(option, select.querySelector('option[value="Other"]'));
+      });
+    })
+    .catch(error => console.error('Error fetching universities:', error));
+
+  // Show/hide custom university input
+  document.getElementById('universitySelect').addEventListener('change', function () {
+    const customGroup = document.getElementById('customUniversityGroup');
+    if (this.value === 'Other') {
+      customGroup.style.display = 'block';
+      document.getElementById('customUniversity').required = true;
+    } else {
+      customGroup.style.display = 'none';
+      document.getElementById('customUniversity').required = false;
+    }
+  });
+</script>
+
+
+
+<script>
+    let scheduleCount = 0;
+
+    function addScheduleField() {
+        const section = document.getElementById("schedule-section");
+        const inputsPerRow = 4;
+
+        // Find all current rows
+        let currentRows = section.getElementsByClassName("form-row");
+
+        // Check the last row
+        let lastRow = currentRows[currentRows.length - 1];
+
+        // If no row exists or last row has 4 children, create a new row
+        if (!lastRow || lastRow.children.length >= inputsPerRow) {
+        lastRow = document.createElement("div");
+        lastRow.className = "form-row";
+        section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
+        }
+
+        // Create the form-group
+        const formGroup = document.createElement("div");
+        formGroup.className = "form-group";
+        formGroup.style.flex = "1"; // Responsive width
+
+        // Create label and input
+        const label = document.createElement("label");
+        label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.name = "schedule[]";
+        input.placeholder = "Schedule ID";
+            // Append label and input to formGroup
+            formGroup.appendChild(label);
+            formGroup.appendChild(input);
+            // Append formGroup to the lastRow
+            lastRow.appendChild(formGroup);
+        }
 </script>
 
 <script>
@@ -285,3 +518,56 @@ window.addEventListener('load', updateAccountInfo);
 document.querySelector('input[name="email"]').addEventListener('input', updateAccountInfo);
 document.querySelector('input[name="birthday"]').addEventListener('input', updateAccountInfo);
 </script>
+
+
+<script>
+  const select = document.querySelector('select[name="year_graduated"]');
+  const currentEducYear = new Date().getFullYear();
+  for (let year = currentEducYear; year >= 1950; year--) {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = year;
+    select.appendChild(option);
+  }
+</script>
+
+<!-- FOR TESTING -->
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelector('input[name="category"][value="part-time"]').checked = true;
+
+    document.querySelector('input[name="first_name"]').value = 'Maria';
+    document.querySelector('input[name="last_name"]').value = 'Santos';
+    document.querySelector('select[name="gender"]').value = 'Female';
+    document.getElementById('age').value = 28;
+    document.getElementById('birthday').value = '1997-04-10';
+
+    document.querySelector('input[name="address"]').value = 'Unit 502, Sunshine Residences, Quezon City';
+    document.querySelector('input[name="zip_code"]').value = '1100';
+    document.querySelector('input[name="contact_number"]').value = '09181234567';
+    document.querySelector('input[name="emergency_contact"]').value = '09998887766';
+    document.querySelector('input[name="email"]').value = 'maria.santos@example.com';
+
+    document.querySelector('select[name="educational_attainment"]').value = "Bachelor's Degree";
+    document.querySelector('input[name="course"]').value = 'Bachelor of Secondary Education';
+
+    // Wait for university list to populate
+    setTimeout(() => {
+      document.getElementById('universitySelect').value = 'Ateneo de Manila University';
+    }, 1000);
+
+    document.querySelector('select[name="year_graduated"]').value = '2016';
+    document.querySelector('select[name="let_passer"]').value = 'Yes';
+
+    document.getElementById('account_username').value = 'mariasantos';
+    document.getElementById('account_password').value = 'AnotherSecure123';
+    document.querySelector('select[name="account_status"]').value = 'active';
+  });
+</script>
+
+
+
+
+
+

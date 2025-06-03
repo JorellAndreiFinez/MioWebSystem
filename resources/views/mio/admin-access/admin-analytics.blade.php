@@ -1,6 +1,9 @@
 <section class="home-section">
   <div class="text">Data Analytics</div>
 
+
+<!-- ✅ Move this outside -->
+<div class="grid-row">
   <!-- Mini Cards with Sparkline Charts -->
   <div class="summary-grid">
   <div class="summary-card">
@@ -14,25 +17,20 @@
     <canvas id="teachersMiniChart" height="50"></canvas>
   </div>
 </div>
-
-<!-- ✅ Move this outside -->
-<div class="grid-row">
   <div class="second-row">
-    <div class="analytics-card">
+    <div class="analytics-card-2">
       <div class="card">
-        <h2>Students</h2>
-        <div class="content">
-          <div class="legend">
-            <div class="legend-item"><span class="box blue"></span> Deaf</div>
-            <div class="legend-item"><span class="box light-blue"></span> Speech delay</div>
-            <div class="legend-item"><span class="box yellow"></span> SPED</div>
-            <div class="legend-item"><span class="box light-yellow"></span> Others</div>
-          </div>
-          <div class="chart-container">
-            <canvas id="studentsChart1"></canvas>
-          </div>
-        </div>
+         <h3>Teacher Distribution</h3>
+        <canvas id="teacherBarChart"></canvas>
       </div>
+
+
+    <!-- Line Chart -->
+    <div class="card">
+      <h3>Student Development</h3>
+      <canvas id="developmentChart"></canvas>
+    </div>
+
     </div>
   </div>
 </div>
@@ -48,11 +46,10 @@
       <canvas id="studentsChart"></canvas>
     </div>
 
-    <!-- Line Chart -->
     <div class="card">
-      <h3>Student Development</h3>
-      <canvas id="developmentChart"></canvas>
-    </div>
+       <h3>Enrollment by Program</h3>
+      <canvas id="enrollmentPolarChart"></canvas>
+      </div>
 
     <!-- Progress Bars -->
     <div class="card">
@@ -157,4 +154,61 @@
       }
     }
   });
+
+  // Bar Chart
+new Chart(document.getElementById('teacherBarChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Kinder', 'Grade 1', 'Grade 2', 'Grade 3', 'SPED'],
+    datasets: [{
+      label: 'Number of Teachers',
+      data: [10, 20, 15, 12, 8],
+      backgroundColor: [
+        '#3b82f6',
+        '#60a5fa',
+        '#93c5fd',
+        '#bfdbfe',
+        '#1e40af'
+      ],
+      borderWidth: 1
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: {
+        beginAtZero: true
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
+  }
+});
+
+// Polar Area Chart
+new Chart(document.getElementById('enrollmentPolarChart'), {
+  type: 'polarArea',
+  data: {
+    labels: ['Deaf', 'SPED', 'Speech Delay', 'Others'],
+    datasets: [{
+      data: [120, 90, 70, 40],
+      backgroundColor: ['#3b82f6', '#fbbf24', '#10b981', '#eab308'],
+      borderColor: '#fff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'right'
+      }
+    }
+  }
+});
+
+
 </script>
