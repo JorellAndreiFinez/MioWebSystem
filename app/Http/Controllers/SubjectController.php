@@ -7,11 +7,18 @@ use Kreait\Firebase\Contract\Database;
 use Kreait\Firebase\Factory;
 use Kreait\Firebase\ServiceAccount;
 use Carbon\Carbon;
+use Google\Cloud\Storage\StorageClient;
+use Google\Cloud\Storage\Bucket;
+use Google\Cloud\Storage\StorageObject;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class SubjectController extends Controller
 {
     protected $database;
     protected $tablename;
+    protected $bucketName;
+    protected $storageClient;
+
 
     protected $gradeLevelsTable = 'gradelevel'; // Firebase collection for grade levels
 
@@ -27,7 +34,34 @@ class SubjectController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+         // Create Google Cloud Storage client
+        $this->storageClient = new StorageClient([
+            'keyFilePath' => $path,
+        ]);
+
+        // Your Firebase Storage bucket name
+        $this->bucketName = 'miolms.firebasestorage.app';
     }
+
+    protected function uploadToFirebaseStorage($file, $storagePath)
+        {
+            $bucket = $this->storageClient->bucket($this->bucketName);
+            $fileName = $file->getClientOriginalName();
+            $firebasePath = "{$storagePath}/" . uniqid() . '_' . $fileName;
+
+            $bucket->upload(
+                fopen($file->getRealPath(), 'r'),
+                ['name' => $firebasePath]
+            );
+
+            return [
+                'name' => $fileName,
+                'path' => $firebasePath,
+                'url' => "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($firebasePath) . "?alt=media",
+            ];
+        }
+
 
      // Fetch grade levels from Firebase and display them in the view
      public function showGradeLevels()
@@ -341,158 +375,140 @@ class SubjectController extends Controller
         }
 
     public function addSubject(Request $request, $grade)
-        {
-           // Get current date components
-            $now = now(); // Carbon instance
-            $currentYear = $now->year;
-            $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT); // Ensure month is two digits
-            $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT); // Ensure day is two digits
-            $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+    {
+        // Generate custom announcement key
+        $now = now();
+        $announcementKey = "SUB-ANN" . $now->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
 
-            // Construct the custom key for the announcement (e.g., SUB-ANN20250511XXX)
-            $announcementKey = "SUB-ANN{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+        // Validate request
+        $validatedData = $request->validate([
+            'subject_id' => 'required|string|max:100',
+            'code' => 'required|string|max:50',
+            'title' => 'required|string|max:255',
+            'subjectType' => 'required|in:academics,specialized',
+            'specialized_type' => 'nullable|string|max:50',
+            'teacher_id' => 'required|string|max:50',
+            'section_id' => 'required|string|max:50',
 
-            $validatedData = $request->validate([
-                'subject_id' => 'required|string|max:100',
-                'code' => 'required|string|max:50',
-                'title' => 'required|string|max:255',
-                'subjectType' => 'required|in:academics,specialized',
-                'teacher_id' => 'required|string|max:50',
-                'section_id' => 'required|string|max:50',
-                'modules' => 'nullable|array',
-                'modules.*.title' => 'required|string|max:255',
-                'modules.*.description' => 'nullable|string',
-                'modules.*.file' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip|max:20480',
+            'modules' => 'nullable|array',
+            'modules.*.title' => 'required|string|max:255',
+            'modules.*.description' => 'nullable|string',
+            'modules.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
+            'modules.*.external_link' => 'nullable|url',
 
-                // Announcement
-                'announcement.title' => 'nullable|string|max:255',
-                'announcement.description' => 'nullable|string|max:1000',
-                'announcement.date' => 'nullable|date',
-                'announcement.file' => 'nullable|file|mimes:jpeg,png,jpg,gif,mp4,mov,avi|max:20480',
-                'announcement.link' => 'nullable|url',
-            ]);
+           'announcements' => 'nullable|array',
+            'announcements.*.title' => 'nullable|string|max:255',
+            'announcements.*.description' => 'nullable|string|max:1000',
+            'announcements.*.date' => 'nullable|date',
+            'announcements.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
+            'announcements.*.link' => 'nullable|url',
+        ]);
 
-            $subjectId = $validatedData['subject_id'];
-            $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
-
-            if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
-                return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
-            }
-
-            // Find active school year
-            $schoolYears = $this->database->getReference('schoolyears')->getValue();
-            $activeSchoolYearId = null;
-
-            if (!empty($schoolYears)) {
-                foreach ($schoolYears as $id => $year) {
-                    if (isset($year['status']) && $year['status'] === 'active') {
-                        $activeSchoolYearId = $year['schoolyearid'];
-                        break;
-                    }
-                }
-            }
-
-            if (!$activeSchoolYearId) {
-                return redirect()->back()->with('status', 'No active school year found.')->withInput();
-            }
-
-            // Prepare base data
-            $postData = [
-                'subject_id' => $validatedData['subject_id'],
-                'code' => $validatedData['code'],
-                'title' => $validatedData['title'],
-                'teacher_id' => $validatedData['teacher_id'],
-                'section_id' => $validatedData['section_id'],
-                'schoolyear_id' => $activeSchoolYearId,
-                'subjectType' => $validatedData['subjectType'],
-                'modules' => [],
-                'assignments' => '',
-                'scores' => '',
-                'announcements' => [],
-                'attendance' => '',
-                'people' => [],
-                'posted_by' => 'admin',
-                'date_created' => Carbon::now()->toDateTimeString(),
-                'date_updated' => Carbon::now()->toDateTimeString(),
-            ];
-
-            // Handle module uploads with keys like MOD00, MOD01
-            if (isset($validatedData['modules'])) {
-                $moduleDataArray = [];
-                foreach ($validatedData['modules'] as $index => $module) {
-                    $moduleKey = 'MOD' . str_pad($index, 2, '0', STR_PAD_LEFT); // e.g., MOD00, MOD01
-
-                    $moduleData = [
-                'title' => $module['title'],
-                'description' => $module['description'] ?? '',
-            ];
-
-            if ($request->hasFile("modules.{$index}.file")) {
-                $file = $request->file("modules.{$index}.file");
-                $filePath = $file->storeAs('modules', $file->getClientOriginalName(), 'public');
-                $moduleData['file'] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $filePath,
-                    'url' => asset('storage/' . $filePath),
-                ];
-            }
-
-            $moduleDataArray[$moduleKey] = $moduleData;
+        // Check for duplicate subject ID
+        $subjectId = $validatedData['subject_id'];
+        $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
+        if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
+            return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
         }
 
-        $postData['modules'] = $moduleDataArray;
-    }
-
-
-        // Handle single announcement
-        if (isset($validatedData['announcement']['title']) && isset($validatedData['announcement']['description'])) {
-            $announcementData = [
-                'title' => $validatedData['announcement']['title'],
-                'description' => $validatedData['announcement']['description'],
-                'date_posted' => $validatedData['announcement']['date'] ?? Carbon::now()->toDateTimeString(),
-                'subject_id' => $validatedData['subject_id'],  // Add subject_id here
-            ];
-
-            if ($request->hasFile('announcement.file')) {
-                $file = $request->file('announcement.file');
-                $filePath = $file->storeAs('announcements', $file->getClientOriginalName(), 'public');
-                $announcementData['file'] = [
-                    'name' => $file->getClientOriginalName(),
-                    'path' => $filePath,
-                    'url' => asset('storage/' . $filePath),
-                ];
-            }
-
-            if (!empty($validatedData['announcement']['link'])) {
-                $announcementData['link'] = $validatedData['announcement']['link'];
-            }
-
-            // Add the announcement with the custom key
-        $postData['announcements'][$announcementKey] = $announcementData;
+        // Get active school year
+        $schoolYears = $this->database->getReference('schoolyears')->getValue();
+        $activeSchoolYearId = collect($schoolYears)->firstWhere('status', 'active')['schoolyearid'] ?? null;
+        if (!$activeSchoolYearId) {
+            return redirect()->back()->with('status', 'No active school year found.')->withInput();
         }
 
-        // Get section students
-        $sectionRef = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
-        if (isset($sectionRef['students']) && is_array($sectionRef['students'])) {
-            foreach ($sectionRef['students'] as $studentId => $value) {
-                // Now $studentId is the actual ID like STU123456
-                $studentData = $this->database->getReference("users/{$studentId}")->getValue();
-
-                $postData['people'][$studentId] = [
-                    'role' => 'student',
-                    'first_name' => $studentData['fname'] ?? '',
-                    'last_name' => $studentData['lname'] ?? '',
-                ];
-            }
-        }
-
-        // Add teacher to people, keyed by teacher_id
-        $postData['people'][$validatedData['teacher_id']] = [
-            'role' => 'teacher',
+        // Prepare subject data
+        $postData = [
+            'subject_id' => $subjectId,
+            'code' => $validatedData['code'],
+            'title' => $validatedData['title'],
+            'subjectType' => $validatedData['subjectType'],
+            'specialized_type' => $validatedData['specialized_type'] ?? '',
+            'teacher_id' => $validatedData['teacher_id'],
+            'section_id' => $validatedData['section_id'],
+            'schoolyear_id' => $activeSchoolYearId,
+            'modules' => [],
+            'assignments' => '',
+            'scores' => '',
+            'announcements' => [],
+            'attendance' => '',
+            'people' => [],
+            'posted_by' => 'admin',
+            'date_created' => now()->toDateTimeString(),
+            'date_updated' => now()->toDateTimeString(),
         ];
 
+        // Handle modules
+        if (!empty($validatedData['modules'])) {
+            $modules = [];
+            foreach ($validatedData['modules'] as $index => $module) {
+                $moduleKey = 'MOD' . str_pad($index, 2, '0', STR_PAD_LEFT);
+                $moduleData = [
+                    'title' => $module['title'],
+                    'description' => $module['description'] ?? '',
+                    'files' => [],
+                    'external_link' => $module['external_link'] ?? '',
+                ];
 
-        // Save to Firebase
+                // Store multiple files per module
+                if ($request->hasFile("modules.$index.files")) {
+                    foreach ($request->file("modules.$index.files") as $file) {
+                        $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/modules");
+                        $moduleData['files'][] = $uploadInfo;
+
+                    }
+                }
+
+                $modules[$moduleKey] = $moduleData;
+            }
+            $postData['modules'] = $modules;
+        }
+
+        // Handle announcements (multiple)
+        if (!empty($validatedData['announcements'])) {
+            foreach ($validatedData['announcements'] as $index => $announcement) {
+                $key = "SUB-ANN" . now()->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+
+                $announcementData = [
+                    'title' => $announcement['title'] ?? '',
+                    'description' => $announcement['description'] ?? '',
+                    'date_posted' => $announcement['date'] ?? now()->toDateString(),
+                    'subject_id' => $subjectId,
+                    'files' => [],
+                    'link' => $announcement['link'] ?? '',
+                ];
+
+                // Handle file uploads
+                if ($request->hasFile("announcements.$index.files")) {
+                    foreach ($request->file("announcements.$index.files") as $file) {
+                        $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/announcements");
+                        $announcementData['files'][] = $uploadInfo;
+                    }
+                }
+
+                $postData['announcements'][$key] = $announcementData;
+            }
+        }
+
+
+        // Add section students to people
+        $section = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
+        if (isset($section['students']) && is_array($section['students'])) {
+            foreach ($section['students'] as $studentId => $value) {
+                $student = $this->database->getReference("users/{$studentId}")->getValue();
+                $postData['people'][$studentId] = [
+                    'role' => 'student',
+                    'first_name' => $student['fname'] ?? '',
+                    'last_name' => $student['lname'] ?? '',
+                ];
+            }
+        }
+
+        // Add teacher
+        $postData['people'][$validatedData['teacher_id']] = ['role' => 'teacher'];
+
+        // Store in Firebase
         try {
             $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
             return redirect()->route('mio.ViewSubject', ['grade' => $grade])
@@ -501,6 +517,7 @@ class SubjectController extends Controller
             return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
         }
     }
+
 
 
 // DISPLAY EDIT SUBJECT
@@ -613,19 +630,35 @@ class SubjectController extends Controller
 
 
     // Delete subject
+
     public function deleteSubject($grade, $subjectId)
     {
         $path = "subjects/{$grade}/{$subjectId}";
         $delete = $this->database->getReference($path)->remove();
 
+        // Delete related files in Firebase Storage
+        $this->deleteStorageFolder("subjects/{$subjectId}/modules");
+        $this->deleteStorageFolder("subjects/{$subjectId}/announcements");
+
         if ($delete) {
             return redirect()->route('mio.ViewSubject', ['grade' => $grade])
-                            ->with('status', 'Subject deleted successfully.');
+                            ->with('status', 'Subject and related files deleted successfully.');
         } else {
             return redirect()->route('mio.ViewSubject', ['grade' => $grade])
                             ->with('status', 'Failed to delete subject.');
         }
     }
+
+    protected function deleteStorageFolder($folderPath)
+    {
+        $bucket = $this->storageClient->bucket($this->bucketName);
+        $objects = $bucket->objects(['prefix' => $folderPath]);
+
+        foreach ($objects as $object) {
+            $object->delete();
+        }
+    }
+
 
 
 }

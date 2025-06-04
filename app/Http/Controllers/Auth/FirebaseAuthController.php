@@ -270,6 +270,7 @@ class FirebaseAuthController extends Controller
                         'first_name' => $request->first_name,
                         'last_name' => $request->last_name,
                         'role' => 'student',
+                        'schoolyear_id' => $activeSchoolYearId,
                     ]);
                 }
 

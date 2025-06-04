@@ -15,6 +15,7 @@ use Google\Cloud\Storage\StorageClient;
 use Google\Cloud\Storage\Bucket;
 use Google\Cloud\Storage\StorageObject;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Arr;
 
 
 class TeacherController extends Controller
@@ -181,13 +182,13 @@ class TeacherController extends Controller
         $specializedType = $specializedTypeRef->getValue() ?? [];
 
         if($subjectType === 'specialized') {
-            if($specializedType === 'speech') {
-                return view('mio.head.teacher-panel', [
+            return view('mio.head.teacher-panel', [
                 'page' => 'scores',
                 'subject' => $subject,
                 'groupedAttempts' => $groupedAttempts,
+                'subjectType' => $subjectType,
+                'specializedType' => $specializedType,
             ]);
-            }
         } else {
             return view('mio.head.teacher-panel', [
                 'page' => 'scores-academics',
@@ -500,74 +501,75 @@ class TeacherController extends Controller
 
 
     // TEACHER ATTENDANCE
-   public function showAttendance(Request $request, $subjectId)
-    {
-        $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
 
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
+    public function showAttendance(Request $request, $subjectId)
+        {
+            $attendanceDate = $request->input('attendance_date', now()->format('Y-m-d'));
 
-        $subjectData = null;
-        $gradeLevelKey = null;
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
 
-        foreach ($allSubjects as $grade => $subjects) {
-            if (isset($subjects[$subjectId])) {
-                $subjectData = $subjects[$subjectId];
-                $gradeLevelKey = $grade;
-                break;
-            }
-        }
+            $subjectData = null;
+            $gradeLevelKey = null;
 
-        if (!$subjectData) {
-            return response()->json(['error' => 'Subject not found'], 404);
-        }
-
-        // Find attendance ID for the given date if exists
-        $attendanceId = null;
-        $attendanceData = [];
-
-        if (!empty($subjectData['attendance'])) {
-            foreach ($subjectData['attendance'] as $id => $record) {
-                if (($record['date'] ?? '') === $attendanceDate) {
-                    $attendanceId = $id;
-                    $attendanceData = $record;
+            foreach ($allSubjects as $grade => $subjects) {
+                if (isset($subjects[$subjectId])) {
+                    $subjectData = $subjects[$subjectId];
+                    $gradeLevelKey = $grade;
                     break;
                 }
             }
-        }
 
-        // Filter out teachers from the people list
-        $students = [];
-        if (!empty($subjectData['people'])) {
-            foreach ($subjectData['people'] as $personId => $person) {
-                if (
-                    (isset($person['role']) && strtolower($person['role']) === 'student') ||
-                    (!isset($person['role']) && !isset($person['teacher_id'])) // maybe treat as student if no role and no teacher_id
-                ) {
-                    $students[$personId] = $person;
+            if (!$subjectData) {
+                return response()->json(['error' => 'Subject not found'], 404);
+            }
+
+            // Find attendance ID for the given date if exists
+            $attendanceId = null;
+            $attendanceData = [];
+
+            if (!empty($subjectData['attendance'])) {
+                foreach ($subjectData['attendance'] as $id => $record) {
+                    if (($record['date'] ?? '') === $attendanceDate) {
+                        $attendanceId = $id;
+                        $attendanceData = $record;
+                        break;
+                    }
                 }
             }
+
+            // Filter out teachers from the people list
+            $students = [];
+            if (!empty($subjectData['people'])) {
+                foreach ($subjectData['people'] as $personId => $person) {
+                    if (
+                        (isset($person['role']) && strtolower($person['role']) === 'student') ||
+                        (!isset($person['role']) && !isset($person['teacher_id'])) // maybe treat as student if no role and no teacher_id
+                    ) {
+                        $students[$personId] = $person;
+                    }
+                }
+            }
+
+
+
+
+            foreach ($subjectData['people'] as $personId => $person) {
+                Log::info("Person role: " . ($person['role'] ?? 'no role'));
+            }
+
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'attendance',
+                'subjectId' => $subjectId,
+                'attendanceId' => $attendanceId,
+                'attendance' => $attendanceData,
+                'subject' => $subjectData,
+                'people' => $students,
+                'attendanceDate' => $attendanceDate,
+                'gradeLevelKey' => $gradeLevelKey,
+            ]);
         }
-
-
-
-
-        foreach ($subjectData['people'] as $personId => $person) {
-            Log::info("Person role: " . ($person['role'] ?? 'no role'));
-        }
-
-
-        return view('mio.head.teacher-panel', [
-            'page' => 'attendance',
-            'subjectId' => $subjectId,
-            'attendanceId' => $attendanceId,
-            'attendance' => $attendanceData,
-            'subject' => $subjectData,
-            'people' => $students,
-            'attendanceDate' => $attendanceDate,
-            'gradeLevelKey' => $gradeLevelKey,
-        ]);
-    }
 
     public function updateAttendance(Request $request, $subjectId)
     {
@@ -669,44 +671,44 @@ class TeacherController extends Controller
 
         // TEACHER QUIZZES
         public function showQuizzes($subjectId)
-    {
-        // Find grade level key
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
-        $gradeLevelKey = null;
-        $matchedSubject = null;
+        {
+            // Find grade level key
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
 
-        foreach ($allSubjects as $key => $subjects) {
-            foreach ($subjects as $subject) {
-                if ($subject['subject_id'] === $subjectId) {
-                    $gradeLevelKey = $key;
-                    $matchedSubject = $subject;
-                    break 2;
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
                 }
             }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // Fetch quizzes
+            $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+            $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+            $quizzes = [];
+            foreach ($rawQuizzes as $key => $quiz) {
+                $quiz['id'] = $key;
+                $quizzes[] = $quiz;
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'quiz',
+                'quizzes' => $quizzes,
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+            ]);
         }
-
-        if (!$gradeLevelKey || !$matchedSubject) {
-            return abort(404, 'Subject not found.');
-        }
-
-        // Fetch quizzes
-        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
-        $rawQuizzes = $quizzesRef->getValue() ?? [];
-
-        $quizzes = [];
-        foreach ($rawQuizzes as $key => $quiz) {
-            $quiz['id'] = $key;
-            $quizzes[] = $quiz;
-        }
-
-        return view('mio.head.teacher-panel', [
-            'page' => 'quiz',
-            'quizzes' => $quizzes,
-            'subjectId' => $subjectId,
-            'subject' => $matchedSubject,
-        ]);
-    }
 
 
     public function addAcadsQuiz($subjectId)
@@ -739,187 +741,187 @@ class TeacherController extends Controller
     }
 
    public function storeQuiz(Request $request, $subjectId)
-{
-    // Step 1: Find gradeLevelKey and subjectKey
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
+    {
+        // Step 1: Find gradeLevelKey and subjectKey
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
 
-    $gradeLevelKey = null;
-    $subjectKey = null;
+        $gradeLevelKey = null;
+        $subjectKey = null;
 
-    foreach ($allSubjects as $gradeKey => $subjects) {
-        foreach ($subjects as $key => $subjectData) {
-            if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
-                $gradeLevelKey = $gradeKey;
-                $subjectKey = $key;
-                break 2;
-            }
-        }
-    }
-
-    if (!$gradeLevelKey || !$subjectKey) {
-        return back()->with('error', 'Subject not found.');
-    }
-
-    // Step 2: Validate request input
-    $request->validate([
-        'quiz.title' => 'required|string|max:255',
-        'quiz.description' => 'nullable|string',
-        'quiz.publish_date' => 'required|date',
-        'quiz.start_time' => 'required',
-        'quiz.no_deadline' => 'nullable|boolean',
-        'quiz.deadline_date' => 'nullable|required_without:quiz.no_deadline|date',
-        'quiz.end_time' => 'nullable|required_without:quiz.no_deadline',
-        'quiz.time_limit' => 'nullable|integer|min:0',
-        'quiz.no_time_limit' => 'nullable|boolean',
-        'quiz.total_points' => 'required|integer|min:0',
-        'quiz.attempts' => 'required|integer|min:1',
-        'quiz.one_question_at_a_time' => 'nullable|boolean',
-        'quiz.can_go_back' => 'nullable|boolean',
-        'quiz.show_correct_answers' => 'nullable|boolean',
-        'questions' => 'required|array',
-        'questions.*.question' => 'required|string',
-        'questions.*.type' => 'required|string|in:multiple_choice,essay,file_upload,fill_blank,dropdown',
-        'questions.*.options' => 'sometimes|array',
-        'questions.*.options.*' => 'string',
-        'questions.*.points' => 'required|numeric|min:0.01',
-    ]);
-
-
-    $quizData = $request->input('quiz');
-    $questions = $request->input('questions');
-
-    $noDeadline = isset($quizData['no_deadline']) && $quizData['no_deadline'];
-
-        if ($noDeadline) {
-            $quizData['deadline_date'] = '';
-            $quizData['end_time'] = '';
-        }
-
-
-    // Additional validation: if one of deadline_date or end_time is filled, the other must be required
-    $deadlineDate = $request->input('quiz.deadline_date');
-    $endTime = $request->input('quiz.end_time');
-
-    if (($deadlineDate && !$endTime) || (!$deadlineDate && $endTime)) {
-        return back()
-            ->withInput()
-            ->withErrors(['deadline' => 'Both Deadline Date and End Time are required if either is provided.']);
-    }
-
-    // Step 3: Generate unique quiz ID
-    $today = Carbon::now()->format('Ymd');
-    $prefix = 'QU' . $today;
-
-    $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes");
-    $existingQuizzes = $quizzesRef->getValue() ?? [];
-
-    $maxNumber = 0;
-    foreach (array_keys($existingQuizzes) as $existingId) {
-        if (Str::startsWith($existingId, $prefix)) {
-            $numberPart = substr($existingId, strlen($prefix), 3);
-            if (ctype_digit($numberPart)) {
-                $num = (int)$numberPart;
-                if ($num > $maxNumber) {
-                    $maxNumber = $num;
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subjectData) {
+                if (isset($subjectData['subject_id']) && $subjectData['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
                 }
             }
         }
-    }
 
-    $newNumber = $maxNumber + 1;
-    $quizId = $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
-
-    // Step 4: Build people (students)
-    $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/people");
-    $students = $studentsRef->getValue() ?? [];
-
-    $people = [];
-    foreach ($students as $studentId => $studentInfo) {
-        $people[$studentId] = [
-            'name' => trim(($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? '')),
-            'attempts' => [],
-            'latest_score' => null,
-            'latest_submitted_at' => null,
-            'comments' => '',
-            'status' => 'not_started',
-            'total_student_attempts' => 0,
-        ];
-    }
-
-    // Step 5: Handle optional file upload
-    $fileUrl = null;
-    if ($request->hasFile('quiz_file') && $request->file('quiz_file')->isValid()) {
-        $file = $request->file('quiz_file');
-        $path = $file->store("public/quiz_files");
-        $fileUrl = asset(str_replace('public', 'storage', $path));
-    }
-
-    // Step 6: Determine time limit
-    $timeLimit = isset($quizData['time_limit']) ? (int)$quizData['time_limit'] : 0;
-    $noTimeLimit = $timeLimit === 0;
-
-    // ✅ Step 7: Build questions array with UUIDs, handling all types
-    $questionMap = [];
-    foreach ($questions as $q) {
-        $questionId = (string) Str::uuid();
-
-        $data = [
-            'question' => $q['question'],
-            'type' => $q['type'],
-            'points' => (float) $q['points'],
-        ];
-
-        // Add options only for types that support it
-        if (in_array($q['type'], ['multiple_choice', 'dropdown', 'fill_blank'])) {
-            $data['options'] = $q['options'] ?? [];
+        if (!$gradeLevelKey || !$subjectKey) {
+            return back()->with('error', 'Subject not found.');
         }
 
-        // Add answer only if provided (optional for file_upload and essay)
-        if (isset($q['answer'])) {
-            $data['answer'] = $q['answer'];
-        } else {
-            // Optional: initialize answer as empty string for consistency
-            $data['answer'] = '';
+        // Step 2: Validate request input
+        $request->validate([
+            'quiz.title' => 'required|string|max:255',
+            'quiz.description' => 'nullable|string',
+            'quiz.publish_date' => 'required|date',
+            'quiz.start_time' => 'required',
+            'quiz.no_deadline' => 'nullable|boolean',
+            'quiz.deadline_date' => 'nullable|required_without:quiz.no_deadline|date',
+            'quiz.end_time' => 'nullable|required_without:quiz.no_deadline',
+            'quiz.time_limit' => 'nullable|integer|min:0',
+            'quiz.no_time_limit' => 'nullable|boolean',
+            'quiz.total_points' => 'required|integer|min:0',
+            'quiz.attempts' => 'required|integer|min:1',
+            'quiz.one_question_at_a_time' => 'nullable|boolean',
+            'quiz.can_go_back' => 'nullable|boolean',
+            'quiz.show_correct_answers' => 'nullable|boolean',
+            'questions' => 'required|array',
+            'questions.*.question' => 'required|string',
+            'questions.*.type' => 'required|string|in:multiple_choice,essay,file_upload,fill_blank,dropdown',
+            'questions.*.options' => 'sometimes|array',
+            'questions.*.options.*' => 'string',
+            'questions.*.points' => 'required|numeric|min:0.01',
+        ]);
+
+
+        $quizData = $request->input('quiz');
+        $questions = $request->input('questions');
+
+        $noDeadline = isset($quizData['no_deadline']) && $quizData['no_deadline'];
+
+            if ($noDeadline) {
+                $quizData['deadline_date'] = '';
+                $quizData['end_time'] = '';
+            }
+
+
+        // Additional validation: if one of deadline_date or end_time is filled, the other must be required
+        $deadlineDate = $request->input('quiz.deadline_date');
+        $endTime = $request->input('quiz.end_time');
+
+        if (($deadlineDate && !$endTime) || (!$deadlineDate && $endTime)) {
+            return back()
+                ->withInput()
+                ->withErrors(['deadline' => 'Both Deadline Date and End Time are required if either is provided.']);
         }
 
-        $questionMap[$questionId] = $data;
-    }
+        // Step 3: Generate unique quiz ID
+        $today = Carbon::now()->format('Ymd');
+        $prefix = 'QU' . $today;
 
-    // Step 8: Build final quiz payload
-    $quizPayload = [
-        'quiz_id' => $quizId,
-        'title' => $quizData['title'],
-        'description' => $quizData['description'] ?? '',
-        'publish_date' => $quizData['publish_date'],
-        'start_time' => $quizData['start_time'],
-        'deadline_date' => $quizData['deadline_date'] ?? null,
-        'end_time' => $quizData['end_time'] ?? null,
-        'time_limit' => $timeLimit,
-        'no_time_limit' => $noTimeLimit,
-        'total_points' => (int) $quizData['total_points'],
-        'attempts' => (int) $quizData['attempts'],
-        'access_code' => $quizData['access_code'] ?? '',
-        'one_question_at_a_time' => isset($quizData['one_question_at_a_time']),
-        'can_go_back' => isset($quizData['can_go_back']),
-        'show_correct_answers' => isset($quizData['show_correct_answers']),
-        'created_at' => now()->toDateTimeString(),
-        'questions' => $questionMap,
-        'people' => $people,
-    ];
+        $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes");
+        $existingQuizzes = $quizzesRef->getValue() ?? [];
 
-    if ($fileUrl) {
-        $quizPayload['file_url'] = $fileUrl;
-    }
+        $maxNumber = 0;
+        foreach (array_keys($existingQuizzes) as $existingId) {
+            if (Str::startsWith($existingId, $prefix)) {
+                $numberPart = substr($existingId, strlen($prefix), 3);
+                if (ctype_digit($numberPart)) {
+                    $num = (int)$numberPart;
+                    if ($num > $maxNumber) {
+                        $maxNumber = $num;
+                    }
+                }
+            }
+        }
 
-    // Step 9: Save to Firebase
-    $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
-    $quizRef->set($quizPayload);
+        $newNumber = $maxNumber + 1;
+        $quizId = $prefix . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
 
-    // Step 10: Redirect
-    return redirect()->route('mio.subject-teacher.quiz', $subjectId)
-        ->with('success', 'Quiz successfully created.');
-    }
+        // Step 4: Build people (students)
+        $studentsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/people");
+        $students = $studentsRef->getValue() ?? [];
+
+        $people = [];
+        foreach ($students as $studentId => $studentInfo) {
+            $people[$studentId] = [
+                'name' => trim(($studentInfo['first_name'] ?? '') . ' ' . ($studentInfo['last_name'] ?? '')),
+                'attempts' => [],
+                'latest_score' => null,
+                'latest_submitted_at' => null,
+                'comments' => '',
+                'status' => 'not_started',
+                'total_student_attempts' => 0,
+            ];
+        }
+
+        // Step 5: Handle optional file upload
+        $fileUrl = null;
+        if ($request->hasFile('quiz_file') && $request->file('quiz_file')->isValid()) {
+            $file = $request->file('quiz_file');
+            $path = $file->store("public/quiz_files");
+            $fileUrl = asset(str_replace('public', 'storage', $path));
+        }
+
+        // Step 6: Determine time limit
+        $timeLimit = isset($quizData['time_limit']) ? (int)$quizData['time_limit'] : 0;
+        $noTimeLimit = $timeLimit === 0;
+
+        // ✅ Step 7: Build questions array with UUIDs, handling all types
+        $questionMap = [];
+        foreach ($questions as $q) {
+            $questionId = (string) Str::uuid();
+
+            $data = [
+                'question' => $q['question'],
+                'type' => $q['type'],
+                'points' => (float) $q['points'],
+            ];
+
+            // Add options only for types that support it
+            if (in_array($q['type'], ['multiple_choice', 'dropdown', 'fill_blank'])) {
+                $data['options'] = $q['options'] ?? [];
+            }
+
+            // Add answer only if provided (optional for file_upload and essay)
+            if (isset($q['answer'])) {
+                $data['answer'] = $q['answer'];
+            } else {
+                // Optional: initialize answer as empty string for consistency
+                $data['answer'] = '';
+            }
+
+            $questionMap[$questionId] = $data;
+        }
+
+        // Step 8: Build final quiz payload
+        $quizPayload = [
+            'quiz_id' => $quizId,
+            'title' => $quizData['title'],
+            'description' => $quizData['description'] ?? '',
+            'publish_date' => $quizData['publish_date'],
+            'start_time' => $quizData['start_time'],
+            'deadline_date' => $quizData['deadline_date'] ?? null,
+            'end_time' => $quizData['end_time'] ?? null,
+            'time_limit' => $timeLimit,
+            'no_time_limit' => $noTimeLimit,
+            'total_points' => (int) $quizData['total_points'],
+            'attempts' => (int) $quizData['attempts'],
+            'access_code' => $quizData['access_code'] ?? '',
+            'one_question_at_a_time' => isset($quizData['one_question_at_a_time']),
+            'can_go_back' => isset($quizData['can_go_back']),
+            'show_correct_answers' => isset($quizData['show_correct_answers']),
+            'created_at' => now()->toDateTimeString(),
+            'questions' => $questionMap,
+            'people' => $people,
+        ];
+
+        if ($fileUrl) {
+            $quizPayload['file_url'] = $fileUrl;
+        }
+
+        // Step 9: Save to Firebase
+        $quizRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectKey}/quizzes/{$quizId}");
+        $quizRef->set($quizPayload);
+
+        // Step 10: Redirect
+        return redirect()->route('mio.subject-teacher.quiz', $subjectId)
+            ->with('success', 'Quiz successfully created.');
+        }
 
 
     public function deleteQuiz($subjectId, $quizId)
@@ -1178,47 +1180,48 @@ class TeacherController extends Controller
     }
 
     public function updateAttempt(Request $request, $subjectId, $quizId)
-{
-    $studentId = $request->input('student_id');
-    $attemptId = $request->input('attempt_id');
-    $score = $request->input('score');
-    $answers = $request->input('answers');
+    {
+        $studentId = $request->input('student_id');
+        $attemptId = $request->input('attempt_id');
+        $score = $request->input('score');
+        $answers = $request->input('answers');
 
-    // Validate data here as needed
+        // Validate data here as needed
 
-    // Build updated data structure
-    $updatedAttempt = [
-        'score' => $score,
-        'answers' => [],
-        // Other fields like submitted_at, total_points should be preserved or recalculated
-    ];
-
-    foreach ($answers as $qid => $answerData) {
-        $updatedAttempt['answers'][$qid] = [
-            'student_answer' => $answerData['student_answer'],
-            'points' => floatval($answerData['points']),
-            // You might want to keep correct_answer and question from old data
+        // Build updated data structure
+        $updatedAttempt = [
+            'score' => $score,
+            'answers' => [],
+            // Other fields like submitted_at, total_points should be preserved or recalculated
         ];
+
+        foreach ($answers as $qid => $answerData) {
+            $updatedAttempt['answers'][$qid] = [
+                'student_answer' => $answerData['student_answer'],
+                'points' => floatval($answerData['points']),
+                // You might want to keep correct_answer and question from old data
+            ];
+        }
+
+        // Fetch existing attempt data from Firebase (optional)
+
+        // Update the Firebase document:
+        // Use your Firebase PHP SDK or REST API to update the student's attempt at:
+        // path like: quizzes/{quizId}/people/{studentId}/ATTM{attemptId}
+
+        // Example (pseudocode):
+        // $firebase = app('firebase.database');
+        // $ref = $firebase->getReference("quizzes/{$quizId}/people/{$studentId}/{$attemptId}");
+        // $ref->update($updatedAttempt);
+
+        // Redirect back with success message
+        return redirect()->back()->with('message', 'Attempt updated successfully.');
     }
 
-    // Fetch existing attempt data from Firebase (optional)
-
-    // Update the Firebase document:
-    // Use your Firebase PHP SDK or REST API to update the student's attempt at:
-    // path like: quizzes/{quizId}/people/{studentId}/ATTM{attemptId}
-
-    // Example (pseudocode):
-    // $firebase = app('firebase.database');
-    // $ref = $firebase->getReference("quizzes/{$quizId}/people/{$studentId}/{$attemptId}");
-    // $ref->update($updatedAttempt);
-
-    // Redirect back with success message
-    return redirect()->back()->with('message', 'Attempt updated successfully.');
-}
 
 
 
-// TEACHER ASSIGNMENTS
+    // TEACHER ASSIGNMENTS
 
     public function showAssignment($subjectId)
     {
@@ -1386,7 +1389,8 @@ class TeacherController extends Controller
                         ->with('success', 'Assignment deleted successfully.');
     }
 
-// ASSIGNMENT DETAILS
+
+    // ASSIGNMENT DETAILS
     public function showAssignmentDetails($subjectId, $assignmentId)
     {
         // Step 1: Find grade level and subjectKey
@@ -1526,94 +1530,94 @@ class TeacherController extends Controller
     }
 
     public function editAssignment(Request $request, $subjectId, $assignmentId)
-{
-    $validated = $request->validate([
-        'title' => 'required|string',
-        'description' => 'nullable|string',
-        'deadline' => 'nullable|date',
-        'availability_start' => 'required',
-        'availability_end' => 'nullable',
-        'points_total' => 'required|integer',
-        'attempts' => 'required|integer',
-        'publish_date' => 'required|date',
-        'attachments' => 'nullable|array',
-        'attachments.*.link' => 'nullable|url',
-        'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
-    ]);
+    {
+        $validated = $request->validate([
+            'title' => 'required|string',
+            'description' => 'nullable|string',
+            'deadline' => 'nullable|date',
+            'availability_start' => 'required',
+            'availability_end' => 'nullable',
+            'points_total' => 'required|integer',
+            'attempts' => 'required|integer',
+            'publish_date' => 'required|date',
+            'attachments' => 'nullable|array',
+            'attachments.*.link' => 'nullable|url',
+            'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
+        ]);
 
-    $subjectsRef = $this->database->getReference('subjects');
-    $allSubjects = $subjectsRef->getValue() ?? [];
+        $subjectsRef = $this->database->getReference('subjects');
+        $allSubjects = $subjectsRef->getValue() ?? [];
 
-    $gradeLevelKey = null;
-    $subjectKey = null;
+        $gradeLevelKey = null;
+        $subjectKey = null;
 
-    // Find subject location
-    foreach ($allSubjects as $gradeKey => $subjects) {
-        foreach ($subjects as $key => $subject) {
-            if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
-                $gradeLevelKey = $gradeKey;
-                $subjectKey = $key;
-                break 2;
+        // Find subject location
+        foreach ($allSubjects as $gradeKey => $subjects) {
+            foreach ($subjects as $key => $subject) {
+                if (isset($subject['subject_id']) && $subject['subject_id'] === $subjectId) {
+                    $gradeLevelKey = $gradeKey;
+                    $subjectKey = $key;
+                    break 2;
+                }
             }
         }
-    }
 
-    if (!$gradeLevelKey || !$subjectKey) {
-        return abort(404, 'Subject not found.');
-    }
-
-    $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
-    $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
-
-    // Handle attachments
-    $attachments = [];
-
-    if ($request->has('attachments')) {
-        foreach ($request->attachments as $index => $attachment) {
-            $fileUrl = null;
-
-            if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
-                $file = $request->file("attachments.$index.file");
-                $path = $file->store("assignments", 'public');
-                $fileUrl = asset("storage/" . $path);
-            } elseif (!empty($attachment['file'])) {
-                $fileUrl = $attachment['file']; // Keep existing file URL
-            }
-
-            $attachments[] = [
-                'link' => $attachment['link'] ?? '',
-                'file' => $fileUrl ?? '',
-            ];
+        if (!$gradeLevelKey || !$subjectKey) {
+            return abort(404, 'Subject not found.');
         }
-    } elseif (isset($existingAssignment['attachments'])) {
-        $attachments = $existingAssignment['attachments']; // Keep existing if no update
+
+        $assignmentPath = "subjects/{$gradeLevelKey}/{$subjectKey}/assignments/{$assignmentId}";
+        $existingAssignment = $this->database->getReference($assignmentPath)->getValue();
+
+        // Handle attachments
+        $attachments = [];
+
+        if ($request->has('attachments')) {
+            foreach ($request->attachments as $index => $attachment) {
+                $fileUrl = null;
+
+                if (isset($attachment['file']) && $request->hasFile("attachments.$index.file")) {
+                    $file = $request->file("attachments.$index.file");
+                    $path = $file->store("assignments", 'public');
+                    $fileUrl = asset("storage/" . $path);
+                } elseif (!empty($attachment['file'])) {
+                    $fileUrl = $attachment['file']; // Keep existing file URL
+                }
+
+                $attachments[] = [
+                    'link' => $attachment['link'] ?? '',
+                    'file' => $fileUrl ?? '',
+                ];
+            }
+        } elseif (isset($existingAssignment['attachments'])) {
+            $attachments = $existingAssignment['attachments']; // Keep existing if no update
+        }
+
+        $deadline = $validated['deadline'] ?? null;
+        $endtime = $validated['availability_end'] ?? null;
+
+        $updatedData = [
+            'title' => $validated['title'],
+            'description' => $validated['description'] ?? '',
+            'deadline' => $deadline ?? '',
+            'availability' => [
+                'start' => $validated['availability_start'],
+                'end' => $endtime ?? '',
+            ],
+            'total' => $validated['points_total'],
+            'attempts' => $validated['attempts'],
+            'attachments' => $attachments,
+            'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+            // We retain 'people' and other fields as-is
+        ];
+
+        // Update assignment data
+        $this->database->getReference($assignmentPath)->update($updatedData);
+
+        return redirect()->back()->with('success', 'Assignment updated successfully.');
     }
 
-    $deadline = $validated['deadline'] ?? null;
-    $endtime = $validated['availability_end'] ?? null;
-
-    $updatedData = [
-        'title' => $validated['title'],
-        'description' => $validated['description'] ?? '',
-        'deadline' => $deadline ?? '',
-        'availability' => [
-            'start' => $validated['availability_start'],
-            'end' => $endtime ?? '',
-        ],
-        'total' => $validated['points_total'],
-        'attempts' => $validated['attempts'],
-        'attachments' => $attachments,
-        'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
-        // We retain 'people' and other fields as-is
-    ];
-
-    // Update assignment data
-    $this->database->getReference($assignmentPath)->update($updatedData);
-
-    return redirect()->back()->with('success', 'Assignment updated successfully.');
-}
-
-// ANNOUNCEMENTS
+    // ANNOUNCEMENTS
 
     public function showSubjectAnnouncements($subjectId)
     {
@@ -1666,7 +1670,7 @@ class TeacherController extends Controller
         ]);
     }
 
-    // Show specific announcement details
+    // ANNOUNCEMENT BODY
     public function showAnnouncementDetails($subjectId, $announcementId)
     {
         // Fetch active school year
@@ -1690,7 +1694,6 @@ class TeacherController extends Controller
                 if ($item['subject_id'] === $subjectId) {
                     $subject = $item;
                     $gradeLevelKey = $gradeLevel;
-                    // Find the announcement by ID
                     if (isset($item['announcements'][$announcementId])) {
                         $announcement = $item['announcements'][$announcementId];
                     }
@@ -1704,6 +1707,45 @@ class TeacherController extends Controller
                 ->with('error', 'Announcement not found.');
         }
 
+        // ✅ SAFELY handle files
+        $imageUrls = [];
+
+        if (isset($announcement['files']) && is_array($announcement['files'])) {
+            foreach ($announcement['files'] as $file) {
+                // Case 1: Direct string URL
+                if (is_string($file) && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file)) {
+                    $imageUrls[] = $file;
+                    continue;
+                }
+
+                // Case 2: Structured array
+                if (is_array($file)) {
+                    if (!empty($file['url']) && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $file['url'])) {
+                        $imageUrls[] = $file['url'];
+                        continue;
+                    }
+
+                    $path = $file['path'] ?? null;
+
+                    if (!$path && !empty($announcementId) && !empty($file['name'])) {
+                        $path = "subjects/{$subjectId}/announcements/{$announcementId}/" . $file['name'];
+                    }
+
+                    if ($path && preg_match('/\.(jpg|jpeg|png|gif|webp)$/i', $path)) {
+                        try {
+                            $bucket = $this->storageClient->bucket($this->bucketName);
+                            $object = $bucket->object($path);
+
+                            if ($object->exists()) {
+                                $imageUrls[] = $object->signedUrl(new \DateTime('+1 hour'));
+                            }
+                        } catch (\Exception $e) {
+                            logger()->error("Error generating signed URL: " . $e->getMessage());
+                        }
+                    }
+                }
+            }
+        }
 
         return view('mio.head.teacher-panel', [
             'page' => 'announcement-body',
@@ -1711,69 +1753,106 @@ class TeacherController extends Controller
             'announcement' => $announcement,
             'announcementId' => $announcementId,
             'subjectId' => $subjectId,
+            'imageUrls' => $imageUrls,
         ]);
     }
 
     public function editAnnouncement(Request $request, $subjectId, $announcementId)
     {
-
+        // Validate request
         $validated = $request->validate([
-        'title' => 'required|string|max:255',
-        'date_posted' => 'required|date',
-        'description' => 'required|string',
-        'link' => 'nullable|url',
-    ]);
+            'announcements.0.title' => 'required|string|max:255',
+            'announcements.0.date' => 'required|date',
+            'announcements.0.description' => 'required|string',
+            'announcements.0.link' => 'nullable|url',
+            'announcements.0.files.*' => 'nullable|file|max:10240',
+            'announcements.0.existing_files' => 'nullable|array',
+            'announcements.0.existing_files.*' => 'nullable|string', // store file names here, not URLs!
+        ]);
 
-    // Fetch the subjects list
-    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+        $announcementData = $validated['announcements'][0];
 
-    $found = false;
-    $gradeLevelKey = null;
+        // Step 1: Locate subject
+        $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+        $gradeLevelKey = null;
 
-    // Find the grade level where the subject exists
-    foreach ($subjects as $gradeLevel => $subjectList) {
-        if (isset($subjectList[$subjectId])) {
-            $gradeLevelKey = $gradeLevel;
-            $found = true;
-            break;
+        foreach ($subjects as $gradeLevel => $subjectList) {
+            if (isset($subjectList[$subjectId])) {
+                $gradeLevelKey = $gradeLevel;
+                break;
+            }
         }
+
+        if (!$gradeLevelKey) {
+            return redirect()->back()->with('error', 'Subject not found.');
+        }
+
+        $announcementPath = "subjects/{$gradeLevelKey}/{$subjectId}/announcements/{$announcementId}";
+        $announcementRef = $this->database->getReference($announcementPath);
+
+        // Step 2: Fetch current announcement data
+        $existingData = $announcementRef->getValue() ?? [];
+        $existingFiles = $existingData['files'] ?? [];
+
+        // Step 3: Update basic fields
+        $updateData = [
+            'title' => $announcementData['title'],
+            'date_posted' => $announcementData['date'],
+            'description' => $announcementData['description'],
+            'link' => $announcementData['link'] ?? '',
+            'subject_id' => $subjectId,
+        ];
+
+        $bucket = $this->storageClient->bucket($this->bucketName);
+        $finalFiles = [];
+
+        // Step 4: Retain selected files based on name
+        $retainedNames = $announcementData['existing_files'] ?? [];
+
+        foreach ($existingFiles as $file) {
+            if (in_array($file['name'], $retainedNames)) {
+                $finalFiles[] = $file;
+            } else {
+                // Delete from Firebase Storage
+                if (isset($file['path'])) {
+                    $object = $bucket->object($file['path']);
+                    if ($object->exists()) {
+                        $object->delete();
+                    }
+                }
+            }
+        }
+
+        // Step 5: Upload new files
+        if ($request->hasFile('announcements.0.files')) {
+            foreach ($request->file('announcements.0.files') as $file) {
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $filePath = "subjects/{$subjectId}/announcements/{$announcementId}/" . $filename;
+
+                $bucket->upload(
+                    file_get_contents($file->getRealPath()),
+                    ['name' => $filePath]
+                );
+
+                $object = $bucket->object($filePath);
+                $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
+
+                $finalFiles[] = [
+                    'name' => $filename,
+                    'path' => $filePath,
+                    'url' => $object->signedUrl(new \DateTime('+1 year')),
+                ];
+            }
+        }
+
+        // Step 6: Save new files list
+        $updateData['files'] = $finalFiles;
+        $announcementRef->update($updateData);
+
+        return back()->with('success', 'Announcement updated successfully.');
     }
 
-    if (!$found || !$gradeLevelKey) {
-        return redirect()->back()->with('error', 'Subject not found.');
-    }
 
-    // Build the Firebase path to the announcement
-    $announcementPath = "subjects/{$gradeLevelKey}/{$subjectId}/announcements/{$announcementId}";
-
-    // Update announcement data
-    $updateData = [
-        'title' => $validated['title'],
-        'date_posted' => $validated['date_posted'],
-        'description' => $validated['description'],
-        'link' => $validated['link'] ?? '',
-        'subject_id' => $subjectId,
-    ];
-
-    if ($request->hasFile('image_file')) {
-    $file = $request->file('image_file');
-    $filename = time() . '_' . $file->getClientOriginalName();
-    $path = $file->storeAs('announcement_images', $filename, 'public');
-
-        // Store public URL of the uploaded file
-        $updateData['link'] = asset('storage/' . $path);
-    } elseif (!empty($validated['link'])) {
-        $updateData['link'] = $validated['link'];
-    } else {
-        $updateData['link'] = '';
-    }
-
-
-    $this->database->getReference($announcementPath)->update($updateData);
-
-    return redirect()->route('mio.subject-teacher.announcement', ['subjectId' => $subjectId])
-        ->with('success', 'Announcement updated successfully.');
-    }
 
 
     public function storeReply(Request $request, $subjectId, $announcementId)

@@ -126,7 +126,7 @@ class SectionController extends Controller
         'teacherid' => $validated['teacherid'] ?? null,
         'section_grade' => $validated['section_grade'],
         'students' => [],  // Initialize empty students array
-        'schoolyearid' => $activeSchoolYear,  // Include active school year
+        'schoolyear_id' => $activeSchoolYear,  // Include active school year
         'created_at' => Carbon::now()->toDateTimeString(),
         'updated_at' => Carbon::now()->toDateTimeString(),
     ];
@@ -232,6 +232,7 @@ class SectionController extends Controller
             'teacherid' => $validated['teacherid'] ?? null,
             'section_grade' => $validated['section_grade'],
             'students' => $sectionsRef[$oldKey]['students'] ?? [],  // Keep existing students array
+            'schoolyear_id' => $sectionsRef[$oldKey]['schoolyear_id'],
             'created_at' => $sectionsRef[$oldKey]['created_at'] ?? Carbon::now()->toDateTimeString(),
             'updated_at' => Carbon::now()->toDateTimeString(),
             'schoolyearid' => $activeSchoolYear,

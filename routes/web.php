@@ -414,12 +414,19 @@ Route::prefix('mio/teacher')->middleware(
 
     Route::get('/settings', [SettingsController::class, 'showSettings'])->name('mio.teacher-settings');
 
+// ------------- SUBJECT
     Route::prefix('subject')->name('mio.subject-teacher.')->group(function () {
 
         Route::get('/{subjectId}', [TeacherController::class, 'showSubject'])->name('show-subject');
 
     // ANNOUNCEMENTS
         Route::get('/{subjectId}/announcements', [TeacherController::class, 'showSubjectAnnouncements'])->name('announcement');
+
+        Route::post('/{subjectId}/announcements/store', [AnnouncementController::class, 'storeTeacherAnnouncement'])->name('announcement-store');
+
+        Route::delete('/{subjectId}/announcement/{announcementId}/delete', [AnnouncementController::class, 'deleteTeacherAnnouncement'])->name('deleteTeacherAnnouncement');
+
+
 
         Route::get('/{subjectId}/announcements/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('announcements-body');
 
