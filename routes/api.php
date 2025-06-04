@@ -47,7 +47,8 @@ Route::middleware([
     // auditory
     Route::post('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startBingoActivity']);
     Route::post('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startMatchingActivity']);
-
+    Route::put('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
+    Route::put('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeMatchingAttempt']);
     //language
     Route::post('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeHomonymActivity']);
     Route::patch('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeHomonymsAttempt']);
@@ -72,13 +73,18 @@ Route::middleware([
     Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
 
     //speech
-    Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'getActivityPictureById']);
+    Route::get('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'getActivityPictureById']);
     Route::post('/subject/{subjectId}/specialized/speech', [SpecializedSpeechApi::class, 'createSpeechActivity']);
     Route::post('/subject/{subjectId}/specialized/speech/picture', [SpecializedSpeechApi::class, 'createSpeechPictureActivity']);
     Route::put('/subject/{subjectId}/specialized/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'editSpeechActivity']);
     Route::post('/subject/{subjectId}/specialized/speech/picture/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'editSpeechPictureActivity']);
 
+    // auditory
+    Route::get('/subject/{subjectId}/auditory/auditory/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'getBingoById']);
+    Route::get('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'getMatchingById']);
     Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
+    Route::post('/subject/{subjectId}/specialized/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'editBingoActivity']);
+    Route::post('/subject/{subjectId}/specialized/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'editMatchingActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createMatchingCardsActivity']);
 
 
