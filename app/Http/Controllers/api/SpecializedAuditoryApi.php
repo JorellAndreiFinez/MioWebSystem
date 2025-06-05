@@ -57,7 +57,7 @@ class SpecializedAuditoryApi extends Controller
         try{
 
             $activity = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/auditory/{$difficulty}/{$activityId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
@@ -380,9 +380,8 @@ class SpecializedAuditoryApi extends Controller
             }
 
             $mappedCorrectAnswers = [];
-            foreach ($existingActivity['correct_answers']  ?? [] as $answer) {
-                $key = $answer['image_id'];
-                $answerKeyMap[$key] = true;
+            foreach ($existingActivity['correct_answers'] ?? [] as $image_id) {
+                $mappedCorrectAnswers[$image_id] = true;
             }
 
             $updatedActivity = [];

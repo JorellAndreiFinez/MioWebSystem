@@ -80,7 +80,7 @@ Route::middleware([
     Route::post('/subject/{subjectId}/specialized/speech/picture/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'editSpeechPictureActivity']);
 
     // auditory
-    Route::get('/subject/{subjectId}/auditory/auditory/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'getBingoById']);
+    Route::get('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'getBingoById']);
     Route::get('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'getMatchingById']);
     Route::post('/subject/{subjectId}/specialized/auditory/bingo', [SpecializedAuditoryApi::class, 'createBingoActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'editBingoActivity']);
