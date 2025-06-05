@@ -10,12 +10,15 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>First Name</label>
-                        <input type="text" name="first_name" value="{{ $enrollees['first_name'] }}" readonly />
+                        <input type="text" name="first_name" value="{{ $enrollee['fname'] }}" readonly />
                     </div>
                     <div class="form-group">
                         <label>Last Name</label>
                         <input type="text" name="last_name" value="{{ $enrollee['enrollment_form']['last_name'] }}" readonly />
                     </div>
+                </div>
+
+                 <div class="form-row">
                     <div class="form-group">
                         <label>Gender</label>
                         <input type="text" name="gender" value="{{ $enrollee['enrollment_form']['gender'] }}" readonly />

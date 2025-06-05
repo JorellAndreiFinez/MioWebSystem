@@ -19,16 +19,20 @@ use Kreait\Firebase\Exception\Auth\InvalidArgument;
 use Illuminate\Support\Str;
 use Kreait\Firebase\Storage;
 use Illuminate\Support\Facades\Storage as LocalStorage;
-
+use Google\Cloud\Storage\StorageClient;
+use Google\Cloud\Storage\Bucket;
+use Google\Cloud\Storage\StorageObject;
+use Barryvdh\DomPDF\Facade\Pdf;
 use function Illuminate\Log\log;
 
 class EnrollController extends Controller
 {
     protected $database;
     protected $auth;
-    protected $storage;
-    protected $bucket;
 
+    protected $bucketName;
+    protected $storageClient;
+    
 
 
     public function __construct()
@@ -42,12 +46,32 @@ class EnrollController extends Controller
         $this->database = $factory->createDatabase();
         $this->auth = $factory->createAuth(); // Firebase Auth instance
 
-        $this->storage = (new Factory())
-            ->withServiceAccount(base_path('storage/firebase/firebase.json'))
-            ->withDefaultStorageBucket('miolms.firebasestorage.app')
-            ->createStorage();
+          // Create Google Cloud Storage client
+        $this->storageClient = new StorageClient([
+            'keyFilePath' => $path,
+        ]);
 
+        // Your Firebase Storage bucket name
+        $this->bucketName = 'miolms.firebasestorage.app';
     }
+
+     protected function uploadToFirebaseStorage($file, $storagePath)
+        {
+            $bucket = $this->storageClient->bucket($this->bucketName);
+            $fileName = $file->getClientOriginalName();
+            $firebasePath = "{$storagePath}/" . uniqid() . '_' . $fileName;
+
+            $bucket->upload(
+                fopen($file->getRealPath(), 'r'),
+                ['name' => $firebasePath]
+            );
+
+            return [
+                'name' => $fileName,
+                'path' => $firebasePath,
+                'url' => "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($firebasePath) . "?alt=media",
+            ];
+        }
 
 
 
@@ -591,7 +615,11 @@ class EnrollController extends Controller
             return redirect()->route('enroll-login')->with('error', 'Enrollment record not found.');
         }
 
-        $form = $enrollData['enrollment_form'] ?? null;
+        $form = $enrollData['enrollment_form'] ?? [];
+        $form['first_name'] = $enrollData['fname'] ?? '';
+        $form['last_name'] = $enrollData['lname'] ?? '';
+        $form['email'] = $enrollData['email'] ?? '';
+
 
         $status = $enrollData['enroll_status'] ?? 'NotStarted';
 
@@ -607,14 +635,16 @@ class EnrollController extends Controller
     public function submitEnrollmentForm(Request $request)
     {
         Log::info('submitEnrollmentForm called');
-        // Validate input — adjust rules based on your form field names
-        $request->validate([
+
+        try {
+            
+            $request->validate([
             'first_name' => 'required|string',
             'last_name' => 'required|string',
             'gender' => 'required|string',
             'age' => 'required|integer',
             'birthday' => 'required|date',
-            'street' => 'required|string',
+            'address' => 'required|string', // Updated from 'street'
             'barangay' => 'required|string',
             'region' => 'required|string',
             'province' => 'required|string',
@@ -624,8 +654,8 @@ class EnrollController extends Controller
             'emergency_contact' => 'required|string',
             'emergency_name' => 'required|string',
             'previous_school' => 'required|string',
-            'grade_level' => 'required|integer',
-            'medical_history' => 'nullable|string',
+            'previous_grade_level' => 'required|integer', // Updated from 'grade_level'
+            'medical_history' => 'required|string',
             'disability' => 'required|string',
             'hearing_loss' => 'nullable|string',
             'hearing_identity' => 'required|string',
@@ -646,76 +676,75 @@ class EnrollController extends Controller
             'form_137_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
         ]);
 
-        // Get currently logged in user's enrollee ID from session
-    $enrollmentUser = session('enrollment_user');
+        // Enrollee session check
+         $enrollmentUser = session('enrollment_user');
         if (!$enrollmentUser || !isset($enrollmentUser['ID'])) {
             return redirect()->back()->with('error', 'User not logged in.');
         }
         $enrolleeId = $enrollmentUser['ID'];
         Log::info('Enrollee ID: ' . $enrolleeId);
 
-        // Collect form data except files
         $formData = $request->only([
-            'first_name', 'last_name', 'gender', 'age', 'birthday', 'street', 'barangay', 'region',
+            'first_name', 'last_name', 'gender', 'age', 'birthday', 'address', 'barangay', 'region',
             'province', 'city', 'zip_code', 'contact_number', 'emergency_contact', 'emergency_name',
-            'previous_school', 'grade_level', 'medical_history', 'disability', 'hearing_loss',
+            'previous_school', 'previous_grade_level', 'medical_history', 'disability', 'hearing_loss',
             'hearing_identity', 'assistive_devices', 'health_notes'
         ]);
 
-        // Upload files helper
-        $uploadMultipleFiles = function ($files, $folder, $prefix) {
+        // Upload helper using Firebase Storage
+        $uploadMultipleFilesToFirebase = function ($files, $folder) {
             $paths = [];
             foreach ($files as $file) {
-                $filename = time() . '_' . $prefix . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                $file->storeAs('public/enrollment/' . $folder, $filename);
-                $paths[] = 'storage/enrollment/' . $folder . '/' . $filename;
+                $uploadResult = $this->uploadToFirebaseStorage($file, "enrollment/{$folder}");
+                $paths[] = $uploadResult['url'];
             }
             return $paths;
         };
 
-        // Upload proof of payment (single file)
+        // Upload payment proof
         if ($request->hasFile('payment')) {
             $paymentFile = $request->file('payment');
-            $paymentFilename = time() . '_payment.' . $paymentFile->getClientOriginalExtension();
-            $paymentFile->storeAs('public/enrollment/payment', $paymentFilename);
-            $formData['payment_proof_path'] = 'storage/enrollment/payment/' . $paymentFilename;
+            $uploadResult = $this->uploadToFirebaseStorage($paymentFile, "enrollment/payment/{$enrolleeId}");
+            $formData['payment_proof_path'] = $uploadResult['url'];
         }
 
-        // Upload multiple files for each category
+        // Multiple file fields
         if ($request->hasFile('good_moral_files')) {
-            $formData['good_moral_paths'] = $uploadMultipleFiles($request->file('good_moral_files'), 'good_moral', 'goodmoral');
+            $formData['good_moral_paths'] = $uploadMultipleFilesToFirebase($request->file('good_moral_files'), "good_moral/{$enrolleeId}");
         }
 
         if ($request->hasFile('health_certificate_files')) {
-            $formData['health_certificate_paths'] = $uploadMultipleFiles($request->file('health_certificate_files'), 'health_certificate', 'healthcert');
+            $formData['health_certificate_paths'] = $uploadMultipleFilesToFirebase($request->file('health_certificate_files'), "health_certificate/{$enrolleeId}");
         }
 
         if ($request->hasFile('psa_birth_certificate_files')) {
-            $formData['psa_birth_certificate_paths'] = $uploadMultipleFiles($request->file('psa_birth_certificate_files'), 'psa_birth_certificate', 'psa');
+            $formData['psa_birth_certificate_paths'] = $uploadMultipleFilesToFirebase($request->file('psa_birth_certificate_files'), "psa_birth_certificate/{$enrolleeId}");
         }
 
         if ($request->hasFile('form_137_files')) {
-            $formData['form_137_paths'] = $uploadMultipleFiles($request->file('form_137_files'), 'form_137', 'form137');
+            $formData['form_137_paths'] = $uploadMultipleFilesToFirebase($request->file('form_137_files'), "form_137/{$enrolleeId}");
         }
 
-        // Add timestamps
         $formData['submitted_at'] = now()->toDateTimeString();
 
-        // Save the enrollment form data under
-        // enrollment/enrollees/{enrolleeId}/enrollment_form
-        Log::info(session()->all());
+        // Save to Firebase Realtime Database
         $this->database
-            ->getReference('enrollment/enrollees/' . $enrolleeId . '/enrollment_form')
+            ->getReference("enrollment/enrollees/{$enrolleeId}/enrollment_form")
             ->set($formData);
 
-            // Update enroll_status to "Registered"
+        // Set status
         $this->database
-            ->getReference('enrollment/enrollees/' . $enrolleeId . '/enroll_status')
+            ->getReference("enrollment/enrollees/{$enrolleeId}/enroll_status")
             ->set('Registered');
 
-
         return redirect()->back()->with('success', 'Enrollment form submitted successfully!');
+        } catch (\Throwable $e) {
+              Log::error('Enrollment form submission error: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'An error occurred while submitting the form. Please try again.');
+        }
+
     }
+
 
 
 public function logout(Request $request)
@@ -1439,9 +1468,6 @@ public function logout(Request $request)
 
         return redirect()->back()->with('success', 'Question updated successfully!');
     }
-
-
-
 
 
 
