@@ -36,7 +36,7 @@
         </div>
 
         <!-- SHOW THIS FOR SPEECH -->
-        @if ($subject['specialized_type'] === 'speech' && $subject['subjectType'] === 'specialized')
+        @if ($specializedType === 'speech')
         <main class="main-scores">
             <div class="table-container">
                 @forelse($groupedAttempts as $activityType => $attempts)
@@ -168,24 +168,25 @@
             </div>
 
         </main>
-        @elseif($subject['specialized_type'] === 'auditory')
+
+        @elseif($specializedType === 'auditory')
 
         <main class="main-scores">
-        <div class="table-container">
-            @forelse($groupedAttempts as $activityType => $attempts)
+    <div class="table-container">
+        @forelse($groupedAttempts as $activityType => $attempts)
+            @if(in_array($activityType, ['bingo', 'matching']))
                 <div class="score-table" style="max-width: 900px; margin-bottom: 5rem;">
-                    <h3>{{ ucfirst($activityType) }}</h3>
+                    <h3>{{ ucfirst($activityType) }} (Auditory)</h3>
                     <table>
                         <thead>
                             <tr>
                                 <th style="width: 30px;"></th>
                                 <th style="width: 180px;">Student ID</th>
                                 <th style="width: 180px;">Name</th>
-                                <th style="width: 180px;">Answered At</th>
-                                <th style="width: 180px;">
-                                    {{ $activityType === 'bingo' || $activityType === 'matching' ? 'Score' : 'MIÓ Score' }}
-                                </th>
-                                <th style="width: 300px;">Feedback</th>
+                                <th style="width: 180px;">Started At</th>
+                                <th style="width: 180px;">Completed At</th>
+                                <th style="width: 120px;">Score</th>
+                                <th style="width: 180px;">Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -199,171 +200,118 @@
                             @foreach($attemptsByStudent as $studentId => $studentAttempts)
                                 @php
                                     usort($studentAttempts, function ($a, $b) {
-                                        return strtotime($b['answered_at']) - strtotime($a['answered_at']);
+                                        return strtotime($b['started_at'] ?? '') - strtotime($a['started_at'] ?? '');
                                     });
 
                                     $recentAttempt = $studentAttempts[0];
-                                    $latestAnsweredAt = $recentAttempt['answered_at'] ?? '-';
+                                    $startedAt = $recentAttempt['started_at'] ?? null;
+                                    $completedAt = $recentAttempt['completed_at'] ?? null;
+                                    $studentFirstName = $recentAttempt[0]['student_first_name'] ?? '';
+                                    $studentLastName = $recentAttempt[0]['student_last_name'] ?? '';
 
-                                    $latestValid = collect($studentAttempts)->first(function ($attempt) {
-                                        return !empty($attempt['pronunciation_details']['speechace_pronunciation_score']);
-                                    }) ?? [];
+                                    // Duration
+                                    $duration = ($startedAt && $completedAt)
+                                        ? (strtotime($completedAt) - strtotime($startedAt))
+                                        : null;
 
-                                    $studentFirstName = $studentAttempts[0]['student_first_name'] ?? '';
-                                    $studentLastName = $studentAttempts[0]['student_last_name'] ?? '';
+                                    // Audio Playback Info
+                                    $audioPlayed = $recentAttempt['audio_played'][0]['played_at'] ?? [];
+                                    $audioPlayCount = count($audioPlayed);
+                                    $audioFirstPlay = $audioPlayed[0] ?? null;
+                                    $audioLastPlay = end($audioPlayed) ?: null;
+
+                                    // Answered Items and Response Times
+                                    $answeredItems = [];
+                                    foreach ($recentAttempt['items'] ?? [] as $item) {
+                                        if (!empty($item['selected_at'])) {
+                                            $refTime = $audioFirstPlay ?? $startedAt;
+                                            $responseTime = strtotime($item['selected_at']) - strtotime($refTime);
+                                            $answeredItems[] = [
+                                                'image_id' => $item['image_id'] ?? '',
+                                                'selected_at' => $item['selected_at'],
+                                                'response_time' => $responseTime > 0 ? $responseTime : 0
+                                            ];
+                                        }
+                                    }
                                 @endphp
 
-                                <tr class="student-summary" data-student="{{ $studentId }}" data-activity-type="{{ $activityType }}">
+                                <tr class="student-summary-auditory" data-student="{{ $studentId }}" data-activity-type="{{ $activityType }}">
                                     <td class="toggle-arrow" style="cursor:pointer; user-select:none;">▶</td>
                                     <td>{{ $studentId }}</td>
                                     <td>{{ $studentFirstName }} {{ $studentLastName }}</td>
-                                    <td>{{ $latestAnsweredAt }}</td>
-                                    <td>
-                                        @if($activityType === 'bingo' || $activityType === 'matching')
-                                            {{ $recentAttempt['score'] ?? '-' }}
-                                        @else
-                                            {{ isset($recentAttempt['mio_score']) ? number_format($recentAttempt['mio_score'], 2) : 'N/A' }}
-                                        @endif
-                                    </td>
-                                    <td>{{ $latestValid['pronunciation_details']['feedback'] ?? '-' }}</td>
+                                    <td>{{ $startedAt ?? '-' }}</td>
+                                    <td>{{ $completedAt ?? '-' }}</td>
+                                    <td>{{ isset($recentAttempt['score']) ? number_format($recentAttempt['score'], 2) : 'N/A' }}</td>
+                                    <td>{{ $recentAttempt['status'] ?? '-' }}</td>
                                 </tr>
 
                                 <tr class="student-details-row" data-student="{{ $studentId }}" data-activity-type="{{ $activityType }}" style="display:none; background-color: #f9f9f9;">
-                                    <td colspan="6" style="padding: 1rem;">
+                                    <td colspan="7" style="padding: 1rem;">
                                         <div class="student-details">
-                                            <table style="width: 100%; border-collapse: collapse;">
-                                                <thead>
-                                                    @if($activityType === 'speech')
-                                                        <tr>
-                                                            <th>Audio</th>
-                                                            <th>Text</th>
-                                                            <th>CEFR</th>
-                                                            <th>IELTS</th>
-                                                            <th>PTE</th>
-                                                            <th>TOEIC</th>
-                                                        </tr>
-                                                    @elseif($activityType === 'bingo')
-                                                        <tr>
-                                                            <th>Started At</th>
-                                                            <th>Completed At</th>
-                                                            <th>Audio Played</th>
-                                                            <th>Score</th>
-                                                            <th>Correct Items</th>
-                                                        </tr>
-                                                    @elseif($activityType === 'matching')
-                                                        <tr>
-                                                            <th>Audio</th>
-                                                            <th>First Played</th>
-                                                            <th>Last Played</th>
-                                                            <th>Play Count</th>
-                                                            <th>Selected Images</th>
-                                                        </tr>
-                                                    @endif
-                                                </thead>
-                                                <tbody>
-                                                    @foreach($studentAttempts as $attempt)
-                                                        @if($activityType === 'speech')
-                                                            <tr>
-                                                                <td>
-                                                                    @if(!empty($attempt['audio_url']))
-                                                                        <audio controls style="width: 120px; height: 30px;">
-                                                                            <source src="{{ $attempt['audio_url'] }}" type="audio/mpeg">
-                                                                            Your browser does not support the audio element.
-                                                                        </audio>
-                                                                    @else
-                                                                        -
-                                                                    @endif
-                                                                </td>
-                                                                <td>
-                                                                    @if(isset($attempt['pronunciation_details']['words']))
-                                                                        <p style="margin:0;">
-                                                                            @foreach ($attempt['pronunciation_details']['words'] as $wordInfo)
-                                                                                <span
-                                                                                    class="word-info"
-                                                                                    data-word="{{ $wordInfo['word'] }}"
-                                                                                    data-quality-score="{{ $wordInfo['quality_score'] }}"
-                                                                                    data-syllables='@json($wordInfo['syllables'])'
-                                                                                    style="border-bottom: 1px dotted #666; cursor: help;"
-                                                                                >
-                                                                                    {{ $wordInfo['word'] }}
-                                                                                </span>
-                                                                            @endforeach
-                                                                        </p>
-                                                                    @else
-                                                                        {{ $attempt['pronunciation_details']['text'] ?? '-' }}
-                                                                    @endif
-                                                                </td>
-                                                                <td>{{ $attempt['pronunciation_details']['cefr_pronunciation_score'] ?? '-' }}</td>
-                                                                <td>{{ $attempt['pronunciation_details']['ielts_pronunciation_score'] ?? '-' }}</td>
-                                                                <td>{{ $attempt['pronunciation_details']['pte_pronunciation_score'] ?? '-' }}</td>
-                                                                <td>{{ $attempt['pronunciation_details']['toeic_pronunciation_score'] ?? '-' }}</td>
-                                                            </tr>
-                                                        @elseif($activityType === 'bingo')
-                                                            <tr>
-                                                                <td>{{ $attempt['started_at'] ?? '-' }}</td>
-                                                                <td>{{ $attempt['completed_at'] ?? '-' }}</td>
-                                                                <td>
-                                                                    @foreach($attempt['audio_played'] ?? [] as $audio)
-                                                                        <div>
-                                                                            <strong>{{ $audio['audio_id'] }}</strong><br>
-                                                                            Played:
-                                                                            <ul style="margin: 0; padding-left: 15px;">
-                                                                                @foreach($audio['played_at'] ?? [] as $playTime)
-                                                                                    <li>{{ $playTime }}</li>
-                                                                                @endforeach
-                                                                            </ul>
-                                                                        </div>
-                                                                    @endforeach
-                                                                </td>
-                                                                <td>{{ $attempt['score'] ?? '0' }}</td>
-                                                                <td>
-                                                                    {{ collect($attempt['items'])->where('is_correct', true)->count() ?? '0' }}
-                                                                </td>
-                                                            </tr>
-                                                        @elseif($activityType === 'matching')
-                                                            @foreach($attempt['answer_logs'] ?? [] as $log)
-                                                                <tr>
-                                                                    <td>{{ $log['audio_id'] ?? '-' }}</td>
-                                                                    <td>{{ $log['first_played_at'] ?? '-' }}</td>
-                                                                    <td>{{ $log['last_played_at'] ?? '-' }}</td>
-                                                                    <td>{{ $log['play_count'] ?? 0 }}</td>
-                                                                    <td>
-                                                                        @foreach($log['selected_images'] ?? [] as $imageId)
-                                                                            <span style="display: inline-block; background: #ddd; padding: 2px 6px; margin: 2px; border-radius: 3px;">
-                                                                                {{ $imageId }}
-                                                                            </span>
-                                                                        @endforeach
-                                                                    </td>
-                                                                </tr>
-                                                            @endforeach
-                                                        @endif
-                                                    @endforeach
-                                                </tbody>
-                                            </table>
+                                            <strong>Audio Played:</strong> {{ $audioPlayCount }} time(s)<br>
+                                            @if($audioFirstPlay)
+                                                <strong>First Played At:</strong> {{ $audioFirstPlay }}<br>
+                                            @endif
+                                            @if($audioLastPlay)
+                                                <strong>Last Played At:</strong> {{ $audioLastPlay }}<br>
+                                            @endif
+                                            @if($duration !== null)
+                                                <strong>Total Duration:</strong> {{ $duration }} second(s)<br>
+                                            @endif
+                                            <br>
+                                            <strong>Answered Items:</strong>
+                                            <ul>
+                                                @forelse($answeredItems as $item)
+                                                    <li>
+                                                        Item ID: {{ $item['image_id'] }} -
+                                                        Selected at {{ $item['selected_at'] }}
+                                                        (Response Time: {{ $item['response_time'] }}s)
+                                                    </li>
+                                                @empty
+                                                    <li>No answered items found.</li>
+                                                @endforelse
+                                            </ul>
                                         </div>
-                                    </td>
-                                </tr>
-
-                                <tr class="word-summary-row" style="background-color: #eee;">
-                                    <td colspan="6" class="word-summary-cell" data-student="{{ $studentId }}" data-activity-type="{{ $activityType }}">
-                                        <!-- summary will be injected here -->
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
-            @empty
-                <p>No attempts found for any activity type.</p>
-            @endforelse
-        </div>
-        </main>
-
-
+            @endif
+        @empty
+            <p>No scores available.</p>
+        @endforelse
+    </div>
+</main>
         @endif
 
     </div>
 </section>
+
+
+
+
+<!-- SCRIPT -->
+
+<script>
+    // Optional toggle script to show/hide details
+    document.querySelectorAll('.student-summary-auditory').forEach(row => {
+        row.addEventListener('click', () => {
+            const studentId = row.getAttribute('data-student');
+            const activityType = row.getAttribute('data-activity-type');
+            const detailRow = document.querySelector(`.student-details-row[data-student="${studentId}"][data-activity-type="${activityType}"]`);
+            const arrow = row.querySelector('.toggle-arrow');
+            if (detailRow.style.display === 'none') {
+                detailRow.style.display = 'table-row';
+                arrow.textContent = '▼';
+            } else {
+                detailRow.style.display = 'none';
+                arrow.textContent = '▶';
+            }
+        });
+    });
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {

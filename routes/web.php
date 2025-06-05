@@ -412,6 +412,9 @@ Route::prefix('mio/teacher')->middleware(
 
     Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
 
+    Route::post('/profile/update', [TeacherController::class, 'updateProfile'])->name('mio.updateProfile');
+
+
     Route::get('/settings', [SettingsController::class, 'showSettings'])->name('mio.teacher-settings');
 
 // ------------- SUBJECT

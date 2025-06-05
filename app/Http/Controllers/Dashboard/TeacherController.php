@@ -98,9 +98,11 @@ class TeacherController extends Controller
 
         $groupedAttempts = [];
 
+        // SPEECH- getting activity type available for speech
         foreach ($activityTypes as $activityType) {
             $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
             $students = $activityRef->getValue() ?? [];
+
 
             foreach ($students as $activitySetId => $studentSet) {
                 if (!is_array($studentSet)) continue;
@@ -116,6 +118,8 @@ class TeacherController extends Controller
                     // Get the most recent attempt
                     $recentAttempt = reset($studentAttempts);
                     $attemptId = key($studentAttempts);
+
+                    // FOR SPEECH
                     if (!isset($recentAttempt['answers'])) continue;
 
                     foreach ($recentAttempt['answers'] as $answerId => $answerData) {
@@ -171,15 +175,51 @@ class TeacherController extends Controller
 
                         $groupedAttempts[$activityType][] = $attempt;
                     }
+
                 }
             }
         }
+
+          // 4. Define auditory activity types only
+            $auditoryTypes = ['bingo', 'matching'];
+
+            $auditoryAttempts = [];
+
+            foreach ($auditoryTypes as $activityType) {
+                $activityRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/attempts/{$activityType}");
+                $activityData = $activityRef->getValue() ?? [];
+
+                foreach ($activityData as $activityId => $students) {
+                    foreach ($students as $studentId => $attempts) {
+                        foreach ($attempts as $attemptId => $attemptData) {
+                            $groupedAttempts[$activityType][] = [
+                                'activity_id' => $activityId,
+                                'student_id' => $studentId,
+                                'attempt_id' => $attemptId,
+                                'score' => $attemptData['score'] ?? null,
+                                'status' => $attemptData['status'] ?? null,
+                                'started_at' => $attemptData['started_at'] ?? null,
+                                'completed_at' => $attemptData['completed_at'] ?? null,
+                                'audio_played' => $attemptData['audio_played'] ?? [],
+                                'items' => $attemptData['items'] ?? [],
+                                'answer_logs' => $attemptData['answer_logs'] ?? [],
+                            ];
+                        }
+                    }
+                }
+            }
+
+
+
 
         $subjectTypeRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/subjectType");
         $subjectType = $subjectTypeRef->getValue() ?? [];
 
         $specializedTypeRef = $this->database->getReference("subjects/{$gradeLevelFound}/{$subjectId}/specialized_type");
         $specializedType = $specializedTypeRef->getValue() ?? [];
+
+        // ✅ Log the specialized_type value to check if it is fetched correctly
+        Log::info("Fetched specialized_type for subject {$subjectId}: " . json_encode($specializedType));
 
         if($subjectType === 'specialized') {
             return view('mio.head.teacher-panel', [
@@ -188,6 +228,7 @@ class TeacherController extends Controller
                 'groupedAttempts' => $groupedAttempts,
                 'subjectType' => $subjectType,
                 'specializedType' => $specializedType,
+                'auditoryAttempts' => $auditoryAttempts
             ]);
         } else {
             return view('mio.head.teacher-panel', [
@@ -2046,34 +2087,89 @@ class TeacherController extends Controller
         $userId = session('firebase_user.uid');
         $teacherName = session('firebase_user.name');
 
-                // Get student data
-                $teacherRef = $this->database->getReference('users/' . $userId);
-                $teacher = $teacherRef->getValue();
+        // Get teacher data
+        $teacherRef = $this->database->getReference('users/' . $userId);
+        $teacher = $teacherRef->getValue();
 
-                if (!$teacher) {
-                    abort(404, 'Teacher not found.');
-                }
+        if (!$teacher) {
+            abort(404, 'Teacher not found.');
+        }
 
-                // // Find the section where this student is enrolled
-                // $sectionsRef = $this->database->getReference('sections');
-                // $sections = $sectionsRef->getValue();
+        // ✅ Get departments
+        $departmentsRef = $this->database->getReference('departments');
+        $departmentsData = $departmentsRef->getValue() ?? [];
 
-                // $studentSection = null;
+        $departments = [];
+        foreach ($departmentsData as $id => $dept) {
+            $departments[] = [
+                'departmentid' => $id,
+                'department_name' => $dept['department_name'] ?? 'Unnamed'
+            ];
+        }
 
-                // foreach ($sections as $sectionId => $sectionData) {
-                //     if (isset($sectionData['students']) && array_key_exists($userId, $sectionData['students'])) {
-                //         $studentSection = $sectionData;
-                //         break;
-                //     }
-                // }
-
-                return view('mio.head.teacher-panel', [
-                    'page' => 'profile',
-                    'teacher' => $teacher,
-                    'name' => $teacherName,
-                    'uid' => $userId,
-                ]);
+        return view('mio.head.teacher-panel', [
+            'page' => 'profile',
+            'teacher' => $teacher,
+            'name' => $teacherName,
+            'uid' => $userId,
+            'departments' => $departments, // 👈 include this
+        ]);
     }
+
+
+    public function updateProfile(Request $request)
+    {
+        $userId = session('firebase_user.uid'); // Use session, not auth()->user()
+
+        // Validate only editable fields (exclude readonly fields)
+        $data = $request->validate([
+            'bio' => 'nullable|string',
+            'social_link' => 'nullable|url',
+            'profile_picture' => 'nullable|image|max:2048',
+        ]);
+
+        try {
+            // Handle profile picture upload if exists
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+                $filename = 'images/profile_pictures/' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                // Upload to Firebase Storage
+                $bucket = $this->storageClient->bucket($this->bucketName);
+                $bucket->upload(
+                    fopen($file->getRealPath(), 'r'), // safer than file_get_contents
+                    ['name' => $filename]
+                );
+
+
+                $object = $bucket->object($filename);
+
+                // Make public (optional, if you're not using signed URLs)
+                $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
+
+                $data['photo_url'] = 'https://storage.googleapis.com/' . $this->bucketName . '/' . $filename;
+
+            }
+
+            Log::info('Final data to update in Firebase:', $data);
+
+
+            // Update only the fields provided by the form
+            $this->database->getReference('users/' . $userId)->update($data);
+
+            return redirect()->back()->with('success', 'Profile updated successfully.');
+
+    } catch (\Throwable $e) {
+        // Log error (optional)
+        Log::error('Profile update failed: ' . $e->getMessage());
+
+        return redirect()->back()->with('error', 'Failed to update profile. Please try again.');
+    }
+}
+
+
+
+
 
     public function showPeople($subjectId)
     {

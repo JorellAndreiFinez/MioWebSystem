@@ -37,6 +37,59 @@
 }
 
 
+/* Input Fields */
+
+input[type="text"],
+input[type="password"],
+input[type="date"],
+input[type="number"],
+input[type="time"],
+input[type="url"],
+select {
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: #555;
+    outline: none;
+    width: 100%;
+}
+
+input[type="radio"] {
+    accent-color: var(--secondary-color);
+    cursor: pointer;
+}
+
+
+/* Adjust the date input for consistency */
+
+input[type="date"] {
+    height: 3.8rem;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    padding-right: 12px;
+}
+
+
+/* Placeholder text for consistency */
+
+textarea::placeholder,
+input::placeholder {
+    color: #aaa;
+    font-size: 14px;
+}
+
+
+/* Focus effect */
+
+input:focus {
+    border-color: #007bff;
+    background-color: #ffffff;
+}
+
+
 /* Hide arrows in Chrome, Safari, Edge, Opera */
 
 .no-spinner::-webkit-inner-spin-button,
