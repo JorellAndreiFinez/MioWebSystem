@@ -83,6 +83,8 @@ class EnrollController extends Controller
 
         $enrollStatus = $this->getEnrollStatus();
 
+        Log::info($enrollStatus);
+
         $adminFeedback = null;
 
         if ($enrollmentId) {
@@ -147,10 +149,13 @@ class EnrollController extends Controller
             return redirect()->route('enroll-login')->with('error', 'Please log in first.');
         }
 
-        $status = $user['enroll_status'] ?? null;
+        $user = session('enrollment_user');
+        $enrollmentId = $user['ID'] ?? null;
+
+        $enrollStatus = $this->getEnrollStatus();
 
         // Check if status is exactly 'Assessment'
-        if ($status !== 'Assessment') {
+        if ($enrollStatus !== 'Assessment') {
             return redirect()->route('enroll-dashboard')->with('error', 'You are not yet eligible for the assessment.');
         }
 
@@ -166,7 +171,7 @@ class EnrollController extends Controller
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'enroll-assessment',
             'assessment' => $user['Assessment'] ?? null,
-            'status' => $status,
+            'status' => $enrollStatus,
             'speechAuditoryStatus' => $speechAuditoryStatus,
             'readingStatus' => $readingStatus,
             'user' => $user,
@@ -199,11 +204,67 @@ class EnrollController extends Controller
             $sentenceStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/Sentence/status');
             $sentenceStatus = $sentenceStatusRef->getValue();
 
+            $fillblankStatusRef = $this->database->getReference('enrollment/enrollees/' . $userId . '/Assessment/fillblanks/status');
+            $fillblankStatus = $fillblankStatusRef->getValue();
+
+            // Fetch speech phrases from your Firebase path, e.g.:
+            $speechDataRef = $this->database->getReference('enrollment/assessment_settings/physical/speech');
+            $speechData = $speechDataRef->getValue();
+
+            // Fetch auditory answers similarly
+            $auditoryDataRef = $this->database->getReference('enrollment/assessment_settings/physical/auditory');
+            $auditoryData = $auditoryDataRef->getValue();
+
+            // 🔥 Fetch sentences from Firebase
+            $sentencesRef = $this->database->getReference("enrollment/assessment_settings/physical/sentences");
+            $sentencesData = $sentencesRef->getValue();
+
+            // ✅ Re-index sentences (to match your loop in Blade template)
+            $sentences = [];
+            if ($sentencesData && is_array($sentencesData)) {
+                foreach ($sentencesData as $sentence) {
+                    $sentences[] = $sentence['text'] ?? '';  // push just the text
+                }
+            }
+
+            // ✅ Fix this block
+            $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
+            $fillblanksData = $fillblanksRef->getValue();
+
+            $fillblanks = [];
+            if ($fillblanksData && is_array($fillblanksData)) {
+                foreach ($fillblanksData as $item) {
+                    $fillblanks[] = $item;
+                }
+            }
+
+             $phrases = [];
+            if ($speechData) {
+                foreach ($speechData as $item) {
+                    $phrases[] = [
+                        'text' => $item['text'] ?? '',
+                        'image_url' => $item['image_url'] ?? null,
+                    ];
+                }
+            }
+
+            $auditoryAnswers = [];
+            if ($auditoryData) {
+                $index = 1;
+                foreach ($auditoryData as $item) {
+                    $auditoryAnswers[$index++] = $item['text'] ?? '';
+                }
+                
+            }
+
+
             // Check both statuses to determine what to show next
             if ($speechAuditoryStatus !== 'done') {
                 return view('enrollment-panel.enrollment-panel', [
                     'page' => 'main-assessment',
                     'user' => $user,
+                    'phrases' => $phrases,
+                    'auditoryAnswers' => $auditoryAnswers,
                 ]);
             }
 
@@ -211,15 +272,18 @@ class EnrollController extends Controller
                 return view('enrollment-panel.enrollment-panel', [
                     'page' => 'main-assessment2',
                     'user' => $user,
+                    'sentences' => $sentences ?? [],
                 ]);
             }
 
-            if ($sentenceStatus !== 'done') {
-                return view('enrollment-panel.enrollment-panel', [
-                    'page' => 'main-assessment3',
-                    'user' => $user,
-                ]);
-            }
+           if ($fillblankStatus !== 'done') {
+            return view('enrollment-panel.enrollment-panel', [
+                'page' => 'main-assessment3',
+                'user' => $user,
+                'fillblanks' => $fillblanks,
+            ]);
+        }
+
 
              // Add your questions array here for the sentence test page:
             $questions = [
@@ -377,8 +441,6 @@ class EnrollController extends Controller
                 ],
             ];
 
-
-
             // If both are done, go to sentence test
             return view('enrollment-panel.enrollment-panel', [
                 'page' => 'main-assessment4',
@@ -405,30 +467,45 @@ class EnrollController extends Controller
                     'page' => 'main-assessment3',
                     'speech_results' => $speechResults,
                     'auditory_results' => $auditoryResults,
+                    'sentences' => $sentences ?? [],
                 ]);
             }
         }
+
+        // 🔥 Fetch sentences from Firebase
+            $sentencesRef = $this->database->getReference("enrollment/assessment_settings/physical/sentences");
+            $sentencesData = $sentencesRef->getValue();
+
+            // ✅ Re-index sentences (to match your loop in Blade template)
+            $sentences = [];
+            if ($sentencesData && is_array($sentencesData)) {
+                foreach ($sentencesData as $sentence) {
+                    $sentences[] = $sentence['text'] ?? '';  // push just the text
+                }
+            }
+
 
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'main-assessment2',
             'speech_results' => $speechResults,
             'auditory_results' => $auditoryResults,
+            'sentences' => $sentences ?? [],
+
         ]);
     }
 
     public function mainAssessment3()
     {
-        // Retrieve flash data from session (results passed from submit)
         $speechResults = session('speech_results', []);
         $auditoryResults = session('auditory_results', []);
 
         $uid = Session::get('firebase_uid');
+        
 
         if ($uid) {
-            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Reading/status");
+            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/fillblanks/status");
             $status = $statusRef->getValue();
 
-            // If already done, redirect to dashboard or another page
             if ($status === 'done') {
                 return view('enrollment-panel.enrollment-panel', [
                     'page' => 'main-assessment4',
@@ -438,12 +515,67 @@ class EnrollController extends Controller
             }
         }
 
+            Log::info($status);
+
+
+        // ✅ Fix this block
+        $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
+        $fillblanksData = $fillblanksRef->getValue();
+
+        $fillblanks = [];
+        if ($fillblanksData && is_array($fillblanksData)) {
+            foreach ($fillblanksData as $item) {
+                $fillblanks[] = $item;
+            }
+        }
+
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'main-assessment3',
             'speech_results' => $speechResults,
             'auditory_results' => $auditoryResults,
+            'fillblanks' => $fillblanks,
         ]);
     }
+
+    public function mainAssessment4()
+    {
+        $speechResults = session('speech_results', []);
+        $auditoryResults = session('auditory_results', []);
+
+        $uid = Session::get('firebase_uid');
+
+        if ($uid) {
+            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Reading/status");
+            $status = $statusRef->getValue();
+
+            if ($status === 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment4',
+                    'speech_results' => $speechResults,
+                    'auditory_results' => $auditoryResults,
+                ]);
+            }
+        }
+
+        // ✅ Fix this block
+        $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
+        $fillblanksData = $fillblanksRef->getValue();
+
+        $fillblanks = [];
+        if ($fillblanksData && is_array($fillblanksData)) {
+            foreach ($fillblanksData as $item) {
+                $fillblanks[] = $item;
+            }
+        }
+
+        return view('enrollment-panel.enrollment-panel', [
+            'page' => 'main-assessment4',
+            'speech_results' => $speechResults,
+            'auditory_results' => $auditoryResults,
+            'fillblanks' => $fillblanks,
+        ]);
+    }
+
 
     public function assessmentPhysical()
     {
@@ -452,8 +584,6 @@ class EnrollController extends Controller
 
         return view('enrollment-panel.pages.assessment.physical', compact('user'));
     }
-
-
 
 
     public function login(Request $request)
@@ -634,116 +764,118 @@ class EnrollController extends Controller
 
     public function submitEnrollmentForm(Request $request)
     {
-        Log::info('submitEnrollmentForm called');
+        Log::info('All request data:', $request->all());
+        Log::info('All files:', $request->files->all());
 
         try {
-            
             $request->validate([
-            'first_name' => 'required|string',
-            'last_name' => 'required|string',
-            'gender' => 'required|string',
-            'age' => 'required|integer',
-            'birthday' => 'required|date',
-            'address' => 'required|string', // Updated from 'street'
-            'barangay' => 'required|string',
-            'region' => 'required|string',
-            'province' => 'required|string',
-            'city' => 'required|string',
-            'zip_code' => 'required|string|min:4|max:4',
-            'contact_number' => 'required|string',
-            'emergency_contact' => 'required|string',
-            'emergency_name' => 'required|string',
-            'previous_school' => 'required|string',
-            'previous_grade_level' => 'required|integer', // Updated from 'grade_level'
-            'medical_history' => 'required|string',
-            'disability' => 'required|string',
-            'hearing_loss' => 'nullable|string',
-            'hearing_identity' => 'required|string',
-            'assistive_devices' => 'nullable|string',
-            'health_notes' => 'nullable|string',
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'gender' => 'required|string',
+                'age' => 'required|integer',
+                'birthday' => 'required|date',
+                'address' => 'required|string',
+                'barangay' => 'required|string',
+                'region' => 'required|string',
+                'province' => 'required|string',
+                'city' => 'required|string',
+                'zip_code' => 'required|string|min:4|max:4',
+                'contact_number' => 'required|string',
+                'emergency_contact' => 'required|string',
+                'emergency_name' => 'required|string',
+                'previous_school' => 'required|string',
+                'previous_grade_level' => 'required|integer',
+                'medical_history' => 'required|string',
+                'hearing_loss' => 'nullable|string',
+                'hearing_identity' => 'required|string',
+                'assistive_devices' => 'nullable|string',
+                'health_notes' => 'nullable|string',
 
-            'payment' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
-            'good_moral_files' => 'required|array|min:1',
-            'good_moral_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
+                'enrollment_grade' => 'required|string',
+                'grade_level' => 'nullable|string',
+                'strand' => 'nullable|string',
 
-            'health_certificate_files' => 'required|array|min:1',
-            'health_certificate_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
+               'payment' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'good_moral_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'health_certificate_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'psa_birth_certificate_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+                'form_137_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            ]);
 
-            'psa_birth_certificate_files' => 'required|array|min:1',
-            'psa_birth_certificate_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
-
-            'form_137_files' => 'required|array|min:1',
-            'form_137_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120',
-        ]);
-
-        // Enrollee session check
-         $enrollmentUser = session('enrollment_user');
-        if (!$enrollmentUser || !isset($enrollmentUser['ID'])) {
-            return redirect()->back()->with('error', 'User not logged in.');
-        }
-        $enrolleeId = $enrollmentUser['ID'];
-        Log::info('Enrollee ID: ' . $enrolleeId);
-
-        $formData = $request->only([
-            'first_name', 'last_name', 'gender', 'age', 'birthday', 'address', 'barangay', 'region',
-            'province', 'city', 'zip_code', 'contact_number', 'emergency_contact', 'emergency_name',
-            'previous_school', 'previous_grade_level', 'medical_history', 'disability', 'hearing_loss',
-            'hearing_identity', 'assistive_devices', 'health_notes'
-        ]);
-
-        // Upload helper using Firebase Storage
-        $uploadMultipleFilesToFirebase = function ($files, $folder) {
-            $paths = [];
-            foreach ($files as $file) {
-                $uploadResult = $this->uploadToFirebaseStorage($file, "enrollment/{$folder}");
-                $paths[] = $uploadResult['url'];
+            $enrollmentUser = session('enrollment_user');
+            if (!$enrollmentUser || !isset($enrollmentUser['ID'])) {
+                return redirect()->back()->with('error', 'User not logged in.');
             }
-            return $paths;
-        };
 
-        // Upload payment proof
-        if ($request->hasFile('payment')) {
-            $paymentFile = $request->file('payment');
-            $uploadResult = $this->uploadToFirebaseStorage($paymentFile, "enrollment/payment/{$enrolleeId}");
-            $formData['payment_proof_path'] = $uploadResult['url'];
-        }
+            $enrolleeId = $enrollmentUser['ID'];
+            Log::info('Enrollee ID: ' . $enrolleeId);
 
-        // Multiple file fields
-        if ($request->hasFile('good_moral_files')) {
-            $formData['good_moral_paths'] = $uploadMultipleFilesToFirebase($request->file('good_moral_files'), "good_moral/{$enrolleeId}");
-        }
+            // Retrieve all form data
+            $formData = $request->only([
+                'first_name', 'last_name', 'gender', 'age', 'birthday', 'address', 'barangay', 'region',
+                'province', 'city', 'zip_code', 'contact_number', 'emergency_contact', 'emergency_name',
+                'previous_school', 'previous_grade_level', 'medical_history', 'hearing_loss',
+                'hearing_identity', 'assistive_devices', 'health_notes', 'enrollment_grade', 'grade_level', 'strand'
+            ]);
 
-        if ($request->hasFile('health_certificate_files')) {
-            $formData['health_certificate_paths'] = $uploadMultipleFilesToFirebase($request->file('health_certificate_files'), "health_certificate/{$enrolleeId}");
-        }
+            // ✅ Add this line
+            $formData['category'] = 'new';
 
-        if ($request->hasFile('psa_birth_certificate_files')) {
-            $formData['psa_birth_certificate_paths'] = $uploadMultipleFilesToFirebase($request->file('psa_birth_certificate_files'), "psa_birth_certificate/{$enrolleeId}");
-        }
+            // Apply conditional logic
+            $enrollmentGrade = $formData['enrollment_grade'];
 
-        if ($request->hasFile('form_137_files')) {
-            $formData['form_137_paths'] = $uploadMultipleFilesToFirebase($request->file('form_137_files'), "form_137/{$enrolleeId}");
-        }
+            if (in_array($enrollmentGrade, ['kinder', 'one-on-one-therapy'])) {
+                $formData['grade_level'] = '';
+            }
 
-        $formData['submitted_at'] = now()->toDateTimeString();
+            if (in_array($enrollmentGrade, ['elementary', 'junior-highschool'])) {
+                $formData['strand'] = '';
+            }
 
-        // Save to Firebase Realtime Database
-        $this->database
-            ->getReference("enrollment/enrollees/{$enrolleeId}/enrollment_form")
-            ->set($formData);
+            // Upload files
+            if ($request->hasFile('payment')) {
+                $uploadResult = $this->uploadToFirebaseStorage($request->file('payment'), "enrollment/{$enrolleeId}");
+                $formData['payment_proof_path'] = $uploadResult['url'];
+            }
 
-        // Set status
-        $this->database
-            ->getReference("enrollment/enrollees/{$enrolleeId}/enroll_status")
-            ->set('Registered');
+            if ($request->hasFile('good_moral_file')) {
+                $uploadResult = $this->uploadToFirebaseStorage($request->file('good_moral_file'), "enrollment/{$enrolleeId}");
+                $formData['good_moral_path'] = $uploadResult['url'];
+            }
 
-        return redirect()->back()->with('success', 'Enrollment form submitted successfully!');
+            if ($request->hasFile('health_certificate_file')) {
+                $uploadResult = $this->uploadToFirebaseStorage($request->file('health_certificate_file'), "enrollment/{$enrolleeId}");
+                $formData['health_certificate_path'] = $uploadResult['url'];
+            }
+
+            if ($request->hasFile('psa_birth_certificate_file')) {
+                $uploadResult = $this->uploadToFirebaseStorage($request->file('psa_birth_certificate_file'), "enrollment/{$enrolleeId}");
+                $formData['psa_birth_certificate_path'] = $uploadResult['url'];
+            }
+
+            if ($request->hasFile('form_137_file')) {
+                $uploadResult = $this->uploadToFirebaseStorage($request->file('form_137_file'), "enrollment/{$enrolleeId}");
+                $formData['form_137_path'] = $uploadResult['url'];
+            }
+
+            $formData['submitted_at'] = now()->toDateTimeString();
+
+            // Save to Firebase
+            $this->database
+                ->getReference("enrollment/enrollees/{$enrolleeId}/enrollment_form")
+                ->set($formData);
+
+            $this->database
+                ->getReference("enrollment/enrollees/{$enrolleeId}/enroll_status")
+                ->set('Registered');
+
+            return redirect()->back()->with('success', 'Enrollment form submitted successfully!');
         } catch (\Throwable $e) {
-              Log::error('Enrollment form submission error: ' . $e->getMessage());
+            Log::error('Enrollment form submission error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'An error occurred while submitting the form. Please try again.');
         }
-
     }
+
 
 
 
@@ -843,31 +975,61 @@ public function logout(Request $request)
 
         $speech = $request->input('speech', []);
 
-        foreach ($speech as $key => $phrase) {
-            // Skip if 'text' or 'level' keys are missing to avoid undefined key error
-            if (!isset($phrase['text'], $phrase['level'])) {
+        // Handle deletions and updates
+        foreach ($speech as $speechID => $data) {
+            // Deletion
+            if (isset($data['_delete']) && $data['_delete'] == '1') {
+                $this->database
+                    ->getReference("enrollment/assessment_settings/$type/speech/$speechID")
+                    ->remove();
+
+                unset($existingData[$speechID]);
                 continue;
             }
 
-            // Skip if level is invalid
-            if (!in_array($phrase['level'], $allowedLevels)) {
+            // Validation
+            if (!isset($data['text'], $data['level']) || !in_array($data['level'], $allowedLevels)) {
                 continue;
             }
 
-            // Keep existing created_at if available, otherwise set current timestamp
-            $createdAt = $existingData[$key]['created_at'] ?? now()->toDateTimeString();
-
-            // Update or add phrase data in existingData array
-            $existingData[$key] = [
-                'text' => $phrase['text'],
-                'level' => $phrase['level'],
-                'speechID' => $key,
-                'created_at' => $createdAt,
+            // Build update data
+            $updateData = [
+                'text' => $data['text'],
+                'level' => $data['level'],
+                'speechID' => $speechID,
+                'created_at' => $existingData[$speechID]['created_at'] ?? now()->toDateTimeString(),
                 'updated_at' => now()->toDateTimeString(),
             ];
+
+            // Handle image upload
+            if ($request->hasFile("speech.$speechID.image")) {
+                $image = $request->file("speech.$speechID.image");
+                $imagePath = "images/enrollment/assessment_settings/{$type}_{$speechID}_" . time() . '.' . $image->getClientOriginalExtension();
+
+                $bucket = $this->storageClient->bucket($this->bucketName);
+                $bucket->upload(
+                    fopen($image->getRealPath(), 'r'),
+                    ['name' => $imagePath]
+                );
+
+                $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
+                $updateData['image_url'] = $imageUrl;
+            } elseif (isset($data['existing_image'])) {
+                $updateData['image_url'] = $data['existing_image'];
+            } elseif (isset($existingData[$speechID]['image_url'])) {
+                // Preserve previous image if nothing new is uploaded and no existing_image field is sent
+                $updateData['image_url'] = $existingData[$speechID]['image_url'];
+            }
+
+            // Update Firebase and local mirror
+            $this->database
+                ->getReference("enrollment/assessment_settings/$type/speech/$speechID")
+                ->set($updateData);
+
+            $existingData[$speechID] = $updateData;
         }
 
-
+        // Handle new phrase
         $newPhrase = $request->input('new_speech');
         if ($newPhrase && isset($newPhrase['text'], $newPhrase['level'])) {
             if (in_array($newPhrase['level'], $allowedLevels)) {
@@ -875,14 +1037,12 @@ public function logout(Request $request)
 
                 $imageUrl = null;
 
-
-
                 // Upload image if present
-                if ($request->hasFile('new_speech.image') || isset($request->file('new_speech')['image'])) {
-                    $image = $request->file('new_speech')['image'];
+                if ($request->hasFile('new_speech.image')) {
+                    $image = $request->file('new_speech.image');
                     $imagePath = "images/enrollment/assessment_settings/{$type}_{$newKey}_" . time() . '.' . $image->getClientOriginalExtension();
 
-                    $bucket = $this->storage->getBucket();
+                    $bucket = $this->storageClient->bucket($this->bucketName);
                     $bucket->upload(
                         fopen($image->getRealPath(), 'r'),
                         ['name' => $imagePath]
@@ -891,7 +1051,7 @@ public function logout(Request $request)
                     $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
                 }
 
-                $existingData[$newKey] = [
+                $newData = [
                     'text' => $newPhrase['text'],
                     'level' => $newPhrase['level'],
                     'speechID' => $newKey,
@@ -903,59 +1063,13 @@ public function logout(Request $request)
                 // Save immediately to Firebase
                 $this->database
                     ->getReference("enrollment/assessment_settings/$type/speech/$newKey")
-                    ->set($existingData[$newKey]);
+                    ->set($newData);
+
+                $existingData[$newKey] = $newData;
             }
         }
 
-
-
-        // Process deletions and updates directly to Firebase for consistency
-        foreach ($speech as $speechID => $data) {
-            if (isset($data['_delete']) && $data['_delete'] == '1') {
-                // Delete phrase from Firebase
-                $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")->remove();
-
-                // Also remove from local array to keep it in sync
-                unset($existingData[$speechID]);
-            } else {
-                // Update phrase in Firebase (ensure keys exist before accessing)
-                if (isset($data['text'], $data['level'])) {
-                    $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
-                        ->update([
-                            'text' => $data['text'],
-                            'level' => $data['level'],
-                            'updated_at' => now()->toDateTimeString(),
-                            // Preserve created_at if exists in existingData
-                            'created_at' => $existingData[$speechID]['created_at'] ?? now()->toDateTimeString(),
-                        ]);
-                }
-                if ($request->hasFile("speech.$speechID.image")) {
-                    $image = $request->file("speech.$speechID.image");
-                    $imagePath = "images/enrollment/assessment_settings/{$type}_{$speechID}_" . time() . '.' . $image->getClientOriginalExtension();
-
-                    $bucket = $this->storage->getBucket();
-
-                    // Upload to Firebase Storage
-                    $bucket->upload(
-                        fopen($image->getRealPath(), 'r'),
-                        ['name' => $imagePath]
-                    );
-
-                    // Get public URL
-                    $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
-                    $newData['image_url'] = $imageUrl;
-
-                    // Save to local data array and update Firebase
-                    $existingData[$speechID]['image_url'] = $imageUrl;
-
-                    $this->database->getReference("enrollment/assessment_settings/$type/speech/$speechID")
-                        ->update(['image_url' => $imageUrl]);
-                }
-
-            }
-        }
-
-        // Finally, write the full updated data back to Firebase (optional redundancy, but safer)
+        // Final sync: Save updated collection to Firebase
         $this->database
             ->getReference("enrollment/assessment_settings/$type/speech")
             ->set($existingData);
@@ -964,6 +1078,7 @@ public function logout(Request $request)
             ->back()
             ->with('success', 'Speech phrases saved successfully!');
     }
+
 
     public function saveAuditoryPhrases(Request $request, $type)
     {
@@ -1347,12 +1462,13 @@ public function logout(Request $request)
             $image = $request->file('new_mcq.image');
             $imagePath = "images/enrollment/assessment_settings/{$type}_" . time() . '.' . $image->getClientOriginalExtension();
 
-            $bucket = $this->storage->getBucket();
+            $bucket = $this->storageClient->bucket($this->bucketName);
             $bucket->upload(fopen($image->getRealPath(), 'r'), ['name' => $imagePath]);
 
             $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
             $newData['image_url'] = $imageUrl;
         }
+
 
         // Save to Firebase
         $date = now()->format('Ymd'); // e.g. 20250601
@@ -1455,12 +1571,13 @@ public function logout(Request $request)
             $image = $request->file('edit_mcq.image');
             $imagePath = "images/enrollment/assessment_settings/{$type}_" . time() . '.' . $image->getClientOriginalExtension();
 
-            $bucket = $this->storage->getBucket();
+            $bucket = $this->storageClient->bucket($this->bucketName);
             $bucket->upload(fopen($image->getRealPath(), 'r'), ['name' => $imagePath]);
 
             $imageUrl = "https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/" . urlencode($imagePath) . "?alt=media";
             $updateData['image_url'] = $imageUrl;
         }
+
 
         // Update existing question at given id
         $refPath = "enrollment/assessment_settings/$type/questions/$id";
@@ -1505,7 +1622,7 @@ public function logout(Request $request)
             'enroll_status' => $status
         ]);
 
-        return redirect()->route('mio.view-enrollee', ['id' => $id])
+        return redirect()->route('mio.enrollment', ['id' => $id])
             ->with('success', 'Enrollee feedback and status updated successfully.');
     }
 

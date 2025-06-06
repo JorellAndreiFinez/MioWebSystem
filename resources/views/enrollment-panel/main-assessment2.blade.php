@@ -1,15 +1,3 @@
-@php
-$phrases = [
-    1 => 'Look at the robot.',                           // Easy sentence (Imperative)
-    2 => 'The drone flies over the park.',               // Medium sentence (Declarative)
-    3 => 'The young inventor developed an extraordinary device.', // Hard sentence (Declarative)
-    4 => 'Clouds are white and fluffy.',                 // Easy sentence (Declarative)
-    5 => 'The biologist discovered a glowing mushroom. She carefully recorded its features.', // Hard sentence (Declarative, compound)
-];
-@endphp
-
-
-
 
 <section class="home-section">
     <div class="text">Physical Evaluation</div>
@@ -25,22 +13,28 @@ $phrases = [
             <h4>Reading Test</h4>
             <p>Please speak the sentences shown. Your voice will be recorded.</p>
 
-            @for ($i = 1; $i <= 5; $i++)
-            <div class="speech-item">
-                <label>
-                    <strong>Item {{ $i }}:</strong>
-                    <span id="speech-phrase-{{ $i }}">{{ $phrases[$i] }}</span>
-                </label>
-                <div class="speech-controls">
-                    <div class="buttons">
-                        <button type="button" id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
-                        <button type="button" id="stop-btn-{{ $i }}" onclick="stopRecording({{ $i }})" class="btn btn-sm btn-danger" disabled>Stop</button>
+            @if (!empty($sentences) && is_array($sentences))
+               @foreach ($sentences as $index => $sentence)
+                <div class="speech-item">
+                    <label>
+                        <strong>Item {{ $index + 1 }}:</strong>
+                        <span id="speech-phrase-{{ $index + 1 }}">{{ $sentence }}</span>
+                    </label>
+                    <div class="speech-controls">
+                        <div class="buttons">
+                            <button type="button" id="start-btn-{{ $index + 1 }}" onclick="startRecording({{ $index + 1 }})" class="btn btn-sm btn-success">Start</button>
+                            <button type="button" id="stop-btn-{{ $index + 1 }}" onclick="stopRecording({{ $index + 1 }})" class="btn btn-sm btn-danger" disabled>Stop</button>
+                        </div>
+                        <div id="waveform-{{ $index + 1 }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
+                        <button type="button" id="play-pause-{{ $index + 1 }}" class="btn btn-sm btn-primary">Play/Pause</button>
                     </div>
-                    <div id="waveform-{{ $i }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
-                    <button type="button" id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
                 </div>
-            </div>
-            @endfor
+            @endforeach
+
+            @else
+                <p>No sentences available.</p>
+            @endif
+            
         </div>
             <div style="text-align: right; margin-top: 2rem;">
         <button type="submit" id="submit-speechace" class="btn btn-primary">Next</button>
@@ -142,6 +136,8 @@ function stopRecording(id) {
     }
 }
 
+ const sentenceCount = {{ count($sentences) }};
+
 document.getElementById('speech-auditory-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -156,7 +152,7 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     const formData = new FormData();
 
     // Append speech texts and audio blobs
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= sentenceCount; i++) {
         const audioBlob = recordings[i];
         const text = document.getElementById('speech-phrase-' + i).textContent;
 
@@ -202,21 +198,4 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
 
 
 </script>
-
-<script src="https://code.responsivevoice.org/responsivevoice.js"></script>
-<script>
-    const auditoryTexts = {
-        1: "dog",
-        2: "helicopter",
-        3: "unbelievable",
-        4: "It is raining.",
-        5: "She is my friend."
-    };
-
-    function playAuditory(index) {
-        const text = auditoryTexts[index];
-        responsiveVoice.speak(text, "US English Female", { rate: 0.9 });
-    }
-</script>
-
 

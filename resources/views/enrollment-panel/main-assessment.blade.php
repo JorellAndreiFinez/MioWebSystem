@@ -1,23 +1,3 @@
-@php
-$phrases = [
-    1 => 'cat',                        // Easy word
-    2 => 'bicycle',                   // Medium word
-    3 => 'extraordinary',             // Hard word
-    4 => 'Bright sun',              // Easy phrase
-    5 => 'Lifelong learning journey', // Medium phrase
-];
-@endphp
-
-@php
-$auditoryAnswers = [
-    1 => 'dog',                    // Easy word
-    2 => 'helicopter',            // Medium word
-    3 => 'unbelievable',          // Hard word
-    4 => 'It is raining.',        // Easy short phrase
-    5 => 'She is my friend.',     // Easy short phrase
-];
-@endphp
-
 <section class="home-section">
     <div class="text">Physical Evaluation</div>
 
@@ -32,12 +12,19 @@ $auditoryAnswers = [
             <h4>Speech Test</h4>
             <p>Please speak the word or phrase shown. Your voice will be recorded.</p>
 
-            @for ($i = 1; $i <= 5; $i++)
+            @for ($i = 1; $i <= count($phrases); $i++)
             <div class="speech-item">
                 <label>
                     <strong>Item {{ $i }}:</strong>
-                    <span id="speech-phrase-{{ $i }}">{{ $phrases[$i] }}</span>
+                     <span id="speech-phrase-{{ $i }}">
+                        {{ $phrases[$i - 1]['text'] ?? $phrases[$i - 1] ?? '' }}
+                    </span>
                 </label>
+                 @if (!empty($phrases[$i - 1]['image_url']))
+                    <div class="speech-image mb-2">
+                        <img src="{{ $phrases[$i - 1]['image_url'] }}" alt="Image for {{ $phrases[$i - 1]['text']}}" style="max-width: 150px; height: auto;">
+                    </div>
+                @endif
                 <div class="speech-controls">
                     <div class="buttons">
                         <button type="button" id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
@@ -47,25 +34,34 @@ $auditoryAnswers = [
                     <button type="button" id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
                 </div>
             </div>
-            @endfor
+        @endfor
+
         </div>
 
-            <!-- Auditory Test (5 Items) -->
             <div class="card mb-5">
                 <h4>Auditory Test</h4>
                 <p>Listen to the audio and type what you hear.</p>
 
-                @for ($i = 1; $i <= 5; $i++)
-                    <div class="mb-3">
-                        <label><strong>Audio {{ $i }}:</strong></label>
-                        <div>
-                           <button type="button" onclick="playAuditory({{ $i }})" class="btn btn-sm btn-info">🔊 Play Audio</button>
+                @for ($i = 1; $i <= count($auditoryAnswers); $i++)
+                <div class="mb-3">
+                    <label><strong>Audio {{ $i }}:</strong></label>
+                    <div>
+                        <button type="button" onclick="playAuditory({{ $i }})" class="btn btn-sm btn-info">🔊 Play Audio</button>
+                        <input type="text" name="auditory_inputs[]" class="form-control mt-2" placeholder="Type what you heard...">
 
-                           <input type="text" name="auditory_inputs[]" class="form-control mt-2" placeholder="Type what you heard...">
-
+                        <!-- NEW: Volume level for SRT -->
+                        <input type="hidden" name="auditory_volume_levels[]" id="volume-level-{{ $i }}" value="1.0">
+                        <div class="mt-2">
+                            <label for="volume-slider-{{ $i }}" class="form-label">Volume Level</label>
+                            <input type="range" id="volume-slider-{{ $i }}" min="0.2" max="1.0" step="0.2" value="1.0"
+                                onchange="updateVolumeLevel({{ $i }}, this.value)">
+                            <span id="volume-display-{{ $i }}">1.0</span>
                         </div>
                     </div>
+                </div>
                 @endfor
+
+
             </div>
             <div style="text-align: right; margin-top: 2rem;">
         <button type="submit" id="submit-speechace" class="btn btn-primary">Next</button>
@@ -83,6 +79,8 @@ $auditoryAnswers = [
 const recordings = {}; // store audio blobs per item
 let mediaRecorder;
 let audioChunks = [];
+
+ const speechCount = {{ count($phrases) }};
 
 function startRecording(id) {
     const startBtn = document.querySelector(`#start-btn-${id}`);
@@ -178,28 +176,39 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
-    const formData = new FormData();
+    const formData = new FormData(this); // 'this' is the form element in submit handler
+
 
     // Append speech texts and audio blobs
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= speechCount; i++) {
         const audioBlob = recordings[i];
         const text = document.getElementById('speech-phrase-' + i).textContent;
 
-        formData.append(`texts[]`, text);
-        if (audioBlob) {
-            formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
-        } else {
-            // No recording for this item, maybe alert or handle accordingly
+        if (!audioBlob) {
             alert(`Please record phrase #${i} first.`);
             submitBtn.disabled = false;
             submitBtn.textContent = 'Next';
             return;
         }
+
+        formData.append(`texts[]`, text);
+        formData.append(`user_audio_files[]`, audioBlob, `recording_${i}.wav`);
     }
+
 
     // Append auditory answers
     document.querySelectorAll('input[name="auditory_inputs[]"]').forEach(input => {
         formData.append('auditory_inputs[]', input.value.trim());
+    });
+
+
+     // ✅ Append replay counts and response times — THIS WAS MISSING BEFORE
+    Object.keys(auditoryReplayCounts).forEach(index => {
+        formData.append('auditory_replay_counts[]', auditoryReplayCounts[index]);
+    });
+
+    Object.keys(auditoryResponseTimes).forEach(index => {
+        formData.append('auditory_response_times[]', auditoryResponseTimes[index]);
     });
 
     fetch(this.action, {
@@ -228,24 +237,51 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     });
 });
 
-
-
-
 </script>
 
 <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
 <script>
-    const auditoryTexts = {
-        1: "dog",
-        2: "helicopter",
-        3: "unbelievable",
-        4: "It is raining.",
-        5: "She is my friend."
-    };
+let auditoryStartTimes = {};
+let auditoryReplayCounts = {};
+let auditoryResponseTimes = {};
 
-    function playAuditory(index) {
-        const text = auditoryTexts[index];
-        responsiveVoice.speak(text, "US English Female", { rate: 0.9 });
+    
+function updateVolumeLevel(index, value) {
+    document.getElementById('volume-level-' + index).value = value;
+    document.getElementById('volume-display-' + index).innerText = value;
+}
+
+ const auditoryTexts = {!! json_encode(array_map(function($ans) {
+        return is_array($ans) ? $ans[0] : $ans;
+    }, $auditoryAnswers)) !!};
+
+function playAuditory(index) {
+    const zeroIndex = index; // adjust for 1-based input id vs zero-based arrays
+    const text = auditoryTexts[zeroIndex];
+    const volume = parseFloat(document.getElementById('volume-level-' + index).value || '1.0');
+
+    if (!auditoryStartTimes[index]) {
+        auditoryStartTimes[index] = Date.now();
     }
-</script>
 
+    auditoryReplayCounts[index] = (auditoryReplayCounts[index] || 0) + 1;
+
+    responsiveVoice.speak(text, "US English Female", {
+        rate: 0.9,
+        volume: volume
+    });
+}
+
+
+document.querySelectorAll('input[name="auditory_inputs[]"]').forEach((input, idx) => {
+    input.addEventListener('input', () => {
+        // Record only first time the user interacts
+        if (!auditoryResponseTimes[idx + 1]) {
+            const reaction = Date.now() - (auditoryStartTimes[idx + 1] || Date.now());
+            auditoryResponseTimes[idx + 1] = Math.round(reaction / 1000); // in seconds
+        }
+    });
+});
+
+
+</script>

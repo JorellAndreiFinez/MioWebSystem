@@ -1,33 +1,3 @@
-@php
-$questions = [
-    1 => [
-        'sentence' => 'I need to schedule an appointment with _____',
-        'choices' => ['the dentist', 'the police', 'the janitor'],
-        'correct' => 'I need to schedule an appointment with the dentist',
-    ],
-    2 => [
-       'sentence' => 'Juan moved into _____',
-        'choices' => ['the mall', 'an apartment', 'the library'],
-        'correct' => 'Juan moved into an apartment',
-    ],
-    3 => [
-        'sentence' => 'They arrived _____ the meeting started.',
-        'choices' => ['before', 'during', 'beneath'],
-        'correct' => 'They arrived before the meeting started.',
-    ],
-    4 => [
-       'sentence' => 'He apologized _____ being late to the meeting.',
-        'choices' => ['for', 'of', 'with'],
-        'correct' => 'He apologized for being late to the meeting.',
-    ],
-    5 => [
-        'sentence' => 'He ordered _____ at the restaurant.',
-        'choices' => ['fried chicken', 'a backpack', 'a lightbulb'],
-        'correct' => 'He ordered fried chicken at the restaurant.',
-    ],
-];
-@endphp
-
 
 <section class="home-section">
     <div class="text">Physical Evaluation</div>
@@ -43,31 +13,31 @@ $questions = [
             <h4>Reading Test</h4>
             <p>Please speak the sentences shown. Your voice will be recorded.</p>
 
-            @for ($i = 1; $i <= 5; $i++)
+           @foreach ($fillblanks as $index => $item)
             <div class="speech-item">
                 <label>
-                    <strong>Item {{ $i }}:</strong>
-                    <span id="speech-phrase-{{ $i }}">{{ $questions[$i]['sentence'] }}</span>
-                    <input type="hidden" name="texts[]" value="{{ $questions[$i]['correct'] }}">
+                    <strong>Item {{ $index + 1 }}:</strong>
+                    <span id="speech-phrase-{{ $index + 1 }}">{{ $item['text'] ?? '' }}</span>
+                    <input type="hidden" name="texts[]" value="{{ $item['full_answer'] ?? '' }}">
                     <div class="choices" style="margin-left: 1rem;">
                         <ul>
-                            @foreach ($questions[$i]['choices'] as $choice)
-                                <li>{{ $choice }}</li>
-                            @endforeach
+                            <li>A. {{ $item['a'] ?? '' }}</li>
+                            <li>B. {{ $item['b'] ?? '' }}</li>
+                            <li>C. {{ $item['c'] ?? '' }}</li>
                         </ul>
                     </div>
-
                 </label>
                 <div class="speech-controls">
                     <div class="buttons">
-                        <button type="button" id="start-btn-{{ $i }}" onclick="startRecording({{ $i }})" class="btn btn-sm btn-success">Start</button>
-                        <button type="button" id="stop-btn-{{ $i }}" onclick="stopRecording({{ $i }})" class="btn btn-sm btn-danger" disabled>Stop</button>
+                        <button type="button" id="start-btn-{{ $index + 1 }}" onclick="startRecording({{ $index + 1 }})" class="btn btn-sm btn-success">Start</button>
+                        <button type="button" id="stop-btn-{{ $index + 1 }}" onclick="stopRecording({{ $index + 1 }})" class="btn btn-sm btn-danger" disabled>Stop</button>
                     </div>
-                    <div id="waveform-{{ $i }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
-                    <button type="button" id="play-pause-{{ $i }}" class="btn btn-sm btn-primary">Play/Pause</button>
+                    <div id="waveform-{{ $index + 1 }}" class="waveform" style="width: 100%; height: 80px; margin-top: 10px;"></div>
+                    <button type="button" id="play-pause-{{ $index + 1 }}" class="btn btn-sm btn-primary">Play/Pause</button>
                 </div>
             </div>
-            @endfor
+            @endforeach
+
         </div>
             <div style="text-align: right; margin-top: 2rem;">
         <button type="submit" id="submit-speechace" class="btn btn-primary">Next</button>
@@ -169,6 +139,9 @@ function stopRecording(id) {
     }
 }
 
+const fillblanksCount = {{ count($fillblanks) }};
+
+
 document.getElementById('speech-auditory-form').addEventListener('submit', function(e) {
     e.preventDefault();
 
@@ -183,7 +156,7 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
     const formData = new FormData();
 
     // Append speech texts and audio blobs
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= fillblanksCount; i++) {
         const audioBlob = recordings[i];
        const text = document.getElementsByName('texts[]')[i - 1].value;
 
@@ -223,20 +196,5 @@ document.getElementById('speech-auditory-form').addEventListener('submit', funct
 
 </script>
 
-<script src="https://code.responsivevoice.org/responsivevoice.js"></script>
-<script>
-    const auditoryTexts = {
-        1: "dog",
-        2: "helicopter",
-        3: "unbelievable",
-        4: "It is raining.",
-        5: "She is my friend."
-    };
-
-    function playAuditory(index) {
-        const text = auditoryTexts[index];
-        responsiveVoice.speak(text, "US English Female", { rate: 0.9 });
-    }
-</script>
 
 

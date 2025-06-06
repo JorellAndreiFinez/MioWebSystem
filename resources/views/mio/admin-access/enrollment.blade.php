@@ -46,7 +46,7 @@
 
                     <tr>
                         <td>{{ $enrollee['ID'] ?? $id }}</td>
-                        <td>{{ $enrollee['fname'] }}</td>
+                        <td>{{ isset($enrollee['enrollment_form']['first_name']) ? $enrollee['enrollment_form']['first_name'] : 'N/A' }}</td>
                         <td>{{ $enrollee['enroll_status'] }}</td>
 
                         <td class="action-icons">

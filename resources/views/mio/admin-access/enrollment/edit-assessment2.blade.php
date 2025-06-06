@@ -65,46 +65,53 @@
                         <th>Type</th>
                         <th>Question</th>
                         <th>Level</th>
+                        <th>Image</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                   @if(!empty($mcqs[$levelKey]) && count($mcqs[$levelKey]) > 0)
-                        @foreach($mcqs[$levelKey] as $itemID => $item)
-                            <tr data-key="{{ $itemID }}">
-                                <td>{{ $itemID }}</td>
-                                <td>{{ ucfirst(str_replace('_', ' ', $item['type'] ?? '')) }}</td>
-                                <td>
-                                    <strong>{{ $item['question'] ?? '' }}</strong>
-                                    @if(isset($item['type']) && strpos($item['type'], 'multiple') !== false)
-                                        <ul style="padding-left: 15px; margin-top:5px;">
-                                            @foreach($item['options'] ?? [] as $key => $option)
-                                                <li @if($item['correct'] == $key || (is_array($item['correct']) && in_array($key, $item['correct']))) style="font-weight: bold; color: green;" @endif>
-                                                    {{ $key }}. {{ $option }}
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    @elseif($item['type'] == 'fill_blank')
-                                        <div style="margin-top:5px;"><em>Answer:</em> {{ $item['correct'] ?? '' }}</div>
-                                    @endif
-                                </td>
-                                <td>{{ ucfirst($item['level'] ?? '') }}</td>
-                                <td>
-                                    <button
-                                        class="btn btn-primary btn-sm"
-                                        data-question='@json($item)'
-                                        data-update-url="{{ route('mio.update-question', ['type' => $type, 'id' => $itemID]) }}"
-                                        onclick="handleEditQuestion(this)">
-                                        Edit
-                                    </button>
-                                </td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr><td colspan="5" class="text-center">No questions for {{ $levelLabel }}.</td></tr>
-                    @endif
-
-                </tbody>
+                    @if(!empty($mcqs[$levelKey]) && count($mcqs[$levelKey]) > 0)
+                            @foreach($mcqs[$levelKey] as $itemID => $item)
+                                <tr data-key="{{ $itemID }}">
+                                    <td>{{ $itemID }}</td>
+                                    <td>{{ ucfirst(str_replace('_', ' ', $item['type'] ?? '')) }}</td>
+                                    <td>
+                                        <strong>{{ $item['question'] ?? '' }}</strong>
+                                        @if(isset($item['type']) && strpos($item['type'], 'multiple') !== false)
+                                            <ul style="padding-left: 15px; margin-top:5px;">
+                                                @foreach($item['options'] ?? [] as $key => $option)
+                                                    <li @if($item['correct'] == $key || (is_array($item['correct']) && in_array($key, $item['correct']))) style="font-weight: bold; color: green;" @endif>
+                                                        {{ $key }}. {{ $option }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @elseif($item['type'] == 'fill_blank')
+                                            <div style="margin-top:5px;"><em>Answer:</em> {{ $item['correct'] ?? '' }}</div>
+                                        @endif
+                                    </td>
+                                    <td>{{ ucfirst($item['level'] ?? '') }}</td>
+                                    <td>
+                                        @if (!empty($item['image_url']))
+                                            <a href="#" onclick="showImageModal('{{ $item['image_url'] }}'); return false;">
+                                                <i class="fas fa-image fa-2x text-primary"></i>
+                                            </a>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <button
+                                            class="btn btn-primary btn-sm"
+                                            data-question='@json($item)'
+                                            data-update-url="{{ route('mio.update-question', ['type' => $type, 'id' => $itemID]) }}"
+                                            onclick="handleEditQuestion(this)">
+                                            Edit
+                                        </button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        @else
+                            <tr><td colspan="6" class="text-center">No questions for {{ $levelLabel }}.</td></tr>
+                        @endif
+                    </tbody>
             </table>
             <hr class="my-5">
 
@@ -113,6 +120,18 @@
         </main>
     </div>
 </section>
+
+<!-- Image Preview Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body text-center">
+        <img id="modalImage" src="" alt="Preview" class="img-fluid rounded">
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- Edit Question Modal -->
 <div class="modal fade" id="editQuestionModal" tabindex="-1" role="dialog" aria-labelledby="editQuestionModalLabel" aria-hidden="true">
@@ -664,8 +683,6 @@
     });
 </script>
 
-
-
 <script>
 function openModal(deleteUrl, itemName = 'this item', itemType = 'item') {
     const modal = document.getElementById("confirmModal");
@@ -686,6 +703,18 @@ function closeModal() {
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
+</script>
+
+<script>
+    const csrfToken = '{{ csrf_token() }}';
+    const assessmentType = '{{ $type }}';
+
+    function showImageModal(imageUrl) {
+        const modalImg = document.getElementById('modalImage');
+        modalImg.src = imageUrl;
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+    }
 </script>
 
 

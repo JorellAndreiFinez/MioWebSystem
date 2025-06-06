@@ -32,25 +32,39 @@
         @if(count($speech) > 0)
             @foreach ($speech as $speechID => $phrase)
             <tr data-key="{{ $speechID }}">
-            <td>{{ $speechID }}</td>
-            <td class="phrase-text">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
-            <td class="phrase-level">{{ $phrase['level'] ?? '' }}</td>
+                <td>{{ $speechID }}</td>
+                
+                <td class="phrase-text">
+                    <span>{{ htmlspecialchars($phrase['text'] ?? '') }}</span>
+                    <input type="text" name="speech[{{ $speechID }}][text]" class="form-control d-none" value="{{ $phrase['text'] ?? '' }}">
+                </td>
 
-            <td>
-            @if (!empty($phrase['image_url']))
-                <a href="#" onclick="showImageModal('{{ $phrase['image_url'] }}'); return false;">
-                    <i class="fas fa-image fa-2x text-primary"></i> <!-- Font Awesome icon -->
-                </a>
-            @endif
-            </td>
+                <td class="phrase-level">
+                    <span>{{ $phrase['level'] ?? '' }}</span>
+                    <select name="speech[{{ $speechID }}][level]" class="form-control d-none">
+                        @foreach(['Easy', 'Medium', 'Hard'] as $level)
+                            <option value="{{ $level }}" {{ ($phrase['level'] ?? '') == $level ? 'selected' : '' }}>{{ $level }}</option>
+                        @endforeach
+                    </select>
+                </td>
 
-            <td class="phrase-actions">
-                <input type="hidden" name="speech[{{ $speechID }}][_delete]" class="delete-flag" value="0">
-                <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
-                <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
-            </td>
+                <td>
+                    @if (!empty($phrase['image_url']))
+                        <a href="#" onclick="showImageModal('{{ $phrase['image_url'] }}'); return false;">
+                            <i class="fas fa-image fa-2x text-primary"></i>
+                        </a>
+                    @endif
+                    <input type="file" name="speech[{{ $speechID }}][image]" class="form-control d-none">
+                </td>
+
+                <td class="phrase-actions">
+                    <input type="hidden" name="speech[{{ $speechID }}][_delete]" class="delete-flag" value="0">
+                    <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
+                    <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
+                </td>
             </tr>
             @endforeach
+
         @else
             <tr>
             <td colspan="4" class="text-center">No speech phrases found. Please add some.</td>
@@ -706,75 +720,120 @@ function markDelete(button) {
         const row = button.closest('tr');
         const key = row.getAttribute('data-key');
 
-        // Get current phrase text and level
+        // Prevent double editing
+        if (row.classList.contains('editing')) return;
+
+        row.classList.add('editing');
+
         const textCell = row.querySelector('.phrase-text');
         const levelCell = row.querySelector('.phrase-level');
         const actionsCell = row.querySelector('.phrase-actions');
-         const imageCell = row.querySelector('td:nth-child(4)');
+        const imageCell = row.querySelector('td:nth-child(4)');
 
-        const currentText = textCell.textContent.trim();
-        const currentLevel = levelCell.textContent.trim();
+        const currentText = textCell.querySelector('span').textContent.trim();
+        const currentLevel = levelCell.querySelector('span').textContent.trim();
+        const currentImage = imageCell.querySelector('a')?.getAttribute('onclick')?.match(/'(.*?)'/)?.[1] || '';
 
-        // Replace text with input
-        textCell.innerHTML = `<input type="text" name="speech[${key}][text]" class="form-control" value="${currentText}">`;
+        // Replace text cell
+        textCell.innerHTML = `
+            <input type="text" name="speech[${key}][text]" class="form-control" value="${currentText}">
+        `;
 
-        // Replace level with select dropdown
+        // Replace level cell
         levelCell.innerHTML = `
             <select name="speech[${key}][level]" class="form-control">
-            <option value="Easy" ${currentLevel === 'Easy' ? 'selected' : ''}>Easy</option>
-            <option value="Medium" ${currentLevel === 'Medium' ? 'selected' : ''}>Medium</option>
-            <option value="Hard" ${currentLevel === 'Hard' ? 'selected' : ''}>Hard</option>
-            </select>`;
+                <option value="Easy"${currentLevel === 'Easy' ? ' selected' : ''}>Easy</option>
+                <option value="Medium"${currentLevel === 'Medium' ? ' selected' : ''}>Medium</option>
+                <option value="Hard"${currentLevel === 'Hard' ? ' selected' : ''}>Hard</option>
+            </select>
+        `;
 
-            // Replace image cell content with file input and existing image if any
-            let existingImg = '';
-            const imgTag = imageCell.querySelector('img');
-            if (imgTag) {
-                existingImg = `<img src="${imgTag.src}" width="50" alt="Image" style="display:block; margin-bottom:5px;">`;
-            }
-            imageCell.innerHTML = `
-                ${existingImg}
-                <input type="file" name="speech[${key}][image]" class="form-control">
-            `;
+        // Replace image cell (preserve current image with preview)
+        imageCell.innerHTML = `
+            ${currentImage ? `<img src="${currentImage}" width="50" alt="Image" style="display:block; margin-bottom:5px;">` : ''}
+            <input type="file" name="speech[${key}][image]" class="form-control mt-1">
+            ${currentImage ? `<input type="hidden" name="speech[${key}][existing_image]" value="${currentImage}">` : ''}
+        `;
 
-        // Replace action buttons with Save and Delete
+        // Action buttons
         actionsCell.innerHTML = `
-            <button type="submit" class="btn btn-sm btn-success" onclick="saveSpeechRow(this)">Save</button>
+            <button type="button" class="btn btn-sm btn-success" onclick="saveSpeechRow(this)">Save</button>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEdit(this)">Cancel</button>
         `;
     }
 
     // Save changes for the row, toggle inputs back to text and level
-    function saveSpeechRow(button) {
-    const row = button.closest('tr');
-    const key = row.getAttribute('data-key');
+   function saveSpeechRow(button) {
+        const row = button.closest('tr');
+        const key = row.getAttribute('data-key');
+        row.classList.remove('editing');
 
-    const textInput = row.querySelector(`input[name="speech[${key}][text]"]`);
-    const levelSelect = row.querySelector(`select[name="speech[${key}][level]"]`);
-    const actionsCell = row.querySelector('.phrase-actions');
-    const textCell = row.querySelector('.phrase-text');
-    const levelCell = row.querySelector('.phrase-level');
+        const textInput = row.querySelector(`input[name="speech[${key}][text]"]`);
+        const levelSelect = row.querySelector(`select[name="speech[${key}][level]"]`);
+        const existingImageInput = row.querySelector(`input[name="speech[${key}][existing_image]"]`);
+        const imageInput = row.querySelector(`input[name="speech[${key}][image]"]`);
 
-    if (!textInput.value.trim()) {
-        alert('Please enter a phrase.');
-        return;
+        if (!textInput.value.trim()) {
+            alert('Please enter a phrase.');
+            return;
+        }
+
+        const textCell = row.querySelector('.phrase-text');
+        const levelCell = row.querySelector('.phrase-level');
+        const imageCell = row.querySelector('td:nth-child(4)');
+        const actionsCell = row.querySelector('.phrase-actions');
+
+        // Update display for text and level
+        textCell.innerHTML = `
+            <span>${textInput.value.trim()}</span>
+            <input type="hidden" name="speech[${key}][text]" value="${textInput.value.trim()}">
+        `;
+
+        levelCell.innerHTML = `
+            <span>${levelSelect.value}</span>
+            <input type="hidden" name="speech[${key}][level]" value="${levelSelect.value}">
+        `;
+
+        // Keep the existing image preview + file input (DO NOT REMOVE IT!)
+        let imageHTML = '';
+        if (existingImageInput) {
+            const existingURL = existingImageInput.value;
+            imageHTML += `
+                <a href="#" onclick="showImageModal('${existingURL}'); return false;">
+                    <i class="fas fa-image fa-2x text-primary"></i>
+                </a>
+                <input type="hidden" name="speech[${key}][existing_image]" value="${existingURL}">
+            `;
+        }
+
+        imageCell.innerHTML = '';
+
+        if (existingImageInput) {
+            const existingURL = existingImageInput.value;
+            imageCell.innerHTML += `
+                <a href="#" onclick="showImageModal('${existingURL}'); return false;">
+                    <i class="fas fa-image fa-2x text-primary"></i>
+                </a>
+                <input type="hidden" name="speech[${key}][existing_image]" value="${existingURL}">
+            `;
+        }
+
+        if (imageInput) {
+            imageCell.appendChild(imageInput); // ✅ PRESERVE FILE SELECTION
+        }
+
+
+
+        // Restore the action buttons
+        actionsCell.innerHTML = `
+            <input type="hidden" name="speech[${key}][_delete]" class="delete-flag" value="0">
+            <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
+            <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
+        `;
+
+        showSubmitButton(); // Ensure submit button is shown after editing
     }
 
-    // Update cells with new values as plain text
-    textCell.textContent = textInput.value.trim();
-    levelCell.textContent = levelSelect.value;
-
-    // Keep existing image and file input as is (file input remains to allow upload)
-    // Or you can reset imageCell content if you want (optional)
-
-    // Restore action buttons
-    actionsCell.innerHTML = `
-        <input type="hidden" name="speech[${key}][_delete]" class="delete-flag" value="0">
-        <button type="button" class="btn btn-sm btn-primary" onclick="editSpeechRow(this)">Edit</button>
-        <button type="button" class="btn btn-sm btn-danger" onclick="markDelete(this)">Remove</button>
-    `;
-
-    showSubmitButton();
-    }
 
     // Cancel editing, revert to original display
     function cancelEdit(button) {

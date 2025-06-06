@@ -10,13 +10,15 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>First Name</label>
-                        <input type="text" name="first_name" value="{{ $enrollee['fname'] }}" readonly />
+                        <input type="text" name="first_name" value="{{ $enrollee['enrollment_form']['first_name'] }}" readonly />
                     </div>
                     <div class="form-group">
                         <label>Last Name</label>
                         <input type="text" name="last_name" value="{{ $enrollee['enrollment_form']['last_name'] }}" readonly />
                     </div>
                 </div>
+
+                <hr>
 
                  <div class="form-row">
                     <div class="form-group">
@@ -33,39 +35,44 @@
                     </div>
                 </div>
 
+                <hr>
+
                 <div class="form-row">
                     <div class="form-group wide">
-                        <label>Street Name, Building, House No.</label>
-                        <input type="text" name="street" value="{{ $enrollee['enrollment_form']['street'] }}" readonly />
+                        <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" id="region" name="region" readonly />
                     </div>
+
                     <div class="form-group wide">
-                        <label>Barangay</label>
-                        <input type="text" name="barangay" value="{{ $enrollee['enrollment_form']['barangay'] }}" readonly />
+                        <label>Province <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" id="province" name="province" readonly />
                     </div>
+
                     <div class="form-group wide">
-                        <label for="region">Region</label>
-                        <select id="region" name="region" disabled>
-                            <option value="">Select a Region</option>
-                            <option value="NCR" {{ ($form['region'] ?? '') == 'NCR' ? 'selected' : '' }}>NCR</option>
-                            <option value="CAR" {{ ($form['region'] ?? '') == 'CAR' ? 'selected' : '' }}>CAR</option>
-                        </select>
+                        <label>City/ Municipality <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" id="city" name="city" readonly />
+                    </div>
+
+                    <div class="form-group wide">
+                        <label>Barangay <span style="color: red; font-weight:700">*</span> </label>
+                        <input type="text" id="barangay" name="barangay" readonly />
                     </div>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group wide">
-                        <label>Province</label>
-                        <input type="text" name="province" value="{{ $enrollee['enrollment_form']['province'] }}" readonly />
+                        <label>Building/House No., Street <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="address" placeholder="Home Address" readonly />
                     </div>
-                    <div class="form-group wide">
-                        <label>City</label>
-                        <input type="text" name="city" value="{{ $enrollee['enrollment_form']['city'] }}"readonly />
-                    </div>
-                    <div class="form-group wide">
-                        <label>Zip Code</label>
-                        <input type="number" name="zip_code" value="{{ $enrollee['enrollment_form']['zip_code'] }}" readonly />
+
+                    <div class="form-group">
+                        <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
+                        <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" maxlength="4" readonly />
                     </div>
                 </div>
+
+                    <hr>
+
 
                 <div class="form-row">
                     <div class="form-group">
@@ -83,175 +90,330 @@
                 </div>
             </div>
 
-            <!-- Academic Info -->
+             @php
+                $gradeMap = [
+                    'kinder' => 'Kinder',
+                    'elementary' => 'Elementary',
+                    'junior-highschool' => 'Junior High School',
+                    'senior-highschool' => 'Senior High School',
+                    'one-on-one-therapy' => 'One-on-One Therapy',
+                ];
+
+                $enrollmentGradeKey = $enrollee['enrollment_form']['enrollment_grade'] ?? '';
+                $enrollmentGradeDisplay = $gradeMap[$enrollmentGradeKey] ?? $enrollmentGradeKey;
+            @endphp
+
+            <!-- Academic Information Section -->
             <div class="section-header">Academic Information</div>
             <div class="section-content">
                 <div class="form-row">
                     <div class="form-group wide">
-                        <label>Previous School Attended</label>
-                        <input type="text" name="previous_school" value="{{ $enrollee['enrollment_form']['previous_school'] }}" readonly />
+                        <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="previous_school" id="previous_school" value="{{ $enrollee['enrollment_form']['previous_school'] ?? '' }}" readonly />
                     </div>
                     <div class="form-group">
-                        <label>Grade Level</label>
-                        <input type="number" name="grade_level"  value="{{ $enrollee['enrollment_form']['grade_level'] }}"  readonly />
+                        <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="previous_grade_level" id="previous_grade_level" value="{{ $enrollee['enrollment_form']['previous_grade_level'] ?? '' }}" readonly />
                     </div>
+                </div>
+                <hr>
+                <div class="form-group">
+                    <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
+                    <input type="text" name="enrollment_grade" id="enrollment_grade" value="{{ $enrollmentGradeDisplay }}" readonly />
+                </div>
+
+                <div class="form-group" id="grade_level_group">
+                    <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
+                    <input type="text" name="grade_level" id="grade_level" value="{{ $enrollee['enrollment_form']['grade_level'] ?? '' }}" readonly />
+                </div>
+
+                @if (!empty($enrollee['enrollment_form']['strand']))
+                    <div class="form-group" id="strand_group">
+                        <label>Strand <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="strand" id="strand" value="{{ $enrollee['enrollment_form']['strand'] }}" readonly />
+                    </div>
+                @endif
+
+            </div>
+
+    <!-- Health Information Section -->
+            <div class="section-header">Health Information</div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Medical History <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $enrollee['enrollment_form']['medical_history'] }}" readonly />
+                                </div>
+                                <div class="form-group">
+                                    <label>Type of Hearing Loss (if applicable)</label>
+                                    <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" value="{{ $enrollee['enrollment_form']['hearing_loss'] }}"  readonly/>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Do you identify as? <span style="color: red; font-weight:700">*</span></label>
+                                   <input type="text" value="{{ $enrollee['enrollment_form']['hearing_identity'] }}"  readonly>
+                                </div>
+                                <div class="form-group">
+                                    <label>Assistive Devices Used</label>
+                                    <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None" value="{{ $enrollee['enrollment_form']['assistive_devices'] }}" readonly/>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group wide">
+                                    <label>Other Notes or Health Concerns</label>
+                                    <input type="text" name="health_notes" placeholder="Specify any other relevant information" value="{{ $enrollee['enrollment_form']['health_notes'] }}" />
+                                </div>
+                            </div>
+                        </div>
+
+            <div class="form-group">
+            <div class="section-header">Uploaded Documents</div>
+            <div class="section-content">
+
+                <!-- File Preview Area -->
+                <div id="filePreviewContainer" style="margin-top: 20px; display: none; position: relative;">
+                <h3>Document Preview</h3>
+
+                <!-- Loader -->
+                <div id="previewLoader" style="
+                    position: absolute;
+                    top: 40px;
+                    left: 0;
+                    right: 0;
+                    height: 30px;
+                    background: #f0f0f0;
+                    text-align: center;
+                    line-height: 30px;
+                    font-weight: bold;
+                    display: none;
+                    z-index: 10;
+                    ">
+                    Loading document...
+                </div>
+
+                <div id="filePreview" style="border: 1px solid #ccc; padding: 10px;">
+                    <iframe id="previewFrame" src="" style="width: 100%; height: 500px;" frameborder="0"></iframe>
+                </div>
+                </div>
+
+
+
+
+                <!-- PSA Birth Certificate -->
+                <div class="document-group" style="margin-top: 3rem;">
+                    <p>
+                        <strong>PSA Birth Certificate:</strong>
+                        <button type="button" onclick="previewFile('{{ $enrollee['enrollment_form']['psa_birth_certificate_path'] ?? '' }}')">Preview</button>
+                    </p>
+                    <div id="psa" class="doc-files" style="display: none;">
+                        @if (!empty($enrollee['enrollment_form']['psa_birth_certificate_path']))
+                            <a href="{{ $enrollee['enrollment_form']['psa_birth_certificate_path'] }}" target="_blank">View PSA Birth Certificate</a><br>
+                        @endif
+                    </div>
+                </div>
+
+
+                <!-- Form 137 -->
+                <div class="document-group">
+                    <p>
+                        <strong>Form 137:</strong>
+                        <button type="button" onclick="previewFile('{{ $enrollee['enrollment_form']['form_137_path'] ?? '' }}')">Preview</button>
+                    </p>
+                    <div id="form137" class="doc-files" style="display: none;">
+                        @if (!empty($enrollee['enrollment_form']['form_137_path']))
+                            <a href="{{ $enrollee['enrollment_form']['form_137_path'] }}" target="_blank">View Form 137</a><br>
+                        @endif
+                    </div>
+                </div>
+
+
+                <!-- Good Moral -->
+            <div class="document-group">
+                <p>
+                    <strong>Good Moral:</strong>
+                    <button type="button" onclick="previewFile('{{ $enrollee['enrollment_form']['good_moral_path'] ?? '' }}')">Preview</button>
+                </p>
+                <div id="goodMoral" class="doc-files" style="display: none;">
+                    @if (!empty($enrollee['enrollment_form']['good_moral_path']))
+                        <a href="{{ $enrollee['enrollment_form']['good_moral_path'] }}" target="_blank">View Good Moral</a><br>
+                    @endif
                 </div>
             </div>
 
-            <!-- Health Info -->
-            <div class="section-header">Health Information</div>
-            <div class="section-content">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Medical History</label>
-                        <input type="text" name="medical_history"  value="{{ $enrollee['enrollment_form']['medical_history'] }}" readonly />
-                    </div>
-                    <div class="form-group">
-                        <label>Type of Disability</label>
-                        <input type="text" name="disability"  value="{{ $enrollee['enrollment_form']['disability'] }}"  readonly />
-                    </div>
-                    <div class="form-group">
-                        <label>Type of Hearing Loss (if applicable)</label>
-                        <input type="text" name="hearing_loss"  value="{{ $enrollee['enrollment_form']['hearing_loss'] }}"  readonly />
-                    </div>
-                </div>
 
-                <div class="form-row">
+                <!-- Health Certificate -->
+            <div class="document-group">
+                <p>
+                    <strong>Health Certificate:</strong>
+                    <button type="button" onclick="previewFile('{{ $enrollee['enrollment_form']['health_certificate_path'] ?? '' }}')">Preview</button>
+                </p>
+                <div id="healthCert" class="doc-files" style="display: none;">
+                    @if (!empty($enrollee['enrollment_form']['health_certificate_path']))
+                        <a href="{{ $enrollee['enrollment_form']['health_certificate_path'] }}" target="_blank">View Health Certificate</a><br>
+                    @endif
+                </div>
+            </div>
+
+                <!-- Payment Proof -->
+            <div class="document-group">
+                <p>
+                    <strong>Proof of Payment:</strong>
+                    <button type="button" onclick="previewFile('{{ $enrollee['enrollment_form']['payment_proof_path'] ?? '' }}')">Preview</button>
+                </p>
+                <div id="paymentProof" class="doc-files" style="display: none;">
+                    @if (!empty($enrollee['enrollment_form']['payment_proof_path']))
+                        <a href="{{ $enrollee['enrollment_form']['payment_proof_path'] }}" target="_blank">View Payment Proof</a>
+                    @endif
+                </div>
+            </div>
+
+            </div>
+
+
+            <!-- Teacher Action Section -->
+                <form id="teacherActionForm" method="POST" action="{{ route('mio.update-enrollee', ['id' => $id]) }}">
+                    @csrf
+                    @method('PUT')
+                    <div class="section-header">Admin Action</div>
+                    <div class="section-content">
+                    <div class="form-group wide">
+                        <label>Enrollment Feedback</label>
+                        <textarea name="feedback_admin" placeholder="Write your feedback here..." required>{{ $enrollee['feedback_admin'] ?? '' }}</textarea>
+                    </div>
                     <div class="form-group">
-                        <label>Do you identify as Deaf or Hard of Hearing?</label>
-                        <select name="hearing_identity" disabled>
-                            <option value="">Select one</option>
-                            <option value="deaf" {{ ($enrollee['enrollment_form']['hearing_identity'] ?? '') == 'deaf' ? 'selected' : '' }}>Deaf</option>
-                            <option value="hard_of_hearing" {{ ($enrollee['enrollment_form']['hearing_identity'] ?? '') == 'hard_of_hearing' ? 'selected' : '' }}>Hard of Hearing</option>
+                        <label>Enrollment Status</label>
+                        <select name="enroll_status" required>
+                        <option value="Revision" {{ $enrollee['enroll_status'] == 'Revision' ? 'selected' : '' }}>Revision</option>
+                        <option value="Registered" {{ $enrollee['enroll_status'] == 'Registered' ? 'selected' : '' }}>Registered</option>
+                        <option value="Assessment" {{ $enrollee['enroll_status'] == 'Assessment' ? 'selected' : '' }}>Assessment</option>
+                        <option value="Enrolled" {{ $enrollee['enroll_status'] == 'Enrolled' ? 'selected' : '' }}>Enrolled</option>
+                        <option value="Rejected" {{ $enrollee['enroll_status'] == 'Rejected' ? 'selected' : '' }}>Rejected</option>
                         </select>
                     </div>
-                </div>
-            </div>
 
-        <div class="form-group">
-        <div class="section-header">Uploaded Documents</div>
-        <div class="section-content">
-
-        <!-- File Preview Area -->
-        <div id="filePreviewContainer" style="margin-top: 20px;">
-        <h3>Document Preview</h3>
-        <div id="filePreview" style="border: 1px solid #ccc; padding: 10px;">
-            <iframe id="previewFrame" src="" style="width: 100%; height: 500px;" frameborder="0"></iframe>
-        </div>
-        </div>
-
-            <!-- PSA Birth Certificate -->
-            <div class="document-group" style="margin-top: 3rem;">
-                <p>
-                    <strong>PSA Birth Certificate:</strong>
-                    <button type="button" class="toggle-btn " onclick="toggleDoc('psa')">Show/Hide</button>
-                </p>
-                <div id="psa" class="doc-files" style="display: none;">
-                    @foreach ($enrollee['enrollment_form']['psa_birth_certificate_paths'] ?? [] as $path)
-                        <a href="{{ asset($path) }}" target="_blank">View PSA Birth Certificate</a><br>
-                    @endforeach
-                </div>
-            </div>
-
-            <!-- Form 137 -->
-            <div class="document-group">
-            <p>
-                <strong>Form 137:</strong>
-                <button type="button" class="toggle-btn" onclick="toggleDoc('form137')">Show/Hide</button>
-            </p>
-            <div id="form137" class="doc-files" style="display: none;">
-                @foreach ($enrollee['enrollment_form']['form_137_paths'] ?? [] as $path)
-                <a href="{{ asset($path) }}" target="_blank">View Form 137</a><br>
-                @endforeach
-            </div>
-            </div>
-
-            <!-- Good Moral -->
-            <div class="document-group">
-            <p>
-                <strong>Good Moral:</strong>
-                <button type="button" class="toggle-btn" onclick="toggleDoc('goodMoral')">Show/Hide</button>
-            </p>
-            <div id="goodMoral" class="doc-files" style="display: none;">
-                @foreach ($enrollee['enrollment_form']['good_moral_paths'] ?? [] as $path)
-                <a href="{{ asset($path) }}" target="_blank">View Good Moral</a><br>
-                @endforeach
-            </div>
-            </div>
-
-            <!-- Health Certificate -->
-            <div class="document-group">
-            <p>
-                <strong>Health Certificate:</strong>
-                <button type="button" class="toggle-btn" onclick="toggleDoc('healthCert')">Show/Hide</button>
-            </p>
-            <div id="healthCert" class="doc-files" style="display: none;">
-                @foreach ($enrollee['enrollment_form']['health_certificate_paths'] ?? [] as $path)
-                <a href="{{ asset($path) }}" target="_blank">View Health Certificate</a><br>
-                @endforeach
-            </div>
-            </div>
-
-            <!-- Payment Proof -->
-            <div class="document-group">
-            <p>
-                <strong>Proof of Payment:</strong>
-                <button type="button" class="toggle-btn" onclick="toggleDoc('paymentProof')">Show/Hide</button>
-            </p>
-            <div id="paymentProof" class="doc-files" style="display: none;">
-                @if (!empty($enrollee['enrollment_form']['payment_proof_path']))
-                <a href="{{ asset($enrollee['enrollment_form']['payment_proof_path']) }}" target="_blank">View Payment Proof</a>
-                @endif
-            </div>
-            </div>
-        </div>
-
-
-        <!-- Teacher Action Section -->
-            <form id="teacherActionForm" method="POST" action="{{ route('mio.update-enrollee', ['id' => $id]) }}">
-                @csrf
-                @method('PUT')
-                <div class="section-header">Admin Action</div>
-                <div class="section-content">
-                <div class="form-group wide">
-                    <label>Enrollment Feedback</label>
-                    <textarea name="feedback_admin" placeholder="Write your feedback here..." required>{{ $enrollee['feedback_admin'] ?? '' }}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Enrollment Status</label>
-                    <select name="enroll_status" required>
-                    <option value="Revision" {{ $enrollee['enroll_status'] == 'Revision' ? 'selected' : '' }}>Revision</option>
-                    <option value="Registered" {{ $enrollee['enroll_status'] == 'Registered' ? 'selected' : '' }}>Registered</option>
-                    <option value="Assessment" {{ $enrollee['enroll_status'] == 'Assessment' ? 'selected' : '' }}>Assessment</option>
-                    <option value="Enrolled" {{ $enrollee['enroll_status'] == 'Enrolled' ? 'selected' : '' }}>Enrolled</option>
-                    <option value="Rejected" {{ $enrollee['enroll_status'] == 'Rejected' ? 'selected' : '' }}>Rejected</option>
-                    </select>
-                </div>
-
-                 <div class="form-row">
-                     <div class="button-group">
-                    <button type="button" class="btn cancel-btn">
-                        <a href="{{ url()->previous() }}">Cancel</a>
-                    </button>
-                    <button class="btn add-btn" type="submit">
-                        <span class="icon">✔</span> Save Changes
-                    </button>
+                    <div class="form-row">
+                        <div class="button-group">
+                        <button type="button" class="btn cancel-btn">
+                            <a href="{{ route("mio.enrollment") }}">Cancel</a>
+                        </button>
+                        <button class="btn add-btn" type="submit">
+                            <span class="icon">✔</span> Save Changes
+                        </button>
+                        </div>
                     </div>
-                 </div>
                 </div>
 
 
             </form>
-
-
-
       </div>
   </div>
 </section>
 
+<!-- ----- SCRIPTS ----- -->
+
+<!-- PH ADDRESS -->
+
+<script>
+    const apiBase = "https://psgc.gitlab.io/api";
+
+    const regionNameMap = {
+        "010000000": "Region I - Ilocos Region",
+        "020000000": "Region II - Cagayan Valley",
+        "030000000": "Region III - Central Luzon",
+        "040000000": "Region IV-A - CALABARZON",
+        "170000000": "MIMAROPA Region",
+        "050000000": "Region V - Bicol Region",
+        "060000000": "Region VI - Western Visayas",
+        "070000000": "Region VII - Central Visayas",
+        "080000000": "Region VIII - Eastern Visayas",
+        "090000000": "Region IX - Zamboanga Peninsula",
+        "100000000": "Region X - Northern Mindanao",
+        "110000000": "Region XI - Davao Region",
+        "120000000": "Region XII - SOCCSKSARGEN",
+        "160000000": "CARAGA",
+        "140000000": "CAR - Cordillera Administrative Region",
+        "150000000": "BARMM - Bangsamoro Autonomous Region",
+        "130000000": "NCR - National Capital Region"
+    };
+
+    // Firebase enrollment_form data with codes:
+    const firebaseEnrollmentForm = {
+        region: "010000000",
+        province: "012900000",
+        city: "012903000",
+        barangay: "012903006",
+        address: "456 Sample St.",
+        zip_code: "1000"
+    };
+
+    async function fetchData(url) {
+        const res = await fetch(url);
+        return res.json();
+    }
+
+    // Utility to find name by code from a list
+    function findNameByCode(list, code) {
+        const item = list.find(i => i.code === code);
+        return item ? item.name : "";
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Set region name from the map immediately
+        document.getElementById('region').value = regionNameMap[firebaseEnrollmentForm.region] || "";
+
+        // Fetch provinces under region and find province name
+        const provinces = await fetchData(`${apiBase}/regions/${firebaseEnrollmentForm.region}/provinces/`);
+        document.getElementById('province').value = findNameByCode(provinces, firebaseEnrollmentForm.province);
+
+        // Fetch cities under province and find city name
+        const cities = await fetchData(`${apiBase}/provinces/${firebaseEnrollmentForm.province}/cities-municipalities/`);
+        document.getElementById('city').value = findNameByCode(cities, firebaseEnrollmentForm.city);
+
+        // Fetch barangays under city and find barangay name
+        const barangays = await fetchData(`${apiBase}/cities-municipalities/${firebaseEnrollmentForm.city}/barangays/`);
+        document.getElementById('barangay').value = findNameByCode(barangays, firebaseEnrollmentForm.barangay);
+
+        // Set address and zip code
+        document.querySelector("input[name='address']").value = firebaseEnrollmentForm.address;
+        document.querySelector("input[name='zip_code']").value = firebaseEnrollmentForm.zip_code;
+    });
+</script>
+
 <script>
   function previewFile(filePath) {
+    const previewContainer = document.getElementById('filePreviewContainer');
     const previewFrame = document.getElementById('previewFrame');
-    previewFrame.src = filePath;
+    const previewLoader = document.getElementById('previewLoader');
+
+    // Toggle off if same file clicked again
+    if (previewContainer.style.display !== 'none' && previewFrame.src === filePath) {
+      previewFrame.src = '';
+      previewContainer.style.display = 'none';
+      previewLoader.style.display = 'none';
+      return;
+    }
+
+    // Show container and loader
+    previewContainer.style.display = 'block';
+    previewLoader.style.display = 'block';
+
+    // Clear current src first to retrigger load event
+    previewFrame.src = '';
+
+    // Set new src after a tiny delay to ensure load event fires
+    setTimeout(() => {
+      previewFrame.src = filePath;
+    }, 50);
+
+    // When iframe finishes loading, hide the loader
+    previewFrame.onload = () => {
+      previewLoader.style.display = 'none';
+    };
   }
 </script>
+
+
+
