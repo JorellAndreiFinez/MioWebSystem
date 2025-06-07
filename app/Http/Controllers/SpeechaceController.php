@@ -33,7 +33,7 @@ class SpeechaceController extends Controller
 
     protected $bucketName;
     protected $storageClient;
-    
+
 
 
     public function __construct()
@@ -245,7 +245,7 @@ class SpeechaceController extends Controller
                 'extra_words' => array_values($extraWords),
                 'score' => $score,
                 'assessment' => $assessment,
-                'volume_level' => floatval($volumeLevels[$index] ?? 1.0), 
+                'volume_level' => floatval($volumeLevels[$index] ?? 1.0),
                 'replay_count' => (int)($replayCounts[$index] ?? 0),
                 'reaction_time_seconds' => (int)($responseTimes[$index] ?? 0),
                 'timestamp' => now()->toDateTimeString(),
@@ -527,109 +527,230 @@ class SpeechaceController extends Controller
     }
 
 
-    public function submit4(Request $request)
+   public function submit4(Request $request)
     {
-        $request->validate([
-            'texts' => 'required|array',
-            'texts.*' => 'required|string',
-            'user_audio_files' => 'required|array',
-            'user_audio_files.*' => 'required|file|mimes:wav,mp3,webm',
-        ]);
+        try {
 
-        $apiKey = env('SPEECHACE_API_KEY');
-        $texts = $request->input('texts');
-        $files = $request->file('user_audio_files');
-        $client = new \GuzzleHttp\Client();
-        $uid = Session::get('firebase_uid');
-        $results = [];
-
-        if ($uid) {
-            $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Sentence/status")
-                ->set('done');
-        }
-
-        foreach ($texts as $index => $text) {
-            $file = $files[$index] ?? null;
-            if (!$file) {
-                $results[] = ['error' => "Missing audio file for sentence #".($index+1)];
-                continue;
+            $uid = Session::get('firebase_uid');
+            if (!$uid) {
+                Log::error('No Firebase UID in session.');
+                return back()->withErrors(['user' => 'User not logged in or session expired.']);
             }
 
-            try {
-                $response = $client->request('POST', 'https://api2.speechace.com/api/scoring/text/v9/json', [
-                    'query' => ['key' => $apiKey, 'dialect' => 'en-us'],
-                    'multipart' => [
-                        ['name' => 'text', 'contents' => $text],
-                        ['name' => 'user_audio_file', 'contents' => fopen($file->getRealPath(), 'r'), 'filename' => $file->getClientOriginalName()],
-                        ['name' => 'markup_language', 'contents' => 'arpa_mark'],
-                    ],
-                ]);
+             $levelMap = [
+                'kinder' => 'kinder',
+                'elementary' => 'elementary',
+                'junior-highschool' => 'highschool',
+                'senior-highschool' => 'highschool',
+            ];
 
-                $resultRaw = $response->getBody()->getContents();
-                Log::info('SpeechAce API response: ' . $resultRaw);
 
-                $decoded = json_decode($resultRaw, true);
-                $overallQuality = $decoded['text_score']['overall_quality_score'] ?? null;
+            $user = Session::get('enrollment_user');
 
-                // Detect missing words (quality_score very low or zero)
-                $missingWords = [];
-                if (!empty($decoded['text_score']['word_score_list'])) {
-                    foreach ($decoded['text_score']['word_score_list'] as $word) {
-                        // You can tune this threshold depending on what you consider "missing"
-                        $qualityScore = $word['quality_score'] ?? 100;
-                        if ($qualityScore < 20) { // consider words below 20 quality_score as missing/not spoken well
-                            $missingWords[] = $word['word'] ?? '';
-                        }
+            $enrollmentForm = $user['enrollment_form'] ?? [];
+
+            Log::info('Enrollment form full data:', $enrollmentForm);
+
+            $possibleGradeKeys = ['enrollment_grade', 'grade_level', 'grade', 'level'];
+            $enrollmentGrade = null;
+
+            foreach ($possibleGradeKeys as $key) {
+                if (isset($enrollmentForm[$key]) && !empty($enrollmentForm[$key])) {
+                    $enrollmentGrade = $enrollmentForm[$key];
+                    break;
+                }
+            }
+
+            Log::info('Detected Enrollment Grade: ' . ($enrollmentGrade ?? 'NULL'));
+
+
+            $questionsRef = $this->database->getReference('enrollment/assessment_settings/written/questions');
+            $allQuestions = $questionsRef->getValue();
+            $enrollmentLevel = $levelMap[$enrollmentGrade] ?? null;
+            Log::info('Enrollment Grade: ' . $enrollmentGrade);
+
+
+            if (!$enrollmentLevel) {
+                return back()->withErrors(['level' => 'Cannot determine enrollment level.']);
+            }
+
+            $questionsRef = $this->database->getReference('enrollment/assessment_settings/written/questions');
+            $allQuestions = $questionsRef->getValue();
+
+            $questionTypes = array_unique(array_column(array_filter($allQuestions, function ($q) use ($enrollmentLevel) {
+                return isset($q['level']) && $q['level'] === $enrollmentLevel;
+            }), 'type'));
+
+            $rules = [
+                'start_time' => 'required|string',
+            ];
+
+            if (in_array('multiple_choice', $questionTypes) || in_array('multiple_single', $questionTypes) || in_array('multiple_multiple', $questionTypes)) {
+                $rules['selected_choices'] = 'array';
+                $rules['selected_choices.*'] = 'string';
+            }
+
+            $rules['fill_in_blanks'] = in_array('fill_blank', $questionTypes) ? 'array' : 'nullable';
+            $rules['fill_in_blanks.*'] = 'string';
+
+            $rules['sentence_order'] = in_array('syntax', $questionTypes) ? 'array' : 'nullable';
+            $rules['sentence_order.*'] = 'array';
+
+            $validated = $request->validate($rules);
+
+            $correctAnswers = [];
+            foreach ($allQuestions as $qid => $qdata) {
+                if (($qdata['level'] ?? '') === $enrollmentLevel) {
+                    $type = $qdata['type'] ?? '';
+                    switch ($type) {
+                        case 'multiple_single':
+                        case 'multiple_multiple':
+                        case 'fill_blank':
+                            $correctAnswers[$qid] = $qdata['correct_answer'] ?? null;
+                            break;
+                        case 'syntax':
+                            $cleaned = preg_replace('/[^\w\s]/u', '', $qdata['correct'] ?? '');
+                            $correctAnswers[$qid] = preg_split('/\s+/', strtolower($cleaned), -1, PREG_SPLIT_NO_EMPTY);
+                            break;
                     }
                 }
-
-                $threshold = 80;
-                $isMatch = ($overallQuality !== null && $overallQuality >= $threshold);
-
-                $cleaned = [
-                    'text' => $decoded['text_score']['text'] ?? '',
-                    'overall_quality_score' => $overallQuality,
-                    'is_match' => $isMatch,
-                    'missing_words' => $missingWords, // store missing words here
-                    'ending_punctuation' => $decoded['text_score']['ending_punctuation'] ?? null,
-                    'ielts_pronunciation_score' => $decoded['text_score']['ielts_score']['pronunciation'] ?? null,
-                    'pte_pronunciation_score' => $decoded['text_score']['pte_score']['pronunciation'] ?? null,
-                    'toeic_pronunciation_score' => $decoded['text_score']['toeic_score']['pronunciation'] ?? null,
-                    'cefr_pronunciation_score' => $decoded['text_score']['cefr_score']['pronunciation'] ?? null,
-                    'speechace_pronunciation_score' => $decoded['text_score']['speechace_score']['pronunciation'] ?? null,
-                    'version' => $decoded['version'] ?? null,
-                    'request_id' => $decoded['request_id'] ?? null,
-                    'words' => [],
-                    'timestamp' => now()->toDateTimeString(),
-                ];
-
-                foreach ($decoded['text_score']['word_score_list'] ?? [] as $word) {
-                    $cleaned['words'][] = [
-                        'word' => $word['word'] ?? '',
-                        'quality_score' => $word['quality_score'] ?? null,
-                        'phones' => $word['phone_score_list'] ?? [],
-                        'syllables' => $word['syllable_score_list'] ?? [],
-                    ];
-                }
-
-                if ($uid) {
-                    $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Sentence")
-                        ->push($cleaned);
-                }
-
-                $results[] = $cleaned;
-
-            } catch (\Exception $e) {
-                Log::error('SpeechAce API error: ' . $e->getMessage());
-                $results[] = ['error' => 'SpeechAce API error: ' . $e->getMessage()];
             }
+
+            $selectedChoices = $request->input('selected_choices', []);
+            $fillInBlanks = $request->input('fill_in_blanks', []);
+            $sentenceOrder = $request->input('sentence_order', []);
+            $startTimeRaw = $request->input('start_time');
+
+            $startTimeInput = is_array($startTimeRaw) ? $startTimeRaw[0] : $startTimeRaw;
+            $startTimeCleaned = str_replace('Z', '', $startTimeInput);
+            $startTime = new \DateTime($startTimeRaw);
+            $submitTime = new \DateTime(now());
+
+            Log::info('selected_choices:', is_array($selectedChoices) ? $selectedChoices : []);
+            Log::info('fill_in_blanks:', is_array($fillInBlanks) ? $fillInBlanks : []);
+            Log::info('sentence_order:', is_array($sentenceOrder) ? $sentenceOrder : []);
+
+
+            $totalPoints = count($correctAnswers);
+            $correctPoints = 0;
+            $incorrectItems = [];
+
+            foreach ($correctAnswers as $qid => $correctAnswer) {
+                $userAnswer = null;
+                $answered = true;
+
+                if (isset($selectedChoices[$qid])) {
+                    $userAnswer = $selectedChoices[$qid];
+                } elseif (isset($fillInBlanks[$qid])) {
+                    $userAnswer = strtolower(trim($fillInBlanks[$qid]));
+                    $correctAnswer = strtolower(trim($correctAnswer));
+                } elseif (isset($sentenceOrder[$qid])) {
+                    $userAnswer = array_map('strtolower', $sentenceOrder[$qid]);
+                } else {
+                    $answered = false;
+                }
+
+                if (!$answered) {
+                    $incorrectItems[] = $qid; // Treat unanswered as incorrect
+                    continue;
+                }
+
+                $isCorrect = false;
+                if (is_array($correctAnswer) && is_array($userAnswer)) {
+                    $isCorrect = ($correctAnswer === $userAnswer);
+                } else {
+                    $isCorrect = ($correctAnswer === $userAnswer);
+                }
+
+                if ($isCorrect) {
+                    $correctPoints++;
+                } else {
+                    $incorrectItems[] = $qid;
+                }
+            }
+
+
+            $durationSeconds = $submitTime->getTimestamp() - $startTime->getTimestamp();
+
+            $dataToSave = [
+                'selected_choices' => $selectedChoices,
+                'fill_in_blanks' => $fillInBlanks,
+                'sentence_order' => $sentenceOrder,
+                'start_time' => $startTime->format('c'),
+                'submitted_at' => $submitTime->format('c'),
+                'total_score' => $totalPoints,
+                'correct_points' => $correctPoints,
+                'incorrect_items' => $incorrectItems,
+                'duration_seconds' => $durationSeconds,
+            ];
+
+            try {
+                $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Written")->set($dataToSave);
+                Log::info('Answers saved successfully.');
+            } catch (\Exception $e) {
+                Log::error('Failed to save answers to Firebase: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to save your answers. Please try again.');
+            }
+
+            $enrollStatus = $this->getEnrollStatus();
+
+            Log::info($enrollStatus);
+
+             // If both are done, go to sentence test
+            return view('enrollment-panel.enrollment-panel', [
+                'page' => 'enroll-dashboard',
+                'enrollStatus' => $enrollStatus,
+                'user' => $user,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation failed: ', $e->errors());
+            return back()->withErrors($e->errors())->withInput();
+        } catch (\Exception $e) {
+                Log::error('Failed to save answers to Firebase: ' . $e->getMessage());
+                return redirect()->back()->with('error', 'Failed to save your answers. Please try again.');
+            }
+    }
+
+
+    public function getEnrollStatus()
+        {
+            // Assume you have the logged-in user's enrollment ID or Firebase UID
+            // For example, if stored in session or from Firebase Auth:
+            $enrollmentId = session('enrollment_user')['ID'] ?? null;
+
+            if (!$enrollmentId) {
+                // Handle missing ID, maybe return default or redirect
+                return null;
+            }
+
+            // Reference path to the enrollee in Firebase
+            $enrolleeRef = $this->database->getReference("enrollment/enrollees/{$enrollmentId}");
+
+            // Get enrollee data snapshot
+            $enrolleeSnapshot = $enrolleeRef->getSnapshot();
+
+            if (!$enrolleeSnapshot->exists()) {
+                // Handle case if no data found
+                return null;
+            }
+
+            Log::info($enrollmentId);
+
+
+
+            $enrolleeData = $enrolleeSnapshot->getValue();
+
+
+            Log::info($enrolleeData);
+
+
+            // Return the enroll_status field if exists
+            return $enrolleeData['enroll_status'] ?? null;
         }
 
-        return view('enrollment-panel.enrollment-panel', [
-            'page' => 'main-assessment4',
-            'speech_results' => $results,
-        ]);
-    }
+
+
+
 
     public function submitWrittenTest(Request $request)
 {

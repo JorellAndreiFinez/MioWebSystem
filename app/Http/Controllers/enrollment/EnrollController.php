@@ -24,6 +24,7 @@ use Google\Cloud\Storage\Bucket;
 use Google\Cloud\Storage\StorageObject;
 use Barryvdh\DomPDF\Facade\Pdf;
 use function Illuminate\Log\log;
+use Kreait\Firebase\Exception\Auth\AuthError;
 
 class EnrollController extends Controller
 {
@@ -32,7 +33,7 @@ class EnrollController extends Controller
 
     protected $bucketName;
     protected $storageClient;
-    
+
 
 
     public function __construct()
@@ -254,7 +255,7 @@ class EnrollController extends Controller
                 foreach ($auditoryData as $item) {
                     $auditoryAnswers[$index++] = $item['text'] ?? '';
                 }
-                
+
             }
 
 
@@ -284,162 +285,83 @@ class EnrollController extends Controller
             ]);
         }
 
+            $levelMap = [
+                'kinder' => 'kinder',
+                'elementary' => 'elementary',
+                'junior-highschool' => 'highschool',
+                'senior-highschool' => 'highschool',
+            ];
 
              // Add your questions array here for the sentence test page:
-            $questions = [
-                // Multiple Choice (1-12)
-                1 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'She ___ to school every day.',
-                    'choices' => ['go', 'goes', 'going', 'gone'],
-                ],
-                2 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'They have ___ finished their homework.',
-                    'choices' => ['already', 'yet', 'just', 'still'],
-                ],
-                3 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'I will call you when I ___ home.',
-                    'choices' => ['get', 'got', 'will get', 'getting'],
-                ],
-                4 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'He ___ playing football now.',
-                    'choices' => ['is', 'are', 'was', 'be'],
-                ],
-                5 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'We ___ to the park yesterday.',
-                    'choices' => ['go', 'goes', 'went', 'going'],
-                ],
-                6 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'They ___ never been to Japan.',
-                    'choices' => ['have', 'has', 'had', 'having'],
-                ],
-                7 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'I ___ already eaten lunch.',
-                    'choices' => ['has', 'have', 'had', 'having'],
-                ],
-                8 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'She speaks English ___ than her sister.',
-                    'choices' => ['good', 'well', 'better', 'best'],
-                ],
-                9 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'If it ___ rain, we will cancel the picnic.',
-                    'choices' => ['will', 'is', 'does', 'did'],
-                ],
-                10 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'They ___ playing when I arrived.',
-                    'choices' => ['were', 'was', 'are', 'is'],
-                ],
-                11 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'She has been working here ___ five years.',
-                    'choices' => ['since', 'for', 'during', 'while'],
-                ],
-                12 => [
-                    'type' => 'multiple_choice',
-                    'sentence' => 'This is the ___ movie I have ever seen.',
-                    'choices' => ['good', 'better', 'best', 'well'],
-                ],
+            $enrollmentGrade = $user['enrollment_form']['enrollment_grade'] ?? null;
+            $enrollmentLevel = $levelMap[$enrollmentGrade] ?? null;
 
-                // Fill in the blanks (13-20)
-                13 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'The cat is ___ the table.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                14 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'He ___ playing football now.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                15 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'We ___ to the mall yesterday.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                16 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'They have been friends ___ childhood.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                17 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'She is better at math ___ her brother.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                18 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'I will call you when I ___ home.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                19 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'They ___ finished their work already.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
-                20 => [
-                    'type' => 'fill_in_blank',
-                    'sentence' => 'Please ___ the door when you leave.',
-                    'answer_placeholder' => 'Type your answer here',
-                ],
+            $questionsRef = $this->database->getReference('enrollment/assessment_settings/written/questions');
+            $allQuestions = $questionsRef->getValue();
 
-                // Sentence Ordering (21-25)
-                21 => [
-                    'type' => 'sentence_order',
-                    'words' => ['is', 'the', 'dog', 'brown'],
-                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
-                ],
-                22 => [
-                    'type' => 'sentence_order',
-                    'words' => ['they', 'go', 'to', 'school', 'every', 'day'],
-                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
-                ],
-                23 => [
-                    'type' => 'sentence_order',
-                    'words' => ['my', 'favorite', 'color', 'blue', 'is'],
-                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
-                ],
-                24 => [
-                    'type' => 'sentence_order',
-                    'words' => ['she', 'reading', 'is', 'book', 'a'],
-                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
-                ],
-                25 => [
-                    'type' => 'sentence_order',
-                    'words' => ['we', 'going', 'are', 'to', 'park', 'the'],
-                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
-                ],
+            $questions = [];
+            if ($allQuestions && $enrollmentLevel) {
+                $index = 1;
+                foreach ($allQuestions as $questionId => $questionData) {
+                    // Filter by level
+                    if (($questionData['level'] ?? '') === $enrollmentLevel) {
+                        $type = $questionData['type'] ?? '';
 
-                // True/False grammar questions (26-30)
-                26 => [
-                    'type' => 'true_false',
-                    'statement' => 'The word "quickly" is an adjective.',
-                ],
-                27 => [
-                    'type' => 'true_false',
-                    'statement' => 'She don’t like apples.',
-                ],
-                28 => [
-                    'type' => 'true_false',
-                    'statement' => 'The past tense of "run" is "ran".',
-                ],
-                29 => [
-                    'type' => 'true_false',
-                    'statement' => 'We use "an" before words starting with a vowel sound.',
-                ],
-                30 => [
-                    'type' => 'true_false',
-                    'statement' => 'Adjectives describe verbs.',
-                ],
-            ];
+                        // Convert Firebase structure into your expected view format
+                        switch ($type) {
+                            case 'multiple_single':
+                                $questions[$index++] = [
+                                    'type' => 'multiple_choice',
+                                    'sentence' => $questionData['question'] ?? '',
+                                    'choices' => array_values($questionData['options'] ?? []),
+                                ];
+                                break;
+
+                            case 'multiple_multiple':
+                                $questions[$index++] = [
+                                    'type' => 'multiple_choice',
+                                    'sentence' => $questionData['question'] ?? '',
+                                    'choices' => array_values($questionData['options'] ?? []),
+                                ];
+                                break;
+
+                            case 'fill_blank':
+                                $questions[$index++] = [
+                                    'type' => 'fill_in_blank',
+                                    'sentence' => $questionData['question'] ?? '',
+                                    'answer_placeholder' => 'Type your answer here',
+                                ];
+                                break;
+
+                            case 'syntax':
+                                // Clean and split the 'correct' sentence into words
+                                $correctSentence = $questionData['correct'] ?? '';
+                                // Remove punctuation using regex, then split on spaces
+                                $cleaned = preg_replace('/[^\w\s]/u', '', $correctSentence);
+                                $words = preg_split('/\s+/', strtolower($cleaned), -1, PREG_SPLIT_NO_EMPTY);
+
+                                $questions[$index++] = [
+                                    'type' => 'sentence_order',
+                                    'words' => $words,
+                                    'sentence_hint' => 'Arrange the words to form a correct sentence.',
+                                    'image_url' => $questionData['image_url'] ?? null,
+                                ];
+                                break;
+
+                            case 'true_false':
+                                $questions[$index++] = [
+                                    'type' => 'true_false',
+                                    'statement' => $questionData['question'] ?? '',
+                                ];
+                                break;
+
+                            default:
+                                // skip unknown types
+                                break;
+                        }
+                    }
+                }
+            }
 
             // If both are done, go to sentence test
             return view('enrollment-panel.enrollment-panel', [
@@ -500,7 +422,7 @@ class EnrollController extends Controller
         $auditoryResults = session('auditory_results', []);
 
         $uid = Session::get('firebase_uid');
-        
+
 
         if ($uid) {
             $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/fillblanks/status");
@@ -1395,7 +1317,7 @@ public function logout(Request $request)
 
         // Base rules
         $rules = [
-            'new_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,match_pair',
+            'new_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,syntax',
             'new_mcq.question' => 'required|string|max:255',
             'new_mcq.level' => 'required|in:kinder,elementary,highschool,seniorhigh',
         ];
@@ -1418,7 +1340,7 @@ public function logout(Request $request)
                 $rules['new_mcq.correct'] = ['required', 'array'];
                 $rules['new_mcq.correct.*'] = ['string', 'in:' . implode(',', $optionKeys)];
             }
-        } elseif ($typeRule === 'fill_blank') {
+        } elseif ($typeRule === 'fill_blank' || $typeRule === 'syntax') {
             $rules['new_mcq.correct'] = 'required|string|max:255';
         } elseif ($typeRule === 'match_pair') {
             $rules['new_mcq.pair_a'] = 'required|array|min:1';
@@ -1504,7 +1426,7 @@ public function logout(Request $request)
 
         // Base rules
         $rules = [
-            'edit_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,match_pair',
+            'edit_mcq.type' => 'required|in:multiple_single,multiple_multiple,fill_blank,match_pair,syntax',
             'edit_mcq.question' => 'required|string|max:255',
             'edit_mcq.level' => 'required|in:kinder,elementary,highschool,seniorhigh',
         ];
@@ -1534,6 +1456,8 @@ public function logout(Request $request)
             $rules['edit_mcq.pair_b'] = 'required|array|min:1';
             $rules['edit_mcq.pair_a.*'] = 'required|string';
             $rules['edit_mcq.pair_b.*'] = 'required|string';
+        } elseif ($typeRule === 'syntax') {
+            $rules['edit_mcq.correct'] = 'required|string|max:255';
         }
 
         try {
@@ -1588,7 +1512,6 @@ public function logout(Request $request)
 
 
 
-
     public function viewAdminEnrollee($id)
     {
         $enrollee = $this->database->getReference('enrollment/enrollees/' . $id)->getValue();
@@ -1604,27 +1527,92 @@ public function logout(Request $request)
         ]);
     }
 
+
     public function updateEnrolleeStatus(Request $request, $id)
     {
         $assessment = $request->input('feedback_admin');
         $status = $request->input('enroll_status');
 
         $enrolleeRef = $this->database->getReference('enrollment/enrollees/' . $id);
+        $snapshot = $enrolleeRef->getSnapshot();
 
-        // Check if enrollee exists
-        if (!$enrolleeRef->getSnapshot()->exists()) {
+        if (!$snapshot->exists()) {
             return redirect()->route('mio.view-enrollee', ['id' => $id])->with('error', 'Enrollee not found.');
         }
 
-        // Update fields
+        // Update status and feedback
         $enrolleeRef->update([
             'feedback_admin' => $assessment,
             'enroll_status' => $status
         ]);
 
+        // ✅ If enrolled, create student user
+        if (strtolower($status) === 'enrolled') {
+            $enrollee = $snapshot->getValue();
+            $form = $enrollee['enrollment_form'] ?? [];
+
+            // 🔄 Generate unique student ID
+            $now = Carbon::now();
+            $year = $now->year;
+            $week = str_pad($now->weekOfYear, 2, '0', STR_PAD_LEFT);
+            $day = str_pad($now->day, 2, '0', STR_PAD_LEFT);
+            $random = str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT);
+            $studentID = 'ST' . $year . $week . $day . $random;
+
+            $email = $enrollee['email'] ?? '';
+            $hashedPassword = $enrollee['password'] ?? ''; // hashed password from enrollment
+            $username = $enrollee['username'] ?? $email;
+
+            // Check for duplicate email/username
+            $existingUsers = $this->database->getReference('users')->getValue() ?? [];
+            foreach ($existingUsers as $user) {
+                if (($user['email'] ?? '') === $email) {
+                    return redirect()->back()->with('error', 'A user with this email already exists.');
+                }
+            }
+
+            // Save user to Realtime DB only (skip Firebase Auth)
+            $userData = [
+                'fname' => $form['first_name'] ?? '',
+                'lname' => $form['last_name'] ?? '',
+                'gender' => $form['gender'] ?? '',
+                'age' => $form['age'] ?? '',
+                'bday' => $form['birthday'] ?? '',
+                'address' => $form['address'] ?? '',
+                'barangay' => $form['barangay'] ?? '',
+                'region' => $form['region'] ?? '',
+                'province' => $form['province'] ?? '',
+                'city' => $form['city'] ?? '',
+                'zip_code' => $form['zip_code'] ?? '',
+                'contact_number' => $form['contact_number'] ?? '',
+                'emergency_contact' => $form['emergency_contact'] ?? '',
+                'email' => $email,
+                'previous_school' => $form['previous_school'] ?? '',
+                'previous_grade_level' => $form['previous_grade_level'] ?? '',
+                'category' => $form['category'] ?? '',
+                'studentid' => $studentID,
+                'role' => 'student',
+                'profile_picture' => '', // if applicable
+                'schoolyear_id' => null,
+                'username' => $username,
+                'password' => $hashedPassword, // already hashed
+                'account_status' => 'active',
+                'date_created' => Carbon::now()->toDateTimeString(),
+                'date_updated' => Carbon::now()->toDateTimeString(),
+                'last_login' => null,
+                'already_login' => 'false',
+            ];
+
+            $this->database->getReference('users/' . $studentID)->set($userData);
+
+            // Mark enrollee as enrolled
+            $enrolleeRef->update(['enrolled_at' => Carbon::now()->toDateTimeString()]);
+        }
+
         return redirect()->route('mio.enrollment', ['id' => $id])
             ->with('success', 'Enrollee feedback and status updated successfully.');
     }
+
 
 
 

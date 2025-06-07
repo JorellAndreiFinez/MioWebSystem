@@ -85,7 +85,7 @@
                                                     </li>
                                                 @endforeach
                                             </ul>
-                                        @elseif($item['type'] == 'fill_blank')
+                                        @elseif($item['type'] == 'fill_blank' || $item['type'] == 'syntax')
                                             <div style="margin-top:5px;"><em>Answer:</em> {{ $item['correct'] ?? '' }}</div>
                                         @endif
                                     </td>
@@ -155,6 +155,7 @@
                 <option value="" disabled selected hidden>Select a type</option>
                 <option value="multiple_single">Multiple Choice (Single Answer)</option>
                 <option value="multiple_multiple">Multiple Choice (Multiple Answers)</option>
+                <option value="syntax">Arrange Words to Form Sentence (Syntax)</option>
                 <option value="fill_blank">Fill in the Blank</option>
             </select>
           </div>
@@ -183,6 +184,13 @@
                 <div id="editCorrectAnswerOptions" class="form-group d-flex flex-wrap gap-3"></div>
             </div>
           </div>
+
+          <!-- Add new container for syntax question -->
+            <div id="editSyntaxFields" class="question-type d-none">
+            <label for="editSyntaxCorrect">Correct Sentence</label>
+            <input type="text" name="edit_mcq[correct]" id="editSyntaxCorrect" class="form-control" placeholder="Enter the correct sentence" required>
+            </div>
+
 
           <!-- Fill in the Blank -->
           <div id="editFillBlankFields" class="question-type d-none">
@@ -228,6 +236,9 @@
         const fillBlankFields = document.getElementById('editFillBlankFields');
         const fillBlankInput = document.getElementById('editFillBlankCorrect');
         const levelSelect = document.getElementById('editLevelSelect');
+        const syntaxFields = document.getElementById('editSyntaxFields');
+        const syntaxInput = document.getElementById('editSyntaxCorrect');
+
 
         // Clear previous options and correct answers
         optionContainer.innerHTML = '';
@@ -258,20 +269,36 @@
                 fillBlankInput.required = true;
                 fillBlankInput.disabled = false;
 
-                // Disable multiple choice correct inputs
-                correctAnswerOptions.innerHTML = '';
-                optionContainer.innerHTML = '';
+                syntaxFields.classList.add('d-none');
+                syntaxInput.required = false;
+                syntaxInput.disabled = true;
+
+            } else if (type === 'syntax') {
+                multipleFields.classList.add('d-none');
+                fillBlankFields.classList.add('d-none');
+
+                syntaxFields.classList.remove('d-none');
+                syntaxInput.required = true;
+                syntaxInput.disabled = false;
+
+                fillBlankInput.required = false;
+                fillBlankInput.disabled = true;
 
             } else if (type === 'multiple_single' || type === 'multiple_multiple') {
                 multipleFields.classList.remove('d-none');
+
                 fillBlankFields.classList.add('d-none');
                 fillBlankInput.required = false;
                 fillBlankInput.disabled = true;
 
-                // Enable add option button
+                syntaxFields.classList.add('d-none');
+                syntaxInput.required = false;
+                syntaxInput.disabled = true;
+
                 document.getElementById('editAddOptionBtn').disabled = false;
             }
         }
+
 
         showFieldsForType(questionTypeSelect.value);
 
@@ -346,6 +373,9 @@
 
         } else if (question.type === 'fill_blank') {
             fillBlankInput.value = question.correct || '';
+        } else if (question.type === 'syntax') {
+            console.log('Loaded syntax question:', question);
+            syntaxInput.value = question.correct || '';
         }
 
         // Show image preview if exists
@@ -473,6 +503,7 @@
                 <option value="" disabled selected hidden>Select a type</option>
                 <option value="multiple_single">Multiple Choice (Single Answer)</option>
                 <option value="multiple_multiple">Multiple Choice (Multiple Answers)</option>
+                <option value="syntax">Syntax</option>
                 <option value="fill_blank">Fill in the Blank</option>
                 {{-- Removed Connect the Answer (match_pair) option --}}
             </select>
@@ -527,6 +558,13 @@
             </div>
           </div>
 
+          <!-- Syntax (Arrange words to form a sentence) -->
+            <div id="syntaxFields" class="question-type d-none">
+                <label for="syntaxCorrect">Correct Sentence</label>
+                <input type="text" name="new_mcq[correct]" id="syntaxCorrect" class="form-control" placeholder="Enter the correct sentence" required>
+                <small class="form-text text-muted">Students will be asked to rearrange the words to match this sentence.</small>
+            </div>
+
           <!-- Fill in the Blank -->
           <div id="fillBlankFields" class="question-type d-none">
             <label for="fillBlankCorrect">Correct Answer</label>
@@ -557,6 +595,7 @@
 
 <!-- ADD MODAL -->
 <script>
+
     document.addEventListener('DOMContentLoaded', () => {
         const questionTypeSelect = document.getElementById('questionTypeSelect');
         const multipleFields = document.getElementById('multipleFields');
@@ -564,6 +603,8 @@
         const correctAnswerOptions = document.getElementById('correctAnswerOptions');
         const optionContainer = document.getElementById('optionContainer');
         const addOptionBtn = document.getElementById('addOptionBtn');
+        const syntaxFields = document.getElementById('syntaxFields');
+
 
         function updateCorrectAnswerInputs() {
             correctAnswerOptions.innerHTML = '';
@@ -597,54 +638,61 @@
 
     questionTypeSelect.addEventListener('change', () => {
         const selected = questionTypeSelect.value;
-        if (selected === 'fill_blank') {
+        if (selected === 'fill_blank' || selected === 'syntax') {
+            const isSyntax = selected === 'syntax';
+
             multipleFields.classList.add('d-none');
-            fillBlankFields.classList.remove('d-none');
+            fillBlankFields.classList.toggle('d-none', isSyntax); // hide if syntax
+            syntaxFields.classList.toggle('d-none', !isSyntax);   // show if syntax
 
-            // Enable required for fillBlankCorrect and enable input
             const fillBlankInput = document.getElementById('fillBlankCorrect');
-            fillBlankInput.required = true;
-            fillBlankInput.disabled = false;
+            fillBlankInput.required = selected === 'fill_blank';
+            fillBlankInput.disabled = selected !== 'fill_blank';
 
-            // Disable multiple choice correct inputs (radio/checkbox)
+            const syntaxInput = document.getElementById('syntaxCorrect');
+            syntaxInput.required = isSyntax;
+            syntaxInput.disabled = !isSyntax;
+
+            // Disable MCQ options and correct answer inputs
             document.querySelectorAll('#correctAnswerOptions input').forEach(input => {
                 input.required = false;
                 input.disabled = true;
             });
 
-            // Disable and remove required from options inputs
             document.querySelectorAll('#optionContainer input.option-input').forEach(input => {
                 input.required = false;
                 input.disabled = true;
             });
 
-            // Also disable the "Add Option" button so no new options can be added
             addOptionBtn.disabled = true;
 
         } else {
+            // Restore for MCQ
             multipleFields.classList.remove('d-none');
             fillBlankFields.classList.add('d-none');
+            syntaxFields.classList.add('d-none');
 
-            // Disable fillBlankCorrect required & disable input
             const fillBlankInput = document.getElementById('fillBlankCorrect');
             fillBlankInput.required = false;
             fillBlankInput.disabled = true;
 
-            // Enable multiple choice correct inputs
+            const syntaxInput = document.getElementById('syntaxCorrect');
+            syntaxInput.required = false;
+            syntaxInput.disabled = true;
+
             document.querySelectorAll('#correctAnswerOptions input').forEach(input => {
                 input.required = true;
                 input.disabled = false;
             });
 
-            // Enable options inputs and add required
             document.querySelectorAll('#optionContainer input.option-input').forEach(input => {
                 input.required = true;
                 input.disabled = false;
             });
 
-            // Enable the Add Option button
             addOptionBtn.disabled = false;
         }
+
     });
 
         addOptionBtn.addEventListener('click', () => {
@@ -684,25 +732,25 @@
 </script>
 
 <script>
-function openModal(deleteUrl, itemName = 'this item', itemType = 'item') {
-    const modal = document.getElementById("confirmModal");
-    modal.style.display = "flex";
+    function openModal(deleteUrl, itemName = 'this item', itemType = 'item') {
+        const modal = document.getElementById("confirmModal");
+        modal.style.display = "flex";
 
-    // Set delete URL
-    document.getElementById("deleteForm").action = deleteUrl;
+        // Set delete URL
+        document.getElementById("deleteForm").action = deleteUrl;
 
-    // Set message and title
-    document.getElementById("confirmMessage").textContent = `Are you sure you want to delete "${itemName}" from your ${itemType}?`;
-    document.getElementById("modalTitle").textContent = `Delete ${capitalizeFirstLetter(itemType)}`;
-}
+        // Set message and title
+        document.getElementById("confirmMessage").textContent = `Are you sure you want to delete "${itemName}" from your ${itemType}?`;
+        document.getElementById("modalTitle").textContent = `Delete ${capitalizeFirstLetter(itemType)}`;
+    }
 
-function closeModal() {
-    document.getElementById("confirmModal").style.display = "none";
-}
+    function closeModal() {
+        document.getElementById("confirmModal").style.display = "none";
+    }
 
-function capitalizeFirstLetter(string) {
-    return string.charAt(0).toUpperCase() + string.slice(1);
-}
+    function capitalizeFirstLetter(string) {
+        return string.charAt(0).toUpperCase() + string.slice(1);
+    }
 </script>
 
 <script>

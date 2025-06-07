@@ -30,6 +30,7 @@
     <div class="card revision">
         <div class="status-indicator
             {{ $enrollStatus === 'Assessment' ? 'green' : '' }}
+            {{ $enrollStatus === 'Qualified' ? 'green' : '' }}
             {{ $enrollStatus === 'Revision' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Registered' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Rejected' ? 'red' : '' }}">
@@ -45,7 +46,8 @@
         <div class="status-indicator
             {{ $enrollStatus === 'Assessment' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
-            {{ $enrollStatus === 'Failed' ? 'red' : '' }}">
+            {{ $enrollStatus === 'Qualified' ? 'green' : '' }}
+            {{ $enrollStatus === 'Rejected' ? 'red' : '' }}">
         </div>
         <div class="card-content">
             <h3>Evaluation</h3>
@@ -55,7 +57,13 @@
 
     <!-- Conclusion (Optional: Add logic here too if needed later) -->
     <div class="card">
-        <div class="status-indicator"></div>
+
+        <div class="status-indicator
+            {{ $enrollStatus === 'Qualified' ? 'yellow' : '' }}
+            {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
+            {{ $enrollStatus === 'Rejected' ? 'red' : '' }}"
+        >
+        </div>
         <div class="card-content">
             <h3>Conclusion</h3>
             <p>Enrollee Verification</p>
