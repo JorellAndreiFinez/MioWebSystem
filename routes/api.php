@@ -90,5 +90,6 @@ Route::middleware([
 
     Route::post('/subject/{subjectId}/specialized/language/homonyms', [SpecializedLanguageApi::class, 'createHomonymsActivity']);
     Route::post('/subject/{subjectId}/specialized/language/fill', [SpecializedLanguageApi::class, 'createFillActivity']);
-    // Route::post('/subject/{subjectId}/specialized/language/talk2Me', [SpecializedLanguageApi::class, 'createTalk2MeActivity']);
+    Route::post('/subject/{subjectId}/specialized/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'editHomonymsActivity']);
+    Route::post('/subject/{subjectId}/specialized/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'editFillActivity']);
 });
