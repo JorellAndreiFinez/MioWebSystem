@@ -50,6 +50,18 @@ class SpecializedLanguageApi extends Controller
         return $announcementId;
     }
 
+    function checkBlanks($sentence) {
+        $words = explode(' ', $sentence);
+
+        foreach ($words as $word) {
+            if (preg_match('/^_+$/', $word)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public function createHomonymsActivity(Request $request, string $subjectId) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
@@ -57,77 +69,111 @@ class SpecializedLanguageApi extends Controller
         $validated = $request->validate([
             'difficulty' => 'required|in:easy,average,difficult,challenge',
 
-            'homonym' => 'required|array|min:1',
-            'homonym.*.sentences' => 'required|array|min:2',
-            'homonym.*.sentences.*' => 'required|string|min:1',
-            'homonym.*.audio' => 'required|array',
-            'homonym.*.audio.*' => 'required|file|mimetypes:video/mp4,audio/mp3',
-            'homonym.*.answers' => 'required|array|min:2',
-            'homonym.*.answers.*' => 'required|string',
-            'homonym.*.choices' => 'required|array|min:2',
-            'homonym.*.choices.*' => 'required|string|min:1'
+            'homonyms' => 'required|array|min:1',
+            'homonyms.*.sentences' => 'required|array|size:2',
+            'homonyms.*.sentences.*' => 'required|string|min:1',
+            'homonyms.*.answers' => 'required|array|size:2',
+            'homonyms.*.answers.*' => 'required|string|min:1',
+            'homonyms.*.audio_type' => 'required|array|size:2',
+            'homonyms.*.audio_type.*' => 'required|string|in:record,upload,system',
+            'homonyms.*.audio' => 'nullable|array|size:2',
+            'homonyms.*.audio.*' => 'nullable|file|mimetypes:audio/mp3,audio/wav',
+            'homonyms.*.distractors' => 'required|array|min:1',
+            'homonyms.*.distractors.*' => 'required|string|min:1'
         ]);
 
-        try{
-            $activity_data = [];
-
+        try {
+            $items = [];
             $bucket = $this->storage->getBucket();
 
-            foreach ($validated['homonym'] as $item) {
-                $item_id = (string) Str::uuid();
+            foreach ($validated['homonyms'] as $index => $item) {
+                $audio_1 = $item['audio'][0] ?? null;
+                $audio_2 = $item['audio'][1] ?? null;
 
-                if (count($item['answers']) !== count($item['sentences'])) {
+                if (empty($audio_1) && $item['audio_type'][0] !== "system") {
                     return response()->json([
-                        "success" => false,
-                        "message" => "Each sentence must have a corresponding answer. The number of answers must match the number of sentences."
+                        'success' => false,
+                        'message' => "Audio in item #" . ($index + 1) . " (sentence #1) is required when audio_type is 'upload' or 'record'.",
                     ], 422);
                 }
 
-                foreach ($item['answers'] as $ans) {
-                    if (!in_array($ans, $item['choices'])) {
+                if (empty($audio_2) && $item['audio_type'][1] !== "system") {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Audio in item #" . ($index + 1) . " (sentence #2) is required when audio_type is 'upload' or 'record'.",
+                    ], 422);
+                }
+
+                $sentence_1 = $item['sentences'][0];
+                $sentence_2 = $item['sentences'][1];
+
+                $answer_1 = $item['answers'][0];
+                $answer_2 = $item['answers'][1];
+
+                $cleaned_answer_1 = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $answer_1));
+                $cleaned_answer_2 = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $answer_2));
+
+                if (!$this->checkBlanks($sentence_1)) {
+                    return response()->json([
+                        'message' => "Sentence in item #" . ($index + 1) . " (homonym #1) must contain exactly one underscore (_) as a blank.",
+                    ], 422);
+                }
+
+                if (!$this->checkBlanks($sentence_2)) {
+                    return response()->json([
+                        'message' => "Sentence in item #" . ($index + 1) . " (homonym #2) must contain exactly one underscore (_) as a blank.",
+                    ], 422);
+                }
+
+                $item_choices = [
+                    $cleaned_answer_1,
+                    $cleaned_answer_2
+                ];
+
+                foreach ($item['distractors'] as $dist) {
+                    $cleaned_dist = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $dist));
+                    if ($cleaned_dist === $cleaned_answer_1 || $cleaned_dist === $cleaned_answer_2) {
                         return response()->json([
-                            "success" => false,
-                            "message" => "Each answer must be one of the choices."
+                            'message' => "Distractors must not match correct answers in item #" . ($index + 1),
                         ], 422);
+                    }
+                    $item_choices[] = $cleaned_dist;
+                }
+
+                $audio_1_remotePath = null;
+                $audio_2_remotePath = null;
+
+                if (!empty($item['audio'])) {
+                    if ($audio_1) {
+                        $audio_1_id = (string) Str::uuid();
+                        $audio_1_remotePath = "audio/language/" . $audio_1_id . "_" . $audio_1->getClientOriginalName();
+                        $bucket->upload(
+                            fopen($audio_1->getPathname(), 'r'),
+                            ['name' => $audio_1_remotePath]
+                        );
+                    }
+
+                    if ($audio_2) {
+                        $audio_2_id = (string) Str::uuid();
+                        $audio_2_remotePath = "audio/language/" . $audio_2_id . "_" . $audio_2->getClientOriginalName();
+                        $bucket->upload(
+                            fopen($audio_2->getPathname(), 'r'),
+                            ['name' => $audio_2_remotePath]
+                        );
                     }
                 }
 
-                $sentence_answer_pairs = [];
-
-                foreach ($item['sentences'] as $index => $sentence) {
-                    $sentence_id = (string) Str::uuid();
-
-                    $answer = $item['answers'][$index] ?? null;
-
-
-                    if ($answer === null) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => "Missing answer for sentence at position " . ($index + 1) . ". Each sentence must have a corresponding answer."
-                        ], 422);
-                    }
-
-                    $audio_file = $item['audio'][$index];
-                    $audio_id = (string) Str::uuid();
-                    $filename = $uuid . $file->getClientOriginalName();
-                    $remoteAudioPath = "audio/language/" . $filename;
-
-                    $bucket->upload(
-                        fopen($audio_file->getPathName(), 'r'),
-                        ['name' => $remoteAudioPath]
-                    );
-
-                    $sentence_answer_pairs[$sentence_id] = [
-                        'sentence_id' => $sentence_id,
-                        'text' => $sentence,
-                        'answer' => $answer,
-                        'audio_path' => $remoteAudioPath,
-                    ];
-                }
-
-                $activity_data[$item_id] = [
-                    'homonym' => $sentence_answer_pairs,
-                    'choices' => $item['choices'],
+                $item_id = (string) Str::uuid();
+                $items[$item_id] = [
+                    'sentence_1' => $sentence_1,
+                    'sentence_2' => $sentence_2,
+                    'answer_1' => $cleaned_answer_1,
+                    'answer_2' => $cleaned_answer_2,
+                    'audio_1_path' => $audio_1_remotePath,
+                    'audio_2_path' => $audio_2_remotePath,
+                    'audio_type' => $item['audio_type'],
+                    'distractors' => array_slice($item_choices, 2),
+                    'choices' => $item_choices,
                 ];
             }
 
@@ -138,14 +184,15 @@ class SpecializedLanguageApi extends Controller
 
             $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activity_id}")
                 ->set([
-                    'items' => $activity_data,
-                    'total' => count($activity_data),
+                    'items' => $items,
+                    'total' => count($items),
                     'created_at' => $date,
+                    'created_by' => $userId
                 ]);
 
             return response()->json([
                 'success' => true,
-                'activity' => $activity_data,
+                'message' => 'Homonym auditory activity successfully created.',
             ]);
             
         }catch (\Exception $e) {
@@ -163,10 +210,13 @@ class SpecializedLanguageApi extends Controller
 
         $validated = $request->validate([
             'difficulty' => 'required|in:easy,average,difficult,challenge',
+
             'activity' => 'required|array|min:1',
             'activity.*.sentence' => 'required|string',
-            'activity.*.audio' => 'required|file|mimetypes:video/mp4,audio/mp3',
-            'activity.*.distractor' => 'required|string|min:1',
+            'activity.*.audioType' => 'required|string|in:record,upload,system',
+            'activity.*.audio' => 'nullable|file|mimetypes:audio/mp3,audio/wav',
+            'activity.*.distractors' => 'required|array|min:1',
+            'activity.*.distractors.*' => 'required|string|min:1',
         ]);
 
         try {
@@ -175,20 +225,24 @@ class SpecializedLanguageApi extends Controller
 
             foreach ($validated['activity'] as $activity) {
                 $activity_item_id = (string) Str::uuid();
+                $remote_path = null;
 
-                $audio_file = $activity['audio'];
-                $audio_id = (string) Str::uuid();
-                $filename = $audio_id . $audio_file->getClientOriginalName(); // Use $audio_id for uniqueness
-                $remote_path = "audio/language/" . $filename;
+                if (isset($activity['audio']) && $activity['audio']) {
+                    $audio_file = $activity['audio'];
+                    $audio_id = (string) Str::uuid();
+                    $filename = $audio_id . $audio_file->getClientOriginalName();
+                    $remote_path = "audio/language/" . $filename;
 
-                $bucket->upload(
-                    fopen($audio_file->getPathname(), 'r'),
-                    ['name' => $remote_path]
-                );
+                    $bucket->upload(
+                        fopen($audio_file->getPathname(), 'r'),
+                        ['name' => $remote_path]
+                    );
+                }
 
                 $activity_data[$activity_item_id] = [
                     'sentence' => $activity['sentence'],
-                    'distractors' => $activity['distractor'],
+                    'distractors' => $activity['distractors'],
+                    'audioType' => $activity['audioType'],
                     'audio_path' => $remote_path
                 ];
             }
@@ -203,11 +257,12 @@ class SpecializedLanguageApi extends Controller
                     'items' => $activity_data,
                     'total' => count($activity_data),
                     'created_at' => $date,
+                    'created_by' => $userId
                 ]);
 
             return response()->json([
                 'success' => true,
-                'activity_id' => $activity_id,
+                'message' => "Successfully created fill activity",
             ]);
 
         } catch (\Exception $e) {
@@ -218,13 +273,124 @@ class SpecializedLanguageApi extends Controller
         }
     }
 
-    public function createTalk2MeActivity(Request $request, string $subjectId){
+    public function editHomonymsActivity(Request $request, string $subjectId, string $difficulty, string $activityId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
-        $validated = $request->validate([]);
+        $validated = $request->validate([
+            'homonyms' => 'required|array|min:1',
+            'homonyms.*.sentences' => 'required|array|size:2',
+            'homonyms.*.sentences.*' => 'required|string|min:1',
+            'homonyms.*.answers' => 'required|array|size:2',
+            'homonyms.*.answers.*' => 'required|string|min:1',
+            'homonyms.*.audio_type' => 'required|array|size:2',
+            'homonyms.*.audio_type.*' => 'required|string|in:record,upload,system',
+            'homonyms.*.audio' => 'nullable|array|size:2',
+            'homonyms.*.audio.*' => 'nullable|file|mimetypes:audio/mp3,audio/wav',
+            'homonyms.*.distractors' => 'required|array|min:1',
+            'homonyms.*.distractors.*' => 'required|string|min:1'
+        ]);
 
-        try{
+        try {
+            $existing_activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}")
+                ->getSnapshot()
+                ->getValue();
+
+            if (empty($existing_activity)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Activity not found.'
+                ], 404);
+            }
+
+            $existing_items = $existing_activity['items'] ?? [];
+            $bucket = $this->storage->getBucket();
+            $items = [];
+
+            foreach ($validated['homonyms'] as $index => $item) {
+                $audio_1 = $item['audio'][0] ?? null;
+                $audio_2 = $item['audio'][1] ?? null;
+
+                $sentence_1 = $item['sentences'][0];
+                $sentence_2 = $item['sentences'][1];
+
+                $answer_1 = $item['answers'][0];
+                $answer_2 = $item['answers'][1];
+
+                $cleaned_answer_1 = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $answer_1));
+                $cleaned_answer_2 = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $answer_2));
+
+                if (!$this->checkBlanks($sentence_1)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Sentence #1 in item #" . ($index + 1) . " must contain exactly one underscore (_)."
+                    ], 422);
+                }
+
+                if (!$this->checkBlanks($sentence_2)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Sentence #2 in item #" . ($index + 1) . " must contain exactly one underscore (_)."
+                    ], 422);
+                }
+
+                $item_choices = [$cleaned_answer_1, $cleaned_answer_2];
+
+                foreach ($item['distractors'] as $dist) {
+                    $cleaned_dist = trim(preg_replace("/[^\p{L}\p{N}\s]/u", "", $dist));
+                    if (in_array($cleaned_dist, [$cleaned_answer_1, $cleaned_answer_2])) {
+                        return response()->json([
+                            'message' => "Distractors in item #" . ($index + 1) . " must not match answers."
+                        ], 422);
+                    }
+                    $item_choices[] = $cleaned_dist;
+                }
+
+                $audio_1_remotePath = $existing_items[array_keys($existing_items)[$index]]['audio_1_path'] ?? null;
+                $audio_2_remotePath = $existing_items[array_keys($existing_items)[$index]]['audio_2_path'] ?? null;
+
+                if ($item['audio_type'][0] !== 'system' && $audio_1) {
+                    $audio_1_id = (string) Str::uuid();
+                    $audio_1_remotePath = "audio/language/" . $audio_1_id . "_" . $audio_1->getClientOriginalName();
+                    $bucket->upload(fopen($audio_1->getPathname(), 'r'), ['name' => $audio_1_remotePath]);
+                }
+
+                if ($item['audio_type'][1] !== 'system' && $audio_2) {
+                    $audio_2_id = (string) Str::uuid();
+                    $audio_2_remotePath = "audio/language/" . $audio_2_id . "_" . $audio_2->getClientOriginalName();
+                    $bucket->upload(fopen($audio_2->getPathname(), 'r'), ['name' => $audio_2_remotePath]);
+                }
+
+                $item_id = array_keys($existing_items)[$index] ?? (string) Str::uuid();
+
+                $items[$item_id] = [
+                    'sentence_1' => $sentence_1,
+                    'sentence_2' => $sentence_2,
+                    'answer_1' => $cleaned_answer_1,
+                    'answer_2' => $cleaned_answer_2,
+                    'audio_1_path' => $audio_1_remotePath,
+                    'audio_2_path' => $audio_2_remotePath,
+                    'audio_type' => $item['audio_type'],
+                    'distractors' => array_slice($item_choices, 2),
+                    'choices' => $item_choices,
+                ];
+            }
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}")
+                ->set([
+                    'items' => $items,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $userId,
+                    'total' => count($items)
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => "Homonyms activity updated successfully."
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -234,78 +400,87 @@ class SpecializedLanguageApi extends Controller
         }
     }
 
-    public function takeHomonymActivity(Request $request, string $subjectId, string $difficulty, string $activityId){
+
+    public function editFillActivity(Request $request, string $subjectId, string $difficulty, string $activityId ){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
+        $validated = $request->validate([
+            'activity' => 'required|array|min:1',
+            'activity.*.item_id' => 'nullable|string|min:1',
+            'activity.*.sentence' => 'required|string|min:1',
+            'activity.*.audioType' => 'required|string|in:record,upload,system',
+            'activity.*.audio' => 'nullable|file|mimetypes:audio/mp3,audio/wav',
+            'activity.*.distractors' => 'required|array|min:1',
+            'activity.*.distractors.*' => 'required|string|min:1',
+        ]);
+
         try{
-            $activity = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}")
+            $exisitng_activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
-            if ($activity === null) {
+            if(empty($exisitng_activity)){
                 return response()->json([
                     'success' => false,
-                    'message' => "The requested homonyms activity does not exist or may have been deleted."
+                    'message' => "Activity not found"
                 ],404);
             }
-            
-            $attempt_data = [];
 
+            $mapped_items = [];
+            foreach($exisitng_activity['items'] as $item_id => $item){
+                $mapped_items[$item_id] = $item['audio_path'] ?? "";
+            }
+
+            $items = [];
             $bucket = $this->storage->getBucket();
 
-            foreach ($activity['items'] as $item_id => $item) {
-                $items = [];
+            foreach($validated['activity'] as $activity){
+                $item_id = $activity['item_id'] ?? (String) Str::uuid();
+                $remote_path = $mapped_items[$item_id] ?? null;
 
-                foreach ($item['homonym'] as $index => $homonym) {
-                    $text = strtolower($homonym['text']);
-                    $cleaned_sentence = preg_replace('/[^a-z0-9\s]/i', '', $text);
-                    $words = explode(' ', $cleaned_sentence);
-                    $words = array_filter($words);
-
-                    $answer = strtolower($homonym['answer']);
-                    $cleaned_answer = preg_replace('/[^a-z0-9\s]/i', '', $answer);
-
-                    foreach ($words as $i => $word) {
-                        if ($word === $cleaned_answer) {
-                            $words[$i] = "_____";
-                        }
+                if (isset($activity['audio']) && $activity['audio'] && $activity['audioType'] !== "system") {
+                    if ($remote_path) {
+                        $bucket->object($remote_path)->delete();
                     }
 
-                    $masked_sentence = ucfirst(implode(' ', $words));
+                    $audio_file = $activity['audio'];
+                    $audio_id = (String) Str::uuid();
+                    $filename = $audio_id . $audio_file->getClientOriginalName();
+                    $remote_path = "audio/language/" . $filename;
 
-                    $items[] = [
-                        "sentence_id" => $homonym['sentence_id'],
-                        "sentence" => $masked_sentence,
-                        'audio_path' => $homonym['audio_path']
-                    ];
+                    $bucket->upload(
+                        fopen($audio_file->getPathname(), 'r'),
+                        ['name' => $remote_path]
+                    );
                 }
 
-                $attempt_data[$item_id] = [
-                    'homonyms' => $items,
-                    'choices' => $item['choices']
+                $items[$item_id] = [
+                    'audioType' => $activity['audioType'],
+                    'distractors' => $activity['distractors'],
+                    'sentence' => $activity['sentence'],
+                    'audio_path' => $remote_path,
                 ];
             }
 
-            $attempt_id = $this->generateUniqueId("ATTM");
             $date = now()->toDateTimeString();
 
             $this->database
-                ->getReference("/subjects/GR{$gradeLevel}/{$subjectId}/attempts/homonyms/{$activityId}/{$userId}/{$attempt_id}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}")
                 ->set([
-                    'items' => $attempt_data,
-                    'status' => "in-progress",
-                    'created_at' => $date,
+                    'items' => $items,
+                    'updated_at' => $date,
+                    'updated_by' => $userId,
+                    'total' => count($items)
                 ]);
 
             return response()->json([
                 'success' => true,
-                'attempt_id' => $attempt_id,
-                'activity' => $attempt_data
-            ],201);
+                'message' => "Updated successfully"
+            ]);
 
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => 'Internal server error: ' . $e->getMessage(),
