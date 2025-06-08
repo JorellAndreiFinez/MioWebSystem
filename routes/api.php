@@ -87,7 +87,9 @@ Route::middleware([
     Route::post('/subject/{subjectId}/specialized/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'editMatchingActivity']);
     Route::post('/subject/{subjectId}/specialized/auditory/matching', [SpecializedAuditoryApi::class, 'createMatchingCardsActivity']);
 
-
+    // language
+    Route::get('/subject/{subjectId}/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'getFillActivity']);
+    Route::get('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'getHomonymsActivity']);
     Route::post('/subject/{subjectId}/specialized/language/homonyms', [SpecializedLanguageApi::class, 'createHomonymsActivity']);
     Route::post('/subject/{subjectId}/specialized/language/fill', [SpecializedLanguageApi::class, 'createFillActivity']);
     Route::post('/subject/{subjectId}/specialized/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'editHomonymsActivity']);
