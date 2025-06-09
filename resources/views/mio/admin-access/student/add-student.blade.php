@@ -37,6 +37,7 @@
               <label><input type="radio" name="category" value="international"> International</label>
             </div>
           </div>
+          <hr>
           <div class="form-group wide">
               <label>Student ID <span style="color: red; font-weight:700">*</span></label>
               <input type="text" name="studentid" id="studentID" required />
@@ -67,6 +68,8 @@
             </div>
             </div>
 
+            <hr>
+
             <div class="form-row">
 
             <div class="form-group">
@@ -94,9 +97,14 @@
                 min="1900-01-01"
                 max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
                 />
-
           </div>
+          <div class="form-group">
+              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="contact_number" placeholder="Contact Number" required />
             </div>
+            </div>
+
+            <hr>
 
           <div class="form-row">
 
@@ -143,15 +151,10 @@
             </div>
           </div>
 
+          <hr>
+
           <div class="form-row">
-            <div class="form-group">
-              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="contact_number" placeholder="Contact Number" required />
-            </div>
-            <div class="form-group wide">
-              <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="emergency_contact" placeholder="Emergency Contact Number" required />
-            </div>
+
             <div class="form-group">
               <label>Email <span style="color: red; font-weight:700">*</span></label>
               <input type="text" name="email" placeholder="Email Address" required />
@@ -159,20 +162,88 @@
           </div>
         </div>
 
-        <!-- Academic Information Section -->
+        <div class="section-header">Parent/Guardian Information</div>
+                        <div class="section-content">
+
+                         <div class="form-row">
+                            <div class="form-group wide">
+                                <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_firstname" placeholder="First Name" required value/>
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_lastname" placeholder="Last Name" required />
+                            </div>
+                        </div>
+
+                        <hr>
+                              <div class="form-row">
+                                <div class="form-group">
+                                    <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="emergency_contact" placeholder="Emergency Number"  required />
+                                </div>
+                                <div class="form-group">
+                                <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+                                <select name="parent_role" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="father">Father</option>
+                                    <option value="mother">Mother</option>
+                                    <option value="guardian">Guardian</option>
+                                </select>
+                            </div>
+                            </div>
+
+                        </div>
+
         <div class="section-header">Academic Information</div>
-        <div class="section-content">
-          <div class="form-row">
-            <div class="form-group wide">
-              <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="previous_school" value="Blah blah High school" required />
-            </div>
-            <div class="form-group">
-              <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="previous_grade_level" value="10" required />
-            </div>
-          </div>
-        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group wide">
+                                    <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="previous_school" placeholder="Previous School" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required />
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="form-group">
+                                <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
+                                <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()">
+                                    <option value="" disabled selected>Select one</option>
+                                    <option value="kinder">Kinder</option>
+                                    <option value="elementary">Elementary</option>
+                                    <option value="junior-highschool">Junior High School</option>
+                                    <option value="senior-highschool">Senior High School</option>
+                                    <option value="one-on-one-therapy">One-on-One Therapy</option>
+                                </select>
+                            </div>
+
+                            <!-- Grade Level Selector (Initially Hidden) -->
+                            <div class="form-group" id="grade_level_group" style="display: none;">
+                                <label>Select Grade Level <span style="color: red; font-weight:700">*</span></label>
+                                <select name="grade_level" id="grade_level">
+                                    <option value="" disabled selected>Select grade level</option>
+                                </select>
+                            </div>
+
+                            <!-- Senior High School Strand Selector (Initially Hidden) -->
+                            <div class="form-group" id="strand_group" style="display: none;">
+                                <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
+                                <select name="strand">
+                                    <option value="" disabled selected>Select strand</option>
+                                    <option value="agri-fishery">Agri-Fishery Arts</option>
+                                    <option value="home-economics">Home Economics</option>
+                                    <option value="industrial-arts">Industrial Arts</option>
+                                    <option value="ict">Information, Communications, & Technology</option>
+                                    <option value="entrepreneurship">Entrepreneurship & Financial Management</option>
+                                    <option value="culinary">Culinary Skills Development</option>
+                                    <option value="fashion-beauty">Fashion Beauty Skills</option>
+                                </select>
+                            </div>
+                        </div>
 
         <!-- Account Information Section -->
         <div class="section-header">Account Information</div>
@@ -406,24 +477,150 @@ document.querySelector('input[name="email"]').addEventListener('input', updateAc
 document.querySelector('input[name="birthday"]').addEventListener('input', updateAccountInfo);
 </script>
 
+<!-- ACADEMICS DYNAMIC INPUT -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Trigger update on page load
+        handleGradeChange();
+    });
+
+    function handleGradeChange() {
+        const enrollmentGrade = document.getElementById('enrollment_grade').value;
+        const gradeLevelGroup = document.getElementById('grade_level_group');
+        const gradeLevelSelect = document.getElementById('grade_level');
+        const strandGroup = document.getElementById('strand_group');
+
+        // Saved value from backend (Blade will render these)
+        const savedGradeLevel = "{{ $form['grade_level'] ?? '' }}";
+
+        // Reset
+        gradeLevelSelect.innerHTML = '<option value="" disabled>Select grade level</option>';
+        gradeLevelGroup.style.display = 'none';
+        strandGroup.style.display = 'none';
+
+        if (enrollmentGrade === 'elementary') {
+            gradeLevelGroup.style.display = 'block';
+            for (let i = 1; i <= 6; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        } else if (enrollmentGrade === 'junior-highschool') {
+            gradeLevelGroup.style.display = 'block';
+            for (let i = 7; i <= 10; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        } else if (enrollmentGrade === 'senior-highschool') {
+            gradeLevelGroup.style.display = 'block';
+            strandGroup.style.display = 'block';
+            for (let i = 11; i <= 12; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        }
+    }
+</script>
+
 <!-- FOR TESTING -->
 
 <script>
-document.querySelector('[name="first_name"]').value = "Andrea";
-document.querySelector('[name="last_name"]').value = "Dela Cruz";
-document.querySelector('[name="gender"]').value = "Female";
-document.querySelector('[name="age"]').value = 16;
-document.querySelector('[name="birthday"]').value = "2009-05-20";
-document.querySelector('[name="address"]').value = "123 Mabini St.";
-document.querySelector('[name="zip_code"]').value = "4217";
-document.querySelector('[name="contact_number"]').value = "09171234567";
-document.querySelector('[name="emergency_contact"]').value = "09179876543";
-document.querySelector('[name="email"]').value = "andrea.delacruz@example.com";
-document.querySelector('[name="previous_school"]').value = "Mabini National High School";
-document.querySelector('[name="previous_grade_level"]').value = 10;
-document.querySelector('[name="username"]').value = "juancruz2025";
-document.querySelector('[name="account_password"]').value = "P@ssword123";
-document.querySelector('[name="account_status"]').value = "active";
+  function fillDummyData() {
+    // Student Category (radio)
+    document.querySelector('input[name="category"][value="new"]').checked = true;
 
+    // Student ID
+
+    // Section select
+    const sectionSelect = document.getElementById('section_id');
+    if(sectionSelect){
+      // Select first non-empty option or 'none'
+      sectionSelect.value = sectionSelect.options[1] ? sectionSelect.options[1].value : 'none';
+    }
+
+    // Personal Information
+    document.querySelector('input[name="first_name"]').value = "John";
+    document.querySelector('input[name="last_name"]').value = "Doe";
+
+    // Gender select
+    const genderSelect = document.querySelector('select[name="gender"]');
+    if(genderSelect) genderSelect.value = "Male";
+
+    // Age
+    document.getElementById('age').value = 16;
+
+    // Birthday
+    document.getElementById('birthday').value = "2007-05-15";
+
+    // Contact Number
+    document.querySelector('input[name="contact_number"]').value = "09171234567";
+
+    // Region/Province/City/Barangay selects
+    // For demo, just enable and select first options (assuming options exist)
+    function setSelectValue(id) {
+      let sel = document.getElementById(id);
+      if(sel && sel.options.length > 1){
+        sel.disabled = false;
+        sel.value = sel.options[1].value; // pick second option (first after placeholder)
+      }
+    }
+    setSelectValue('region');
+    setSelectValue('province');
+    setSelectValue('city');
+    setSelectValue('barangay');
+
+    // Address and Zip
+    document.querySelector('input[name="address"]').value = "1234 Elm Street";
+    document.querySelector('input[name="zip_code"]').value = "1234";
+
+    // Email
+    document.querySelector('input[name="email"]').value = "john.doe@example.com";
+
+    // Parent/Guardian
+    document.querySelector('input[name="parent_firstname"]').value = "Jane";
+    document.querySelector('input[name="parent_lastname"]').value = "Doe";
+    document.querySelector('input[name="emergency_contact"]').value = "09987654321";
+
+    // Parent Role select
+    const parentRoleSelect = document.querySelector('select[name="parent_role"]');
+    if(parentRoleSelect) parentRoleSelect.value = "mother";
+
+    // Academic Information
+    document.querySelector('input[name="previous_school"]').value = "Springfield Elementary";
+    document.querySelector('input[name="previous_grade_level"]').value = 10;
+
+    // Enrollment Grade select
+    const enrollGradeSelect = document.getElementById('enrollment_grade');
+    if(enrollGradeSelect) enrollGradeSelect.value = "junior-highschool";
+
+    // Show grade_level selector and populate it for junior highschool (example)
+    const gradeLevelGroup = document.getElementById('grade_level_group');
+    const gradeLevelSelect = document.getElementById('grade_level');
+    if(gradeLevelGroup && gradeLevelSelect){
+      gradeLevelGroup.style.display = "block";
+      gradeLevelSelect.innerHTML = `
+        <option value="" disabled>Select grade level</option>
+        <option value="7">Grade 7</option>
+        <option value="8" selected>Grade 8</option>
+        <option value="9">Grade 9</option>
+        <option value="10">Grade 10</option>
+      `;
+      gradeLevelSelect.value = "8";
+    }
+
+    // Hide strand group since it's not senior high school
+    const strandGroup = document.getElementById('strand_group');
+    if(strandGroup) strandGroup.style.display = "none";
+
+    // Account Information
+    document.getElementById('account_username').value = "johndoe16";
+    document.getElementById('account_password').value = "password123";
+    const accStatusSelect = document.querySelector('select[name="account_status"]');
+    if(accStatusSelect) accStatusSelect.value = "active";
+
+    // Schedule Section (leave empty or add one dummy)
+    const scheduleInput = document.querySelector('input[name="schedule[]"]');
+    if(scheduleInput) scheduleInput.value = "SCHD001";
+  }
+
+  // Run on page load or attach to a button click
+  window.addEventListener('DOMContentLoaded', () => {
+    fillDummyData();
+  });
 </script>
-

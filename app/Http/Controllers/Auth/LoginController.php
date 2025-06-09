@@ -80,7 +80,7 @@ public function login(Request $request)
             'uid' => $uid,
             'email' => $email,
             'role' => $role,
-            'name' => $name, 
+            'name' => $name,
             'category' => $userData['category'] ?? null,
             'section_id' => $sectionId, // Store section_id in session
         ]);
@@ -94,13 +94,14 @@ public function login(Request $request)
         return match ($role) {
             'admin'   => redirect()->route('mio.admin-panel'),
             'teacher' => redirect()->route('mio.teacher-panel'),
-            'parent'  => redirect()->route('mio.parent-panel'),
             'student' => redirect()->route('mio.student-panel'),
+            'parent'  => redirect()->route('mio.parent-panel'),
             default   => redirect()->back()->with('error', 'Unrecognized role.'),
         };
 
     } catch (\Kreait\Firebase\Exception\AuthException $e) {
-        return response()->json(['error' => 'Invalid Credentials.'], 401);
+                return redirect()->back()->with('error', 'Invalid Credentials');
+
     } catch (\Throwable $e) {
         return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
     }
@@ -132,7 +133,7 @@ public function mobileLogin(Request $request)
         try {
             $email = $request->input('email');
             $password = $request->input('password');
-            
+
             // authenticate user
             $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
             $firebaseUser = $signInResult->data();
@@ -169,7 +170,7 @@ public function mobileLogin(Request $request)
             // Return success response with user data
             return response()->json([
                 'session_id' => $tokeId,
-                'user' => [ 
+                'user' => [
                     'uid' => $uid,
                     'email' => $email,
                     'role' => $role,

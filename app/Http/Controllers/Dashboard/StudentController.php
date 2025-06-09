@@ -8,11 +8,19 @@ use Kreait\Firebase\Factory;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 use Carbon\Carbon;
+use Google\Cloud\Storage\StorageClient;
+use Google\Cloud\Storage\Bucket;
+use Google\Cloud\Storage\StorageObject;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Arr;
 
 
 class StudentController extends Controller
 {
+
     protected $database;
+    protected $storageClient;
+    protected $bucketName;
 
     public function __construct()
     {
@@ -26,7 +34,17 @@ class StudentController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+        // Create Google Cloud Storage client
+        $this->storageClient = new StorageClient([
+            'keyFilePath' => $path,
+        ]);
+
+        // Your Firebase Storage bucket name
+        $this->bucketName = 'miolms.firebasestorage.app';
     }
+
+
 
    public function showDashboard()
     {
@@ -86,9 +104,12 @@ class StudentController extends Controller
         }
 
         // Filter active sections based on the logged-in user's section_id
-        $filteredSections = array_filter($activeSections, function($section) use ($userSectionId) {
-            return $section['sectionid'] === $userSectionId;
-        });
+        $filteredSections = $userSectionId
+        ? array_filter($activeSections, function($section) use ($userSectionId) {
+            return isset($section['sectionid']) && $section['sectionid'] === $userSectionId;
+        })
+        : [];
+
 
         // Fetch users (students and teachers) for the active sections
         $usersRef = $this->database->getReference('users');
@@ -1112,41 +1133,6 @@ class StudentController extends Controller
     ]);
 }
 
-    public function showProfile()
-    {
-        $userId = session('firebase_user.uid');
-        $studentName = session('firebase_user.name');
-
-        // Get student data
-        $studentRef = $this->database->getReference('users/' . $userId);
-        $student = $studentRef->getValue();
-
-        if (!$student) {
-            abort(404, 'Student not found.');
-        }
-
-        // Find the section where this student is enrolled
-        $sectionsRef = $this->database->getReference('sections');
-        $sections = $sectionsRef->getValue();
-
-        $studentSection = null;
-
-        foreach ($sections as $sectionId => $sectionData) {
-            if (isset($sectionData['students']) && array_key_exists($userId, $sectionData['students'])) {
-                $studentSection = $sectionData;
-                break;
-            }
-        }
-
-        return view('mio.head.student-panel', [
-            'page' => 'profile',
-            'student' => $student,
-            'name' => $studentName,
-            'uid' => $userId,
-            'section' => $studentSection // Pass section data to the view
-        ]);
-    }
-
     public function showPeople($subjectId)
     {
         // Get all subjects grouped by grade level
@@ -1187,6 +1173,89 @@ class StudentController extends Controller
         ]);
     }
 
+    public function showProfile(){
+        $userId = session('firebase_user.uid');
+        $teacherName = session('firebase_user.name');
+
+        // Get teacher data
+        $teacherRef = $this->database->getReference('users/' . $userId);
+        $teacher = $teacherRef->getValue();
+
+        if (!$teacher) {
+            abort(404, 'Teacher not found.');
+        }
+
+        // ✅ Get departments
+        $departmentsRef = $this->database->getReference('departments');
+        $departmentsData = $departmentsRef->getValue() ?? [];
+
+        $departments = [];
+        foreach ($departmentsData as $id => $dept) {
+            $departments[] = [
+                'departmentid' => $id,
+                'department_name' => $dept['department_name'] ?? 'Unnamed'
+            ];
+        }
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'profile',
+            'teacher' => $teacher,
+            'name' => $teacherName,
+            'uid' => $userId,
+            'departments' => $departments, // 👈 include this
+        ]);
+    }
+
+
+    public function updateProfile(Request $request)
+    {
+        $userId = session('firebase_user.uid'); // Use session, not auth()->user()
+
+        // Validate only editable fields (exclude readonly fields)
+        $data = $request->validate([
+            'bio' => 'nullable|string',
+            'social_link' => 'nullable|url',
+            'profile_picture' => 'nullable|image|max:2048',
+        ]);
+
+        try {
+            // Handle profile picture upload if exists
+            if ($request->hasFile('profile_picture')) {
+                $file = $request->file('profile_picture');
+                $filename = 'images/profile_pictures/' . uniqid() . '.' . $file->getClientOriginalExtension();
+
+                // Upload to Firebase Storage
+                $bucket = $this->storageClient->bucket($this->bucketName);
+                $bucket->upload(
+                    fopen($file->getRealPath(), 'r'), // safer than file_get_contents
+                    ['name' => $filename]
+                );
+
+
+                $object = $bucket->object($filename);
+
+                // Make public (optional, if you're not using signed URLs)
+                $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
+
+                $data['photo_url'] = 'https://storage.googleapis.com/' . $this->bucketName . '/' . $filename;
+
+            }
+
+            Log::info('Final data to update in Firebase:', $data);
+
+
+            // Update only the fields provided by the form
+            $this->database->getReference('users/' . $userId)->update($data);
+
+            return redirect()->back()->with('success', 'Profile updated successfully.');
+
+    } catch (\Throwable $e) {
+        // Log error (optional)
+        Log::error('Profile update failed: ' . $e->getMessage());
+
+        return redirect()->back()->with('error', 'Failed to update profile. Please try again.');
+    }
+}
 
 
 

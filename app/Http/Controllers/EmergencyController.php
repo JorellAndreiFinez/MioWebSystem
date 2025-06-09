@@ -31,12 +31,14 @@ class EmergencyController extends Controller
     {
         // Validate input
         $validated = $request->validate([
-            'name' => 'required|in:flood,earthquake,fire,school_threat,power_outage',
+            'name' => 'required|in:fl,ea,fi,sc,po',
         ]);
 
-        $name = $validated['name'];
-        $timestamp = Carbon::now()->timestamp;
-        $emergencyId = strtoupper($name) . $timestamp;
+        $name = strtoupper($validated['name']); // e.g. FL, EA, etc.
+        $datePart = Carbon::now()->format('Ymd'); // e.g. 20250608
+        $randomSuffix = str_pad(rand(0, 99), 2, '0', STR_PAD_LEFT); // e.g. 00 to 99
+
+        $emergencyId = "{$name}{$datePart}{$randomSuffix}"; // e.g. FL2025060807
 
         // Emergency data
         $emergencyData = [
@@ -50,7 +52,7 @@ class EmergencyController extends Controller
         // Announcement data
         $announcementData = [
             'id' => $emergencyId,
-            'title' => 'Emergency Alert: ' . ucfirst($name),
+            'title' => 'Emergency Alert: ' . $name,
             'description' => 'A ' . $name . ' alert has been issued. Please take appropriate action.',
             'people' => 'all',
             'date' => Carbon::now()->format('Y-m-d'),
@@ -68,4 +70,49 @@ class EmergencyController extends Controller
             'emergency_id' => $emergencyId,
         ]);
     }
+
+    public function stopVibration(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|string'
+        ]);
+
+        $emergencyId = $request->input('id');
+
+        // Set vibrate to false and add finished_at timestamp
+        $this->database->getReference("emergencies/{$emergencyId}")->update([
+            'vibrate' => false,
+            'finished_at' => \Carbon\Carbon::now()->toDateTimeString()
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Vibration stopped and emergency marked as finished: ' . $emergencyId,
+        ]);
+    }
+
+
+    public function getActiveEmergency()
+    {
+        $emergencies = $this->database->getReference('emergencies')->getValue();
+
+        if (!$emergencies) {
+            return response()->json(['active' => false]);
+        }
+
+        // Look for any emergency with vibrate == true
+        foreach ($emergencies as $id => $emergency) {
+            if (isset($emergency['vibrate']) && $emergency['vibrate'] === true) {
+                return response()->json([
+                    'active' => true,
+                    'id' => $id,
+                    'name' => $emergency['name']
+                ]);
+            }
+        }
+
+        return response()->json(['active' => false]);
+    }
+
+
 }

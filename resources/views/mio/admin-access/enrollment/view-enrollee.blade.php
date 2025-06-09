@@ -1,8 +1,8 @@
 <section class="home-section">
   <div class="text">View Enrollee</div>
   <div class="teacher-container">
-    @include('mio.dashboard.status-message')
       <div class="form-container">
+    @include('mio.dashboard.status-message')
 
             <div id="page-1" class="enrollee-section">
                 <!-- Enrollee Info Display -->
@@ -80,16 +80,44 @@
                                 <label>Contact Number</label>
                                 <input type="text" name="contact_number" value="{{ $enrollee['enrollment_form']['contact_number'] }}" readonly />
                             </div>
-                            <div class="form-group wide">
-                                <label>Emergency Contact Number</label>
-                                <input type="text" name="emergency_contact" value="{{ $enrollee['enrollment_form']['emergency_contact'] }}" readonly />
-                            </div>
-                            <div class="form-group wide">
-                                <label>Emergency Name</label>
-                                <input type="text" name="emergency_name" value="{{ $enrollee['enrollment_form']['emergency_name'] }}" readonly />
-                            </div>
                         </div>
                     </div>
+
+                    <div class="section-header">Parent/Guardian Information</div>
+                        <div class="section-content">
+
+                         <div class="form-row">
+                            <div class="form-group wide">
+                                <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_firstname" value="{{ $enrollee['enrollment_form']['parent_firstname'] }}" placeholder="Parent First Name" required />
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_lastname" value="{{ $enrollee['enrollment_form']['parent_lastname'] }}" placeholder="Parent Last Name" required />
+                            </div>
+                        </div>
+                        <hr>
+                             <div class="form-row">
+
+                        <div class="form-group">
+                            <label>Parent/Guardian Contact Number <span style="color: red; font-weight:700">*</span></label>
+                            <input type="text" name="emergency_contact" placeholder="Emergency Number" required
+                                value="{{ $enrollee['enrollment_form']['emergency_contact'] }}" readonly />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+                            <select name="parent_role" disabled>
+                                <option value="" disabled {{ old('parent_role', '') == '' ? 'selected' : '' }}>Select role</option>
+                                <option value="father" {{ old('parent_role', $enrollee['enrollment_form']['parent_role'] ?? '') == 'father' ? 'selected' : '' }}>Father</option>
+                                <option value="mother" {{ old('parent_role', $enrollee['enrollment_form']['parent_role'] ?? '') == 'mother' ? 'selected' : '' }}>Mother</option>
+                                <option value="guardian" {{ old('parent_role', $enrollee['enrollment_form']['parent_role'] ?? '') == 'guardian' ? 'selected' : '' }}>Guardian</option>
+                            </select>
+                        </div>
+                    </div>
+                            </div>
+
 
                     @php
                         $gradeMap = [
@@ -405,7 +433,7 @@
             </div>
 
             <!-- Teacher Action Section -->
-                <form id="teacherActionForm" method="POST" action="{{ route('mio.update-enrollee', ['id' => $id]) }}">
+                <form id="teacherActionForm" method="POST" action="{{ route('mio.update-enrollee', ['id' => $id]) }}" data-status="{{ $enrollee['enroll_status'] }}">
                     @csrf
                     @method('PUT')
                     <div class="section-header">Admin Action</div>
@@ -574,6 +602,21 @@
     document.getElementById('nextBtn').style.display = currentPage === totalPages ? 'none' : 'inline-block';
   }
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('teacherActionForm');
+    const currentStatus = form.dataset.status;
+
+    form.addEventListener('submit', function (e) {
+        if (currentStatus === 'Enrolled') {
+            e.preventDefault();
+            alert('This enrollee is already enrolled. You cannot make further changes.');
+        }
+    });
+});
+</script>
+
 
 <!-- STYLES -->
 

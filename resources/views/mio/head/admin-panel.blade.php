@@ -196,7 +196,95 @@
             }
         });
 </script>
+
+
+    <!-- Emergency Modal (hidden initially) -->
+<div id="emergencyModal" class="modal" style="display:none; position: fixed; z-index: 1000; inset: 0; background: rgba(0,0,0,0.6); justify-content: center; align-items: center;">
+    <div id="modalBox" style="background: yellow; transition: background 0.5s ease; padding: 2rem; border-radius: 10px; text-align: center; width: 300px;">
+        <h3 id="modalCountdownText" style="font-size: 24px; margin-bottom: 20px;">Starting in 3...</h3>
+        <button id="cancelButton" onclick="cancelEmergency()" style="margin-right: 10px;">Cancel</button>
+        <button id="finishButton" style="display: none;" onclick="closeEmergencyModal()">Finish</button>
+    </div>
+</div>
+
+<script>
+    let currentEmergencyId = null;
+let selectedEmergencyName = '';
+let emergencyInterval = null;
+
+function showEmergencyModalFromExisting(data) {
+    currentEmergencyId = data.id;
+    selectedEmergencyName = data.name;
+
+    const modal = document.getElementById('emergencyModal');
+    const text = document.getElementById('modalCountdownText');
+    const button = document.getElementById('finishButton');
+    const modalBox = document.getElementById('modalBox');
+
+    modal.style.display = 'flex';
+    modalBox.style.background = 'red';
+    text.textContent = 'Emergency Vibration is Started';
+    button.style.display = 'inline-block';
+}
+
+// On every page load, check if emergency is active:
+window.onload = function () {
+    fetch("{{ route('emergency.active') }}")
+    .then(response => response.json())
+    .then(data => {
+        if (data.active) {
+            // Show emergency modal immediately on all pages
+            showEmergencyModalFromExisting(data);
+
+            // Redirect to emergency page if not already there
+            if (!window.location.pathname.includes('/emergency')) {
+                window.location.href = "{{ route('mio.emergency') }}";
+            }
+        }
+    });
+};
+
+function closeEmergencyModal() {
+    if (!currentEmergencyId) {
+        alert('No emergency is active.');
+        return;
+    }
+
+    fetch("{{ route('emergency.stop-vibration') }}", {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ id: currentEmergencyId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Vibration stopped:', data);
+        alert("Emergency Vibration Stopped.");
+        document.getElementById('emergencyModal').style.display = 'none';
+        selectedEmergencyName = '';
+        currentEmergencyId = null;
+
+        // After stopping emergency, redirect away from emergency page if needed
+        if (window.location.pathname.includes('/emergency')) {
+            window.location.href = "{{ route('mio.admin-panel') }}"; // or any safe default
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert("Failed to stop vibration.");
+    });
+}
+
+function cancelEmergency() {
+    // Optionally allow cancel to hide modal but vibration remains active
+    clearInterval(emergencyInterval);
+    document.getElementById('emergencyModal').style.display = 'none';
+    selectedEmergencyName = '';
+}
+
+</script>
+
 </body>
-
-
 </html>

@@ -25,6 +25,9 @@ use Google\Cloud\Storage\StorageObject;
 use Barryvdh\DomPDF\Facade\Pdf;
 use function Illuminate\Log\log;
 use Kreait\Firebase\Exception\Auth\AuthError;
+use App\Mail\EnrollmentSuccessMail;
+use Illuminate\Support\Facades\Mail;
+use Mailgun\Mailgun;
 
 class EnrollController extends Controller
 {
@@ -77,34 +80,130 @@ class EnrollController extends Controller
 
 
 
+
     public function showDashboard()
     {
-        $user = session('enrollment_user');
-        $enrollmentId = $user['ID'] ?? null;
-
-        $enrollStatus = $this->getEnrollStatus();
-
-        Log::info($enrollStatus);
+        $enrollmentUser = session('enrollment_user');
+        $enrollmentId = $enrollmentUser['ID'] ?? null;
 
         $adminFeedback = null;
-
         if ($enrollmentId) {
-            $enrolleeRef = $this->database->getReference("enrollment/enrollees/{$enrollmentId}");
-            $enrolleeSnapshot = $enrolleeRef->getSnapshot();
-
-            if ($enrolleeSnapshot->exists()) {
-                $enrolleeData = $enrolleeSnapshot->getValue();
+            $enrolleeData = $this->database->getReference("enrollment/enrollees/{$enrollmentId}")->getValue();
+            if ($enrolleeData) {
                 $adminFeedback = $enrolleeData['feedback_admin'] ?? null;
             }
         }
 
+        $enrollStatus = $enrollmentUser['enroll_status'] ?? 'NotStarted';
+
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'enroll-dashboard',
-            'user' => $user,
+            'user' => $enrollmentUser,
             'enrollStatus' => $enrollStatus,
-            'adminFeedback' => $adminFeedback, // 💡 pass to view
+            'adminFeedback' => $adminFeedback,
         ]);
     }
+
+
+    public function login(Request $request)
+    {
+        $request->validate([
+            'user_login' => 'required|string',
+            'user_pass' => 'required|string',
+        ]);
+
+        $usernameOrEmail = $request->input('user_login');
+        $password = $request->input('user_pass');
+        $email = null;
+
+        try {
+            // 1. Identify email from username/email input
+            if (filter_var($usernameOrEmail, FILTER_VALIDATE_EMAIL)) {
+                $email = $usernameOrEmail;
+            } else {
+                // Lookup in enrollees and users by username to get email
+                $allEnrollees = $this->database->getReference('enrollment/enrollees')->getValue() ?? [];
+                $allUsers = $this->database->getReference('users')->getValue() ?? [];
+
+                foreach ($allEnrollees as $id => $data) {
+                    if (($data['username'] ?? '') === $usernameOrEmail) {
+                        $email = $data['email'] ?? null;
+                        break;
+                    }
+                }
+
+                if (!$email) {
+                    foreach ($allUsers as $uid => $data) {
+                        if (($data['username'] ?? '') === $usernameOrEmail) {
+                            $email = $data['email'] ?? null;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$email) {
+                    return redirect()->back()->with('error', 'Username not found.');
+                }
+            }
+
+            // 2. Firebase Auth login
+            $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
+            $firebaseUid = $signInResult->firebaseUserId();
+
+            // 3. Get user info from users/{uid}
+            $user = $this->database->getReference('users/' . $firebaseUid)->getValue();
+
+            if (!$user) {
+                // Not enrolled yet? Try find enrollee by email:
+                $enrollees = $this->database->getReference('enrollment/enrollees')->getValue() ?? [];
+                $enrollee = null;
+                foreach ($enrollees as $id => $data) {
+                    if (($data['email'] ?? '') === $email) {
+                        $enrollee = $data;
+                        $enrollee['ID'] = $id; // store the enrollee ID (key)
+                        break;
+                    }
+                }
+
+                if (!$enrollee) {
+                    return redirect()->back()->with('error', 'User not found in database.');
+                }
+
+                // Store enrollee only if not enrolled yet
+                session([
+                    'firebase_uid' => $firebaseUid,
+                    'enrollment_user' => $enrollee,
+                    'user_account' => null,
+                ]);
+
+            } else {
+                // Enrolled user found, get enrollee_id from user
+                $enrolleeId = $user['enrollee_id'] ?? null;
+                $enrolleeData = null;
+                if ($enrolleeId) {
+                    $enrolleeData = $this->database->getReference("enrollment/enrollees/{$enrolleeId}")->getValue();
+                    if ($enrolleeData) {
+                        $enrolleeData['ID'] = $enrolleeId; // add ID key to data for consistency
+                    }
+                }
+
+                // Store both user account and enrollee data
+                session([
+                    'firebase_uid' => $firebaseUid,
+                    'user_account' => $user,
+                    'enrollment_user' => $enrolleeData ?? null,
+                ]);
+            }
+
+            return redirect()->route('enroll-dashboard');
+
+        } catch (InvalidPassword $e) {
+            return redirect()->back()->with('error', 'Incorrect password.');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
+        }
+    }
+
 
    public function getEnrollStatus()
     {
@@ -157,6 +256,12 @@ class EnrollController extends Controller
 
         // Check if status is exactly 'Assessment'
         if ($enrollStatus !== 'Assessment') {
+
+            if ($enrollStatus === 'Enrolled') {
+
+                return redirect()->route('enroll-dashboard')->with('error', 'You are done in assessment.');
+            }
+
             return redirect()->route('enroll-dashboard')->with('error', 'You are not yet eligible for the assessment.');
         }
 
@@ -508,62 +613,6 @@ class EnrollController extends Controller
     }
 
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'user_login' => 'required|string',
-            'user_pass' => 'required|string',
-        ]);
-
-        $usernameOrEmail = $request->input('user_login');
-        $password = $request->input('user_pass');
-        $email = null;
-
-        try {
-            if (filter_var($usernameOrEmail, FILTER_VALIDATE_EMAIL)) {
-                $email = $usernameOrEmail;
-            } else {
-                // Find email by username in enrollment/users
-                $allUsers = $this->database->getReference('enrollment/enrollees')->getValue();
-                if ($allUsers) {
-                    foreach ($allUsers as $uid => $data) {
-                        if (isset($data['username']) && $data['username'] === $usernameOrEmail) {
-                            $email = $data['email'] ?? null;
-                            break;
-                        }
-                    }
-                }
-                if (!$email) {
-                    return redirect()->back()->with('error', 'Username not found.');
-                }
-            }
-
-            $signInResult = $this->auth->signInWithEmailAndPassword($email, $password);
-            $firebaseUser = $signInResult->firebaseUserId();
-            Log::info('Firebase UID after login: ' . $firebaseUser);
-
-            // Get user data for session if needed
-            $user = $this->database->getReference('enrollment/enrollees/' . $firebaseUser)->getValue();
-
-            if (!$user) {
-                return redirect()->back()->with('error', 'User not found in database.');
-            }
-
-            session([
-                'firebase_uid' => $firebaseUser,
-                'enrollment_user' => $user, // Store entire user info for middleware access
-            ]);
-
-
-            return redirect()->route('enroll-dashboard');
-
-        } catch (InvalidPassword $e) {
-            return redirect()->back()->with('error', 'Incorrect password.');
-        } catch (\Throwable $e) {
-            return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
-        }
-    }
-
 
 
     public function signup(Request $request)
@@ -703,8 +752,13 @@ class EnrollController extends Controller
                 'city' => 'required|string',
                 'zip_code' => 'required|string|min:4|max:4',
                 'contact_number' => 'required|string',
+
                 'emergency_contact' => 'required|string',
-                'emergency_name' => 'required|string',
+                'parent_firstname' => 'required|string',
+                'parent_lastname' => 'required|string',
+                'parent_role' => 'required|string|in:father,mother,guardian',
+
+
                 'previous_school' => 'required|string',
                 'previous_grade_level' => 'required|integer',
                 'medical_history' => 'required|string',
@@ -712,16 +766,15 @@ class EnrollController extends Controller
                 'hearing_identity' => 'required|string',
                 'assistive_devices' => 'nullable|string',
                 'health_notes' => 'nullable|string',
-
                 'enrollment_grade' => 'required|string',
                 'grade_level' => 'nullable|string',
                 'strand' => 'nullable|string',
 
-               'payment' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'good_moral_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'health_certificate_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'psa_birth_certificate_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-                'form_137_file' => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+               'payment' => $request->hasFile('payment') ? 'file|mimes:pdf,jpg,jpeg,png|max:5120' : 'nullable',
+                'good_moral_file' => $request->hasFile('good_moral_file') ? 'file|mimes:pdf,jpg,jpeg,png|max:5120' : 'nullable',
+                'health_certificate_file' => $request->hasFile('health_certificate_file') ? 'file|mimes:pdf,jpg,jpeg,png|max:5120' : 'nullable',
+                'psa_birth_certificate_file' => $request->hasFile('psa_birth_certificate_file') ? 'file|mimes:pdf,jpg,jpeg,png|max:5120' : 'nullable',
+                'form_137_file' => $request->hasFile('form_137_file') ? 'file|mimes:pdf,jpg,jpeg,png|max:5120' : 'nullable',
             ]);
 
             $enrollmentUser = session('enrollment_user');
@@ -735,13 +788,32 @@ class EnrollController extends Controller
             // Retrieve all form data
             $formData = $request->only([
                 'first_name', 'last_name', 'gender', 'age', 'birthday', 'address', 'barangay', 'region',
-                'province', 'city', 'zip_code', 'contact_number', 'emergency_contact', 'emergency_name',
+                'province', 'city', 'zip_code', 'contact_number', 'emergency_contact',
                 'previous_school', 'previous_grade_level', 'medical_history', 'hearing_loss',
-                'hearing_identity', 'assistive_devices', 'health_notes', 'enrollment_grade', 'grade_level', 'strand'
+                'hearing_identity', 'assistive_devices', 'health_notes', 'enrollment_grade', 'grade_level', 'strand', 'parent_role', 'parent_firstname', 'parent_lastname'
             ]);
 
             // ✅ Add this line
             $formData['category'] = 'new';
+
+            $activeSchoolYearId = null;
+
+            // Fetch all school years (flat structure)
+            $schoolYears = $this->database->getReference('schoolyears')->getValue() ?? [];
+
+            // Look for the one with status "active"
+            foreach ($schoolYears as $schoolYearId => $schoolYearData) {
+                if (
+                    isset($schoolYearData['status']) &&
+                    strtolower($schoolYearData['status']) === 'active'
+                ) {
+                    $activeSchoolYearId = $schoolYearId;
+                    break;
+                }
+            }
+
+            // Set it in the form data
+            $formData['schoolyear_id'] = $activeSchoolYearId;
 
             // Apply conditional logic
             $enrollmentGrade = $formData['enrollment_grade'];
@@ -758,27 +830,42 @@ class EnrollController extends Controller
             if ($request->hasFile('payment')) {
                 $uploadResult = $this->uploadToFirebaseStorage($request->file('payment'), "enrollment/{$enrolleeId}");
                 $formData['payment_proof_path'] = $uploadResult['url'];
+            } elseif ($request->filled('existing_payment')) {
+                $formData['payment_proof_path'] = $request->input('existing_payment');
             }
 
+            // Good Moral
             if ($request->hasFile('good_moral_file')) {
                 $uploadResult = $this->uploadToFirebaseStorage($request->file('good_moral_file'), "enrollment/{$enrolleeId}");
                 $formData['good_moral_path'] = $uploadResult['url'];
+            } elseif ($request->filled('existing_good_moral_file')) {
+                $formData['good_moral_path'] = $request->input('existing_good_moral_file');
             }
 
+            // Health Certificate
             if ($request->hasFile('health_certificate_file')) {
                 $uploadResult = $this->uploadToFirebaseStorage($request->file('health_certificate_file'), "enrollment/{$enrolleeId}");
                 $formData['health_certificate_path'] = $uploadResult['url'];
+            } elseif ($request->filled('existing_health_certificate_file')) {
+                $formData['health_certificate_path'] = $request->input('existing_health_certificate_file');
             }
 
+            // PSA Birth Certificate
             if ($request->hasFile('psa_birth_certificate_file')) {
                 $uploadResult = $this->uploadToFirebaseStorage($request->file('psa_birth_certificate_file'), "enrollment/{$enrolleeId}");
                 $formData['psa_birth_certificate_path'] = $uploadResult['url'];
+            } elseif ($request->filled('existing_psa_birth_certificate_file')) {
+                $formData['psa_birth_certificate_path'] = $request->input('existing_psa_birth_certificate_file');
             }
 
+            // Form 137
             if ($request->hasFile('form_137_file')) {
                 $uploadResult = $this->uploadToFirebaseStorage($request->file('form_137_file'), "enrollment/{$enrolleeId}");
                 $formData['form_137_path'] = $uploadResult['url'];
+            } elseif ($request->filled('existing_form_137_file')) {
+                $formData['form_137_path'] = $request->input('existing_form_137_file');
             }
+
 
             $formData['submitted_at'] = now()->toDateTimeString();
 
@@ -799,17 +886,15 @@ class EnrollController extends Controller
     }
 
 
+    public function logout(Request $request)
+    {
+        // Clear all session data related to enrollment
+        $request->session()->forget(['firebase_uid', 'enrollment_user']);
+        $request->session()->flush(); // optional, clears all session data
 
-
-public function logout(Request $request)
-{
-    // Clear all session data related to enrollment
-    $request->session()->forget(['firebase_uid', 'enrollment_user']);
-    $request->session()->flush(); // optional, clears all session data
-
-    // Redirect to enrollment login page with a message
-    return redirect()->route('enroll-login')->with('status', 'You have been logged out successfully.');
-}
+        // Redirect to enrollment login page with a message
+        return redirect()->route('enroll-login')->with('status', 'You have been logged out successfully.');
+    }
 
 
     public function showAdminEnrollment()
@@ -1546,24 +1631,25 @@ public function logout(Request $request)
             'enroll_status' => $status
         ]);
 
-        // ✅ If enrolled, create student user
         if (strtolower($status) === 'enrolled') {
             $enrollee = $snapshot->getValue();
             $form = $enrollee['enrollment_form'] ?? [];
 
-            // 🔄 Generate unique student ID
+            // Generate unique student ID
             $now = Carbon::now();
             $year = $now->year;
             $week = str_pad($now->weekOfYear, 2, '0', STR_PAD_LEFT);
             $day = str_pad($now->day, 2, '0', STR_PAD_LEFT);
-            $random = str_pad(mt_rand(0, 999), 3, '0', STR_PAD_LEFT);
+            $random = str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
             $studentID = 'ST' . $year . $week . $day . $random;
 
             $email = $enrollee['email'] ?? '';
-            $hashedPassword = $enrollee['password'] ?? ''; // hashed password from enrollment
+            $bday = $form['birthday'] ?? null;
+            $rawPassword = $bday ? Carbon::parse($bday)->format('Y-m-d') : 'default123';
+            $hashedPassword = $rawPassword;
             $username = $enrollee['username'] ?? $email;
 
-            // Check for duplicate email/username
+            // Check duplicate email in Realtime DB users node
             $existingUsers = $this->database->getReference('users')->getValue() ?? [];
             foreach ($existingUsers as $user) {
                 if (($user['email'] ?? '') === $email) {
@@ -1571,8 +1657,54 @@ public function logout(Request $request)
                 }
             }
 
-            // Save user to Realtime DB only (skip Firebase Auth)
-            $userData = [
+            // Find active school year
+            $schoolId = $form['school_id'] ?? null;
+            $activeSchoolYearId = null;
+            if ($schoolId) {
+                $schoolYearsRef = $this->database->getReference('schoolyears/' . $schoolId)->getValue() ?? [];
+                foreach ($schoolYearsRef as $schoolYearId => $schoolYearData) {
+                    if (isset($schoolYearData['status']) && strtolower($schoolYearData['status']) === 'active') {
+                        $activeSchoolYearId = $schoolYearId;
+                        break;
+                    }
+                }
+            }
+
+            // Create Firebase Auth user or update UID if user with this email exists
+            try {
+                    // Try to get user by email
+                    $firebaseUser = $this->auth->getUserByEmail($email);
+
+                    // If found, delete and recreate to use new UID
+                    $oldUid = $firebaseUser->uid;
+                    $this->auth->deleteUser($oldUid);
+
+                    // Recreate user with correct UID and password
+                    $createdUser = $this->auth->createUser([
+                        'uid' => $studentID,
+                        'email' => $email,
+                        'emailVerified' => false,
+                        'password' => $rawPassword, // ✅ Use raw password
+                        'displayName' => trim(($form['first_name'] ?? '') . ' ' . ($form['last_name'] ?? '')),
+                        'disabled' => false,
+                    ]);
+                } catch (\Kreait\Firebase\Exception\Auth\UserNotFound $e) {
+                    // User not found in Firebase Auth, create new user
+                    $createdUser = $this->auth->createUser([
+                        'uid' => $studentID,
+                        'email' => $email,
+                        'emailVerified' => false,
+                        'password' => $rawPassword, // ✅ Use raw password
+                        'displayName' => trim(($form['first_name'] ?? '') . ' ' . ($form['last_name'] ?? '')),
+                        'disabled' => false,
+                    ]);
+                } catch (\Exception $e) {
+                    return redirect()->back()->with('error', 'Failed to update Firebase Authentication user: ' . $e->getMessage());
+                }
+
+
+            // Save student user in Realtime Database
+            $studentData = [
                 'fname' => $form['first_name'] ?? '',
                 'lname' => $form['last_name'] ?? '',
                 'gender' => $form['gender'] ?? '',
@@ -1592,26 +1724,64 @@ public function logout(Request $request)
                 'category' => $form['category'] ?? '',
                 'studentid' => $studentID,
                 'role' => 'student',
-                'profile_picture' => '', // if applicable
-                'schoolyear_id' => null,
+                'profile_picture' => '',
+                'schoolyear_id' => $activeSchoolYearId,
                 'username' => $username,
-                'password' => $hashedPassword, // already hashed
+                'password' => Hash::make($hashedPassword),
                 'account_status' => 'active',
-                'date_created' => Carbon::now()->toDateTimeString(),
-                'date_updated' => Carbon::now()->toDateTimeString(),
+                'date_created' => $now->toDateTimeString(),
+                'date_updated' => $now->toDateTimeString(),
+                'last_login' => null,
+                'already_login' => 'false',
+                'enrollee_id' => $id,
+            ];
+
+            $this->database->getReference('users/' . $studentID)->set($studentData);
+
+            // Create parent user data
+            $parentId = 'PA' . $year . $week . $day . str_pad(mt_rand(0, 99), 2, '0', STR_PAD_LEFT);
+
+            if (isset($existingUsers[$parentId])) {
+                $parentId .= '1'; // Avoid collision
+            }
+
+            $parentData = [
+                'fname' => $form['parent_firstname'] ?? '',
+                'lname' => $form['parent_lastname'] ?? '',
+                'contact_number' => $form['emergency_contact'] ?? '',
+                'email' => $email,
+                'username' => $email,
+                'password' => $hashedPassword,
+                'address' => $form['address'] ?? '',
+                'barangay' => $form['barangay'] ?? '',
+                'region' => $form['region'] ?? '',
+                'province' => $form['province'] ?? '',
+                'city' => $form['city'] ?? '',
+                'zip_code' => $form['zip_code'] ?? '',
+                'category' => $form['parent_role'] ?? '',
+                'parentid' => $parentId,
+                'studentid' => $studentID,
+                'role' => 'parent',
+                'schoolyear_id' => $activeSchoolYearId,
+                'account_status' => 'active',
+                'date_created' => $now->toDateTimeString(),
+                'date_updated' => $now->toDateTimeString(),
                 'last_login' => null,
                 'already_login' => 'false',
             ];
 
-            $this->database->getReference('users/' . $studentID)->set($userData);
+            $this->database->getReference('users/' . $parentId)->set($parentData);
 
-            // Mark enrollee as enrolled
-            $enrolleeRef->update(['enrolled_at' => Carbon::now()->toDateTimeString()]);
+            // Update enrollee with timestamp
+            $enrolleeRef->update(['enrolled_at' => $now->toDateTimeString()]);
         }
+
+
 
         return redirect()->route('mio.enrollment', ['id' => $id])
             ->with('success', 'Enrollee feedback and status updated successfully.');
     }
+
 
 
 

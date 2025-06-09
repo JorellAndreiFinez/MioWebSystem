@@ -1,7 +1,18 @@
 <section class="home-section">
   <div class="text">Edit Parent</div>
   <div class="teacher-container">
-    @include('mio.dashboard.status-message')
+    @if (session('status'))
+        <div class="alert alert-success">
+            {{ session('status') }}
+        </div>
+    @endif
+
+    @if (session('error'))
+        <div class="alert alert-danger">
+            {{ session('error') }}
+        </div>
+    @endif
+
 
     <form action="{{ url('mio/admin/UpdateParent/'.$editdata['parentid']) }}"  method="POST" enctype="multipart/form-data">
       @csrf
@@ -21,6 +32,8 @@
         <!-- Teacher Information Section -->
         <div class="section-header">Parent Information</div>
         <div class="section-content">
+            <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+
         <div class="form-row">
             <div class="form-group">
               <label><input type="radio" name="category" value="father" {{ $editdata['category'] == 'father' ? 'checked' : '' }} required> Father</label>
@@ -33,7 +46,7 @@
             </div>
           </div>
 
-
+        <hr>
 
           <div class="form-group wide">
             <label>Parent ID <span style="color: red; font-weight:700">*</span></label>
@@ -78,27 +91,30 @@
                 <label>Last Name <span style="color: red; font-weight:700">*</span></label>
                 <input type="text" name="last_name" placeholder="Last Name" value="{{ $editdata['lname'] }}" required />
                 </div>
-                <div class="form-group">
-                <label>Gender <span style="color: red; font-weight:700">*</span></label>
-                <select name="gender" required>
-                    <option value="Male" {{ $editdata['gender'] == 'Male' ? 'selected' : '' }}>Male</option>
-                    <option value="Female" {{ $editdata['gender'] == 'Female' ? 'selected' : '' }}>Female</option>
-                    <option value="Other" {{ $editdata['gender'] == 'Other' ? 'selected' : '' }}>Other</option>
-                </select>
-                </div>
+            </div>
+            <hr>
 
+            <div class="form-row">
                 <div class="form-group">
-                <label>Age <span style="color: red; font-weight:700">*</span></label>
-                <input type="number" name="age" placeholder="Age" value="{{ $editdata['age'] }}" required />
+                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
                 </div>
                 <div class="form-group">
-                <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-                <input type="date" name="birthday" value="{{ $editdata['bday'] }}" required />
+                <label>Email <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="email" value="{{ $editdata['email'] }}" required />
                 </div>
             </div>
 
+            <hr>
+
             <!-- Dynamic Address Fields -->
             <div class="form-row">
+
+            <input type="hidden" id="selectedRegion" value="{{ $editdata['region'] }}">
+            <input type="hidden" id="selectedProvince" value="{{ $editdata['province'] }}">
+            <input type="hidden" id="selectedCity" value="{{ $editdata['city'] }}">
+            <input type="hidden" id="selectedBarangay" value="{{ $editdata['barangay'] }}">
+
             <div class="form-group wide">
                 <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
                 <select id="region" name="region" data-selected="{{ $editdata['region'] }}" required>
@@ -143,22 +159,7 @@
 
             <!-- Checkbox to Copy Information from Student -->
             <div class="form-group checkbox-container" id="sameToChildContainer" style="display: none;">
-            <label><input type="checkbox" id="sameToChild" /> Same as Child's Address</label>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
-                </div>
-                <div class="form-group wide">
-                <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-                <input type="text" name="emergency_contact" value="{{ $editdata['emergency_contact'] }}" required />
-                </div>
-                <div class="form-group">
-                <label>Email <span style="color: red; font-weight:700">*</span></label>
-                <input type="text" name="email" value="{{ $editdata['email'] }}" required />
-                </div>
+                <label><input type="checkbox" id="sameToChild" /> Same as Child's Address</label>
             </div>
         </div>
 
@@ -223,15 +224,64 @@
     const studentNameDisplay = document.getElementById('studentNameDisplay'); // Make sure this exists
     const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');   // Make sure this exists
 
-    // Load Regions
-    fetch("https://psgc.gitlab.io/api/regions/")
-        .then(res => res.json())
-        .then(regions => {
+   // Map region codes to their proper display names
+const regionNameMap = {
+    "010000000": "Region I - Ilocos Region",
+    "020000000": "Region II - Cagayan Valley",
+    "030000000": "Region III - Central Luzon",
+    "040000000": "Region IV-A - CALABARZON",
+    "170000000": "MIMAROPA Region",
+    "050000000": "Region V - Bicol Region",
+    "060000000": "Region VI - Western Visayas",
+    "070000000": "Region VII - Central Visayas",
+    "080000000": "Region VIII - Eastern Visayas",
+    "090000000": "Region IX - Zamboanga Peninsula",
+    "100000000": "Region X - Northern Mindanao",
+    "110000000": "Region XI - Davao Region",
+    "120000000": "Region XII - SOCCSKSARGEN",
+    "160000000": "CARAGA",
+    "140000000": "CAR - Cordillera Administrative Region",
+    "150000000": "BARMM - Bangsamoro Autonomous Region",
+    "130000000": "NCR - National Capital Region"
+};
+
+// Load Regions
+fetch("https://psgc.gitlab.io/api/regions/")
+    .then(res => res.json())
+    .then(async regions => {
         regions.forEach(region => {
-            const option = new Option(region.name, region.code);
+            const regionCode = region.code;
+            const regionLabel = regionNameMap[regionCode] || region.name;
+            const option = new Option(regionLabel, regionCode);
             regionSelect.add(option);
         });
-        });
+
+        const selectedRegion = document.getElementById("selectedRegion").value;
+        const selectedProvince = document.getElementById("selectedProvince").value;
+        const selectedCity = document.getElementById("selectedCity").value;
+        const selectedBarangay = document.getElementById("selectedBarangay").value;
+
+        if (selectedRegion) {
+            regionSelect.value = selectedRegion;
+            regionSelect.dispatchEvent(new Event("change"));
+
+            // Wait and load province
+            await waitForOptions(provinceSelect, selectedProvince);
+            provinceSelect.value = selectedProvince;
+            provinceSelect.dispatchEvent(new Event("change"));
+
+            // Wait and load city
+            await waitForOptions(citySelect, selectedCity);
+            citySelect.value = selectedCity;
+            citySelect.dispatchEvent(new Event("change"));
+
+            // Wait and load barangay
+            await waitForOptions(barangaySelect, selectedBarangay);
+            barangaySelect.value = selectedBarangay;
+        }
+    });
+
+
 
     // On Region Change
     regionSelect.addEventListener("change", function () {
@@ -291,36 +341,30 @@
     });
 
     // Student ID input event
-    studentIDInput.addEventListener('input', function () {
-        const studentID = this.value;
-
-        if (studentID && studentID.length > 0) {
+    if (studentIDInput.value.trim() !== '') {
+        const studentID = studentIDInput.value.trim();
         checkboxContainer.style.display = 'block';
 
         fetch(`/mio/admin/get-student/${studentID}`)
             .then(response => response.json())
             .then(data => {
-            if (data) {
-                studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
-                gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
-                window.studentData = data;
+                if (data) {
+                    studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
+                    gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
+                    window.studentData = data;
 
-                if (sameToChildCheckbox.checked) {
-                autofillAddress(data);
+                    // Automatically check checkbox and autofill
+                    sameToChildCheckbox.checked = true;
+                    autofillAddress(data);
                 }
-            }
             })
             .catch(error => {
-            studentNameDisplay.textContent = '';
-            gradeLevelDisplay.textContent = '';
-            alert("Student data could not be fetched.");
+                studentNameDisplay.textContent = '';
+                gradeLevelDisplay.textContent = '';
+                alert("Student data could not be fetched.");
             });
-        } else {
-        studentNameDisplay.textContent = '';
-        gradeLevelDisplay.textContent = '';
-        checkboxContainer.style.display = 'none';
-        }
-    });
+    }
+
 
     // Checkbox: Same to Child
     sameToChildCheckbox.addEventListener('change', function () {
@@ -384,6 +428,7 @@
     });
 </script>
 
+<!-- SCHEDULE -->
 <script>
     let scheduleCount = 0;
 
@@ -427,38 +472,8 @@
     }
 </script>
 
-<script>
-// Get the current date
-const currentDate = new Date();
 
-// Get the current year
-const currentYear = currentDate.getFullYear();
-
-// Get the current week number (ISO-8601 standard)
-const getWeekNumber = (date) => {
-  const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-  const days = Math.floor((date - firstDayOfYear) / (24 * 60 * 60 * 1000));
-  return Math.ceil((days + 1) / 7);
-};
-const currentWeek = getWeekNumber(currentDate);
-
-// Get the current day of the week (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
-const currentDay = currentDate.getDay();
-
-// Randomize last 3 digits (000–999)
-const randomLastThreeDigits = Math.floor(Math.random() * 1000);
-
-// Format the last 3 digits to always be 3 digits long (e.g., 001, 087, 999)
-const lastThreeDigits = String(randomLastThreeDigits).padStart(3, '0');
-
-// Generate the student ID with the current year, week, day, and random last 3 digits
-const parentID = `PA${currentYear}${String(currentWeek).padStart(2, '0')}${String(currentDay)}${lastThreeDigits}`;
-
-// Set the value in the input field
-document.getElementById('parentID').value = parentID;
-</script>
-
-
+<!-- ACCOUNT INFO AND EMAIL -->
 <script>
 // Function to update account username and password fields
 function updateAccountInfo() {
@@ -474,6 +489,7 @@ window.addEventListener('load', updateAccountInfo);
 document.querySelector('input[name="email"]').addEventListener('input', updateAccountInfo);
 </script>
 
+<!-- TOGGLE PASSWORD -->
 <script>
 function togglePasswordVisibility() {
     const input = document.getElementById('account_password');

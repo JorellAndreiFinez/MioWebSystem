@@ -23,6 +23,8 @@
         <!-- Teacher Information Section -->
         <div class="section-header">Parent Information</div>
         <div class="section-content">
+            <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+
         <div class="form-row">
             <!-- Change category to Father, Mother, or Guardian -->
             <div class="form-group">
@@ -36,6 +38,7 @@
             </div>
           </div>
 
+          <hr>
 
           <div class="form-group wide">
               <label>Parent ID <span style="color: red; font-weight:700">*</span></label>
@@ -62,6 +65,8 @@
 
                 </div>
 
+                <hr>
+
             </div>
 
 
@@ -80,25 +85,22 @@
               <label>Last Name <span style="color: red; font-weight:700">*</span></label>
               <input type="text" name="last_name" placeholder="Last Name" required />
             </div>
-            <div class="form-group">
-            <label>Gender <span style="color: red; font-weight:700">*</span></label>
-            <select name="gender" required>
-                <option value="" disabled selected>Select Gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
-            </div>
+          </div>
 
+          <hr>
+
+          <div class="form-row">
             <div class="form-group">
-              <label>Age <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="age" placeholder="Age" required />
+              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" id="contact_number" name="contact_number" placeholder="Contact Number" required />
             </div>
             <div class="form-group">
-              <label>Birthday <span style="color: red; font-weight:700">*</span></label>
-              <input type="date" name="birthday" value="2008-04-01" required />
+              <label>Email <span style="color: red; font-weight:700">*</span></label>
+              <input type="text" name="email" placeholder="Email Address" required />
             </div>
           </div>
+
+          <hr>
 
          <div class="form-row">
              <div class="form-group wide">
@@ -148,17 +150,6 @@
         <div class="form-group checkbox-container" style="display: none;">
         <label><input type="checkbox" id="sameToChild" /> Same as Child's Address</label>
         </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="contact_number" placeholder="Contact Number" required />
-            </div>
-            <div class="form-group">
-              <label>Email <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="email" placeholder="Email Address" required />
-            </div>
-          </div>
         </div>
 
         <!-- Account Information Section -->
@@ -171,7 +162,7 @@
             </div>
             <div class="form-group">
             <label>Password <span style="color: red; font-weight:700">*</span></label>
-            <input type="password" name="account_password" id="account_password" required />
+            <input type="password" name="account_password" id="account_password" />
             </div>
 
             <div class="form-group">
@@ -189,189 +180,231 @@
   </div>
 </section>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-    const regionSelect = document.getElementById("region");
-    const provinceSelect = document.getElementById("province");
-    const citySelect = document.getElementById("city");
-    const barangaySelect = document.getElementById("barangay");
-    const addressInput = document.querySelector('input[name="address"]');
-    const zipInput = document.querySelector('input[name="zip_code"]');
-    const studentIDInput = document.getElementById('studentID');
-    const sameToChildCheckbox = document.getElementById('sameToChild');
-    const checkboxContainer = document.getElementById('sameToChildContainer'); // Make sure this exists
-    const studentNameDisplay = document.getElementById('studentNameDisplay'); // Make sure this exists
-    const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');   // Make sure this exists
-    const emailInput = document.querySelector('input[name="email"]');
+<!-- SCRIPTS -->
 
+<!-- PH ADDRESS with region name mapping and async handling -->
+ <script>
+        const apiBase = "https://psgc.gitlab.io/api";
 
-    // Load Regions
-    fetch("https://psgc.gitlab.io/api/regions/")
-        .then(res => res.json())
-        .then(regions => {
-        regions.forEach(region => {
-            const option = new Option(region.name, region.code);
-            regionSelect.add(option);
+        const regionNameMap = {
+        "010000000": "Region I - Ilocos Region",
+        "020000000": "Region II - Cagayan Valley",
+        "030000000": "Region III - Central Luzon",
+        "040000000": "Region IV-A - CALABARZON",
+        "170000000": "MIMAROPA Region",
+        "050000000": "Region V - Bicol Region",
+        "060000000": "Region VI - Western Visayas",
+        "070000000": "Region VII - Central Visayas",
+        "080000000": "Region VIII - Eastern Visayas",
+        "090000000": "Region IX - Zamboanga Peninsula",
+        "100000000": "Region X - Northern Mindanao",
+        "110000000": "Region XI - Davao Region",
+        "120000000": "Region XII - SOCCSKSARGEN",
+        "160000000": "CARAGA",
+        "140000000": "CAR - Cordillera Administrative Region",
+        "150000000": "BARMM - Bangsamoro Autonomous Region",
+        "130000000": "NCR - National Capital Region"
+        };
+
+        async function fetchData(url) {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Failed to fetch " + url);
+        return res.json();
+        }
+
+        function populateSelect(selectEl, data, placeholder, customMap = null) {
+        selectEl.innerHTML = `<option value="" disabled selected>${placeholder}</option>`;
+        data.forEach(item => {
+            const option = document.createElement("option");
+            option.value = item.code;
+            option.text = customMap ? customMap[item.code] || item.name : item.name;
+            selectEl.appendChild(option);
         });
+        selectEl.disabled = false;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+        const regionSelect = document.getElementById("region");
+        const provinceSelect = document.getElementById("province");
+        const citySelect = document.getElementById("city");
+        const barangaySelect = document.getElementById("barangay");
+
+        const addressInput = document.querySelector('input[name="address"]');
+        const zipInput = document.querySelector('input[name="zip_code"]');
+        const studentIDInput = document.getElementById('studentID');
+        const sameToChildCheckbox = document.getElementById('sameToChild');
+        const checkboxContainer = document.getElementById('sameToChildContainer');
+        const studentNameDisplay = document.getElementById('studentNameDisplay');
+        const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');
+        const account_password = document.getElementById('account_password');
+        const emailInput = document.querySelector('input[name="email"]');
+
+        // Load Regions with friendly names
+        try {
+            const regions = await fetchData(`${apiBase}/regions/`);
+            populateSelect(regionSelect, regions, "Select Region", regionNameMap);
+        } catch (e) {
+            console.error("Error loading regions:", e);
+        }
+
+        regionSelect.addEventListener("change", async () => {
+            provinceSelect.innerHTML = '';
+            citySelect.innerHTML = '';
+            barangaySelect.innerHTML = '';
+            provinceSelect.disabled = citySelect.disabled = barangaySelect.disabled = true;
+
+            const selectedRegion = regionSelect.value;
+
+            try {
+            const provinces = await fetchData(`${apiBase}/regions/${selectedRegion}/provinces/`);
+
+            if (provinces.length === 0) {
+                // Region has no provinces: disable province dropdown but keep visible
+                provinceSelect.innerHTML = `<option value="" disabled selected>Not Applicable</option>`;
+                provinceSelect.disabled = true;
+
+                // Load cities/municipalities under the region directly
+                const cities = await fetchData(`${apiBase}/regions/${selectedRegion}/cities-municipalities/`);
+                populateSelect(citySelect, cities, "Select City/Municipality");
+            } else {
+                populateSelect(provinceSelect, provinces, "Select Province");
+            }
+            } catch (e) {
+            console.error("Error loading provinces or cities:", e);
+            provinceSelect.innerHTML = `<option value="" disabled selected>Error loading data</option>`;
+            }
         });
 
-    // On Region Change
-    regionSelect.addEventListener("change", function () {
-        provinceSelect.innerHTML = `<option disabled selected>Loading...</option>`;
-        citySelect.innerHTML = `<option disabled selected>Select City/Municipality</option>`;
-        barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
-        provinceSelect.disabled = true;
-        citySelect.disabled = true;
-        barangaySelect.disabled = true;
+        provinceSelect.addEventListener("change", async () => {
+            citySelect.innerHTML = '';
+            barangaySelect.innerHTML = '';
+            citySelect.disabled = barangaySelect.disabled = true;
 
-        fetch(`https://psgc.gitlab.io/api/regions/${this.value}/provinces/`)
-        .then(res => res.json())
-        .then(provinces => {
-            provinceSelect.innerHTML = `<option disabled selected>Select Province</option>`;
-            provinces.forEach(province => {
-            const option = new Option(province.name, province.code);
-            provinceSelect.add(option);
-            });
-            provinceSelect.disabled = false;
+            try {
+            const cities = await fetchData(`${apiBase}/provinces/${provinceSelect.value}/cities-municipalities/`);
+            populateSelect(citySelect, cities, "Select City/Municipality");
+            } catch (e) {
+            console.error("Error loading cities:", e);
+            citySelect.innerHTML = `<option value="" disabled selected>Error loading data</option>`;
+            }
         });
-    });
 
-    // On Province Change
-    provinceSelect.addEventListener("change", function () {
-        citySelect.innerHTML = `<option disabled selected>Loading...</option>`;
-        barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
-        citySelect.disabled = true;
-        barangaySelect.disabled = true;
+        citySelect.addEventListener("change", async () => {
+            barangaySelect.innerHTML = '';
+            barangaySelect.disabled = true;
 
-        fetch(`https://psgc.gitlab.io/api/provinces/${this.value}/cities-municipalities/`)
-        .then(res => res.json())
-        .then(cities => {
-            citySelect.innerHTML = `<option disabled selected>Select City/Municipality</option>`;
-            cities.forEach(city => {
-            const option = new Option(city.name, city.code);
-            citySelect.add(option);
-            });
-            citySelect.disabled = false;
+            try {
+            const barangays = await fetchData(`${apiBase}/cities-municipalities/${citySelect.value}/barangays/`);
+            populateSelect(barangaySelect, barangays, "Select Barangay");
+            } catch (e) {
+            console.error("Error loading barangays:", e);
+            barangaySelect.innerHTML = `<option value="" disabled selected>Error loading data</option>`;
+            }
         });
-    });
 
-    // On City Change
-    citySelect.addEventListener("change", function () {
-        barangaySelect.innerHTML = `<option disabled selected>Loading...</option>`;
-        barangaySelect.disabled = true;
+        // Student ID input event to fetch student data and autofill
+        studentIDInput.addEventListener('input', async () => {
+            const studentID = studentIDInput.value.trim();
 
-        fetch(`https://psgc.gitlab.io/api/cities-municipalities/${this.value}/barangays/`)
-        .then(res => res.json())
-        .then(barangays => {
-            barangaySelect.innerHTML = `<option disabled selected>Select Barangay</option>`;
-            barangays.forEach(barangay => {
-            const option = new Option(barangay.name, barangay.code);
-            barangaySelect.add(option);
-            });
-            barangaySelect.disabled = false;
-        });
-    });
+            if (studentID.length > 0) {
+            checkboxContainer.style.display = 'block';
 
-    // Student ID input event
-    studentIDInput.addEventListener('input', function () {
-        const studentID = this.value;
+            try {
+                const response = await fetch(`/mio/admin/get-student/${studentID}`);
+                if (!response.ok) throw new Error('Student not found');
+                const data = await response.json();
 
+                if (data.error) throw new Error(data.error);
 
-        if (studentID && studentID.length > 0) {
-        checkboxContainer.style.display = 'block';
-
-        fetch(`/mio/admin/get-student/${studentID}`)
-            .then(response => response.json())
-            .then(data => {
-
-            if (data) {
-                studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
+                studentNameDisplay.textContent = `${data.first_name || ''} ${data.last_name || ''}`.trim();
                 gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
+                emailInput.value = data.email || '';
+                account_password.value = data.password || '';
                 window.studentData = data;
 
-
                 if (sameToChildCheckbox.checked) {
-                autofillAddress(data);
+                await autofillAddress(data);
                 }
+            } catch (error) {
+                studentNameDisplay.textContent = '';
+                gradeLevelDisplay.textContent = '';
+                emailInput.value = '';
+                alert("Student data could not be fetched: " + error.message);
             }
-            })
-            .catch(error => {
+            } else {
             studentNameDisplay.textContent = '';
             gradeLevelDisplay.textContent = '';
+            checkboxContainer.style.display = 'none';
             emailInput.value = '';
-            alert("Student data could not be fetched.");
-            });
-        } else {
-        studentNameDisplay.textContent = '';
-        gradeLevelDisplay.textContent = '';
-        checkboxContainer.style.display = 'none';
-          emailInput.value = '';
-        }
-    });
-
-    // Checkbox: Same to Child
-    sameToChildCheckbox.addEventListener('change', function () {
-        if (this.checked && window.studentData) {
-        autofillAddress(window.studentData);
-        }
-        else {
-        clearAddressFields();
-    }
-    });
-
-    function clearAddressFields() {
-        regionSelect.value = '';
-        provinceSelect.innerHTML = '<option value="">Select Province</option>';
-        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
-        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
-        addressInput.value = '';
-        zipInput.value = '';
-    }
-
-
-    async function autofillAddress(data) {
-        if (!regionSelect || !provinceSelect || !citySelect || !barangaySelect) {
-        console.warn("One or more address fields are missing from the DOM.");
-        return;
-        }
-
-        if (addressInput) addressInput.value = data.address || "";
-        if (zipInput) zipInput.value = data.zip_code || "";
-
-        try {
-        regionSelect.value = data.region;
-        regionSelect.dispatchEvent(new Event("change"));
-
-        await waitForOptions(provinceSelect, data.province);
-        provinceSelect.value = data.province;
-        provinceSelect.dispatchEvent(new Event("change"));
-
-        await waitForOptions(citySelect, data.city);
-        citySelect.value = data.city;
-        citySelect.dispatchEvent(new Event("change"));
-
-        await waitForOptions(barangaySelect, data.barangay);
-        barangaySelect.value = data.barangay;
-        } catch (err) {
-        console.warn("Address autofill failed:", err);
-        }
-    }
-
-    function waitForOptions(selectElement, targetValue, timeout = 3000) {
-        return new Promise((resolve, reject) => {
-        const start = Date.now();
-        const check = () => {
-            const optionExists = Array.from(selectElement.options).some(opt => opt.value == targetValue);
-            if (optionExists) return resolve();
-            if (Date.now() - start > timeout) return reject("Timeout waiting for options to load: " + selectElement.id);
-            setTimeout(check, 100);
-        };
-        check();
+            }
         });
-    }
-    });
-</script>
 
+        // Checkbox: Same to Child
+        sameToChildCheckbox.addEventListener('change', async () => {
+            if (sameToChildCheckbox.checked && window.studentData) {
+            await autofillAddress(window.studentData);
+            } else {
+            clearAddressFields();
+            }
+        });
+
+        function clearAddressFields() {
+            regionSelect.value = '';
+            provinceSelect.innerHTML = '<option value="" disabled selected>Select Province</option>';
+            citySelect.innerHTML = '<option value="" disabled selected>Select City/Municipality</option>';
+            barangaySelect.innerHTML = '<option value="" disabled selected>Select Barangay</option>';
+            provinceSelect.disabled = true;
+            citySelect.disabled = true;
+            barangaySelect.disabled = true;
+            if (addressInput) addressInput.value = '';
+            if (zipInput) zipInput.value = '';
+        }
+
+        async function autofillAddress(data) {
+            if (!regionSelect || !provinceSelect || !citySelect || !barangaySelect) {
+            console.warn("One or more address fields missing");
+            return;
+            }
+
+            if (addressInput) addressInput.value = data.address || "";
+            if (zipInput) zipInput.value = data.zip_code || "";
+
+            try {
+            regionSelect.value = data.region || '';
+            regionSelect.dispatchEvent(new Event("change"));
+
+            await waitForOptions(provinceSelect, data.province);
+            provinceSelect.value = data.province || '';
+            provinceSelect.dispatchEvent(new Event("change"));
+
+            await waitForOptions(citySelect, data.city);
+            citySelect.value = data.city || '';
+            citySelect.dispatchEvent(new Event("change"));
+
+            await waitForOptions(barangaySelect, data.barangay);
+            barangaySelect.value = data.barangay || '';
+            } catch (err) {
+            console.warn("Autofill address failed:", err);
+            }
+        }
+
+        function waitForOptions(selectElement, targetValue, timeout = 3000) {
+            return new Promise((resolve, reject) => {
+            const start = Date.now();
+            const check = () => {
+                const optionExists = Array.from(selectElement.options).some(opt => opt.value == targetValue);
+                if (optionExists) return resolve();
+                if (Date.now() - start > timeout) return reject(`Timeout waiting for options in ${selectElement.id}`);
+                setTimeout(check, 100);
+            };
+            check();
+            });
+        }
+        });
+    </script>
+
+
+<!-- PARENT ID -->
 <script>
 // Get the current date
 const currentDate = new Date();
@@ -403,11 +436,14 @@ const parentID = `PA${currentYear}${String(currentWeek).padStart(2, '0')}${Strin
 document.getElementById('parentID').value = parentID;
 </script>
 
+<!-- FETCH STUDENT DATA -->
 <script>
 document.getElementById('studentID').addEventListener('input', function () {
   const studentID = this.value;
   const studentNameDisplay = document.getElementById('studentNameDisplay');
   const gradeLevelDisplay = document.getElementById('gradeLevelDisplay');
+  const contact_number = document.getElementById('contact_number');
+
   const checkboxContainer = document.querySelector('.form-group.checkbox-container');
   const emailInput = document.querySelector('input[name="email"]');
   const personalEmail = document.querySelector('input[name="email"]');
@@ -420,21 +456,28 @@ document.getElementById('studentID').addEventListener('input', function () {
     fetch(`/mio/admin/get-student/${studentID}`)
       .then(response => response.json())
       .then(data => {
-        if (data) {
-          studentNameDisplay.textContent = `${data.first_name} ${data.last_name}`;
-          gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
-            emailInput.value = `${data.email}`;
-            document.getElementById('account_username').value =  emailInput.value;
-            document.getElementById('account_password').value = `${data.password}`;
+         if (data.error) {
+            // Clear fields and maybe alert the user
+            studentNameDisplay.textContent = '';
+            gradeLevelDisplay.textContent = '';
+            emailInput.value = '';
+            document.getElementById('account_username').value = '';
+            document.getElementById('account_password').value = '';
+            alert(data.error);
+            return; // stop further processing
+        }
+         // if no error, populate fields safely
+        studentNameDisplay.textContent = `${data.first_name || ''} ${data.last_name || ''}`.trim();
+        gradeLevelDisplay.textContent = `Grade ${data.grade_level || 'N/A'}`;
+        contact_number.value = `${data.emergency_contact}`;
+        emailInput.value = data.email || '';
+        document.getElementById('account_username').value = data.email || '';
+        // Remove password line as advised before
 
+        window.studentData = data;
 
-          // Store student data globally to use when checkbox is clicked
-          window.studentData = data;
-
-          // Autofill only if checkbox is already checked
-          if (document.getElementById('sameToChild').checked) {
+        if (document.getElementById('sameToChild').checked) {
             autofillAddress(data);
-          }
         }
       })
       .catch(error => {
@@ -467,6 +510,8 @@ function autofillAddress(data) {
 
 </script>
 
+
+
 <!-- FOR TESTING - AUTO-FILL PARENT FORM -->
 <script>
   document.addEventListener('DOMContentLoaded', () => {
@@ -476,10 +521,6 @@ function autofillAddress(data) {
     // Personal Information
     document.querySelector('input[name="first_name"]').value = 'Jose';
     document.querySelector('input[name="last_name"]').value = 'Dela Cruz';
-    document.querySelector('select[name="gender"]').value = 'Male';
-    document.querySelector('input[name="age"]').value = 45;
-    document.querySelector('input[name="birthday"]').value = '1980-06-15';
-    document.querySelector('input[name="contact_number"]').value = '09787230194';
 
 
     document.querySelector('select[name="account_status"]').value = 'active';

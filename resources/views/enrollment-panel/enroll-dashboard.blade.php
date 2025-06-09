@@ -31,6 +31,7 @@
         <div class="status-indicator
             {{ $enrollStatus === 'Assessment' ? 'green' : '' }}
             {{ $enrollStatus === 'Qualified' ? 'green' : '' }}
+            {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
             {{ $enrollStatus === 'Revision' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Registered' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Rejected' ? 'red' : '' }}">

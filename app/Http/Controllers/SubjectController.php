@@ -506,7 +506,12 @@ class SubjectController extends Controller
         }
 
         // Add teacher
-        $postData['people'][$validatedData['teacher_id']] = ['role' => 'teacher'];
+        $teacher = $this->database->getReference("users/{$validatedData['teacher_id']}")->getValue();
+        $postData['people'][$validatedData['teacher_id']] = [
+            'role' => 'teacher',
+            'first_name' => $teacher['fname'] ?? '',
+            'last_name' => $teacher['lname'] ?? '',
+        ];
 
         // Store in Firebase
         try {

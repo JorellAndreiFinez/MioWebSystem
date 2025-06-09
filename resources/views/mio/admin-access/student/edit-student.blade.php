@@ -63,6 +63,7 @@
                         @if (isset($editdata['category']) && $editdata['category'] == 'international') checked @endif> International</label>
                 </div>
             </div>
+            <hr>
             <div class="form-group wide">
                 <label>Student ID <span style="color: red; font-weight:700">*</span></label>
                 <input type="text" name="studentid" id="studentID" value="{{ $editdata['studentid'] }}" required />
@@ -101,6 +102,12 @@
                 <label>Last Name <span style="color: red; font-weight:700">*</span></label>
                 <input type="text" name="last_name" value="{{ $editdata['lname'] }}" placeholder="Last Name" required />
                 </div>
+            </div>
+
+            <hr>
+
+            <div class="form-row">
+
                 <div class="form-group">
                 <label>Gender <span style="color: red; font-weight:700">*</span></label>
                 <select name="gender" required>
@@ -113,7 +120,7 @@
 
                 <div class="form-group">
                 <label>Age <span style="color: red; font-weight:700">*</span></label>
-                <input type="number" name="age" id="age" value="{{ $editdata['age'] }}" placeholder="Age" required min="1" max="100" required />
+                <input type="number" name="age" id="age"  value="{{ $editdata['age'] ?? '' }}" placeholder="Age" required min="1" max="100" required />
                 </div>
                 <div class="form-group">
                 <label>Birthday <span style="color: red; font-weight:700">*</span></label>
@@ -122,9 +129,16 @@
                 name="birthday"
                 min="1900-01-01"
                 max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                value="{{ $editdata['bday'] }}" required />
+                value="{{ $editdata['bday'] ?? '' }}" required />
+                </div>
+
+                <div class="form-group">
+                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
                 </div>
             </div>
+
+            <hr>
 
             <div class="form-row">
 
@@ -177,16 +191,9 @@
                 </div>
                 </div>
 
+                <hr>
 
             <div class="form-row">
-                <div class="form-group">
-                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                <input type="text" name="contact_number" value="{{ $editdata['contact_number'] }}" required />
-                </div>
-                <div class="form-group wide">
-                <label>Emergency Contact Number <span style="color: red; font-weight:700">*</span></label>
-                <input type="text" name="emergency_contact" value="{{ $editdata['emergency_contact'] }}" required />
-                </div>
                 <div class="form-group">
                 <label>Email <span style="color: red; font-weight:700">*</span></label>
                 <input type="text" name="email" value="{{ $editdata['email'] }}" required />
@@ -194,20 +201,89 @@
             </div>
             </div>
 
-        <!-- Academic Information Section -->
+                    <div class="section-header">Parent/Guardian Information</div>
+                        <div class="section-content">
+
+                         <div class="form-row">
+                            <div class="form-group wide">
+                                <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_firstname" placeholder="Parent First Name" required value/>
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="parent_lastname" placeholder="Parent Last Name" required />
+                            </div>
+                        </div>
+
+                        <hr>
+                              <div class="form-row">
+                                <div class="form-group">
+                                    <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="emergency_contact" placeholder="Emergency Number"  required />
+                                </div>
+                                <div class="form-group">
+                                <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+                                <select name="parent_role" required>
+                                    <option value="" disabled selected>Select role</option>
+                                    <option value="father">Father</option>
+                                    <option value="mother">Mother</option>
+                                    <option value="guardian">Guardian</option>
+                                </select>
+                            </div>
+                            </div>
+
+                        </div>
+
         <div class="section-header">Academic Information</div>
-        <div class="section-content">
-          <div class="form-row">
-            <div class="form-group wide">
-              <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-              <input type="text" name="previous_school" value="{{ $editdata["previous_school"] }}" required />
-            </div>
-            <div class="form-group">
-              <label>Grade Level <span style="color: red; font-weight:700">*</span></label>
-              <input type="number" name="previous_grade_level" value="{{ $editdata["previous_grade_level"] }}" min="1" max="12" required />
-            </div>
-          </div>
-        </div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group wide">
+                                    <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="previous_school" placeholder="Previous School" required />
+                                </div>
+                                <div class="form-group">
+                                    <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required />
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="form-group">
+                                <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
+                                <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()">
+                                    <option value="" disabled selected>Select one</option>
+                                    <option value="kinder">Kinder</option>
+                                    <option value="elementary">Elementary</option>
+                                    <option value="junior-highschool">Junior High School</option>
+                                    <option value="senior-highschool">Senior High School</option>
+                                    <option value="one-on-one-therapy">One-on-One Therapy</option>
+                                </select>
+                            </div>
+
+                            <!-- Grade Level Selector (Initially Hidden) -->
+                            <div class="form-group" id="grade_level_group" style="display: none;">
+                                <label>Select Grade Level <span style="color: red; font-weight:700">*</span></label>
+                                <select name="grade_level" id="grade_level">
+                                    <option value="" disabled selected>Select grade level</option>
+                                </select>
+                            </div>
+
+                            <!-- Senior High School Strand Selector (Initially Hidden) -->
+                            <div class="form-group" id="strand_group" style="display: none;">
+                                <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
+                                <select name="strand">
+                                    <option value="" disabled selected>Select strand</option>
+                                    <option value="agri-fishery">Agri-Fishery Arts</option>
+                                    <option value="home-economics">Home Economics</option>
+                                    <option value="industrial-arts">Industrial Arts</option>
+                                    <option value="ict">Information, Communications, & Technology</option>
+                                    <option value="entrepreneurship">Entrepreneurship & Financial Management</option>
+                                    <option value="culinary">Culinary Skills Development</option>
+                                    <option value="fashion-beauty">Fashion Beauty Skills</option>
+                                </select>
+                            </div>
+                        </div>
+
 
         <!-- Account Information Section -->
         <div class="section-header">Account Information</div>
@@ -574,4 +650,45 @@ function addScheduleField() {
   lastRow.appendChild(formGroup);
 }
 
+</script>
+
+<!-- ACADEMICS DYNAMIC INPUT -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // Trigger update on page load
+        handleGradeChange();
+    });
+
+    function handleGradeChange() {
+        const enrollmentGrade = document.getElementById('enrollment_grade').value;
+        const gradeLevelGroup = document.getElementById('grade_level_group');
+        const gradeLevelSelect = document.getElementById('grade_level');
+        const strandGroup = document.getElementById('strand_group');
+
+        // Saved value from backend (Blade will render these)
+        const savedGradeLevel = "{{ $form['grade_level'] ?? '' }}";
+
+        // Reset
+        gradeLevelSelect.innerHTML = '<option value="" disabled>Select grade level</option>';
+        gradeLevelGroup.style.display = 'none';
+        strandGroup.style.display = 'none';
+
+        if (enrollmentGrade === 'elementary') {
+            gradeLevelGroup.style.display = 'block';
+            for (let i = 1; i <= 6; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        } else if (enrollmentGrade === 'junior-highschool') {
+            gradeLevelGroup.style.display = 'block';
+            for (let i = 7; i <= 10; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        } else if (enrollmentGrade === 'senior-highschool') {
+            gradeLevelGroup.style.display = 'block';
+            strandGroup.style.display = 'block';
+            for (let i = 11; i <= 12; i++) {
+                gradeLevelSelect.innerHTML += `<option value="${i}" ${savedGradeLevel == i ? 'selected' : ''}>Grade ${i}</option>`;
+            }
+        }
+    }
 </script>

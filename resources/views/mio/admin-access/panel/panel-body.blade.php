@@ -157,42 +157,37 @@
             </div>
 
 
-            <!-- CLASSES LIST -->
+            <!-- SECTIONS LIST -->
             <div class="list-card">
-            <div class="card">
-                <div class="card-header">
-                    <span>Classes</span>
-                    <span>➡</span>
-                </div>
-                <div class="list-item">
-                    <span>SEC-7A</span>
-                    <span>8 Teachers | 48 Students</span>
-                    <div class="profile-group">
-                    <img src="https://i.pravatar.cc/40?img=10" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=12" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=13" alt="Profile">
+                <div class="card">
+                    <div class="card-header">
+                        <span>Sections</span>
+                        <span>➡</span>
                     </div>
-                </div>
-                <div class="list-item">
-                    <span>SEC-7B</span>
-                    <span>8 Teachers | 40 Students</span>
-                    <div class="profile-group">
-                    <img src="https://i.pravatar.cc/40?img=14" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=15" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=16" alt="Profile">
+
+                    @foreach ($sectionsData as $section)
+                    <div class="list-item">
+                        <span>{{ $section['name'] }}</span>
+                        <span>{{ $section['students_count'] }} Students</span>
+                        <div class="profile-group">
+                            {{-- Teacher --}}
+                            @if ($section['teacher_photo'])
+                                <img src="{{ $section['teacher_photo'] }}" alt="Teacher" title="{{ $section['teacher_name'] }}">
+                            @else
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($section['teacher_name']) }}&background=random" alt="Teacher" title="{{ $section['teacher_name'] }}">
+                            @endif
+
+                            {{-- Students --}}
+                            @foreach ($section['student_photos'] as $photo)
+                                <img src="{{ $photo }}" alt="Student">
+                            @endforeach
+                        </div>
                     </div>
-                </div>
-                <div class="list-item">
-                    <span>SEC-7C</span>
-                    <span>8 Teachers | 38 Students</span>
-                    <div class="profile-group">
-                    <img src="https://i.pravatar.cc/40?img=17" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=18" alt="Profile">
-                        <img src="https://i.pravatar.cc/40?img=19" alt="Profile">
-                    </div>
+                @endforeach
+
                 </div>
             </div>
-            </div>
+
         </div>
         </div>
 

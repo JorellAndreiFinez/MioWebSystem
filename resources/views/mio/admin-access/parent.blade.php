@@ -32,7 +32,7 @@
         </div>
         <div class="button-group">
             <button class="btn sort-btn">Newest ⬇</button>
-            <a href="{{ route('mio.AddParent') }}" class="btn add-btn">+ New Student</a>
+            <a href="{{ route('mio.AddParent') }}" class="btn add-btn">+ New Parent</a>
         </div>
     </div>
 
@@ -60,14 +60,33 @@
                                 <button class="download-btn csv-btn">CSV</button>
                             </td>
                             <td class="action-icons">
-                                <a href="{{ url('mio/admin/EditParent/'.$item['parentid']) }}">
-                                    <i class="fa fa-pencil"></i>
-                                </a>
+                            <a href="{{ url('mio/admin/EditParent/'.$item['parentid']) }}">
+                                <i class="fa fa-pencil"></i>
+                            </a>
 
-                                <button onclick="openModal('{{ url('mio/admin/DeleteParent/'.$item['parentid']) }}', '{{ $item['fname'] }} {{ $item['lname'] }}')" class="open-btn">
-                                    <i class="fa fa-trash"></i>
+                            <div class="tooltip-container" style="position: relative; display: inline-block;">
+                                <button type="button" class="btn delete-btn" style="cursor: not-allowed;" disabled>
+                                    <i class="fa fa-trash" aria-hidden="true" style="color: gray;"></i>
                                 </button>
-                            </td>
+                                <span class="tooltip-text" style="
+                                    position: absolute;
+                                    top: -35px;
+                                    left: 50%;
+                                    transform: translateX(-50%);
+                                    background-color: #333;
+                                    color: #fff;
+                                    padding: 6px 10px;
+                                    border-radius: 5px;
+                                    font-size: 13px;
+                                    white-space: nowrap;
+                                    display: none;
+                                    z-index: 10;
+                                ">
+                                    Cannot delete parent. Linked to student. Delete student first.
+                                </span>
+                            </div>
+                        </td>
+
                         </tr>
                     @endif
                 @empty
@@ -96,4 +115,27 @@ function openModal(deleteUrl, studentName) {
 function closeModal() {
     document.getElementById("confirmModal").style.display = "none";
 }
+
+// tooltip for trash delete
+document.addEventListener("DOMContentLoaded", () => {
+  const deleteBtn = document.querySelector('.delete-btn');
+  const tooltip = document.querySelector('.tooltip-text');
+
+  if (deleteBtn && tooltip) {
+    deleteBtn.addEventListener('mouseover', () => {
+      tooltip.style.display = 'block';
+    });
+
+    deleteBtn.addEventListener('mouseout', () => {
+      tooltip.style.display = 'none';
+    });
+  }
+});
+
 </script>
+
+<style>
+.tooltip-container:hover .tooltip-text {
+    display: block;
+}
+</style>

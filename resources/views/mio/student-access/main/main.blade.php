@@ -1,3 +1,14 @@
+@php
+    $hasSubjects = false;
+    foreach ($allSubjects as $subjects) {
+        if (!empty($subjects)) {
+            $hasSubjects = true;
+            break;
+        }
+    }
+@endphp
+
+
 
 <section class="home-section">
 
@@ -38,6 +49,9 @@
 
             </div>
         </div>
+        @if (!$hasSubjects)
+            <p style="text-align:center; margin-top: 2rem;">No subjects available yet.</p>
+        @endif
         @forelse($allSubjects as $gradeLevel => $subjects)
             @foreach($subjects as $subject)
                 @if(isset($subject['subject_id']) && !empty($subject['subject_id']))
@@ -67,36 +81,36 @@
             <div class="announcement-card">
                 <h4>Announcements</h4>
 
-                @php
-                $rawDate = $announcement['date'] ?? null;
-                $timestamp = strtotime($rawDate);
-                $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
-            @endphp
+                @if (empty($announcements))
+                    <p style="text-align:center; margin-top: 2rem; font-weight: 400;">No announcements available yet.</p>
+                @else
+                    @foreach($announcements as $announcement)
+                        @php
+                            $rawDate = $announcement['date'] ?? null;
+                            $timestamp = strtotime($rawDate);
+                            $formattedDate = $timestamp ? date('M d, Y', $timestamp) : 'Date not available';
+                        @endphp
 
-            @foreach($announcements as $announcement)
-                    <div class="sub-card">
-                        <div class="announce-header">
-                            <p class="announce-date">{{ $announcement['date'] }}</p>
-                            <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
+                        <div class="sub-card">
+                            <div class="announce-header">
+                                <p class="announce-date">{{ $formattedDate }}</p>
+                                <h2 class="announce-subject">{{ $announcement['subject'] }}</h2>
 
-                        @if (($announcement['type'] ?? 'general') === 'general')
-                                <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
-                            @else
-                                <a href="{{ route('mio.announcements-body', [
-                                    'subjectId' => $announcement['subject_id'] ?? '',
-                                    'announcementId' => $announcement['id']
-                                ]) }}">
-                            @endif
-                                    <h3 class="announce-title">{{ $announcement['title'] }}</h3>
-                                </a>
-
+                                @if (($announcement['type'] ?? 'general') === 'general')
+                                    <a href="{{ route('mio.announcements-body', ['subjectId' => 'general', 'announcementId' => $announcement['id']]) }}">
+                                @else
+                                    <a href="{{ route('mio.announcements-body', [
+                                        'subjectId' => $announcement['subject_id'] ?? '',
+                                        'announcementId' => $announcement['id']
+                                    ]) }}">
+                                @endif
+                                        <h3 class="announce-title">{{ $announcement['title'] }}</h3>
+                                    </a>
+                            </div>
                         </div>
-                    </div>
-                @endforeach
-
-
+                    @endforeach
+                @endif
             </div>
-
 
             <div class="task-card">
                 <h4>Activity</h4>

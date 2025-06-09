@@ -123,6 +123,7 @@ Route::prefix('mio/admin/')->middleware(
     [AuthMiddleware::class, RoleBasedAccess::class . ':admin']
 )->name('mio.')->group(function () {
 
+    Route::get('/', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
     Route::get('/dashboard', [FirebaseAuthController::class, 'showAdminPanel'])->name('admin-panel');
 
     Route::post('/verify-password', [AdminController::class, 'verifyPassword'])->name('verify-admin-password');
@@ -315,7 +316,12 @@ Route::prefix('mio/admin/')->middleware(
     Route::view('/emergency', 'mio.head.admin-panel', ['page' => 'emergency'])->name('emergency');
 });
 
+// EMERGENCY FUNCTIONS
 Route::post('/trigger-emergency', [EmergencyController::class, 'triggerEmergency'])->name('trigger.emergency');
+Route::post('/emergency/stop-vibration', [EmergencyController::class, 'stopVibration'])->name('emergency.stop-vibration');
+Route::get('/emergency/active', [EmergencyController::class, 'getActiveEmergency'])->name('emergency.active');
+
+
 
 
 Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess::class . ':student'])->group(function () {
