@@ -169,16 +169,16 @@ class SpecializedSpeechApi extends Controller
 
             foreach($activity['items'] as $index => $item){
                 if($item['image_path'] ?? false){
-                    $image = $bucket->object($item['image_path'])->signedUrl(now()->addMinutes(30));
+                    $image = $bucket->object($item['image_path'])->signedUrl(now()->addMinutes(15));
 
-                    $flashcards[$index] = [
-                        'flashcard_id' => $item['flashcard_id'],
+                    $flashcards[] = [
+                        'flashcard_id' => $index,
                         'image_url' => $image,
                         'text' => $item['text']
                     ];
                 }else{
-                    $flashcards[$index] = [
-                        'flashcard_id' => $item['flashcard_id'],
+                    $flashcards[] = [
+                        'flashcard_id' => $index,
                         'text' => $item['text']
                     ];
                 }
@@ -187,7 +187,7 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Activity retrieved successfully',
-                'flashcards' => $flashcards
+                'items' => $flashcards
             ], 200);
 
         } catch (\Exception $e) {
@@ -201,6 +201,7 @@ class SpecializedSpeechApi extends Controller
     public function createSpeechPictureActivity(Request $request, string $subjectId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
 
         $validated = $request->validate([
             'activity_type' => 'required|in:picture',
@@ -219,16 +220,17 @@ class SpecializedSpeechApi extends Controller
                 $flashcard_id = (string) Str::uuid();
                 $file = $flashcard['image'];
                 $text = $flashcard['text'];
-                $remotePath = 'images/speech/' . $flashcard_id . '_' . $file->getClientOriginalName();
+                $filename = $file->getClientOriginalName();
+                $remotePath = 'images/speech/' . $flashcard_id . $filename ;
 
                 $bucket->upload(
                     fopen($file->getPathname(), 'r'),
                     ['name' => $remotePath]
                 );
 
-                $activity_data[$index] = [
-                    'flashcard_id' => $flashcard_id,
+                $activity_data[$flashcard_id] = [
                     'text' => $text,
+                    'filename' => $filename,
                     'image_path' => $remotePath,
                 ];
             }
@@ -242,6 +244,7 @@ class SpecializedSpeechApi extends Controller
                 'items' => $activity_data,
                 'total' => count($activity_data),
                 'created_at' => $date,
+                'created_by' => $userId
             ];
 
             $this->database
@@ -264,6 +267,7 @@ class SpecializedSpeechApi extends Controller
 
     public function createSpeechActivity(Request $request, string $subjectId){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
 
         $validated = $request->validate([
             'activity_type' => 'required|in:question,phrase,pronunciation',
@@ -278,8 +282,7 @@ class SpecializedSpeechApi extends Controller
 
             foreach ($validated['flashcards'] as $index => $flashcard) {
                 $id = (string) Str::uuid();
-                $activity_data[$index] = [
-                    'flashcard_id' => $id,
+                $activity_data[$id] = [
                     'text' => $flashcard['text'],
                 ];
             }
@@ -293,6 +296,7 @@ class SpecializedSpeechApi extends Controller
                 'items'=> $activity_data,
                 'total' => count($activity_data),
                 'created_at' => $date,
+                'created_by' => $userId,
             ];
 
             $this->database
@@ -302,7 +306,6 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'message'=> "Activity created successfully",
-                'activity'=> $activityData,
             ], 201);
 
         } catch (\Exception $e) {
@@ -337,21 +340,11 @@ class SpecializedSpeechApi extends Controller
                 ], 404);
             }
 
-            $seen = [];
-            foreach ($validated['flashcards'] as $flashcard) {
-                $id = $flashcard['flashcard_id'] ?? '';
-                if ($id && isset($seen[$id])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Duplicate flashcard_id: $id",
-                    ], 422);
-                }
-                $seen[$id] = true;
-            }
-
-            $mapped_existing = [];
-            foreach ($existing_activity['items'] as $item) {
-                $mapped_existing[$item['flashcard_id']] = $item['image_path'];
+            $mapped_paths = [];
+            $mapped_filenames = [];
+            foreach ($existing_activity['items'] as $item_id => $item) {
+                $mapped_paths[$item_id] = $item['image_path'];
+                $mapped_filenames[$item_id] = $item['filename'];
             }
 
             $updated_items = [];
@@ -359,33 +352,31 @@ class SpecializedSpeechApi extends Controller
 
             foreach ($validated['flashcards'] as $flashcard) {
                 $flashcard_id = $flashcard['flashcard_id'] ?? (String) Str::uuid();
+                $remotePath = $mapped_paths[$flashcard_id] ?? null;
+                $filename = $mapped_filenames[$flashcard_id] ?? null;
 
                 if (isset($flashcard['image']) && $flashcard['image']) {
                     $image = $flashcard['image'];
                     $image_id = (string) Str::uuid();
-                    $remotePath = 'images/speech/' . $image_id . '_' . $image->getClientOriginalName();
+                    $filename = $image->getClientOriginalName();
+                    $remotePath = 'images/speech/' . $image_id . $filename; 
 
-                    if(isset($mapped_existing[$flashcard_id])){
-                        $bucket->object($mapped_existing[$flashcard_id])->delete();
+                    if(isset($mapped_paths[$flashcard_id])){
+                        $bucket->object($mapped_paths[$flashcard_id])->delete();
                     }
 
                     $bucket->upload(
                         fopen($image->getPathname(), 'r'),
                         ['name' => $remotePath]
                     );
-
-                    $updated_items[] = [
-                        'flashcard_id' => $flashcard_id,
-                        'text' => $flashcard['text'],
-                        'image_path' => $remotePath,
-                    ];
-                }else{
-                    $updated_items[] = [
-                        'flashcard_id' => $flashcard_id,
-                        'text' => $flashcard['text'],
-                        'image_path' => $mapped_existing[$flashcard_id],
-                    ];
                 }
+
+                $updated_items[$flashcard_id] = [
+                    'filename' => $filename,
+                    'text' => $flashcard['text'],
+                    'image_path' => $remotePath,
+                ];
+                
             }
 
             $date = now()->toDateTimeString();
@@ -404,7 +395,6 @@ class SpecializedSpeechApi extends Controller
                 'success' => true,
                 'message' => 'Activity updated successfully',
             ], 200);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -435,17 +425,6 @@ class SpecializedSpeechApi extends Controller
                     'success' => false,
                     'message' => "Activity not found"
                 ], 404);
-            }
-
-            $id = $flashcard['flashcard_id'] ?? null;
-            if ($id !== null) {
-                if (isset($seen[$id])) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Duplicate flashcard_id: $id",
-                    ], 422);
-                }
-                $seen[$id] = true;
             }
 
             $updated_items = [];
@@ -505,17 +484,31 @@ class SpecializedSpeechApi extends Controller
             $attemptId = $this->generateUniqueId("ATTM");
             $startedAt = now()->toDateTimeString();
 
+            $bucket = $this->storage->getBucket();
+
             $studentAnswers = [];
-            foreach ($flashcards as $idx => $item) {
-                $studentAnswers[$item['flashcard_id']] = [
-                    'card_no' => $idx,
+            $attemp = [];
+            foreach ($flashcards as $flashcardId => $item) {
+                $imagePath = $item['image_path'] ?? null;
+                $imageUrl = null;
+
+                if ($imagePath) {
+                    $imageUrl = $bucket->object($imagePath)->signedUrl(now()->addMinutes(15));
+                }
+
+                $studentAnswers[$flashcardId] = [
                     'text' => $item['text'],
-                    'image_path' => $item['image_path'] ?? ""
+                    'image_url' => $imageUrl,
+                ];
+
+                $attemp[$flashcardId] = [
+                    'text' => $item['text'],
+                    'image_path' => $imagePath,
                 ];
             }
             
             $initialInfo = [
-                'answers' => $studentAnswers,
+                'answers' => $attemp,
                 'started_at' => $startedAt,
                 'status'     => 'in-progress',
             ];
@@ -527,7 +520,7 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'attemptId' => $attemptId,
-                'flashcards' => $flashcards,
+                'flashcards' => $studentAnswers,
             ],201);
 
         } catch (\Exception $e) {
@@ -546,7 +539,7 @@ class SpecializedSpeechApi extends Controller
         string $attemptId,
         string $flashcardId
     ) {
-        try{
+        try {
             $gradeLevel = $request->get('firebase_user_gradeLevel');
             $userId = $request->get('firebase_user_id');
 
@@ -555,23 +548,28 @@ class SpecializedSpeechApi extends Controller
             ]);
 
             $answersRef = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}/answers");
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}/answers")
+                ->getSnapshot()
+                ->getValue() ?? [];
 
-            $answers = $answersRef->getSnapshot()->getValue() ?? [];
+            $answer = $answersRef[$flashcardId];
 
-            if (!isset($answers[$flashcardId])) {
+            if (!isset($answersRef[$flashcardId])) {
                 return response()->json([
                     'success' => false,
-                    'error'   => 'Invalid flashcard ID for this attempt',
+                    'error' => 'Invalid flashcard ID for this attempt',
                 ], 400);
             }
 
+            $answer = $answersRef[$flashcardId];
             $file = $request->file('audio_file');
             $uuid = (string) Str::uuid();
             $filename = $uuid . $file->getClientOriginalName();
-            $path = $file->storeAs('audio_submissions', $filename , 'public');
-            $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}" . $filename;
+            $path = $file->storeAs('audio_submissions', $filename, 'public');
+            $remotePath = "audio/speech/{$activityType}/{$activityId}/{$userId}/{$attemptId}/{$filename}";
+            $word = $answer['text'];
 
+            $pronunciation_details = $this->pronunciationScoreApi($path, $word);
             $bucket = $this->storage->getBucket();
             $bucket->upload(
                 fopen($file->getPathName(), 'r'),
@@ -579,17 +577,14 @@ class SpecializedSpeechApi extends Controller
             );
 
             $now = now()->toDateTimeString();
-            $word = $answers[$flashcardId]['text'];
-            $pronunciation_details = $this->pronunciationScoreApi($path, $word);
-
             $updatedAnswer = [
                 'audio_path' => $remotePath,
                 'answered_at' => $now,
                 'pronunciation_details' => $pronunciation_details,
             ];
 
-            $answersRef
-                ->getChild($flashcardId)
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}/answers/{$flashcardId}")
                 ->update($updatedAnswer);
 
             Storage::disk('public')->delete($path);
@@ -602,7 +597,7 @@ class SpecializedSpeechApi extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
+                'error' => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
     }
