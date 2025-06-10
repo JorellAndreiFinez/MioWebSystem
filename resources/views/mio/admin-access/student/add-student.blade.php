@@ -535,8 +535,8 @@ document.querySelector('input[name="birthday"]').addEventListener('input', updat
     }
 
     // Personal Information
-    document.querySelector('input[name="first_name"]').value = "John";
-    document.querySelector('input[name="last_name"]').value = "Doe";
+    document.querySelector('input[name="first_name"]').value = "Maria";
+    document.querySelector('input[name="last_name"]').value = "Juliana";
 
     // Gender select
     const genderSelect = document.querySelector('select[name="gender"]');
@@ -570,11 +570,11 @@ document.querySelector('input[name="birthday"]').addEventListener('input', updat
     document.querySelector('input[name="zip_code"]').value = "1234";
 
     // Email
-    document.querySelector('input[name="email"]').value = "john.doe@example.com";
+    document.querySelector('input[name="email"]').value = "maria.juliana@example.com";
 
     // Parent/Guardian
     document.querySelector('input[name="parent_firstname"]').value = "Jane";
-    document.querySelector('input[name="parent_lastname"]').value = "Doe";
+    document.querySelector('input[name="parent_lastname"]').value = "Juliana";
     document.querySelector('input[name="emergency_contact"]').value = "09987654321";
 
     // Parent Role select
@@ -608,11 +608,6 @@ document.querySelector('input[name="birthday"]').addEventListener('input', updat
     const strandGroup = document.getElementById('strand_group');
     if(strandGroup) strandGroup.style.display = "none";
 
-    // Account Information
-    document.getElementById('account_username').value = "johndoe16";
-    document.getElementById('account_password').value = "password123";
-    const accStatusSelect = document.querySelector('select[name="account_status"]');
-    if(accStatusSelect) accStatusSelect.value = "active";
 
     // Schedule Section (leave empty or add one dummy)
     const scheduleInput = document.querySelector('input[name="schedule[]"]');

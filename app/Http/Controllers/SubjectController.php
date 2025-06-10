@@ -366,162 +366,239 @@ class SubjectController extends Controller
                 ];
             }
 
+            // Get all subjects for the grade level
+            $subjectsRaw = $this->database->getReference("subjects/{$grade}")->getValue() ?? [];
+
+            // Map of section schedules: section_id => array of schedules
+            $sectionSchedules = [];
+
+            foreach ($subjectsRaw as $subjectID => $subjectData) {
+                if (!isset($subjectData['section_id']) || !isset($subjectData['title'])) continue;
+
+                $occurrenceData = $subjectData['schedule']['occurrence'] ?? [];
+
+                foreach ($occurrenceData as $day => $time) {
+                    $schedule = [
+                        'title' => $subjectData['title'],
+                        'start_time' => $time['start'] ?? null,
+                        'end_time' => $time['end'] ?? null,
+                        'occurrences' => [$day], // single day per entry
+                    ];
+
+                    $section_id = $subjectData['section_id'];
+                    $sectionSchedules[$section_id][] = $schedule;
+                }
+            }
+
+
+
             return view('mio.head.admin-panel', [
                 'page' => 'add-subjects',
                 'teachers' => $teachers,
                 'sections' => $sections,
                 'grade' => $grade,
+                'sectionSchedules' => $sectionSchedules
             ]);
         }
 
     public function addSubject(Request $request, $grade)
     {
-        // Generate custom announcement key
-        $now = now();
-        $announcementKey = "SUB-ANN" . $now->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
-
-        // Validate request
-        $validatedData = $request->validate([
-            'subject_id' => 'required|string|max:100',
-            'code' => 'required|string|max:50',
-            'title' => 'required|string|max:255',
-            'subjectType' => 'required|in:academics,specialized',
-            'specialized_type' => 'nullable|string|max:50',
-            'teacher_id' => 'required|string|max:50',
-            'section_id' => 'required|string|max:50',
-
-            'modules' => 'nullable|array',
-            'modules.*.title' => 'required|string|max:255',
-            'modules.*.description' => 'nullable|string',
-            'modules.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
-            'modules.*.external_link' => 'nullable|url',
-
-           'announcements' => 'nullable|array',
-            'announcements.*.title' => 'nullable|string|max:255',
-            'announcements.*.description' => 'nullable|string|max:1000',
-            'announcements.*.date' => 'nullable|date',
-            'announcements.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
-            'announcements.*.link' => 'nullable|url',
-        ]);
-
-        // Check for duplicate subject ID
-        $subjectId = $validatedData['subject_id'];
-        $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
-        if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
-            return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
-        }
-
-        // Get active school year
-        $schoolYears = $this->database->getReference('schoolyears')->getValue();
-        $activeSchoolYearId = collect($schoolYears)->firstWhere('status', 'active')['schoolyearid'] ?? null;
-        if (!$activeSchoolYearId) {
-            return redirect()->back()->with('status', 'No active school year found.')->withInput();
-        }
-
-        // Prepare subject data
-        $postData = [
-            'subject_id' => $subjectId,
-            'code' => $validatedData['code'],
-            'title' => $validatedData['title'],
-            'subjectType' => $validatedData['subjectType'],
-            'specialized_type' => $validatedData['specialized_type'] ?? '',
-            'teacher_id' => $validatedData['teacher_id'],
-            'section_id' => $validatedData['section_id'],
-            'schoolyear_id' => $activeSchoolYearId,
-            'modules' => [],
-            'assignments' => '',
-            'scores' => '',
-            'announcements' => [],
-            'attendance' => '',
-            'people' => [],
-            'posted_by' => 'admin',
-            'date_created' => now()->toDateTimeString(),
-            'date_updated' => now()->toDateTimeString(),
-        ];
-
-        // Handle modules
-        if (!empty($validatedData['modules'])) {
-            $modules = [];
-            foreach ($validatedData['modules'] as $index => $module) {
-                $moduleKey = 'MOD' . str_pad($index, 2, '0', STR_PAD_LEFT);
-                $moduleData = [
-                    'title' => $module['title'],
-                    'description' => $module['description'] ?? '',
-                    'files' => [],
-                    'external_link' => $module['external_link'] ?? '',
-                ];
-
-                // Store multiple files per module
-                if ($request->hasFile("modules.$index.files")) {
-                    foreach ($request->file("modules.$index.files") as $file) {
-                        $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/modules");
-                        $moduleData['files'][] = $uploadInfo;
-
-                    }
-                }
-
-                $modules[$moduleKey] = $moduleData;
-            }
-            $postData['modules'] = $modules;
-        }
-
-        // Handle announcements (multiple)
-        if (!empty($validatedData['announcements'])) {
-            foreach ($validatedData['announcements'] as $index => $announcement) {
-                $key = "SUB-ANN" . now()->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
-
-                $announcementData = [
-                    'title' => $announcement['title'] ?? '',
-                    'description' => $announcement['description'] ?? '',
-                    'date_posted' => $announcement['date'] ?? now()->toDateString(),
-                    'subject_id' => $subjectId,
-                    'files' => [],
-                    'link' => $announcement['link'] ?? '',
-                ];
-
-                // Handle file uploads
-                if ($request->hasFile("announcements.$index.files")) {
-                    foreach ($request->file("announcements.$index.files") as $file) {
-                        $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/announcements");
-                        $announcementData['files'][] = $uploadInfo;
-                    }
-                }
-
-                $postData['announcements'][$key] = $announcementData;
-            }
-        }
-
-
-        // Add section students to people
-        $section = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
-        if (isset($section['students']) && is_array($section['students'])) {
-            foreach ($section['students'] as $studentId => $value) {
-                $student = $this->database->getReference("users/{$studentId}")->getValue();
-                $postData['people'][$studentId] = [
-                    'role' => 'student',
-                    'first_name' => $student['fname'] ?? '',
-                    'last_name' => $student['lname'] ?? '',
-                ];
-            }
-        }
-
-        // Add teacher
-        $teacher = $this->database->getReference("users/{$validatedData['teacher_id']}")->getValue();
-        $postData['people'][$validatedData['teacher_id']] = [
-            'role' => 'teacher',
-            'first_name' => $teacher['fname'] ?? '',
-            'last_name' => $teacher['lname'] ?? '',
-        ];
-
-        // Store in Firebase
         try {
+            $now = now();
+            $announcementKey = "SUB-ANN" . $now->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+
+            $validatedData = $request->validate([
+                'subject_id' => 'required|string|max:100',
+                'code' => 'required|string|max:50',
+                'title' => 'required|string|max:255',
+                'subjectType' => 'required|in:academics,specialized',
+                'specialized_type' => 'nullable|string|max:50',
+                'teacher_id' => 'required|string|max:50',
+                'section_id' => 'required|string|max:50',
+                'modules' => 'nullable|array',
+                'modules.*.title' => 'required|string|max:255',
+                'modules.*.description' => 'nullable|string',
+                'modules.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
+                'modules.*.external_link' => 'nullable|url',
+                'announcements' => 'nullable|array',
+                'announcements.*.title' => 'nullable|string|max:255',
+                'announcements.*.description' => 'nullable|string|max:1000',
+                'announcements.*.date' => 'nullable|date',
+                'announcements.*.files.*' => 'nullable|file|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif|max:20480',
+                'announcements.*.link' => 'nullable|url',
+
+                'occurrences' => 'required|array|min:1',
+                'occurrences.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+                'common_start_time' => 'nullable|date_format:H:i',
+                'common_end_time' => 'nullable|date_format:H:i|after:common_start_time',
+                'day_times' => 'nullable|array',
+                'day_times.*.start' => 'nullable|date_format:H:i',
+                'day_times.*.end' => 'nullable|date_format:H:i|after:day_times.*.start',
+
+
+            ]);
+
+            $subjectId = $validatedData['subject_id'];
+            $subjectsRef = $this->database->getReference("subjects/{$grade}")->getValue();
+            if (!empty($subjectsRef) && array_key_exists($subjectId, $subjectsRef)) {
+                return redirect()->back()->with('status', 'Subject ID already exists!')->withInput();
+            }
+
+            $schoolYears = $this->database->getReference('schoolyears')->getValue();
+            $activeSchoolYearId = collect($schoolYears)->firstWhere('status', 'active')['schoolyearid'] ?? null;
+            if (!$activeSchoolYearId) {
+                return redirect()->back()->with('status', 'No active school year found.')->withInput();
+            }
+
+            // Step 1: Get the submitted schedule
+            $newSchedule = [];
+
+            if ($request->has('sameTimeToggle') && $request->input('sameTimeToggle') === 'on') {
+                foreach ($validatedData['occurrences'] as $day) {
+                    $newSchedule[$day] = [
+                        'start' => $request->input('common_start_time'),
+                        'end' => $request->input('common_end_time'),
+                    ];
+                }
+            } elseif ($request->has('day_times')) {
+                foreach ($request->input('day_times') as $day => $times) {
+                    $newSchedule[$day] = [
+                        'start' => $times['start'],
+                        'end' => $times['end'],
+                    ];
+                }
+            }
+
+            // Step 2: Get existing subjects for the same section
+            $subjects = $this->database->getReference("subjects/{$grade}")->getValue() ?? [];
+            $sectionId = $validatedData['section_id'];
+
+            foreach ($subjects as $existingSubject) {
+                if (!isset($existingSubject['section_id']) || $existingSubject['section_id'] !== $sectionId) continue;
+
+                $existingSchedule = $existingSubject['schedule']['occurrence'] ?? [];
+
+                foreach ($existingSchedule as $day => $time) {
+                    if (!isset($newSchedule[$day])) continue; // No overlap if days are different
+
+                    $newStart = strtotime($newSchedule[$day]['start']);
+                    $newEnd = strtotime($newSchedule[$day]['end']);
+                    $existingStart = strtotime($time['start']);
+                    $existingEnd = strtotime($time['end']);
+
+                    // Check for time overlap
+                    if ($newStart < $existingEnd && $existingStart < $newEnd) {
+                        return redirect()->back()
+                            ->with('status', "Schedule conflict with existing subject '{$existingSubject['title']}' on $day ({$time['start']} - {$time['end']}).")
+                            ->withInput();
+                    }
+                }
+            }
+
+
+            $postData = [
+                'subject_id' => $subjectId,
+                'code' => $validatedData['code'],
+                'title' => $validatedData['title'],
+                'subjectType' => $validatedData['subjectType'],
+                'specialized_type' => $validatedData['specialized_type'] ?? '',
+                'teacher_id' => $validatedData['teacher_id'],
+                'section_id' => $validatedData['section_id'],
+                'schoolyear_id' => $activeSchoolYearId,
+                'modules' => [],
+                'assignments' => '',
+                'scores' => '',
+                'announcements' => [],
+                'attendance' => '',
+                'people' => [],
+                'posted_by' => 'admin',
+                'date_created' => now()->toDateTimeString(),
+                'date_updated' => now()->toDateTimeString(),
+                'schedule' => [
+                        'occurrence' => $newSchedule
+                    ],
+            ];
+
+            // Modules
+            if (!empty($validatedData['modules'])) {
+                $modules = [];
+                foreach ($validatedData['modules'] as $index => $module) {
+                    $moduleKey = 'MOD' . str_pad($index, 2, '0', STR_PAD_LEFT);
+                    $moduleData = [
+                        'title' => $module['title'],
+                        'description' => $module['description'] ?? '',
+                        'files' => [],
+                        'external_link' => $module['external_link'] ?? '',
+                    ];
+
+                    if ($request->hasFile("modules.$index.files")) {
+                        foreach ($request->file("modules.$index.files") as $file) {
+                            $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/modules");
+                            $moduleData['files'][] = $uploadInfo;
+                        }
+                    }
+
+                    $modules[$moduleKey] = $moduleData;
+                }
+                $postData['modules'] = $modules;
+            }
+
+            // Announcements
+            if (!empty($validatedData['announcements'])) {
+                foreach ($validatedData['announcements'] as $index => $announcement) {
+                    $key = "SUB-ANN" . now()->format('Ymd') . str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+                    $announcementData = [
+                        'title' => $announcement['title'] ?? '',
+                        'description' => $announcement['description'] ?? '',
+                        'date_posted' => $announcement['date'] ?? now()->toDateString(),
+                        'subject_id' => $subjectId,
+                        'files' => [],
+                        'link' => $announcement['link'] ?? '',
+                    ];
+
+                    if ($request->hasFile("announcements.$index.files")) {
+                        foreach ($request->file("announcements.$index.files") as $file) {
+                            $uploadInfo = $this->uploadToFirebaseStorage($file, "subjects/{$subjectId}/announcements");
+                            $announcementData['files'][] = $uploadInfo;
+                        }
+                    }
+
+                    $postData['announcements'][$key] = $announcementData;
+                }
+            }
+
+            // Add section students
+            $section = $this->database->getReference("sections/{$validatedData['section_id']}")->getValue();
+            if (isset($section['students']) && is_array($section['students'])) {
+                foreach ($section['students'] as $studentId => $value) {
+                    $student = $this->database->getReference("users/{$studentId}")->getValue();
+                    $postData['people'][$studentId] = [
+                        'role' => 'student',
+                        'first_name' => $student['fname'] ?? '',
+                        'last_name' => $student['lname'] ?? '',
+                    ];
+                }
+            }
+
+            // Add teacher
+            $teacher = $this->database->getReference("users/{$validatedData['teacher_id']}")->getValue();
+            $postData['people'][$validatedData['teacher_id']] = [
+                'role' => 'teacher',
+                'first_name' => $teacher['fname'] ?? '',
+                'last_name' => $teacher['lname'] ?? '',
+            ];
+
+            // Save to Firebase
             $this->database->getReference("subjects/{$grade}/{$subjectId}")->set($postData);
+
             return redirect()->route('mio.ViewSubject', ['grade' => $grade])
                             ->with('success', 'Subject added successfully.');
+
         } catch (\Exception $e) {
             return redirect()->back()->with('status', 'Failed to add subject: ' . $e->getMessage())->withInput();
         }
     }
+
 
 
 

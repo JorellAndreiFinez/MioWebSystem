@@ -22,13 +22,6 @@
     <div class="text">School</div>
     <section class="grade-section">
     <div class="grade-grid">
-        <a href="{{ route('mio.view-schoolyear') }}">
-        <div class="grade-card">
-            <span class="icon"></span>
-            <p>School Year</p>
-            <span class="arrow">&rsaquo;</span>
-        </div>
-        </a>
        <a href="{{ route('mio.ViewDepartment') }}">
        <div class="grade-card">
             <span class="icon"></span>
@@ -36,6 +29,22 @@
             <span class="arrow">&rsaquo;</span>
         </div>
        </a>
+
+       <a href="{{ route('mio.ViewSchedule') }}">
+        <div class="grade-card">
+            <span class="icon"></span>
+            <p>Schedule</p>
+            <span class="arrow">&rsaquo;</span>
+        </div>
+        </a>
+
+       <a href="{{ route('mio.view-schoolyear') }}">
+        <div class="grade-card">
+            <span class="icon"></span>
+            <p>School Year</p>
+            <span class="arrow">&rsaquo;</span>
+        </div>
+        </a>
 
        <a href="{{ route('mio.ViewSection') }}">
         <div class="grade-card">

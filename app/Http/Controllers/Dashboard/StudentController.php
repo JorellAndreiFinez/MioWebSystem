@@ -1173,45 +1173,89 @@ class StudentController extends Controller
         ]);
     }
 
-    public function showProfile(){
+    public function showProfile()
+    {
         $userId = session('firebase_user.uid');
         $teacherName = session('firebase_user.name');
 
-        // Get teacher data
-        $teacherRef = $this->database->getReference('users/' . $userId);
-        $teacher = $teacherRef->getValue();
+        // 🔍 Fetch student data
+        $studentRef = $this->database->getReference('users/' . $userId);
+        $student = $studentRef->getValue();
 
-        if (!$teacher) {
-            abort(404, 'Teacher not found.');
+        if (!$student) {
+            abort(404, 'Student not found.');
         }
 
-        // ✅ Get departments
-        $departmentsRef = $this->database->getReference('departments');
-        $departmentsData = $departmentsRef->getValue() ?? [];
+        // 🔍 Fetch section info
+        $sectionsRef = $this->database->getReference('sections');
+        $sectionsData = $sectionsRef->getValue() ?? [];
 
-        $departments = [];
-        foreach ($departmentsData as $id => $dept) {
-            $departments[] = [
-                'departmentid' => $id,
-                'department_name' => $dept['department_name'] ?? 'Unnamed'
+        $studentSection = null;
+        foreach ($sectionsData as $sectionId => $section) {
+            if (!empty($section['students']) && array_key_exists($userId, $section['students'])) {
+                $studentSection = [
+                    'sectionid' => $sectionId,
+                    'section_name' => $section['section_name'] ?? 'Unnamed',
+                ];
+                break;
+            }
+        }
+
+        // 🔍 Fetch enrollment form data
+        $enrolleeId = $student['enrollee_id'] ?? null;
+        $form = [];
+
+        if ($enrolleeId) {
+            $formRef = $this->database->getReference('enrollment/enrollees/' . $enrolleeId . '/enrollment_form');
+            $formData = $formRef->getValue() ?? [];
+
+            // ✅ Extracting fields
+            $form = [
+                'medical_history' => $formData['medical_history'] ?? '',
+                'hearing_loss' => $formData['hearing_loss'] ?? '',
+                'hearing_identity' => $formData['hearing_identity'] ?? '',
+                'assistive_devices' => $formData['assistive_devices'] ?? '',
+                'health_notes' => $formData['health_notes'] ?? '',
+
+                'payment_proof_path' => $formData['payment_proof_path'] ?? '',
+
+                'good_moral_path' => !empty($formData['good_moral_path']) ? asset($formData['good_moral_path']) : '',
+                'health_certificate_path' => !empty($formData['health_certificate_path']) ? asset($formData['health_certificate_path']) : '',
+                'psa_birth_certificate_path' => !empty($formData['psa_birth_certificate_path']) ? asset($formData['psa_birth_certificate_path']) : '',
+                'form_137_path' => !empty($formData['form_137_path']) ? asset($formData['form_137_path']) : '',
+
+                // ✅ Academic fields
+                'previous_school' => $formData['previous_school'] ?? '',
+                'previous_grade_level' => $formData['previous_grade_level'] ?? '',
+                'enrollment_grade' => $formData['enrollment_grade'] ?? '',
+                'grade_level' => $formData['grade_level'] ?? '',
+                'strand' => $formData['strand'] ?? '',
+
+                // ✅ Parent/Guardian fields
+                'parent_firstname' => $formData['parent_firstname'] ?? '',
+                'parent_lastname' => $formData['parent_lastname'] ?? '',
+                'parent_role' => $formData['parent_role'] ?? '',
+                'emergency_contact' => $formData['emergency_contact'] ?? '',
             ];
+
+
         }
 
-        return view('mio.head.teacher-panel', [
+        return view('mio.head.student-panel', [
             'page' => 'profile',
-            'teacher' => $teacher,
+            'student' => $student,
             'name' => $teacherName,
             'uid' => $userId,
-            'departments' => $departments, // 👈 include this
+            'sections' => $studentSection,
+            'form' => $form, // 👉 pass the form data
         ]);
     }
 
-
     public function updateProfile(Request $request)
     {
-        $userId = session('firebase_user.uid'); // Use session, not auth()->user()
+        $userId = session('firebase_user.uid'); // Session contains Firebase UID
 
-        // Validate only editable fields (exclude readonly fields)
+        // Validate only editable fields
         $data = $request->validate([
             'bio' => 'nullable|string',
             'social_link' => 'nullable|url',
@@ -1219,7 +1263,7 @@ class StudentController extends Controller
         ]);
 
         try {
-            // Handle profile picture upload if exists
+            // Handle profile picture upload
             if ($request->hasFile('profile_picture')) {
                 $file = $request->file('profile_picture');
                 $filename = 'images/profile_pictures/' . uniqid() . '.' . $file->getClientOriginalExtension();
@@ -1227,35 +1271,27 @@ class StudentController extends Controller
                 // Upload to Firebase Storage
                 $bucket = $this->storageClient->bucket($this->bucketName);
                 $bucket->upload(
-                    fopen($file->getRealPath(), 'r'), // safer than file_get_contents
+                    fopen($file->getRealPath(), 'r'),
                     ['name' => $filename]
                 );
 
-
                 $object = $bucket->object($filename);
-
-                // Make public (optional, if you're not using signed URLs)
                 $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
 
+                // Set profile picture URL
                 $data['photo_url'] = 'https://storage.googleapis.com/' . $this->bucketName . '/' . $filename;
-
             }
 
-            Log::info('Final data to update in Firebase:', $data);
-
-
-            // Update only the fields provided by the form
+            // Update Firebase
             $this->database->getReference('users/' . $userId)->update($data);
 
             return redirect()->back()->with('success', 'Profile updated successfully.');
-
-    } catch (\Throwable $e) {
-        // Log error (optional)
-        Log::error('Profile update failed: ' . $e->getMessage());
-
-        return redirect()->back()->with('error', 'Failed to update profile. Please try again.');
+        } catch (\Throwable $e) {
+            \Log::error('Profile update failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update profile. Please try again.');
+        }
     }
-}
+
 
 
 

@@ -17,6 +17,7 @@ use App\Http\Controllers\SectionController;
 use App\Http\Controllers\SpeechaceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\admin\AdminController;
+use App\Http\Controllers\admin\ScheduleController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
@@ -252,12 +253,6 @@ Route::prefix('mio/admin/')->middleware(
     Route::delete('/subjects/{grade}/DeleteSubject/{subjectId}', [SubjectController::class, 'deleteSubject'])->name('DeleteSubject');
 
 
-// ---------------  SCHEDULES
-    Route::view('/schedules', 'mio.head.admin-panel', ['page' => 'schedules'])->name('schedules');
-    Route::view('/AllSchedules', 'mio.head.admin-panel', ['page' => 'view-schedule'])->name('view-schedule');
-    Route::view('/AddSchedule', 'mio.head.admin-panel', ['page' => 'add-schedule'])->name('add-schedule');
-    Route::view('/EditSchedule', 'mio.head.admin-panel', ['page' => 'edit-schedule'])->name('edit-schedule');
-
 // ---------------  SCHOOL
     Route::get('/school', [AnnouncementController::class, 'school'])->name('school');
 
@@ -276,6 +271,19 @@ Route::prefix('mio/admin/')->middleware(
     Route::put('/UpdateDepartment/{id}', [DepartmentController::class, 'editDepartment'])->name('UpdateDepartment');
 
     Route::delete('/DeleteDepartment/{id}', [DepartmentController::class, 'deleteDepartment'])->name('DeleteDepartment');
+
+// -- SCHEDULE
+
+    Route::get('/schedule', [ScheduleController::class, 'schedules'])->name('ViewSchedule');
+
+    Route::get('/AddSchedule', [ScheduleController::class, 'showAddSchedule'])->name('AddSchedule');
+    Route::post('/AddSchedule', [ScheduleController::class, 'addSchedule'])->name('StoreSchedule');
+
+    Route::get('/EditSchedule/{id}', [ScheduleController::class, 'showEditSchedule'])->name('EditSchedule');
+
+    Route::put('/UpdateSchedule/{id}', [ScheduleController::class, 'editSchedule'])->name('UpdateSchedule');
+
+    Route::delete('/DeleteSchedule/{id}', [ScheduleController::class, 'deleteSchedule'])->name('DeleteSchedule');
 
 // -- SCHOOL ANNOUNCEMENTS
     Route::get('/announcement/{id}', [AnnouncementController::class, 'viewAnnouncement'])->name('view-announcement');
@@ -334,6 +342,7 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
     Route::get('/subject/{subjectId}/announcement/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('mio.announcements-body');
 
+// CALENDAR
     Route::get('/calendar', function () {
         return view('mio.head.student-panel', ['page' => 'calendar']);
     })->name('mio.calendar');
@@ -344,8 +353,8 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     Route::post('/edit-message/{messageId}', [MessagingController::class, 'editMessage'])->name('mio.message-edit');
     Route::post('/delete-message/{messageId}', [MessagingController::class, 'deleteMessage']);
 
-
     Route::get('/profile', [StudentController::class, 'showProfile'])->name('mio.student.profile');
+    Route::post('/profile/update', [StudentController::class, 'updateProfile'])->name('mio.updateStudentProfile');
 
 // SUBJECT
     Route::prefix('subject')->name('mio.subject.')->group(function () {

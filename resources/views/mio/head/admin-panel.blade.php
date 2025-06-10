@@ -87,15 +87,6 @@
     @elseif ($page === 'edit-subject')
         @include('mio.admin-access.subject.edit-subject')
 
-    @elseif ($page === 'schedules')
-        @include('mio.admin-access.schedules')
-    @elseif ($page === 'view-schedule')
-        @include('mio.admin-access.schedule.view-schedule')
-    @elseif ($page === 'add-schedule')
-        @include('mio.admin-access.schedule.add-schedule')
-    @elseif ($page === 'edit-schedule')
-        @include('mio.admin-access.schedule.edit-schedule')
-
     @elseif ($page === 'school')
         @include('mio.admin-access.school')
 <!--
@@ -112,6 +103,13 @@
         @include('mio.admin-access.school.add-department')
     @elseif ($page === 'edit-department')
         @include('mio.admin-access.school.edit-department')
+
+    @elseif ($page === 'view-schedule')
+        @include('mio.admin-access.school.view-schedule')
+    @elseif ($page === 'add-schedule')
+        @include('mio.admin-access.school.add-schedule')
+    @elseif ($page === 'edit-schedule')
+        @include('mio.admin-access.school.edit-schedule')
 
     @elseif ($page === 'view-announcement')
         @include('mio.admin-access.school.view-announcement')

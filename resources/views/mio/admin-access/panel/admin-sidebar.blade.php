@@ -13,7 +13,6 @@
                 ['route' => 'mio.students', 'icon' => 'bx bx-user-voice', 'label' => 'Students'],
                 ['route' => 'mio.accounts', 'icon' => 'bx bxs-user-detail', 'label' => 'Accounts'],
                 ['route' => 'mio.subjects', 'icon' => 'bx bx-book-open', 'label' => 'Subjects'],
-                ['route' => 'mio.schedules', 'icon' => 'bx bx-calendar', 'label' => 'Schedule'],
                 ['route' => 'mio.school', 'icon' => 'bx bx-building', 'label' => 'School'],
                 ['route' => 'mio.enrollment', 'icon' => 'bx bx-file', 'label' => 'Enrollment'],
             ],

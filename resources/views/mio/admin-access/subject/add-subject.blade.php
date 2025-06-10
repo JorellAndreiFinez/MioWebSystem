@@ -1,10 +1,15 @@
 <section class="home-section">
 <div class="text">Add New Subject</div>
 <div class="teacher-container">
+@if(session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+@elseif(session('status'))
+    <div class="alert alert-danger">{{ session('status') }}</div>
+@endif
 
 <form action="{{ route('mio.StoreSubject', ['grade' => $grade]) }}" method="POST" enctype="multipart/form-data">
 
-            @csrf
+    @csrf
 
     <div class="table-header">
         <div class="search-container" style="background: transparent;">
@@ -62,6 +67,8 @@
 
             </div>
 
+            <hr>
+
             <div class="form-row">
                 <div class="form-group wide">
                     <label>Teacher ID</label>
@@ -87,6 +94,62 @@
 
 
             </div>
+
+            <hr>
+
+            <!-- timetable preview of that section -->
+             <div class="form-row">
+                <div class="form-group wide">
+                    <label>Timetable Preview</label>
+                    <div id="timetable-preview" style="overflow-x: auto;">
+                        <em>Select a section to preview its timetable.</em>
+                    </div>
+                </div>
+            </div>
+
+
+
+            <!-- schedule information -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox"  name="sameTimeToggle"  id="sameTimeToggle" checked />
+                        Use same time for all selected days
+                    </label>
+                </div>
+            </div>
+
+            <div id="common-time" class="form-row">
+                <div class="form-group">
+                    <label>Start Time <span style="color: red">*</span></label>
+                    <input type="time" name="common_start_time" />
+                </div>
+
+                <div class="form-group">
+                    <label>End Time <span style="color: red">*</span></label>
+                    <input type="time" name="common_end_time" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label>Occurrences (Days of Week) <span style="color: red; font-weight:700">*</span></label>
+                    <select name="occurrences[]" id="occurrences" multiple required style="height: 170px;">
+                        <option value="Monday">Monday</option>
+                        <option value="Tuesday">Tuesday</option>
+                        <option value="Wednesday">Wednesday</option>
+                        <option value="Thursday">Thursday</option>
+                        <option value="Friday">Friday</option>
+                        <option value="Saturday">Saturday</option>
+                        <option value="Sunday">Sunday</option>
+                    </select>
+                    <small>Hold Ctrl (or Cmd) to select multiple days.</small>
+                </div>
+            </div>
+
+            <!-- Individual day time inputs will appear here -->
+            <div id="individual-times"></div>
+
         </div>
 
         <!-- Modules Section -->
@@ -174,7 +237,9 @@
             <div class="form-row">
                 <div class="form-group wide">
                     <label>Announcement Description</label>
-                    <textarea name="announcements[0][description]" placeholder="Enter details about the announcement..." required></textarea>
+                    <textarea name="announcements[0][description]" placeholder="Enter details about the announcement..." required>Welcome
+Looking forward to a productive and enjoyable learning journey together!
+                    </textarea>
                 </div>
             </div>
 
@@ -218,6 +283,201 @@
 </section>
 
 <!-- -------- SCRIPTS -------- -->
+
+<!-- TIME TABLE -->
+
+<script>
+    const sameTimeToggle = document.getElementById('sameTimeToggle');
+    const occurrencesSelect = document.getElementById('occurrences');
+    const individualTimes = document.getElementById('individual-times');
+    const commonTimeSection = document.getElementById('common-time');
+
+    function updateTimeFields() {
+        const selectedDays = Array.from(occurrencesSelect.selectedOptions).map(opt => opt.value);
+        individualTimes.innerHTML = "";
+
+        if (!sameTimeToggle.checked && selectedDays.length > 0) {
+            selectedDays.forEach(day => {
+                individualTimes.innerHTML += `
+                    <div class="form-row">
+                        <label style="font-weight: bold; margin-top: 10px;">${day}</label>
+                        <div class="form-group">
+                            <label>Start Time for ${day}</label>
+                            <input type="time" name="day_times[${day}][start]" />
+                        </div>
+                        <div class="form-group">
+                            <label>End Time for ${day}</label>
+                            <input type="time" name="day_times[${day}][end]" />
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    sameTimeToggle.addEventListener('change', () => {
+        if (sameTimeToggle.checked) {
+            commonTimeSection.style.display = 'flex';
+            individualTimes.innerHTML = '';
+        } else {
+            commonTimeSection.style.display = 'none';
+            updateTimeFields();
+        }
+    });
+
+    occurrencesSelect.addEventListener('change', () => {
+        if (!sameTimeToggle.checked) {
+            updateTimeFields();
+        }
+    });
+
+    // Initialize state
+    document.addEventListener('DOMContentLoaded', () => {
+        commonTimeSection.style.display = 'flex';
+    });
+</script>
+
+<script>
+    const sectionSchedules = @json($sectionSchedules);
+
+    // Define time slots
+    const timeSlots = [
+        '06:00', '07:00',
+        '07:00', '08:00',
+        '08:00', '09:00',
+        '09:00', '10:00',
+        '10:00', '11:00',
+        '11:00', '12:00',
+        '12:00', '13:00',
+        '13:00', '14:00',
+        '14:00', '15:00',
+        '15:00', '16:00',
+        '16:00', '17:00',
+        '17:00', '18:00',
+        '18:00', '19:00'
+    ];
+
+    function parseTime(timeStr) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        const date = new Date();
+        date.setHours(hours, minutes, 0, 0);
+        return date;
+    }
+
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    function timeInRange(start, end, check) {
+        return check >= start && check < end;
+    }
+
+    function rangesOverlap(startA, endA, startB, endB) {
+        const aStart = parseTime(startA);
+        const aEnd = parseTime(endA);
+        const bStart = parseTime(startB);
+        const bEnd = parseTime(endB);
+
+        return aStart < bEnd && aEnd > bStart;
+    }
+
+
+
+    document.getElementById('sectionID').addEventListener('change', function () {
+        const sectionId = this.value;
+        const container = document.getElementById('timetable-preview');
+        container.innerHTML = '';
+
+        if (!sectionSchedules[sectionId] || sectionSchedules[sectionId].length === 0) {
+            container.innerHTML = '<em>No existing schedule for this section.</em>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.style.width = '100%';
+        table.style.borderCollapse = 'collapse';
+        table.style.textAlign = 'center';
+
+        // Header Row
+        const headerRow = document.createElement('tr');
+        const emptyTh = document.createElement('th');
+        emptyTh.textContent = 'Time';
+        emptyTh.style.padding = '10px';
+        emptyTh.style.border = '1px solid #ccc';
+        emptyTh.style.backgroundColor = '#f0f0f0';
+        headerRow.appendChild(emptyTh);
+
+        days.forEach(day => {
+            const th = document.createElement('th');
+            th.textContent = day;
+            th.style.padding = '10px';
+            th.style.border = '1px solid #ccc';
+            th.style.backgroundColor = '#f0f0f0';
+            headerRow.appendChild(th);
+        });
+
+        table.appendChild(headerRow);
+
+        // Row for each time slot
+        for (let i = 0; i < timeSlots.length; i += 2) {
+            const row = document.createElement('tr');
+
+            const timeRange = `${timeSlots[i]} - ${timeSlots[i + 1]}`;
+            const timeCell = document.createElement('td');
+            timeCell.textContent = timeRange;
+            timeCell.style.border = '1px solid #ccc';
+            timeCell.style.padding = '10px';
+            timeCell.style.fontWeight = 'bold';
+            row.appendChild(timeCell);
+
+            days.forEach(day => {
+                const cell = document.createElement('td');
+                cell.style.border = '1px solid #ccc';
+                cell.style.padding = '8px';
+                cell.style.minWidth = '120px';
+                cell.style.verticalAlign = 'top';
+
+                const slotStart = timeSlots[i];
+                const slotEnd = timeSlots[i + 1];
+
+                const subjects = sectionSchedules[sectionId].filter(subject => {
+                    if (!subject.start_time || !subject.end_time || !subject.occurrences) return false;
+
+                    const inDay = subject.occurrences.includes(day);
+                    const overlaps = rangesOverlap(subject.start_time, subject.end_time, slotStart, slotEnd);
+                    return inDay && overlaps;
+                });
+
+
+
+                if (subjects.length > 0) {
+                    subjects.forEach(subject => {
+                        const div = document.createElement('div');
+                        div.textContent = subject.title;
+                        div.style.backgroundColor = '#b3d9ff';
+                        div.style.borderRadius = '4px';
+                        div.style.padding = '4px';
+                        div.style.marginBottom = '4px';
+                        div.style.fontSize = '0.9em';
+                        cell.appendChild(div);
+                    });
+                } else {
+                    cell.innerHTML = '<span style="color: #aaa;">—</span>';
+                }
+
+                row.appendChild(cell);
+            });
+
+            table.appendChild(row);
+        }
+
+        container.appendChild(table);
+    });
+</script>
+
+
+
+<!-- announcement file upload -->
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('announcement-file-upload-0');
@@ -784,13 +1044,14 @@ document.getElementById('sectionID').addEventListener('blur', function () {
 });
 </script>
 
+
 <!-- FOR TESTING -->
 
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // Subject details
-    document.querySelector('input[name="code"]').value = 'ENG101';
-    document.querySelector('input[name="title"]').value = 'English Basics';
+    document.querySelector('input[name="code"]').value = 'HIS101';
+    document.querySelector('input[name="title"]').value = 'History Basics';
 
     // Select "Academics" as Subject Type
     const subjectTypeSelect = document.querySelector('select[name="subjectType"]');
@@ -803,20 +1064,10 @@ document.addEventListener('DOMContentLoaded', () => {
         teacherSelect.selectedIndex = 4;
     }
 
-    // Select first section (if available)
-    const sectionSelect = document.querySelector('#sectionID');
-    if (sectionSelect.options.length > 1) {
-        sectionSelect.selectedIndex = 1;
-    }
 
     // Module
     document.querySelector('input[name="modules[0][title]"]').value = 'Module 1: Grammar Basics';
-    document.querySelector('textarea[name="modules[0][description]"]').value = 'An introduction to English grammar.';
-
-    // Announcement
-    document.querySelector('input[name="announcement[title]"]').value = 'Welcome to English 101!';
-    document.querySelector('input[name="announcement[date]"]').value = new Date().toISOString().split('T')[0]; // today
-    document.querySelector('textarea[name="announcement[description]"]').value = 'Please read the first module before next class.';
+    document.querySelector('textarea[name="modules[0][description]"]').value = 'An introduction to History of the Philippines.';
 
     console.log('Dummy data filled!');
 });
