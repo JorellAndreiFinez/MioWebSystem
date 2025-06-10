@@ -764,6 +764,7 @@ class SpecializedLanguageApi extends Controller
 
             $attempt_items = [];
             $score = 0;
+            $total = 0;
 
             foreach ($validated['answers'] as $answer) {
                 $item_id = $answer['item_id'];
@@ -772,6 +773,9 @@ class SpecializedLanguageApi extends Controller
 
                 $correctAnswer1 = $activity[$item_id]['answer_1'] ?? null;
                 $correctAnswer2 = $activity[$item_id]['answer_2'] ?? null;
+
+                if ($correctAnswer1 !== null) $total++;
+                if ($correctAnswer2 !== null) $total++;
 
                 if ($userAnswer1 === $correctAnswer1) {
                     $score++;
@@ -784,8 +788,12 @@ class SpecializedLanguageApi extends Controller
                 $attempt_items[$item_id] = [
                     'answer_1' => $userAnswer1,
                     'answer_2' => $userAnswer2,
+                    'correct_1' => $correctAnswer1,
+                    'correct_2' => $correctAnswer2,
                 ];
             }
+
+            $percentageScore = $total > 0 ? round(($score / $total) * 100) : 0;
 
             $date = now()->toDateTimeString();
 
@@ -795,13 +803,13 @@ class SpecializedLanguageApi extends Controller
                     'status' => "submitted",
                     'submitted_at' => $date,
                     'items' => $attempt_items,
-                    'score' => $score
+                    'score' => $percentageScore
                 ]);
 
             return response()->json([
                 'success' => true,
                 'message' => "Attempt successfully submitted!",
-                'score' => $score,
+                'score' => $percentageScore,
             ], 200);
 
         } catch (\Exception $e) {
@@ -843,7 +851,8 @@ class SpecializedLanguageApi extends Controller
             }
 
             $attempt_items = [];
-            $score = 0;
+            $totalWords = 0;
+            $correctWords = 0;
 
             foreach ($validated['answers'] as $answer) {
                 $item_id = $answer['item_id'];
@@ -851,20 +860,32 @@ class SpecializedLanguageApi extends Controller
 
                 if (isset($activity[$item_id])) {
                     $correct_sentence = preg_replace('/[^a-z0-9\s]/i', '', strtolower(trim($activity[$item_id]['sentence'])));
-                    $is_correct = $student_sentence === $correct_sentence;
 
-                    if ($is_correct) {
-                        $score++;
+                    $student_words = explode(" ", $student_sentence);
+                    $correct_words = explode(" ", $correct_sentence);
+
+                    $itemCorrectCount = 0;
+
+                    foreach ($correct_words as $index => $word) {
+                        if (isset($student_words[$index]) && $student_words[$index] === $word) {
+                            $itemCorrectCount++;
+                        }
                     }
+
+                    $totalWords += count($correct_words);
+                    $correctWords += $itemCorrectCount;
 
                     $attempt_items[$item_id] = [
                         'student_answer' => $answer['sentence'],
                         'correct_answer' => $activity[$item_id]['sentence'],
-                        'is_correct' => $is_correct,
+                        'correct_words' => $itemCorrectCount,
+                        'total_words' => count($correct_words),
+                        'is_correct' => $student_sentence === $correct_sentence,
                     ];
                 }
             }
 
+            $score = $totalWords > 0 ? round(($correctWords / $totalWords) * 100, 2) : 0;
             $date = now()->toDateTimeString();
 
             $this->database
