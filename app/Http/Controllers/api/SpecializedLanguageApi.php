@@ -620,16 +620,14 @@ class SpecializedLanguageApi extends Controller
 
             foreach($activity['items'] as $item_id => $item){
                 $sentence = $item['sentence'];
-                $distractors = $item['distractors'];
-
                 $lowercase_sentence = strtolower($sentence);
-                $distractors_sentence = strtolower($distractors);
-
                 $clean_sentence = preg_replace('/[^a-z0-9\s]/i', '', $lowercase_sentence);
-                $clean_distractors = preg_replace('/[^a-z0-9\s]/i', '', $distractors_sentence);
 
                 $sentence_array = explode(" ", $clean_sentence);
-                $distractors_array = explode(" ", $clean_distractors);
+                $distractors_array = array_map(
+                    fn($d) => preg_replace('/[^a-z0-9\s]/i', '', strtolower($d)),
+                    $item['distractors'] ?? []
+                );
 
                 $combined = array_merge($sentence_array, $distractors_array);
                 shuffle($combined);
@@ -669,81 +667,124 @@ class SpecializedLanguageApi extends Controller
         }
     }
 
-    public function finalizeHomonymsAttempt(
-        Request $request,
-        string $subjectId,
-        string $difficulty,
-        string $activityId,
-        string $attemptId
-    ){
+    public function takeHomonymActivity(Request $request, string $subjectId, string $difficulty, string $activityId){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
-        $validated = $request->validate([
-            'answers' => 'required|array|min:1',
-            'answers.*.item_id' => 'required|string|uuid',
-            'answers.*.answers' => 'required|array|min:1',
-            'answers.*.answers.*.sentence_id' => 'required|string|uuid',
-            'answers.*.answers.*.answer' => 'required|string|min:1',
-        ]);
-
         try{
             $activity = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}/items")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
             if ($activity === null) {
                 return response()->json([
                     'success' => false,
-                    'message' => "The requested homonyms activity does not exist or may have been deleted."
+                    'message' => "The requested Homonyms in the blanks activity does not exist or may have been deleted."
                 ],404);
             }
 
-            $mapped_correct_answers = [];
-            $mapped_sentences = [];
+            $attempt_data = [];
 
-            foreach ($activity as $item) {
-                foreach ($item['homonym'] as $homonym) {
-                    $mapped_correct_answers[$homonym['sentence_id']] = $homonym['answer'];
-                    $mapped_sentences[$homonym['sentence_id']] = $homonym['text'];
-                }
+            $bucket = $this->storage->getBucket();
+
+            foreach($activity['items'] as $item_id => $item){
+                $sentence_1 = $item['sentence_1'];
+                $sentence_2 = $item['sentence_2'];
+
+                $choices = $item['choices'] ?? [];
+                shuffle($choices);
+
+                $audio_1 = $bucket->object($item['audio_path_1'])->signedUrl(now()->addMinutes(15));
+                $audio_2 = $bucket->object($item['audio_path_2'])->signedUrl(now()->addMinutes(15));
+
+                $attempt_data[$item_id] = [
+                    'sentence_1' => $sentence_1,
+                    'sentence_2' => $sentence_2,
+                    'audio_path_1' => $audio_1,
+                    'audio_path_2' => $audio_2,
+                    'choices' => $choices
+                ];
+            }
+
+            $attempt_id = $this->generateUniqueId("ATTM");
+            $date = now()->toDateTimeString();
+
+            $this->database
+                ->getReference("/subjects/GR{$gradeLevel}/{$subjectId}/attempts/homonyms/{$activityId}/{$userId}/{$attempt_id}")
+                ->set([
+                    'items' => $attempt_data,
+                    'status' => "in-progress",
+                    'created_at' => $date,
+                ]);
+
+            return response()->json([
+                'success' => true,
+                'activity' => $attempt_data,
+                'attempt_id' => $attempt_id,
+            ],201);
+
+        }catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function finalizeHomonymsAttempt(
+        Request $request,
+        string $subjectId,
+        string $difficulty,
+        string $activityId,
+        string $attemptId
+    ) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        $validated = $request->validate([
+            'answers' => 'required|array|min:1',
+            'answers.*.item_id' => 'required|string|uuid',
+            'answers.*.answer' => 'required|array|size:2',
+            'answers.*.answer.*' => 'required|string|min:1',
+        ]);
+
+        try {
+            $activity = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}/items")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($activity)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "The requested homonyms activity does not exist or may have been deleted."
+                ], 404);
             }
 
             $attempt_items = [];
             $score = 0;
-            foreach ($validated['answers'] as $itemAnswer) {
-                $item_id = $itemAnswer['item_id'];
-                $answers = [];
 
-                foreach ($itemAnswer['answers'] as $index => $userAnswer) {
-                    $sentence_id = $userAnswer['sentence_id'];
-                    $user_response = strtolower(trim($userAnswer['answer']));
+            foreach ($validated['answers'] as $answer) {
+                $item_id = $answer['item_id'];
+                $userAnswer1 = $answer['answer'][0];
+                $userAnswer2 = $answer['answer'][1];
 
-                    if (isset($mapped_correct_answers[$sentence_id])) {
-                        $correct_answer = strtolower(trim($mapped_correct_answers[$sentence_id]));
-                        if ($user_response === $correct_answer) {
-                            $score++;
-                            $answers[$index] = [
-                                'is_correct' => true,
-                                'sentence_id' => $sentence_id,
-                                'student_answer' => $user_response,
-                                'sentence' => $mapped_sentences[$sentence_id] ?? '',
-                                'correct_answer' => $correct_answer,
-                            ];
-                        }else{
-                            $answers[$index] = [
-                                'is_correct' => false,
-                                'sentence_id' => $sentence_id,
-                                'student_answer' => $user_response,
-                                'sentence' => $mapped_sentences[$sentence_id] ?? '',
-                                'correct_answer' => $correct_answer,
-                            ];
-                        }
-                    }
+                $correctAnswer1 = $activity[$item_id]['answer_1'] ?? null;
+                $correctAnswer2 = $activity[$item_id]['answer_2'] ?? null;
+
+                if ($userAnswer1 === $correctAnswer1) {
+                    $score++;
                 }
 
-                $attempt_items[$item_id] = $answers;
+                if ($userAnswer2 === $correctAnswer2) {
+                    $score++;
+                }
+
+                $attempt_items[$item_id] = [
+                    'answer_1' => $userAnswer1,
+                    'answer_2' => $userAnswer2,
+                ];
             }
 
             $date = now()->toDateTimeString();
@@ -761,15 +802,16 @@ class SpecializedLanguageApi extends Controller
                 'success' => true,
                 'message' => "Attempt successfully submitted!",
                 'score' => $score,
-            ],200);
+            ], 200);
 
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function finalizeFillAttempt(
         Request $request,
