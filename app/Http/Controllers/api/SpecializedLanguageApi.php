@@ -747,6 +747,24 @@ class SpecializedLanguageApi extends Controller
             'answers.*.item_id' => 'required|string|uuid',
             'answers.*.answer' => 'required|array|size:2',
             'answers.*.answer.*' => 'required|string|min:1',
+
+            'answer_logs' => 'required|array|min:1',
+            'answer_logs.*.item_id' => 'required|string|uuid',
+            'answer_logs.*.answers_1' => 'required|array|min:1',
+            'answer_logs.*.answers_1.*' => 'required|string|min:1',
+            'answer_logs.*.answers_2' => 'required|array|min:1',
+            'answer_logs.*.answers_2.*' => 'required|string|min:1',
+            'answer_logs.*.answered_at_1' => 'required|array|min:1',
+            'answer_logs.*.answered_at_1.*' => 'required|string|min:1',
+            'answer_logs.*.answered_at_2' => 'required|array|min:1',
+            'answer_logs.*.answered_at_2.*' => 'required|string|min:1',
+
+            'audio_logs' => 'required|array|min:1',
+            'audio_logs.*.item_id' => 'required|string|uuid',
+            'audio_logs.*.played_at_1' => 'required|array|min:1',
+            'audio_logs.*.played_at_1.*' => 'required|string|min:1',
+            'audio_logs.*.played_at_2' => 'required|array|min:1',
+            'audio_logs.*.played_at_2.*' => 'required|string|min:1',
         ]);
 
         try {
@@ -793,8 +811,41 @@ class SpecializedLanguageApi extends Controller
                 ];
             }
 
-            $percentageScore = $total > 0 ? round(($score / $total) * 100) : 0;
+            $answer_logs = [];
+            foreach ($validated['answer_logs'] as $log) {
+                $answer_logs[$log['item_id']] = [
+                    'field_1' => [
+                        'answers' => $log['answers_1'],
+                        'answered_at' => array_combine(
+                            $log['answered_at_1'],
+                            array_fill(0, count($log['answered_at_1']), true)
+                        ),
+                    ],
+                    'field_2' => [
+                        'answers' => $log['answers_2'],
+                        'answered_at' => array_combine(
+                            $log['answered_at_2'],
+                            array_fill(0, count($log['answered_at_2']), true)
+                        ),
+                    ],
+                ];
+            }
 
+            $audio_logs = [];
+            foreach ($validated['audio_logs'] as $log) {
+                $audio_logs[$log['item_id']] = [
+                    'audio_1' => array_combine(
+                        $log['played_at_1'],
+                        array_fill(0, count($log['played_at_1']), true)
+                    ),
+                    'audio_2' => array_combine(
+                        $log['played_at_2'],
+                        array_fill(0, count($log['played_at_2']), true)
+                    ),
+                ];
+            }
+
+            $percentageScore = $total > 0 ? round(($score / $total) * 100) : 0;
             $date = now()->toDateTimeString();
 
             $this->database
@@ -803,7 +854,9 @@ class SpecializedLanguageApi extends Controller
                     'status' => "submitted",
                     'submitted_at' => $date,
                     'items' => $attempt_items,
-                    'score' => $percentageScore
+                    'score' => $percentageScore,
+                    'answer_logs' => $answer_logs,
+                    'audio_logs' => $audio_logs
                 ]);
 
             return response()->json([
@@ -820,7 +873,6 @@ class SpecializedLanguageApi extends Controller
         }
     }
 
-
     public function finalizeFillAttempt(
         Request $request,
         string $subjectId,
@@ -835,6 +887,17 @@ class SpecializedLanguageApi extends Controller
             'answers' => 'required|array|min:1',
             'answers.*.item_id' => 'required|string|min:1',
             'answers.*.sentence' => 'required|string|min:1',
+
+            'answer_logs' => 'required|array|min:1',
+            'answer_logs.*.item_id' => 'required|string|uuid',
+            'answer_logs.*.answers' => 'required|array|min:1',
+            'answer_logs.*.answers.*' => 'required|string|min:1',
+            'answer_logs.*.answered_at' => 'required|array|min:1',
+            'answer_logs.*.answered_at.*' => 'required|string|min:1',
+
+            'audio_logs' => 'required|array|min:1',
+            'audio_logs.*.item_id' => 'required|string|uuid',
+            'audio_logs.*.played_at' => 'required|array|min:1',
         ]);
 
         try {
@@ -885,6 +948,21 @@ class SpecializedLanguageApi extends Controller
                 }
             }
 
+            $answer_logs = [];
+            foreach ($validated['answer_logs'] as $log) {
+                $answer_logs[$log['item_id']] = [
+                    'answers' => $log['answers'],
+                    'answered_at' => array_combine($log['answered_at'], array_fill(0, count($log['answered_at']), true)),
+                ];
+            }
+
+            $audio_logs = [];
+            foreach ($validated['audio_logs'] as $log) {
+                $audio_logs[$log['item_id']] = [
+                    'played_at' => array_combine($log['played_at'], array_fill(0, count($log['played_at']), true)),
+                ];
+            }
+
             $score = $totalWords > 0 ? round(($correctWords / $totalWords) * 100, 2) : 0;
             $date = now()->toDateTimeString();
 
@@ -894,7 +972,9 @@ class SpecializedLanguageApi extends Controller
                     'status' => "submitted",
                     'submitted_at' => $date,
                     'items' => $attempt_items,
-                    'score' => $score
+                    'score' => $score,
+                    'audio_logs' => $audio_logs,
+                    'answer_logs' => $answer_logs,
                 ]);
 
             return response()->json([
