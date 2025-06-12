@@ -26,6 +26,32 @@ class TeacherApiController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+        $this->storage = (new Factory())
+            ->withServiceAccount($path)
+            ->withDefaultStorageBucket('miolms.firebasestorage.app')
+            ->createStorage();
+    }
+
+    protected function uploadToFirebaseStorage($file, $storagePath)
+    {
+        $bucket = $this->storage->getBucket();
+        $fileName = $file->getClientOriginalName();
+        $firebasePath = "{$storagePath}" . '_' . $fileName;
+
+        $bucket->upload(
+            fopen($file->getRealPath(), 'r'),
+            ['name' => $firebasePath]
+        );
+
+        $object = $bucket->object($firebasePath);
+        $object->update([], ['predefinedAcl' => 'publicRead']);
+
+        return [
+            'name' => $fileName,
+            'path' => $firebasePath,
+            'url'  => "https://storage.googleapis.com/{$bucket->name()}/" . $firebasePath,
+        ];
     }
 
     private function generateUniqueId(string $prefix): string
@@ -41,49 +67,145 @@ class TeacherApiController extends Controller
     }
 
     public function editSubjectAnnouncementApi(Request $request, string $subjectId, string $announcementId){
-        
         $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
 
         $validated = $request->validate([
-            'title'       => 'required|string|max:250',
-            'description' => 'required|string|max:1000',
+            'title'       => 'required|string|max:50',
+            'description' => 'required|string|max:300',
+            'files'       => 'nullable|array',
+            'files.*.file'=> 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,odt,rtf|max:5120',
+            'image_urls'   => 'nullable|array',
+            'image_urls.*' => 'nullable|string|min:1',
+            'urls'        => 'nullable|array',
+            'urls.*.url'  => 'nullable|string|min:1',
+            'date_posted' => 'required|string|min:1'
         ]);
 
         try {
+            $existing = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($existing)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Announcement not found.',
+                ], 404);
+            }
+
+            $existingFiles = [];
+            foreach ($existing['files'] as $file) {
+                $existingFiles[$file['url']] = $file;
+            }
+
+            $files = [];
+            if (!empty($validated['image_urls'])){
+                foreach($validated['image_urls'] as $url){
+                    if(isset($existingFiles[$url])){
+                        $files[] = $existingFiles[$url];
+                    }
+                }
+            }
+
+            if (!empty($validated['files'])) {
+                foreach ($validated['files'] ?? [] as $fileData) {
+                    if (!isset($fileData['file'])) continue;
+                    $file = $fileData['file'];
+                    $file_id = (string) Str::uuid();
+                    $remotePath = "subjects/{$subjectId}/announcements/{$file_id}";
+
+                    $uploadResult = $this->uploadToFirebaseStorage($file, $remotePath);
+                    $files[] = $uploadResult;
+                }
+            }
+
+            $urls = collect($validated['urls'] ?? [])
+                ->pluck('url')
+                ->filter()
+                ->values()
+                ->all();
+
+            $date = now()->toDateTimeString();
+
+            $announcementData = [
+                'title'       => $validated['title'],
+                'description' => $validated['description'],
+                'links'       => $urls,
+                'date_posted' => $validated['date_posted'],
+                'files'       => $files,
+                'updated_at'  => now()->toDateTimeString(),
+                'updated_by'  => $userId
+            ];
+
             $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
-                ->update($validated);
+                ->update($announcementData);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Announcement updated successfully.',
+                'files' => $files,
             ], 200);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Failed to update announcement: ' . $e->getMessage(),
+                'error'   => 'Failed to create announcement: ' . $e->getMessage(),
             ], 500);
         }
     }
 
     public function createSubjectAnnouncementApi(Request $request, string $subjectId)
     {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
         $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string|max:1000',
+            'title'       => 'required|string|max:50',
+            'description' => 'required|string|max:300',
+            'files'       => 'nullable|array',
+            'files.*.file'=> 'nullable|file|mimes:jpg,jpeg,png,pdf,doc,docx,odt,rtf|max:5120',
+            'urls'        => 'nullable|array',
+            'urls.*.url'  => 'nullable|string|min:1',
+            'date_posted' => 'required|string|min:1'
         ]);
 
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        $announcementId = $this->generateUniqueId('ANN');
-
-        $announcementData = [
-            'title'       => $validated['title'],
-            'description' => $validated['description'],
-            'date_posted' => now()->toDateTimeString(),
-        ];
-
         try {
+            $files = [];
+            if (!empty($validated['files'])) {
+                foreach ($validated['files'] ?? [] as $fileData) {
+                    if (!isset($fileData['file'])) continue;
+                    $file = $fileData['file'];
+                    $file_id = (string) Str::uuid();
+                    $remotePath = "subjects/{$subjectId}/announcements/{$file_id}";
+
+                    $uploadResult = $this->uploadToFirebaseStorage($file, $remotePath);
+                    $files[] = $uploadResult;
+                }
+            }
+
+            $urls = collect($validated['urls'] ?? [])
+                ->pluck('url')
+                ->filter()
+                ->values()
+                ->all();
+
+            $date = now()->toDateTimeString();
+
+            $announcementData = [
+                'title'       => $validated['title'],
+                'description' => $validated['description'],
+                'links'       => $urls,
+                'date_posted' => $validated['date_posted'],
+                'files'       => $files,
+                'create_at'   => $date,
+                'created_by'  => $userId
+            ];
+
+            $announcementId = $this->generateUniqueId('ANN');
+
             $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
                 ->set($announcementData);
@@ -91,8 +213,8 @@ class TeacherApiController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Announcement created successfully.',
-                'announcement_id' => $announcementId,
             ], 201);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -106,9 +228,17 @@ class TeacherApiController extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         try {
-            $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
-                ->remove();
+            $ref = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}");
+
+            $snapshot = $ref->getSnapshot();
+            if (! $snapshot->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Announcement not found.',
+                ], 404);
+            }
+            $ref->remove();
 
             return response()->json([
                 'success' => true,

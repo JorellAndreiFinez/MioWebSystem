@@ -125,30 +125,56 @@ class StudentApiController extends Controller
         ], 200);
     }
 
-    public function getSubjectAnnouncementByIdApi(Request $request, string $subjectId, string $announcementId){
+    public function getSubjectAnnouncementByIdApi(Request $request, string $subjectId, string $announcementId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        try{
-            $announcementData = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
-            ->getSnapshot()
-            ->getValue();
+        try {
+            $refPath = "subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}";
+            $snapshot = $this->database
+                ->getReference($refPath)
+                ->getSnapshot()
+                ->getValue();
 
-            if(empty($announcementData)) {
+            if (empty($snapshot)) {
                 return response()->json([
-                    'success' => false,
-                    'error'   => 'Assignment not found.',
+                    'success'     => false,
+                    'announcement'=> null,
+                    'error'       => 'Announcement not found.',
                 ], 404);
             }
 
+            $files = [];
+            if (!empty($snapshot['files']) && is_array($snapshot['files'])) {
+                foreach ($snapshot['files'] as $file) {
+                    if (isset($file['url'])) {
+                        $files[] = $file['url'];
+                    }
+                }
+            }
+
+            $links = !empty($snapshot['links']) && is_array($snapshot['links'])
+                ? $snapshot['links']
+                : [];
+
+            $announcement = [
+                'title'       => $snapshot['title'],
+                'description' => $snapshot['description'],
+                'date_posted' => $snapshot['date_posted'],
+                'links'       => $links,
+                'files'       => $files,
+            ];
+
             return response()->json([
-                'success'    => true,
-                'assignment' => $announcementData,
+                'success'      => true,
+                'announcement' => $announcement,
             ], 200);
-            
+
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'error'   => 'Failed to update announcement: ' . $e->getMessage(),
+                'success'      => false,
+                'announcement' => null,
+                'error'        => 'Failed to fetch announcement: ' . $e->getMessage(),
             ], 500);
         }
     }

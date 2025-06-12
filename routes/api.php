@@ -63,7 +63,7 @@ Route::middleware([
 ])
 ->group(function () {
     Route::post('/subject/{subjectId}/announcement', [TeacherApiController::class, 'createSubjectAnnouncementApi']);
-    Route::put('/subject/{subjectId}/announcement/{announcementId}', [TeacherApiController::class, 'editSubjectAnnouncementApi']);
+    Route::post('/subject/{subjectId}/announcement/{announcementId}', [TeacherApiController::class, 'editSubjectAnnouncementApi']);
     Route::delete('/subject/{subjectId}/announcement/{announcementId}', [TeacherApiController::class, 'deleteSubjectAnnouncementApi']);
     
     Route::post('/subject/{subjectId}/assignment', [TeacherApiController::class, 'createAssignmentApi']);
