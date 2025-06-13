@@ -7,8 +7,9 @@
     padding: 80px 100px;
     text-align: left;
     overflow: hidden;
-    height: 50vh;
+    min-height: 400px; /* allows section to expand */
 }
+
 
 .news-content h2 {
     font-size: 32px;
@@ -19,7 +20,6 @@
 
 .highlight {
     color: #ffca28;
-    display: inline-block;
     border-bottom: 4px solid #ffca28;
 }
 
@@ -93,6 +93,7 @@
 @media (max-width: 768px) {
     .news-section {
         padding: 80px 100px;
+        text-align: center;
     }
     .news-content h2 {
         font-size: 28px;
@@ -130,6 +131,7 @@
     margin: 40px auto;
     padding: 20px;
     border-radius: 8px;
+    transition: transform 0.3s;
 }
 
 .article-date {
@@ -178,6 +180,10 @@ hr {
     content: "";
     display: block;
     clear: both;
+}
+
+.news-article:hover {
+    transform: scale(1.02);
 }
 
 @media (max-width: 768px) {
@@ -263,8 +269,12 @@ hr {
     max-width: 1200px;
     margin: 40px auto;
     padding: 20px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
+    transition: transform 0.3s;
+}
+
+.third-container:hover {
+    transform: scale(1.02);
 }
 
 

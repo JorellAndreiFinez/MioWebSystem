@@ -22,10 +22,10 @@
 
 <div class="mission-section">
     <div class="mission-content">
-        <span class="highlight">OUR MISSION</span>
+        <span class="highlight">OUR GOAL</span>
         <h2>Empower Deaf Children</h2>
         <p>
-            The mission of the SERGIA ESGUERRA MEMORIAL FOUNDATION, Inc. (SEMFI) through its two successful school projects. Our whole history, educational philosophy, and programs revolve around this simple, yet powerful, statement.
+            The goal of the SERGIA ESGUERRA MEMORIAL FOUNDATION, Inc. (SEMFI) through its three successful school projects. Our whole history, educational philosophy, and programs revolve around this simple, yet powerful, statement.
         </p>
         <div class="mission-cards">
             <!-- Card 1 -->
@@ -35,10 +35,10 @@
                     <span class="dot small"></span>
                 </div>
                 <img src="{{ asset('storage/assets/images/1.2.2 home-pid.png') }}" alt="PID Logo">
-                <h3>The Philippine Institute for the Deaf <div>PID</div> </h3>
+                <h3>The Philippine Institute for the Deaf - PID</h3>
                 <p>
                     Established in 1988, it empowers deaf children to
-                    <i>"listen, learn, and talk."</i>
+                    <i>“listen, learn, and talk.”</i>
                 </p>
             </div>
             <!-- Card 2 -->
@@ -48,10 +48,23 @@
                     <span class="dot small"></span>
                 </div>
                 <img src="{{ asset('storage/assets/images/1.2.4 home-isp.png')}}" alt="ISP Logo">
-                <h3>The Integrated School of the Philippines <div>ISP</div> </h3>
+                <h3>The Integrated School of the Philippines - ISP </h3>
                 <p>
                     Established in 2007, it integrates
                     <i>"speaking"</i> deaf graduates with hearing peers.
+                </p>
+            </div>
+            <!-- Card 3 -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="dot"></span>
+                    <span class="dot small"></span>
+                </div>
+                <img src="{{ asset('storage/assets/images/1.2.3 home-speechlab.png')}}" alt="ISP Logo">
+                <h3>The One-on-one Clinic - SpeechLAB</h3>
+                <p>
+                    Established in order for deaf children to
+                    <i>"find their voice and express their world."</i>
                 </p>
             </div>
         </div>

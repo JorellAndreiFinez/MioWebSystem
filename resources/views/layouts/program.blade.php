@@ -6,13 +6,13 @@
 <body>
 
 <!-- NAVBAR -->
-@include('layouts.navbar');
+@include('layouts.navbar')
 
 <!-- HEADER  -->
-@include('layouts.program.header');
+@include('layouts.program.header')
 
 <!-- CONTENT SECTION -->
-@include('layouts.program.content');
+@include('layouts.program.content')
 
 <!----- FOOTER ----->
 @extends('layouts.footer')

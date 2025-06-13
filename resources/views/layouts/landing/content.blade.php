@@ -1,25 +1,28 @@
 
 <!-- FIRST PART -->
 
-<div class="first-container">
-    <!-- Image Section -->
-    <div class="image-container">
-      <img src="{{ asset('storage/assets/images/1.3 home-welcome-to-pid.png') }}" alt="Child Image">
+<div class="info-section">
+    <div class="info-content">
+        <div class="info-image">
+            <img src="{{ asset('storage/assets/images/1.3 home-welcome-to-pid.png') }}" alt="Students">
+            <!-- <div class="blue-overlay"></div> -->
+        </div>
+        <div class="info-text">
+            <span class="tagline">WELCOME TO PID</span>
+            <h1>Start Your Journey with Us! </h1>
+            <p>The Philippine Institute for the Deaf (PID) exists for the purpose of insuring that these unique resources are readily available to those young children who need them. With the combined support of the community, young deaf children in the Philippines continue to have the opportunity to listen, learn, and talk.</p>
+            <a href="{{ route('about') }}" class="about-btn">ABOUT US</a>
+
+        </div>
     </div>
+</div>
 
-    <!-- Text Section -->
-    <div class="text-container">
-      <h1>Welcome to PID,  Where Learning Begins! </h1>
-      <p>The Philippine Institute for the Deaf (PID) exists for the purpose of insuring that these unique resources are readily available to those young children who need them. With the combined support of the community, young deaf children in the Philippines continue to have the opportunity to listen, learn, and talk.</p>
 
-    </div>
-  </div>
+<!-- SECOND PART -->
 
-  <!-- SECOND PART -->
-
-  <div class="second-container">
+<div class="second-container">
   <h5>WHY CHOOSE US</h5>
-  <h2>Why PID is The Best Choice?</h2>
+  <h2>Why PID is a Good Choice?</h2>
   <div class="reasons">
     <!-- Reason 1 -->
     <div class="reason">
@@ -42,7 +45,7 @@
     <!-- Reason 3 -->
     <div class="reason">
       <div class="icon">
-    <img src="{{ asset('storage/assets/images/1.4.3 home-icon-inclusive-community.png') }}" alt="Inclusive Community">
+        <img src="{{ asset('storage/assets/images/1.4.3 home-icon-inclusive-community.png') }}" alt="Inclusive Community">
       </div>
       <h3>Inclusive Community</h3>
       <p>A welcoming space where students, families, and educators thrive together.</p>
@@ -56,10 +59,10 @@
   <div class="third-div">
     <!-- Left Side - Image and Title -->
     <div class="guide-left">
-      <img src="{{ asset('storage/assets/images/1.1.2 home-slider.png') }}" alt="Classroom" class="guide-image" />
       <div class="guide-title">
         <span class="process-label">PROCESS</span>
-        <h2>Simple Guide to<br>Join Our School</h2>
+        <h2>Simple Guide to Join Our School</h2>
+        <img src="{{ asset('storage/assets/images/1.5 home-simple-guide.png') }}" alt="Classroom" class="guide-image" />
       </div>
     </div>
 
@@ -100,7 +103,7 @@
           <img src="{{ asset('storage/assets/images/icons/waiting-1.png') }}" alt="Wait for First Day">
         </div>
         <div class="step-content">
-          <h3>Wait for First Day</h3>
+          <h3>Ready for School</h3>
           <p>Get ready to start your learning journey!</p>
         </div>
       </div>
@@ -121,7 +124,7 @@
       <p>
         Discover our latest milestones and successes! From student achievements to special events, we celebrate growth, dedication, and excellence in our community. Stay updated and celebrate with us!
       </p>
-      <a href="{{ route('news') }}" class="btn">VIEW STORIES</a>
+      <a href="{{ route('news') }}" class="updates-btn">GO TO NEWS</a>
     </div>
 
     <!-- Right Side - Image -->
@@ -145,7 +148,7 @@
       <div class="program-image">
         <img src="{{ asset('storage/assets/images/1.7.1 home-card-k-12-basic-education.png') }}" alt="K-12 Basic Education" />
       </div>
-      <h3>K-12 Basic Education</h3>
+      <h3>K-12 Basic<br>Education</h3>
     </div>
 
     <!-- Program 2 -->
@@ -153,7 +156,7 @@
       <div class="program-image">
         <img src="{{ asset('storage/assets/images/1.7.2 home-card-home-economics.png') }}" alt="Home Economics" />
       </div>
-      <h3>Home Economics</h3>
+      <h3>Home<br>Economics</h3>
     </div>
 
     <!-- Program 3 -->
@@ -161,7 +164,7 @@
       <div class="program-image">
         <img src="{{ asset('storage/assets/images/1.7.3 home-card-inustrial-arts.png') }}" alt="Industrial Arts" />
       </div>
-      <h3>Industrial Arts</h3>
+      <h3>Industrial<br>Arts</h3>
     </div>
 
     <!-- Program 4 -->
@@ -169,7 +172,7 @@
       <div class="program-image">
         <img src="{{ asset('storage/assets/images/1.7.4 home-card-culinary-skills-development.png') }}" alt="Culinary Skills Development" />
       </div>
-      <h3>Culinary Skills Development</h3>
+      <h3>Culinary Skills<br>Development</h3>
     </div>
   </div>
 </section>

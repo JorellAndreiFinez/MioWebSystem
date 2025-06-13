@@ -43,7 +43,7 @@
         <iframe width="560" height="315" src="https://www.youtube.com/embed/W2HEz9ObCJs?si=M1S1gIYatyRj9eil" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="video-title">Fun Run 2017</div>
-        <a href="#" class="video-button">LEARN MORE</a>
+        <a href="https://www.youtube.com/@bahmshayno" class="video-button" target="_blank" rel="noopener noreferrer">LEARN MORE</a>
     </div>
 </div>
 
@@ -78,6 +78,7 @@
 <!-- FOURTH PART -->
 
 <div class="fourth-container">
+        <img class="bg-image" src="{{ asset('storage/assets/images/6.3 events-posters.png') }}" alt="Students Talking" />
         <!-- Floating Animated Squares -->
         <div class="floating-square square-1"></div>
         <div class="floating-square square-2"></div>
@@ -89,8 +90,6 @@
             <h3>POSTERS</h3>
             <h2>Special Events</h2>
         </div>
-
-
     </div>
 
 

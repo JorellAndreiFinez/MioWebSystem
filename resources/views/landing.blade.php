@@ -24,7 +24,7 @@
 <body>
 
 <!-- NAVBAR -->
-@include('layouts.navbar');
+@include('layouts.navbar')
 
 @include('layouts.landing.header')
 @include('layouts.landing.content')

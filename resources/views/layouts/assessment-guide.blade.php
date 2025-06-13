@@ -17,10 +17,10 @@
 <body>
 
 <!-- NAVBAR -->
-@include('layouts.navbar');
+@include('layouts.navbar')
 
 <!-- CONTENT SECTION -->
-@include('layouts.enroll.processes.assessment-guide');
+@include('layouts.enroll.processes.assessment-guide')
 
 <!----- FOOTER ----->
 @extends('layouts.footer')
