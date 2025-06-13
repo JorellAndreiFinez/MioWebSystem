@@ -81,7 +81,7 @@ Route::middleware([
     Route::get('/subject/{subjectId}/peoples', [TeacherApiController::class, 'getStudents']);
 
     // scores
-    Route::get('/subject/{subjectId}/scores/{activityType}', [TeacherApiController::class, 'getScores']);
+    Route::get('/subject/{subjectId}/scores', [TeacherApiController::class, 'getScores']);
     Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}', [TeacherApiController::class, 'getStudentAttempts']);
     Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}/{attemptId}', [TeacherApiController::class, 'getStudentActivity']);
 

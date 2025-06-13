@@ -441,13 +441,13 @@ class TeacherApiController extends Controller
         }
     }
 
-    public function getScores(Request $request, string $subjectId, string $activityType)
+    public function getScores(Request $request, string $subjectId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         try {
             $activities = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
@@ -459,7 +459,7 @@ class TeacherApiController extends Controller
             }
 
             $attempts = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
@@ -470,18 +470,27 @@ class TeacherApiController extends Controller
 
             $activity_list = [];
 
-            foreach ($activities as $difficultyName => $difficultyActivities) {
-                $lists = [];
+            foreach ($activities as $activityType => $difficultyGroups) {
+                $activity_list[$activityType] = [];
 
-                foreach ($difficultyActivities as $index => $activity) {
-                    $lists[$index] = [
-                        'total_items' => $activity['total'] ?? 0,
-                        'students_answered' => isset($attempts[$index]) ? count($attempts[$index]) : 0,
+                foreach ($difficultyGroups as $difficulty => $activitySet) {
+                    $activityIds = array_keys($activitySet);
+
+                    $studentsAnsweredCount = 0;
+                    if (isset($attempts[$activityType])) {
+                        foreach ($attempts[$activityType] as $studentId => $studentAttempts) {
+                            if (str_starts_with($studentId, 'SPE')) {
+                                $studentsAnsweredCount++;
+                            }
+                        }
+                    }
+
+                    $activity_list[$activityType][$difficulty] = [
+                        'activity_ids' => $activityIds,
+                        'students_answered' => $studentsAnsweredCount,
                         'total_students' => count($peoples)
                     ];
                 }
-
-                $activity_list[$difficultyName] = $lists;
             }
 
             return response()->json([
@@ -496,6 +505,7 @@ class TeacherApiController extends Controller
             ], 500);
         }
     }
+
 
     public function getStudents(Request $request, string $subjectId) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
