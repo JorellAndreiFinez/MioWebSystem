@@ -107,8 +107,6 @@
                 </div>
             </div>
 
-
-
             <!-- schedule information -->
             <div class="form-row">
                 <div class="form-group">

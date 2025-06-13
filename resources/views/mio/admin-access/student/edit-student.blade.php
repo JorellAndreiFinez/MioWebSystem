@@ -201,88 +201,125 @@
             </div>
             </div>
 
-                    <div class="section-header">Parent/Guardian Information</div>
-                        <div class="section-content">
+            <!-- Parent/Guardian Information -->
+            <div class="section-header">Parent/Guardian Information</div>
+            <div class="section-content">
+                <div class="form-row">
+                    <div class="form-group wide">
+                        <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="parent_firstname" placeholder="Parent First Name" required value="{{ $editdata['parent_firstname'] ?? '' }}" />
+                    </div>
 
-                         <div class="form-row">
-                            <div class="form-group wide">
-                                <label>First Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="parent_firstname" placeholder="Parent First Name" required value/>
-                            </div>
+                    <div class="form-group wide">
+                        <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="parent_lastname" placeholder="Parent Last Name" required value="{{ $editdata['parent_lastname'] ?? '' }}" />
+                    </div>
+                </div>
 
-                            <div class="form-group wide">
-                                <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="parent_lastname" placeholder="Parent Last Name" required />
-                            </div>
-                        </div>
+                <hr>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="emergency_contact" placeholder="Emergency Number" required value="{{ $editdata['emergency_contact'] ?? '' }}" />
+                    </div>
+                    <div class="form-group">
+                    <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+                    <select name="parent_role" required>
+                        <option value="" disabled {{ !isset($editdata['parent_role']) ? 'selected' : '' }}>Select role</option>
+                        <option value="father" {{ ($editdata['parent_role'] ?? '') == 'father' ? 'selected' : '' }}>Father</option>
+                        <option value="mother" {{ ($editdata['parent_role'] ?? '') == 'mother' ? 'selected' : '' }}>Mother</option>
+                        <option value="guardian" {{ ($editdata['parent_role'] ?? '') == 'guardian' ? 'selected' : '' }}>Guardian</option>
+                    </select>
+                </div>
 
-                        <hr>
-                              <div class="form-row">
-                                <div class="form-group">
-                                    <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="emergency_contact" placeholder="Emergency Number"  required />
-                                </div>
-                                <div class="form-group">
-                                <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
-                                <select name="parent_role" required>
-                                    <option value="" disabled selected>Select role</option>
-                                    <option value="father">Father</option>
-                                    <option value="mother">Mother</option>
-                                    <option value="guardian">Guardian</option>
-                                </select>
-                            </div>
-                            </div>
+                </div>
+            </div>
 
-                        </div>
+            <!-- Academic Information -->
+            <div class="section-header">Academic Information</div>
+            <div class="section-content">
+                <div class="form-row">
+                    <div class="form-group wide">
+                        <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
+                        <input type="text" name="previous_school" placeholder="Previous School" required value="{{ $editdata['previous_school'] ?? '' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
+                        <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required value="{{ $editdata['previous_grade_level'] ?? '' }}" />
+                    </div>
+                </div>
+                <hr>
+                <div class="form-group">
+                <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
+                <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()">
+                    <option value="" disabled {{ !isset($editdata['enrollment_grade']) ? 'selected' : '' }}>Select one</option>
+                    <option value="kinder" {{ ($editdata['enrollment_grade'] ?? '') == 'kinder' ? 'selected' : '' }}>Kinder</option>
+                    <option value="elementary" {{ ($editdata['enrollment_grade'] ?? '') == 'elementary' ? 'selected' : '' }}>Elementary</option>
+                    <option value="junior-highschool" {{ ($editdata['enrollment_grade'] ?? '') == 'junior-highschool' ? 'selected' : '' }}>Junior High School</option>
+                    <option value="senior-highschool" {{ ($editdata['enrollment_grade'] ?? '') == 'senior-highschool' ? 'selected' : '' }}>Senior High School</option>
+                    <option value="one-on-one-therapy" {{ ($editdata['enrollment_grade'] ?? '') == 'one-on-one-therapy' ? 'selected' : '' }}>One-on-One Therapy</option>
+                </select>
+            </div>
 
-        <div class="section-header">Academic Information</div>
-                        <div class="section-content">
-                            <div class="form-row">
-                                <div class="form-group wide">
-                                    <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="previous_school" placeholder="Previous School" required />
-                                </div>
-                                <div class="form-group">
-                                    <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required />
-                                </div>
-                            </div>
-                            <hr>
-                            <div class="form-group">
-                                <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
-                                <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()">
-                                    <option value="" disabled selected>Select one</option>
-                                    <option value="kinder">Kinder</option>
-                                    <option value="elementary">Elementary</option>
-                                    <option value="junior-highschool">Junior High School</option>
-                                    <option value="senior-highschool">Senior High School</option>
-                                    <option value="one-on-one-therapy">One-on-One Therapy</option>
-                                </select>
-                            </div>
 
-                            <!-- Grade Level Selector (Initially Hidden) -->
-                            <div class="form-group" id="grade_level_group" style="display: none;">
-                                <label>Select Grade Level <span style="color: red; font-weight:700">*</span></label>
-                                <select name="grade_level" id="grade_level">
-                                    <option value="" disabled selected>Select grade level</option>
-                                </select>
-                            </div>
+                <div class="form-group" id="grade_level_group" style="display: none;">
+                    <label>Select Grade Level <span style="color: red; font-weight:700">*</span></label>
+                    <select name="grade_level" id="grade_level">
+                        <option value="" disabled>Select grade level</option>
+                        <option value="{{ $editdata['grade_level'] ?? '' }}" selected>{{ $editdata['grade_level'] ?? '' }}</option>
+                    </select>
+                </div>
 
-                            <!-- Senior High School Strand Selector (Initially Hidden) -->
-                            <div class="form-group" id="strand_group" style="display: none;">
-                                <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
-                                <select name="strand">
-                                    <option value="" disabled selected>Select strand</option>
-                                    <option value="agri-fishery">Agri-Fishery Arts</option>
-                                    <option value="home-economics">Home Economics</option>
-                                    <option value="industrial-arts">Industrial Arts</option>
-                                    <option value="ict">Information, Communications, & Technology</option>
-                                    <option value="entrepreneurship">Entrepreneurship & Financial Management</option>
-                                    <option value="culinary">Culinary Skills Development</option>
-                                    <option value="fashion-beauty">Fashion Beauty Skills</option>
-                                </select>
-                            </div>
-                        </div>
+                <div class="form-group" id="strand_group" style="display: none;">
+                    <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
+                    <select name="strand">
+                        <option value="" disabled>Select strand</option>
+                        @php $strands = ['agri-fishery','home-economics','industrial-arts','ict','entrepreneurship','culinary','fashion-beauty']; @endphp
+                        @foreach ($strands as $strand)
+                            <option value="{{ $strand }}" {{ ($editdata['strand'] ?? '') == $strand ? 'selected' : '' }}>{{ ucwords(str_replace('-', ' ', $strand)) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+
+            <!-- Health Information -->
+            <div class="section-header">Health Information</div>
+            <div class="section-content">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Medical History</label>
+                        <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $editdata['medical_history'] ?? '' }}" />
+                    </div>
+                    <div class="form-group">
+                        <label>Type of Hearing Loss (if applicable)</label>
+                        <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" value="{{ $editdata['hearing_loss'] ?? '' }}" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Do the student identify as? <span style="color: red; font-weight:700">*</span></label>
+                        <select name="hearing_identity" required>
+                            <option value="" disabled>Select one</option>
+                            <option value="deaf" {{ ($editdata['hearing_identity'] ?? '') == 'deaf' ? 'selected' : '' }}>Deaf</option>
+                            <option value="hard-of-hearing" {{ ($editdata['hearing_identity'] ?? '') == 'hard-of-hearing' ? 'selected' : '' }}>Hard of Hearing</option>
+                            <option value="speech-delay" {{ ($editdata['hearing_identity'] ?? '') == 'speech-delay' ? 'selected' : '' }}>Speech Delay</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Assistive Devices Used</label>
+                        <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None" value="{{ $editdata['assistive_devices'] ?? '' }}" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group wide">
+                        <label>Other Notes or Health Concerns</label>
+                        <input type="text" name="health_notes" placeholder="Specify any other relevant information" value="{{ $editdata['health_notes'] ?? '' }}" />
+                    </div>
+                </div>
+            </div>
+
 
 
         <!-- Account Information Section -->
@@ -332,18 +369,6 @@
         </div>
 
       </div>
-
-       <!-- Schedule Section -->
-            <div class="section-header">Schedule Information (For One-on-One Therapy)</div>
-            <div class="section-content" id="schedule-section">
-            <div class="form-row" id="schedule-container">
-                <div class="form-group">
-                <label>Schedule ID</label>
-                <input type="text" name="schedule[]" placeholder="Schedule ID" />
-                </div>
-            </div>
-            <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
-            </div>
  </form>
 </div>
 

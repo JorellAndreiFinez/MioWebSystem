@@ -192,13 +192,20 @@ class FirebaseAuthController extends Controller
                     'grade_level' => 'nullable|string|max:50',
                     'strand' => 'nullable|string|max:50',
 
+                    // Health/Medical info
+                    'medical_history' => 'required|string|max:255',
+                    'hearing_loss' => 'nullable|string|max:255',
+                    'hearing_identity' => 'required|string|in:deaf,hard-of-hearing,speech-delay',
+                    'assistive_devices' => 'nullable|string|max:255',
+                    'health_notes' => 'nullable|string|max:255',
+
+
                     // Account info
                     'username' => 'required|string|max:255',
                     'account_password' => 'required|string|min:6',
                     'account_status' => 'required|in:active,inactive',
 
                     'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                    'schedule' => 'nullable|array',
                 ]);
 
                 $studentIdKey = $request->studentid;
@@ -245,21 +252,20 @@ class FirebaseAuthController extends Controller
                     $sectionGrade = $section['section_grade'] ?? null;
                     $subjects = $this->database->getReference('subjects')->getValue() ?? [];
 
-                    foreach ($subjects as $grade => $subjectGroup) {
-                        if ((string)$sectionGrade === substr($grade, 2)) {
+                    $matchedSubjects = [];
+                    foreach ($subjects as $gradeKey => $subjectGroup) {
+                        $gradeOnly = substr($gradeKey, 2); // assuming format is like "GR1", "GR10"
+                        if ((string) $sectionGrade === $gradeOnly) {
                             foreach ($subjectGroup as $subjId => $subject) {
-                                if (($subject['section_id'] ?? null) == ($section['sectionid'] ?? null)) {
-                                    $subjectId = $subjId;
-                                    break 2;
+                                if (($subject['section_id'] ?? null) === $section['sectionid']) {
+                                    $matchedSubjects[$subjId] = $gradeKey; // retain full key like "GR1"
                                 }
                             }
                         }
                     }
-
-                    if (!$subjectId) {
-                        return redirect()->back()->with('status', 'No related subject found for this section.');
-                    }
                 }
+
+                
 
                 // Create Firebase Auth user
                 try {
@@ -329,13 +335,20 @@ class FirebaseAuthController extends Controller
 
                     'role' => 'student',
                     'profile_picture' => $profilePictureUrl,
-                    'schedule' => $request->schedule,
                     'schoolyear_id' => $activeSchoolYearId,
 
                     'date_created' => Carbon::now()->toDateTimeString(),
                     'date_updated' => Carbon::now()->toDateTimeString(),
                     'last_login' => null,
                     'already_login' => 'false',
+
+                    // Medical info
+                    'medical_history' => $request->medical_history,
+                    'hearing_loss' => $request->hearing_loss,
+                    'hearing_identity' => $request->hearing_identity,
+                    'assistive_devices' => $request->assistive_devices,
+                    'health_notes' => $request->health_notes,
+
                 ];
 
                 // Save student data to Firebase Realtime Database
@@ -352,17 +365,19 @@ class FirebaseAuthController extends Controller
                 }
 
                 // Add student to subject people if section and subject exist
-                if (!empty($sectionId) && isset($section, $subjectId)) {
-                    $subjectGrade = $section['section_grade'];
-
-                    $this->database
-                        ->getReference("subjects/GR{$subjectGrade}/{$subjectId}/people/{$studentIdKey}")
-                        ->set([
-                            'role' => 'student',
-                            'first_name' => $request->first_name,
-                            'last_name' => $request->last_name,
-                        ]);
+                if (!empty($sectionId) && isset($section, $matchedSubjects)) {
+                    foreach ($matchedSubjects as $subjectId => $gradeKey) {
+                        $this->database
+                            ->getReference("subjects/{$gradeKey}/{$subjectId}/people/{$studentIdKey}")
+                            ->set([
+                                'role' => 'student',
+                                'first_name' => $request->first_name,
+                                'last_name' => $request->last_name,
+                            ]);
+                    }
                 }
+
+
 
                 return redirect()->route('mio.students')->with('status', 'Student added successfully!');
             } catch (\Exception $e) {
@@ -461,39 +476,51 @@ class FirebaseAuthController extends Controller
                     'grade_level' => 'nullable|string|max:20',
                     'strand' => 'nullable|string|max:50',
 
+                    // Medical Information
+                    'medical_history' => 'nullable|string',
+                    'hearing_loss' => 'nullable|string',
+                    'hearing_identity' => 'required|string',
+                    'assistive_devices' => 'nullable|string',
+                    'health_notes' => 'nullable|string',
+
+
+
                     // Account Information
                     'studentid' => 'required|string|max:12',
                     'username' => 'required|string|max:255',
                     'account_password' => 'nullable|string|min:6',
                     'account_status' => 'required|in:active,inactive',
 
-                    // Section and Schedule
+                    // Section
                     'section_id' => 'nullable|string|max:20',
-                    'schedule' => 'nullable|array',
-                    'schedule.*' => 'nullable|string|max:50',
+
                 ]);
 
                 $studentIdKey = $request->studentid;
                 $emailInput = $request->email;
                 $usernameInput = $request->username;
 
+                // ✅ Get existing data early for comparison
+                $existingData = $this->database->getReference('users/' . $oldKey)->getValue();
+
                 // Duplicate checks for studentid, email, username
                 $studentsRef = $this->database->getReference('users')->getValue();
                 if (!empty($studentsRef)) {
                     foreach ($studentsRef as $key => $student) {
                         if ($key !== $oldKey) {
-                            if (isset($student['studentid']) && $student['studentid'] == $studentIdKey) {
+                            if (isset($student['studentid']) && $student['studentid'] === $studentIdKey && $studentIdKey !== $oldKey) {
                                 return redirect()->back()->with('status', 'Student ID already exists!')->withInput();
                             }
-                            if (isset($student['email']) && $student['email'] == $emailInput) {
+                            if (isset($student['email']) && $student['email'] === $emailInput && $emailInput !== ($existingData['email'] ?? '')) {
                                 return redirect()->back()->with('status', 'Email already exists!')->withInput();
                             }
-                            if (isset($student['username']) && $student['username'] == $usernameInput) {
+                            if (isset($student['username']) && $student['username'] === $usernameInput && $usernameInput !== ($existingData['username'] ?? '')) {
                                 return redirect()->back()->with('status', 'Username already exists!')->withInput();
                             }
                         }
                     }
                 }
+
 
                 // Handle section and related data as before
                 $sectionId = $request->section_id;
@@ -540,7 +567,6 @@ class FirebaseAuthController extends Controller
                     return redirect()->back()->with('status', 'No active school year found.')->withInput();
                 }
 
-                $existingData = $this->database->getReference('users/' . $oldKey)->getValue();
 
                 // Compose update data including new fields
                 $updateData = [
@@ -572,6 +598,15 @@ class FirebaseAuthController extends Controller
                     'grade_level' => $request->grade_level ?? '',
                     'strand' => $request->strand ?? '',
 
+                    // Medical Info
+                    'medical_history' => $request->medical_history ?? '',
+                    'hearing_loss' => $request->hearing_loss ?? '',
+                    'hearing_identity' => $request->hearing_identity ?? '',
+                    'assistive_devices' => $request->assistive_devices ?? '',
+                    'health_notes' => $request->health_notes ?? '',
+
+
+
                     // Other student info
                     'category' => $request->category ?? ($existingData['category'] ?? ''),
                     'studentid' => $studentIdKey,
@@ -580,7 +615,6 @@ class FirebaseAuthController extends Controller
                     'schoolyear_id' => $activeSchoolYearId,
                     'section_grade' => $sectionGrade ?? '',
                     'username' => $usernameInput,
-                    'schedule' => $request->schedule ?? [],
                     'already_login' => $existingData['already_login'] ?? 'false',
 
                     'account_status' => $request->account_status,
@@ -612,21 +646,48 @@ class FirebaseAuthController extends Controller
 
                 // Update section reference only if section is assigned (you can finish this part)
                 if (!empty($sectionId)) {
-                    $this->database->getReference("sections/{$sectionId}/students/{$newKey}")->set(true);
+                    $this->database->getReference("sections/{$sectionId}/students/{$newKey}")->set([
+                        'first_name' => $request->first_name,
+                        'last_name' => $request->last_name,
+                        'role' => 'student',
+                    ]);
+
                     if ($oldKey !== $newKey) {
                         $this->database->getReference("sections/{$sectionId}/students/{$oldKey}")->remove();
                     }
                 }
 
-                return redirect()->route('students.index')->with('status', 'Student updated successfully.');
+                if (!empty($sectionId)) {
+                    $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+
+                    foreach ($subjects as $gradeLevel => $subjectGroup) {
+                        foreach ($subjectGroup as $subjId => $subject) {
+                            if (($subject['section_id'] ?? null) === $section['sectionid']) {
+                                // Assign student to this subject
+                                $this->database->getReference("subjects/{$gradeLevel}/{$subjId}/people/{$newKey}")->set([
+                                    'first_name' => $request->first_name,
+                                    'last_name' => $request->last_name,
+                                    'role' => 'student',
+                                ]);
+
+                                // Remove old entry if student ID was changed
+                                if ($oldKey !== $newKey) {
+                                    $this->database->getReference("subjects/{$gradeLevel}/{$subjId}/people/{$oldKey}")->remove();
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+
+                return redirect()->route('mio.students')->with('status', 'Student updated successfully.');
 
             } catch (\Exception $e) {
                 return redirect()->back()->with('error', 'Error updating student: ' . $e->getMessage())->withInput();
             }
         }
-
-
-
 
     // DELETE STUDENT
         public function deleteStudent(Request $request, $id)
@@ -746,7 +807,6 @@ class FirebaseAuthController extends Controller
                 'custom_university' => 'nullable|string|max:255',
                 'year_graduated' => 'required|digits:4',
                 'let_passer' => 'nullable|in:Yes,No',
-                'schedule' => 'required|array',
                 'teacherid' => 'required|string|max:12',
                 'category' => 'required|string',
                 'username' => 'required|string|max:255',
@@ -818,7 +878,6 @@ class FirebaseAuthController extends Controller
                 'year_graduated' => $request->year_graduated,
                 'let_passer' => $request->let_passer ?? null,
                 'category' => $request->category,
-                'schedule' => $request->schedule,
                 'teacherid' => $teacherIdKey,
                 'role' => 'teacher',
                 'username' => $request->username,
@@ -929,7 +988,6 @@ class FirebaseAuthController extends Controller
                 'custom_university' => 'nullable|string|max:255',
                 'year_graduated' => 'required|digits:4',
                 'let_passer' => 'nullable|in:Yes,No',
-                'schedule' => 'required|array',
                 'teacherid' => 'required|string|max:12',
                 'category' => 'required|string',
                 'username' => 'required|string|max:255',
@@ -1001,7 +1059,6 @@ class FirebaseAuthController extends Controller
                 'year_graduated' => $request->year_graduated,
                 'let_passer' => $request->let_passer ?? null,
                 'category' => $request->category,
-                'schedule' => $request->schedule,
                 'teacherid' => $teacherIdKey,
                 'role' => 'teacher',
                 'username' => $usernameInput,

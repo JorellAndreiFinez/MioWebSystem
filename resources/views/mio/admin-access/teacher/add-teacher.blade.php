@@ -235,20 +235,6 @@
         </div>
         </div>
 
-
-
-        <!-- Schedule Section -->
-        <div class="section-header">Schedule</div>
-        <div class="section-content" id="schedule-section">
-          <div class="form-row" id="schedule-container">
-            <div class="form-group">
-              <label>Schedule ID</label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" />
-            </div>
-          </div>
-          <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
-        </div>
-
       </div>
 
     </form>
@@ -424,48 +410,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 </script>
 
-
-
-<script>
-    let scheduleCount = 0;
-
-    function addScheduleField() {
-        const section = document.getElementById("schedule-section");
-        const inputsPerRow = 4;
-
-        // Find all current rows
-        let currentRows = section.getElementsByClassName("form-row");
-
-        // Check the last row
-        let lastRow = currentRows[currentRows.length - 1];
-
-        // If no row exists or last row has 4 children, create a new row
-        if (!lastRow || lastRow.children.length >= inputsPerRow) {
-        lastRow = document.createElement("div");
-        lastRow.className = "form-row";
-        section.insertBefore(lastRow, section.querySelector(".add-btn")); // insert before Add button
-        }
-
-        // Create the form-group
-        const formGroup = document.createElement("div");
-        formGroup.className = "form-group";
-        formGroup.style.flex = "1"; // Responsive width
-
-        // Create label and input
-        const label = document.createElement("label");
-        label.innerHTML = `Schedule ID <span style="color: red; font-weight:700">*</span>`;
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.name = "schedule[]";
-        input.placeholder = "Schedule ID";
-            // Append label and input to formGroup
-            formGroup.appendChild(label);
-            formGroup.appendChild(input);
-            // Append formGroup to the lastRow
-            lastRow.appendChild(formGroup);
-        }
-</script>
 
 <script>
 // Get the current date

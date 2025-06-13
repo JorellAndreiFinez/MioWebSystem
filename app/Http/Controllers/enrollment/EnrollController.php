@@ -1705,36 +1705,56 @@ class EnrollController extends Controller
 
             // Save student user in Realtime Database
             $studentData = [
-                'fname' => $form['first_name'] ?? '',
-                'lname' => $form['last_name'] ?? '',
-                'gender' => $form['gender'] ?? '',
-                'age' => $form['age'] ?? '',
-                'bday' => $form['birthday'] ?? '',
-                'address' => $form['address'] ?? '',
-                'barangay' => $form['barangay'] ?? '',
-                'region' => $form['region'] ?? '',
-                'province' => $form['province'] ?? '',
-                'city' => $form['city'] ?? '',
-                'zip_code' => $form['zip_code'] ?? '',
-                'contact_number' => $form['contact_number'] ?? '',
-                'emergency_contact' => $form['emergency_contact'] ?? '',
-                'email' => $email,
-                'previous_school' => $form['previous_school'] ?? '',
-                'previous_grade_level' => $form['previous_grade_level'] ?? '',
-                'category' => $form['category'] ?? '',
-                'studentid' => $studentID,
-                'role' => 'student',
-                'profile_picture' => '',
-                'schoolyear_id' => $activeSchoolYearId,
-                'username' => $username,
-                'password' => Hash::make($hashedPassword),
-                'account_status' => 'active',
-                'date_created' => $now->toDateTimeString(),
-                'date_updated' => $now->toDateTimeString(),
-                'last_login' => null,
-                'already_login' => 'false',
-                'enrollee_id' => $id,
-            ];
+            // Personal Info
+            'fname' => $form['first_name'] ?? '',
+            'lname' => $form['last_name'] ?? '',
+            'gender' => $form['gender'] ?? '',
+            'age' => $form['age'] ?? '',
+            'bday' => $form['birthday'] ?? '',
+            'address' => $form['address'] ?? '',
+            'barangay' => $form['barangay'] ?? '',
+            'region' => $form['region'] ?? '',
+            'province' => $form['province'] ?? '',
+            'city' => $form['city'] ?? '',
+            'zip_code' => $form['zip_code'] ?? '',
+            'contact_number' => $form['contact_number'] ?? '',
+            'emergency_contact' => $form['emergency_contact'] ?? '',
+            'email' => $email,
+
+            // Parent Info
+            'parent_firstname' => $form['parent_firstname'] ?? '',
+            'parent_lastname' => $form['parent_lastname'] ?? '',
+            'parent_role' => $form['parent_role'] ?? '',
+
+            // Academic Info
+            'previous_school' => $form['previous_school'] ?? '',
+            'previous_grade_level' => $form['previous_grade_level'] ?? '',
+            'enrollment_grade' => $form['enrollment_grade'] ?? '',
+            'grade_level' => $form['grade_level'] ?? '',
+            'strand' => $form['strand'] ?? '',
+            'category' => $form['category'] ?? '',
+
+            // Medical Info
+            'medical_history' => $form['medical_history'] ?? '',
+            'hearing_loss' => $form['hearing_loss'] ?? '',
+            'hearing_identity' => $form['hearing_identity'] ?? '',
+            'assistive_devices' => $form['assistive_devices'] ?? '',
+            'health_notes' => $form['health_notes'] ?? '',
+
+            // System Info
+            'studentid' => $studentID,
+            'role' => 'student',
+            'profile_picture' => '',
+            'schoolyear_id' => $activeSchoolYearId,
+            'username' => $username,
+            'password' => Hash::make($hashedPassword),
+            'account_status' => 'active',
+            'date_created' => $now->toDateTimeString(),
+            'date_updated' => $now->toDateTimeString(),
+            'last_login' => null,
+            'already_login' => 'false',
+            'enrollee_id' => $id,
+        ];
 
             $this->database->getReference('users/' . $studentID)->set($studentData);
 

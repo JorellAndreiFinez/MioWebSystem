@@ -162,7 +162,7 @@
                 <div class="card">
                     <div class="card-header">
                         <span>Sections</span>
-                        <span>➡</span>
+                         <a href="{{ route('mio.ViewSection') }}"><span>➡</span></a>
                     </div>
 
                     @foreach ($sectionsData as $section)

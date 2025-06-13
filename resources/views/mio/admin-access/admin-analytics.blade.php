@@ -19,17 +19,25 @@
 </div>
   <div class="second-row">
     <div class="analytics-card-2">
-      <div class="card">
-         <h3>Teacher Distribution</h3>
-        <canvas id="teacherBarChart"></canvas>
-      </div>
+
+    <div class="card">
+        <div class="d-flex justify-between items-center">
+            <h3>Pronunciation Score by Word</h3>
+            <form method="GET" action="{{ route('mio.ViewDataAnalytics') }}">
+                <button class="btn btn-sm bg-blue-500 text-white px-3 py-1 rounded">🔁 Refresh</button>
+            </form>
+        </div>
+        <canvas id="pronunciationChart"></canvas>
+    </div>
+
 
 
     <!-- Line Chart -->
     <div class="card">
-      <h3>Student Development</h3>
-      <canvas id="developmentChart"></canvas>
+        <h3>Total Students Enrolled (by Date)</h3>
+        <canvas id="enrollmentChart" height="100"></canvas>
     </div>
+
 
     </div>
   </div>
@@ -47,9 +55,10 @@
     </div>
 
     <div class="card">
-       <h3>Enrollment by Program</h3>
-      <canvas id="enrollmentPolarChart"></canvas>
-      </div>
+        <h3>Average Logins per User per Week</h3>
+        <canvas id="loginBarChart"></canvas>
+    </div>
+
 
     <!-- Progress Bars -->
     <div class="card">
@@ -100,23 +109,24 @@
 
   // Doughnut Chart
   new Chart(document.getElementById('studentsChart'), {
-    type: 'doughnut',
-    data: {
-      labels: ['Deaf', 'Hard of Hearing', 'Speech Delay', 'Others'],
-      datasets: [{
-        data: [300, 150, 200, 100],
-        backgroundColor: ['#3b82f6', '#93c5fd', '#fbbf24', '#fcd34d'],
-        borderColor: '#fff',
-        borderWidth: 2
-      }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'right' }
-      }
+  type: 'doughnut',
+  data: {
+    labels: ['Deaf', 'Hard of Hearing', 'Speech Delay', 'Others'],
+    datasets: [{
+      data: @json($hearingChartData),
+      backgroundColor: ['#3b82f6', '#93c5fd', '#fbbf24', '#fcd34d'],
+      borderColor: '#fff',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { position: 'right' }
     }
-  });
+  }
+});
+
 
   // Line Chart
   new Chart(document.getElementById('developmentChart'), {
@@ -156,37 +166,35 @@
   });
 
   // Bar Chart
-new Chart(document.getElementById('teacherBarChart'), {
-  type: 'bar',
-  data: {
-    labels: ['Kinder', 'Grade 1', 'Grade 2', 'Grade 3', 'SPED'],
-    datasets: [{
-      label: 'Number of Teachers',
-      data: [10, 20, 15, 12, 8],
-      backgroundColor: [
-        '#3b82f6',
-        '#60a5fa',
-        '#93c5fd',
-        '#bfdbfe',
-        '#1e40af'
-      ],
-      borderWidth: 1
-    }]
-  },
-  options: {
-    responsive: true,
-    scales: {
-      y: {
-        beginAtZero: true
-      }
+    new Chart(document.getElementById('loginBarChart'), {
+    type: 'bar',
+    data: {
+        labels: @json($loginLabels),
+        datasets: [{
+        label: 'Average Logins per Week',
+        data: @json($loginData),
+        backgroundColor: '#60a5fa',
+        borderWidth: 1
+        }]
     },
-    plugins: {
-      legend: {
-        display: false
-      }
+    options: {
+        responsive: true,
+        scales: {
+        y: {
+            beginAtZero: true,
+            title: {
+            display: true,
+            text: 'Average Logins'
+            }
+        }
+        },
+        plugins: {
+        legend: {
+            display: false
+        }
+        }
     }
-  }
-});
+    });
 
 // Polar Area Chart
 new Chart(document.getElementById('enrollmentPolarChart'), {
@@ -212,3 +220,68 @@ new Chart(document.getElementById('enrollmentPolarChart'), {
 
 
 </script>
+
+
+<!-- ENROLLMENT -->
+<script>
+ const ctx = document.getElementById('enrollmentChart').getContext('2d');
+const enrollmentChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: {!! json_encode($enrollmentLabels) !!}, // ['January', ..., 'December']
+    datasets: [
+      {
+        label: 'Registered (created_at)',
+        data: {!! json_encode($createdCounts) !!},
+        borderColor: 'rgba(255, 99, 132, 1)',
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+      },
+      {
+        label: 'Officially Enrolled (enrolled_at)',
+        data: {!! json_encode($enrolledCounts) !!},
+        borderColor: 'rgba(54, 162, 235, 1)',
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        tension: 0.4,
+        fill: true,
+        pointRadius: 4,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      title: {
+        display: true,
+        text: 'Monthly Enrollment Trend (Jan–Dec)'
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      }
+    },
+    scales: {
+      x: {
+        title: {
+          display: true,
+          text: 'Month'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Number of Students'
+        }
+      }
+    }
+  }
+});
+
+</script>
+
+
+
+

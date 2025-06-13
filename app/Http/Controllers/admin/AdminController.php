@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Kreait\Firebase\Exception\Auth\EmailExists;
 use Illuminate\Support\Facades\Session;
 use Kreait\Firebase\Exception\AuthException;
+use Carbon\CarbonPeriod;
 
 class AdminController extends Controller
 {
@@ -44,113 +45,161 @@ class AdminController extends Controller
         }
 
         public function ShowDataAnalytics()
-    {
-        // Reference all subjects (structure: subjects > gradeLevelKey > subjects[])
-        $subjectsRef = $this->database->getReference('subjects');
-        $allSubjects = $subjectsRef->getValue() ?? [];
+        {
+            $enrollees = $this->database
+                ->getReference('enrollment/enrollees')
+                ->getValue() ?? [];
 
-        $specializedSubjects = [];
+            // Labels for January to December
+            $labels = [];
+            $createdCounts = [];
+            $enrolledCounts = [];
 
-        // Loop all subjects by grade level
-        foreach ($allSubjects as $gradeLevelKey => $subjects) {
-            foreach ($subjects as $subject) {
-                // Check if subject is specialized and type speech
-                if (
-                     isset($subject['subjectType']) &&
-                    $subject['subjectType'] === 'specialized' &&
-                    isset($subject['specialized_type']) &&
-                    $subject['specialized_type'] === 'speech'
-                ) {
-                    // Save grade level key & subject for later use
-                    $specializedSubjects[] = [
-                        'gradeLevelKey' => $gradeLevelKey,
-                        'subject' => $subject
-                    ];
-                }
-            }
-        }
-
-        if (empty($specializedSubjects)) {
-            return abort(404, 'No specialized speech subjects found.');
-        }
-
-        $studentScores = [];  // studentId => ['total' => ..., 'count' => ...]
-
-        // Loop through all matched specialized subjects
-        foreach ($specializedSubjects as $item) {
-            $gradeLevelKey = $item['gradeLevelKey'];
-            $subject = $item['subject'];
-            $subjectId = $subject['subject_id'] ?? null;
-
-            if (!$subjectId) {
-                continue;
+            for ($m = 1; $m <= 12; $m++) {
+                $monthName = Carbon::createFromDate(null, $m, 1)->format('F');
+                $labels[] = $monthName;
+                $createdCounts[$monthName] = 0;
+                $enrolledCounts[$monthName] = 0;
             }
 
-            // Get attempts for this subject
-            $attemptsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/attempts");
-            $allAttempts = $attemptsRef->getValue() ?? [];
+            foreach ($enrollees as $enrollee) {
+                foreach (['created_at', 'enrolled_at'] as $type) {
+                    if (!empty($enrollee[$type])) {
+                        $date = Carbon::parse($enrollee[$type]);
+                        $monthName = $date->format('F');
 
-        foreach ($allAttempts as $attemptType => $activityIds) {
-            if (!is_array($activityIds) && !is_object($activityIds)) {
-                // Skip non-iterables
-                continue;
-            }
-            foreach ($activityIds as $activityId => $students) {
-                if (!is_array($students) && !is_object($students)) {
-                    continue;
-                }
-                foreach ($students as $studentId => $attempts) {
-                    if (!is_array($attempts) && !is_object($attempts)) {
-                        continue;
-                    }
-                    foreach ($attempts as $attemptId => $attemptData) {
-                         $score = 0;
-                            $scoreCount = 0;
-
-                            if (isset($attemptData['pronunciation_details'])) {
-                                $score = $attemptData['pronunciation_details']['pte_pronunciation_score'] ?? 0;
-                                $scoreCount = 1;
-                            } else if (isset($attemptData['score'])) {
-                                $score = $attemptData['score'];
-                                $scoreCount = 1;
-                            } else if (isset($attemptData['answers'])) {
-                                $score = count($attemptData['answers']);
-                                $scoreCount = 1;
-                            }
-
-                            if ($scoreCount > 0) {
-                                if (!isset($studentScores[$studentId])) {
-                                    $studentScores[$studentId] = ['total' => 0, 'count' => 0];
-                                }
-                                $studentScores[$studentId]['total'] += $score;
-                                $studentScores[$studentId]['count'] += $scoreCount;
+                        if (in_array($monthName, $labels)) {
+                            if ($type === 'created_at') {
+                                $createdCounts[$monthName]++;
+                            } elseif ($type === 'enrolled_at') {
+                                $enrolledCounts[$monthName]++;
                             }
                         }
                     }
                 }
             }
+
+            $createdData = array_map(fn($month) => $createdCounts[$month], $labels);
+            $enrolledData = array_map(fn($month) => $enrolledCounts[$month], $labels);
+
+            // === NEW: Hearing Identity Doughnut Data ===
+            $users = $this->database
+                ->getReference('users')
+                ->getValue() ?? [];
+
+            $hearingCounts = [
+                'deaf' => 0,
+                'hard-of-hearing' => 0,
+                'speech-delay' => 0,
+                'others' => 0,
+            ];
+
+            foreach ($users as $user) {
+                if (($user['role'] ?? null) === 'student') {
+                    $identity = strtolower(trim($user['hearing_identity'] ?? 'others'));
+
+                    if (in_array($identity, ['deaf', 'hard-of-hearing', 'speech-delay'])) {
+                        $hearingCounts[$identity]++;
+                    } else {
+                        $hearingCounts['others']++;
+                    }
+                }
+            }
+
+            // === NEW: Average Logins per User per Week ===
+            $loginCountsByGrade = [];
+            $studentsPerGrade = [];
+
+            foreach ($users as $user) {
+                if (($user['role'] ?? null) === 'student') {
+                    $rawGrade = strtolower(trim($user['grade_level'] ?? ''));
+
+                    // Normalize grade
+                    $normalized = preg_replace('/^grade[- ]*/', '', $rawGrade);
+
+                    // Assign grade bucket
+                    if (in_array($normalized, ['k', 'kinder', 'kindergarten'])) {
+                        $grade = 'K';
+                    } elseif (is_numeric($normalized)) {
+                        $num = (int)$normalized;
+                        $grade = ($num >= 1 && $num <= 12) ? (string)$num : 'Others';
+                    } else {
+                        $grade = 'Others'; // for missing, empty, or other services
+                    }
+
+                    $created = $user['date_created'] ?? null;
+                    $lastLogin = $user['last_login'] ?? null;
+
+                    if (!isset($loginCountsByGrade[$grade])) {
+                        $loginCountsByGrade[$grade] = 0;
+                        $studentsPerGrade[$grade] = 0;
+                    }
+
+                    if ($created && $lastLogin) {
+                        $createdAt = Carbon::parse($created);
+                        $lastLoginAt = Carbon::parse($lastLogin);
+                        $weeks = max($createdAt->diffInWeeks($lastLoginAt), 1);
+                        $avgLogin = 1 / $weeks;
+
+                        $loginCountsByGrade[$grade] += $avgLogin;
+                        $studentsPerGrade[$grade]++;
+                    }
+                }
+            }
+
+            // Calculate averages
+            $averageLoginsPerGrade = [];
+            foreach ($loginCountsByGrade as $grade => $totalAvgLogins) {
+                $average = $studentsPerGrade[$grade] > 0
+                    ? round($totalAvgLogins / $studentsPerGrade[$grade], 2)
+                    : 0;
+
+                $averageLoginsPerGrade[$grade] = $average;
+            }
+
+            // Custom sort order: K, 1, 2, ..., 12
+            $gradeOrder = array_merge(['K'], range(1, 12), ['Others']);
+            $averageLoginsPerGrade = [];
+
+            foreach ($gradeOrder as $grade) {
+                $key = (string)$grade;
+
+                // Initialize missing grades with 0
+                if (!isset($loginCountsByGrade[$key])) {
+                    $loginCountsByGrade[$key] = 0;
+                    $studentsPerGrade[$key] = 0;
+                }
+
+                $average = $studentsPerGrade[$key] > 0
+                    ? round($loginCountsByGrade[$key] / $studentsPerGrade[$key], 2)
+                    : 0;
+
+                $averageLoginsPerGrade[$key] = $average;
+            }
+
+
+
+
+
+            // Send to view
+            return view('mio.head.admin-panel', [
+                'page' => 'admin-analytics',
+                'enrollmentLabels' => $labels,
+                'createdCounts' => $createdData,
+                'enrolledCounts' => $enrolledData,
+                'hearingChartData' => array_values($hearingCounts), // [deaf, hard-of-hearing, speech-delay, others]
+                'loginLabels' => array_keys($averageLoginsPerGrade),
+                'loginData' => array_values($averageLoginsPerGrade),
+            ]);
         }
 
 
-        // Calculate average score per student
-        $averages = [];
-        foreach ($studentScores as $studentId => $data) {
-            $averages[$studentId] = $data['count'] > 0 ? $data['total'] / $data['count'] : 0;
-        }
 
-        // Prepare data for Chart.js (labels and data arrays)
-        $labels = array_keys($averages);
-        $dataScores = array_values($averages);
 
-        // Pass data to your view for Chart.js rendering
-        return view('mio.head.admin-panel', [
-            'page' => 'admin-analytics',
-            'labels' => json_encode($labels),
-            'dataScores' => json_encode($dataScores),
-            // You could pass all specialized subjects or some aggregate info if needed
-            'subjects' => $specializedSubjects,
-        ]);
-    }
+
+
+
+
 
     public function verifyPassword(Request $request)
     {

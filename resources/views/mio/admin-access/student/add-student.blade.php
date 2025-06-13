@@ -245,6 +245,44 @@
                             </div>
                         </div>
 
+         <!-- Health Information Section -->
+                        <div class="section-header">Health Information</div>
+                        <div class="section-content">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Medical History</label>
+                                    <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." />
+                                </div>
+                                <div class="form-group">
+                                    <label>Type of Hearing Loss (if applicable)</label>
+                                    <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" />
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Do the student identify as? <span style="color: red; font-weight:700">*</span></label>
+                                    <select name="hearing_identity" required>
+                                        <option value="" disabled selected>Select one</option>
+                                        <option value="deaf" >Deaf</option>
+                                        <option value="hard-of-hearing">Hard of Hearing</option>
+                                        <option value="speech-delay">Speech Delay</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Assistive Devices Used</label>
+                                    <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None"/>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group wide">
+                                    <label>Other Notes or Health Concerns</label>
+                                    <input type="text" name="health_notes" placeholder="Specify any other relevant information" />
+                                </div>
+                            </div>
+                        </div>
+
         <!-- Account Information Section -->
         <div class="section-header">Account Information</div>
         <div class="section-content">
@@ -268,16 +306,6 @@
         </div>
         </div>
 
-        <div class="section-header">Schedule (For One-on-one Therapy)</div>
-        <div class="section-content" id="schedule-section">
-          <div class="form-row" id="schedule-container">
-            <div class="form-group">
-              <label>Schedule ID</label>
-              <input type="text" name="schedule[]" placeholder="Schedule ID" />
-            </div>
-          </div>
-          <button type="button" onclick="addScheduleField()" class="add-btn">Add More</button>
-        </div>
 
         </div>
 

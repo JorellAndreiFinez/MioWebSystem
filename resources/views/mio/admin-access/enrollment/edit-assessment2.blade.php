@@ -366,7 +366,22 @@
             // Attach remove option button listener (delegated)
             optionContainer.querySelectorAll('.remove-option').forEach(btn => {
                 btn.addEventListener('click', e => {
-                    e.target.closest('.option-item').remove();
+                    const optionItem = e.target.closest('.option-item');
+                    const index = [...optionContainer.children].indexOf(optionItem);
+
+                    // Remove the option
+                    optionItem.remove();
+
+                    // Remove corresponding correct answer option
+                    const removedCorrectInput = correctAnswerOptions.children[index].querySelector('input');
+                    if (removedCorrectInput && removedCorrectInput.checked) {
+                        removedCorrectInput.checked = false;
+                    }
+                    correctAnswerOptions.children[index].remove();
+
+                    // Re-index all remaining options and correct answers
+                    updateOptionKeys(optionContainer, correctAnswerOptions, questionTypeSelect.value);
+
                     // Trigger update of correct answers UI if needed here
                 });
             });

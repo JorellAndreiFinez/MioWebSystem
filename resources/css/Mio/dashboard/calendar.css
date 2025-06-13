@@ -1,9 +1,74 @@
 #calendar {
     width: 100%;
+    min-height: 700px;
+    height: 110%;
+    overflow: hidden;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    grid-template-areas: 'main';
+    height: 100vh;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+
+.main {
+    grid-area: main;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 2rem;
+}
+
+.main-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background-color: #cbbcf6;
+    padding: 1rem;
+    border-radius: 12px;
+    flex: 1 1 100%;
+    min-width: 280px;
+    box-sizing: border-box;
 }
 
 
-/* ------- Agenda View -------  */
+/* Calendar Card - bigger */
+
+.card:first-child {
+    height: 700px;
+}
+
+
+/* Responsive: split second row */
+
+@media (min-width: 768px) {
+    .card:first-child {
+        height: 800px;
+    }
+    .main-cards:nth-child(2) .card {
+        flex: 1 1 calc(33.33% - 1rem);
+        height: 250px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .card:first-child {
+        height: 850px;
+    }
+    .main-cards:nth-child(2) {
+        flex-direction: row;
+    }
+}
+
+
+/* Agenda View Table */
 
 #agendaView>table {
     width: 100%;
@@ -20,114 +85,9 @@
     width: 60%;
 }
 
-#agendaView th {
-    height: 30px;
-    font-size: 14px;
-    vertical-align: text-bottom;
-    font-weight: bold;
-    padding: 10px 0 0 10px;
-}
-
+#agendaView th,
 #agendaView td {
-    height: 30px;
-    padding: 10px 0 0 10px;
     font-size: 14px;
-    vertical-align: text-bottom;
-}
-
-.grid-container {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 20px 1fr 20px;
-    grid-template-areas: 'main';
-    height: 100vh;
-}
-
-.main {
-    grid-area: main;
-}
-
-.main-cards {
-    column-count: 1;
-    column-gap: 20px;
-    margin: 20px;
-}
-
-.card {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    background-color: #cbbcf6;
-    margin-bottom: 0px;
-    -webkit-column-break-inside: avoid;
-    padding: 4px;
-    box-sizing: border-box;
-}
-
-
-/* Force varying heights to simulate dynamic content */
-
-.card:first-child {
-    height: 510px;
-    margin-bottom: 1.5rem;
-}
-
-.card:nth-child(2) {
-    height: 248px;
-    margin-bottom: 1.5rem;
-}
-
-.card:nth-child(3) {
-    height: 248px;
-}
-
-
-/* ✅ Responsive for tablets and up (600px+) */
-
-@media screen and (min-width: 600px) {
-    .main-cards {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    .card {
-        flex: 1 1 calc(50% - 1rem);
-    }
-    .card:first-child {
-        flex: 1 1 100%;
-        height: 520px;
-    }
-}
-
-
-/* ✅ Responsive for large screens (1024px+) */
-
-@media screen and (min-width: 1024px) {
-    .main-cards {
-        column-count: 2;
-        column-gap: 20px;
-    }
-    .card {
-        width: 100%;
-        break-inside: avoid;
-    }
-    .card:first-child {
-        height: 520px;
-    }
-}
-
-@media (max-width: 420px) {
-    .card:first-child {
-        height: 200px;
-    }
-}
-
-
-/* Mobile and Tablet Screen */
-
-@media (max-width: 768px) {
-    .card:first-child {
-        height: 580px;
-    }
+    padding: 10px;
+    vertical-align: middle;
 }

@@ -622,7 +622,9 @@ class SubjectController extends Controller
         $sectionsRaw = $this->database->getReference('sections')->getValue() ?? [];
         $sections = [];
 
-        $modules = $editdata['modules'] ?? [];
+        $modules = $subjectRef['modules'] ?? [];
+        $announcements = $subjectRef['announcements'] ?? [];
+
 
         foreach ($sectionsRaw as $key => $section) {
             $sections[] = [
@@ -633,6 +635,66 @@ class SubjectController extends Controller
             ];
         }
 
+        // Get all subjects for the grade level
+            $subjectsRaw = $this->database->getReference("subjects/{$grade}")->getValue() ?? [];
+
+            // Map of section schedules: section_id => array of schedules
+            $sectionSchedules = [];
+
+            foreach ($subjectsRaw as $subjectID => $subjectData) {
+                if (!isset($subjectData['section_id']) || !isset($subjectData['title'])) continue;
+
+                $occurrenceData = $subjectData['schedule']['occurrence'] ?? [];
+
+                foreach ($occurrenceData as $day => $time) {
+                    $schedule = [
+                        'title' => $subjectData['title'],
+                        'start_time' => $time['start'] ?? null,
+                        'end_time' => $time['end'] ?? null,
+                        'occurrences' => [$day],
+                    ];
+
+                    $section_id = $subjectData['section_id'];
+                    $sectionSchedules[$section_id][] = $schedule;
+                }
+            }
+
+            // 🔽 Add this block to also fetch `schedules/` path
+            $schedulesRef = $this->database->getReference("schedules")->getValue() ?? [];
+
+            foreach ($schedulesRef as $section_id => $scheduleGroup) {
+                foreach ($scheduleGroup as $key => $schedule) {
+                    if (!isset($schedule['title'], $schedule['start_time'], $schedule['end_time'], $schedule['occurrences'])) {
+                        continue;
+                    }
+
+                    $sectionSchedules[$section_id][] = [
+                        'title' => $schedule['title'],
+                        'start_time' => $schedule['start_time'],
+                        'end_time' => $schedule['end_time'],
+                        'occurrences' => is_array($schedule['occurrences']) ? $schedule['occurrences'] : [],
+                    ];
+                }
+            }
+
+
+            // Add this before the `return view(...)` statement
+            $scheduleOccurrences = [];  // Example: ['Monday', 'Tuesday']
+            $scheduleTimes = [];        // Example: ['Monday' => ['start' => '09:00', 'end' => '10:00'], ...]
+
+            if (isset($subjectRef['schedule']['occurrence']) && is_array($subjectRef['schedule']['occurrence'])) {
+                foreach ($subjectRef['schedule']['occurrence'] as $day => $time) {
+                    $scheduleOccurrences[] = $day;
+                    $scheduleTimes[$day] = [
+                        'start' => $time['start'] ?? '',
+                        'end' => $time['end'] ?? ''
+                    ];
+                }
+            }
+
+
+
+
         if ($subjectRef) {
             return view('mio.head.admin-panel', [
                 'page' => 'edit-subject',
@@ -642,6 +704,11 @@ class SubjectController extends Controller
                 'teachers' => $teachers,
                 'sections' => $sections,
                 'modules' => $modules,
+                'announcements' => $announcements,
+                'sectionSchedules' => $sectionSchedules,
+                'scheduleOccurrences' => $scheduleOccurrences,
+                'scheduleTimes' => $scheduleTimes
+
             ]);
         } else {
             return redirect()->route('mio.ViewSubject', ['grade' => $grade])
@@ -662,6 +729,11 @@ class SubjectController extends Controller
             'modules' => 'nullable|array',
             'modules.*.title' => 'required|string|max:255',
             'modules.*.description' => 'nullable|string',
+            'occurrences' => 'required|array',
+            'occurrences.*' => 'in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            'common_start_time' => 'nullable|required_if:sameTimeToggle,on|date_format:H:i',
+            'common_end_time' => 'nullable|required_if:sameTimeToggle,on|date_format:H:i',
+            'day_times' => 'nullable|array',
         ]);
 
         $newSubjectId = $validatedData['subject_id'];
@@ -696,6 +768,27 @@ class SubjectController extends Controller
                 ];
             }
         }
+
+        // Handle Schedule
+        $schedule = [];
+        if ($request->has('occurrences')) {
+            foreach ($request->input('occurrences') as $day) {
+                if ($request->has('sameTimeToggle')) {
+                    $schedule[$day] = [
+                        'start' => $request->input('common_start_time'),
+                        'end' => $request->input('common_end_time'),
+                    ];
+                } else {
+                    $schedule[$day] = [
+                        'start' => $request->input("day_times.$day.start"),
+                        'end' => $request->input("day_times.$day.end"),
+                    ];
+                }
+            }
+        }
+
+        $updateData['schedule'] = $schedule;
+
 
         // Update data in Firebase
         if ($oldSubjectId === $newSubjectId) {

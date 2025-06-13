@@ -18,6 +18,7 @@ use App\Http\Controllers\SpeechaceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\admin\AdminController;
 use App\Http\Controllers\admin\ScheduleController;
+use App\Http\Controllers\CalendarController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
@@ -343,9 +344,12 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
     Route::get('/subject/{subjectId}/announcement/{announcementId}', [StudentController::class, 'showAnnouncementDetails'])->name('mio.announcements-body');
 
 // CALENDAR
-    Route::get('/calendar', function () {
-        return view('mio.head.student-panel', ['page' => 'calendar']);
-    })->name('mio.calendar');
+    Route::get('/calendar', [CalendarController::class, 'showCalendarStudent'])->name('mio.calendar');
+
+    Route::get('/calendar/schedules', [CalendarController::class, 'fetchStudentSchedules'])
+    ->name('calendar.schedules');
+
+// MESSAGE
 
     Route::get('/messages', [MessagingController::class, 'showInbox'])->name('mio.inbox');
     Route::post('/send-message', [MessagingController::class, 'sendMessage'])->name('mio.message-send');
