@@ -146,6 +146,98 @@ class SpecializedSpeechApi extends Controller
         }
     }
 
+    public function checkActiveActivity(Request $request, string $subjectId, string $activityType, string $activityId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        try {
+            $attempts = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $attempts_data = [];
+            foreach($attempts as $attemptId => $attempt){
+                $attempts_data[$attemptId] = [
+                    'score' => $attempt['overall_score'] ?? $attempt['score'] ?? null,
+                    'submitted_at' => $attempt['submitted_at'] ?? null,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully get activity',
+                'attempts' => $attempts_data
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function continueActivity(Request $request, string $subjectId, string $activityType, string $activityId, string $attemptId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        try{
+            $attempt = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($attempt)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attempt not found',
+                ], 404);
+            }
+
+            $bucket = $this->storage->getBucket();
+
+            $items = [];
+            $latestTimestamp = null;
+            $lastAnsweredIndex = -1;
+            foreach ($attempt['answers'] as $index => $answer) {
+                if (!empty($answer['answered_at'])) {
+                    if (!$latestTimestamp || $answer['answered_at'] > $latestTimestamp) {
+                        $latestTimestamp = $answer['answered_at'];
+                        $lastAnsweredIndex = $index;
+                        $lastAnsweredIndex = (int) $index;
+                    }
+                }
+
+                if(empty($answer['image_path'])){
+                    $image_url = $bucket->object($answer['image_path'])->signedUrl(now()->addMinutes(15));
+                    $items[$index] = [
+                        'text' => $answer['text'],
+                        'image_url' => $image_url,
+                    ];
+                }else{
+                    $items[$index] = [
+                        'text' => $answer['text'],
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'flashcards' => $items,
+                'attemptId' => $attemptId,
+                'last_answered' => $lastAnsweredIndex,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function getActivityPictureById(Request $request, string $subjectId, string $activityType, string $difficulty, string $activityId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
@@ -388,7 +480,9 @@ class SpecializedSpeechApi extends Controller
                     'items' => $updated_items,
                     'total' => count($updated_items),
                     'updated_at' => $date,
-                    'updated_by' => $userId
+                    'updated_by' => $userId,
+                    'created_by' => $existing_activity['created_by'] ?? "",
+                    'created_at' => $existing_activity['created_at'] ?? "",
                 ]);
 
             return response()->json([
@@ -445,7 +539,9 @@ class SpecializedSpeechApi extends Controller
                     'items' => $updated_items,
                     'total' => count($updated_items),
                     'updated_at' => $date,
-                    'updated_by' => $userId
+                    'updated_by' => $userId,
+                    'created_by' => $existing_activity['created_by'] ?? "",
+                    'created_at' => $existing_activity['created_at'] ?? "",
                 ]);
 
             return response()->json([

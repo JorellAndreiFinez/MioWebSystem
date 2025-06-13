@@ -656,7 +656,7 @@ class SpecializedLanguageApi extends Controller
             return response()->json([
                 'success' => true,
                 'activity' => $attempt_data,
-                'attempt_id' => $attempt_id,
+                'attemptId' => $attempt_id,
             ],201);
 
         }catch (\Exception $e) {
@@ -721,7 +721,7 @@ class SpecializedLanguageApi extends Controller
             return response()->json([
                 'success' => true,
                 'activity' => $attempt_data,
-                'attempt_id' => $attempt_id,
+                'attemptId' => $attempt_id,
             ],201);
 
         }catch (\Exception $e) {
@@ -982,6 +982,34 @@ class SpecializedLanguageApi extends Controller
                 'message' => "Attempt successfully submitted!",
                 'score' => $score,
             ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function continueLanguageActivity(
+        Request $request,
+        string $subjectId,
+        string $activityId,
+        string $attemptId,
+        string $activityType,
+    ) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        try {
+            $attempt = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            return response()->json([
+                'success' => true,
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([

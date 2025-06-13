@@ -204,7 +204,7 @@ class TeacherApiController extends Controller
                 'created_by'  => $userId
             ];
 
-            $announcementId = $this->generateUniqueId('ANN');
+            $announcementId = $this->generateUniqueId('SUB-ANN');
 
             $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")

@@ -648,6 +648,7 @@ class SpecializedAuditoryApi extends Controller
 
             $initialInfo = [
                 'items' => $items,
+                'audios' => $audio,
                 'started_at' => $startedAt,
                 'status' => 'in-progress',
             ];
@@ -671,7 +672,6 @@ class SpecializedAuditoryApi extends Controller
             ], 500);
         }
     }
-
 
     public function startMatchingActivity(
         Request $request,
@@ -796,33 +796,39 @@ class SpecializedAuditoryApi extends Controller
                 $submittedMap[$answer['image_id']] = $answer['selected_at'];
             }
 
-            $score = 0;
             $attemptResult = [];
             $intex = [];
 
+            $rawScore = 0;
+            $totalCorrect = count($activity['correct_answers']);
+
             foreach ($activity['items'] as $index => $item) {
-                if (isset($submittedMap[$index]) && !isset($correctMap[$index])) {
+                $indexKey = (string) $index;
+                if (isset($submittedMap[$indexKey])) {
+                    $isCorrect = isset($correctMap[$indexKey]);
+                    if ($isCorrect) {
+                        $rawScore++;
+                    }
+
                     $attemptResult[] = [
-                        'image_id' => $index,
-                        'is_correct' => false,
+                        'image_id' => $indexKey,
+                        'is_correct' => $isCorrect,
+                        'selected_at' => $submittedMap[$indexKey],
                     ];
 
-                    $intex[] = ['index' => $submittedMap[$index]] ?? [];
-                } else {
-                    $score++;
-                    $attemptResult[] = [
-                        'image_id' => $index,
-                        'is_correct' => true,
-                        'selected_at' => $submittedMap[$index]?? ""
-                    ];
+                    if (!$isCorrect) {
+                        $intex[] = ['index' => $submittedMap[$indexKey]];
+                    }
                 }
             }
+
+            $score = $totalCorrect > 0 ? round(($rawScore / $totalCorrect) * 100) : 0;
 
             $ref->update([
                 'items' => $attemptResult,
                 'score' => $score,
                 'audio_played'=> $validated['audio_played'],
-                'completed_at' => $now,
+                'submitted_at' => $now,
                 'status' => "submitted",
             ]);
 
@@ -874,7 +880,7 @@ class SpecializedAuditoryApi extends Controller
             ], 422);
         }
 
-        try{
+        try {
             $date = now()->toDateTimeString();
 
             $activityData = $this->database
@@ -882,16 +888,14 @@ class SpecializedAuditoryApi extends Controller
                 ->getSnapshot()
                 ->getValue() ?? [];
 
-            $score = 0;
-            $total = count($validated['answers']);
-
             $answerKeyMap = [];
             foreach ($activityData as $item) {
                 $key = $item['audio_id'] . '|' . $item['image_id'];
                 $answerKeyMap[$key] = true;
             }
 
-            $score = 0;
+            $rawScore = 0;
+            $total = count($validated['answers']);
             $items = [];
 
             foreach ($validated['answers'] as $answer) {
@@ -899,7 +903,7 @@ class SpecializedAuditoryApi extends Controller
                 $isCorrect = isset($answerKeyMap[$key]);
 
                 if ($isCorrect) {
-                    $score++;
+                    $rawScore++;
                 }
 
                 $items[] = [
@@ -908,6 +912,8 @@ class SpecializedAuditoryApi extends Controller
                     'correct' => $isCorrect,
                 ];
             }
+
+            $score = $total > 0 ? round(($rawScore / $total) * 100) : 0;
 
             $processedLogs = [];
             foreach ($validated['answerLogs'] as $log) {
@@ -935,6 +941,45 @@ class SpecializedAuditoryApi extends Controller
                 'success' => true,
                 'score' => $score,
             ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function continueBingoActivity(
+        Request $request,
+        string $subjectId,
+        string $activityId,
+        string $attemptId,
+        string $activityType,
+    ) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+        $userId = $request->get('firebase_user_id');
+
+        try {
+            $attempt = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($attempt)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attempt not found',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'attemptId' => $attemptId,
+                'items' => shuffle($attempt['items']) ?? [],
+                'audio_paths' => shuffle($attempt['audios']) ?? [],
+                'total' => isset($attempt['items']) ? count($attempt['items']) : 0,
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
