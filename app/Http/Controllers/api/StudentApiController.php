@@ -44,6 +44,7 @@ class StudentApiController extends Controller
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $role = $request->get('firebase_user_role');
+        $userId = $request->get('firebase_user_id');
 
         $subjects = $this->database
             ->getReference("subjects/GR" . $gradeLevel)
@@ -52,14 +53,16 @@ class StudentApiController extends Controller
 
         $filteredSubjects = [];
         foreach ($subjects as $subjectId => $subjectData) {
-            $filteredSubjects[] = [
-                'subject_id' => $subjectId,
-                'section' => $subjectData['code'] ?? null,
-                'title' => $subjectData['title'] ?? null,
-                'description' => $subjectData['modules']['MOD00']['description'] ?? null,
-                'subjectType' => $subjectData['subjectType'] ?? null,
-                'specialized_type' => $subjectData['specialized_type'] ?? null,
-            ];
+            // if (isset($subjectData['people'][$userId])) {
+                $filteredSubjects[] = [
+                    'subject_id' => $subjectId,
+                    'section' => $subjectData['code'] ?? null,
+                    'title' => $subjectData['title'] ?? null,
+                    'description' => $subjectData['modules']['MOD00']['description'] ?? null,
+                    'subjectType' => $subjectData['subjectType'] ?? null,
+                    'specialized_type' => $subjectData['specialized_type'] ?? null,
+                ];
+            // }
         }
 
         return response()->json([

@@ -50,7 +50,7 @@ Route::middleware([
     Route::get('/subject/{subjectId}/attempts/auditory/{activityType}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'continueBingoActivity']);
     Route::post('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startBingoActivity']);
     Route::post('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}', [SpecializedAuditoryApi::class, 'startMatchingActivity']);
-    Route::put('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
+    Route::post('/subject/{subjectId}/auditory/bingo/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeBingoAttempt']);
     Route::put('/subject/{subjectId}/auditory/matching/{difficulty}/{activityId}/{attemptId}', [SpecializedAuditoryApi::class, 'finalizeMatchingAttempt']);
 
     //language
@@ -77,8 +77,13 @@ Route::middleware([
 
     Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
 
+    //people
+    Route::get('/subject/{subjectId}/peoples', [TeacherApiController::class, 'getStudents']);
+
     // scores
-    Route::get('/subject/{subjectId}/scores/{activityType}/{difficulty}', [TeacherApiController::class, 'getScores']);
+    Route::get('/subject/{subjectId}/scores/{activityType}', [TeacherApiController::class, 'getScores']);
+    Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}', [TeacherApiController::class, 'getStudentAttempts']);
+    Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}/{attemptId}', [TeacherApiController::class, 'getStudentActivity']);
 
     //speech
     Route::get('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'getActivityPictureById']);

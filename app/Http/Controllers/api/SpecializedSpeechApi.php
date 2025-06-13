@@ -50,6 +50,294 @@ class SpecializedSpeechApi extends Controller
         return $announcementId;
     }
 
+    private function generateStudentFeedback(array $phones, float $overallScore = 0): ?string
+    {
+        $excellentScoreTemplates = [
+            "🌟 Excellent pronunciation! You're clearly mastering the sounds!",
+            "🏆 Outstanding! Your pronunciation was very clear — keep it up!",
+            "🎉 Great job! Your speaking score shows strong articulation and confidence.",
+            "👏 Impressive! You pronounced the word with clarity and control.",
+            "💬 That was a sharp and clear performance — keep building on that momentum!",
+            "🚀 You're sounding amazing — your pronunciation is spot-on!",
+            "🌈 Brilliant work! Your overall speech score is showing real progress.",
+            "📣 Loud and clear! You're doing a fantastic job with pronunciation.",
+            "🧠 Great control! Your voice was well-recognized — nicely done!",
+            "🎯 Almost perfect! Your pronunciation is reaching native-like clarity.",
+            "🔥 Fantastic pronunciation! You're developing excellent speech habits.",
+            "🎓 You're speaking like a pro — amazing pronunciation!",
+            "🌟 Wow! That was crystal clear — your voice is getting stronger every time.",
+            "🏅 You nailed it! Your pronunciation is confident and accurate.",
+            "📈 You're leveling up! That pronunciation was top-tier.",
+            "🥇 Gold star performance — your pronunciation skills are shining through!",
+            "🌼 Smooth and natural — your pronunciation flows beautifully.",
+            "🔊 Everything sounded just right — great job with that word!",
+            "🎵 Your voice had rhythm and clarity — very impressive!",
+            "🔑 That was a key step forward — flawless pronunciation!",
+            "📚 You’re sounding fluent — all that practice is really showing!",
+            "💎 Clear and polished! This was one of your best pronunciations yet.",
+            "🎤 Your speech was strong, clear, and easy to understand — keep it up!",
+            "🌠 Your pronunciation sparkled — great clarity and expression!",
+            "💪 Confident delivery and strong articulation — amazing work!",
+            "🌟 Consistent clarity — you’re mastering the sounds so well.",
+            "📣 Your voice rang through perfectly — keep that energy going!",
+            "🧩 Every sound was in place — excellent control and effort!",
+        ];
+
+        if ($overallScore >= 90) {
+            return $excellentScoreTemplates[array_rand($excellentScoreTemplates)];
+        }
+
+        $templates = [
+            "🌟 Nice try! Your '{phone}' sounded like '{sound_most_like}' — you're on the right track!",
+            "👍 You're close! The '{phone}' came out like '{sound_most_like}', but you're improving.",
+            "🗣️ Almost there! Make the '{phone}' sound clearer next time — it was heard as '{sound_most_like}'.",
+            "💪 Good effort! The '{phone}' sounded like '{sound_most_like}' — just a little more focus needed.",
+            "🎯 Getting better! That '{phone}' was heard as '{sound_most_like}', but you're making great progress!",
+            "👏 You're improving! The '{phone}' slipped into '{sound_most_like}', but you're getting there.",
+            "🔊 Oops! The '{phone}' was interpreted as '{sound_most_like}', but it’s okay — that happens.",
+            "🧠 Learning moment: '{sound_most_like}' was heard instead of '{phone}' — great effort overall.",
+            "🎵 The '{phone}' sound needs a bit of tuning — it registered more like '{sound_most_like}'.",
+            "😊 Almost there! Just watch out — your '{phone}' sounded a bit like '{sound_most_like}'.",
+            "🎤 Just a little off — the '{phone}' became '{sound_most_like}'. Keep up the practice!",
+            "🚀 Great progress! Your '{phone}' turned into '{sound_most_like}', but that’s totally normal.",
+            "🔁 That '{phone}' came out like '{sound_most_like}' — you’re definitely improving though.",
+            "😄 Keep it up! Your '{phone}' was almost right, just softened into '{sound_most_like}'.",
+            "📢 Boosting clarity helps! The '{phone}' came out as '{sound_most_like}'. You're learning fast!",
+            "💡 Tip: The '{phone}' sounded like '{sound_most_like}' — check how your mouth moves for that sound.",
+            "🔍 The '{phone}' could be sharper — it leaned toward '{sound_most_like}' this time.",
+            "👐 The '{phone}' was shaped more like '{sound_most_like}' — a great chance to refine it.",
+            "🏁 You're nearly there! The '{phone}' sounded like '{sound_most_like}', but it's all part of progress.",
+            "📣 Your '{phone}' came across as '{sound_most_like}' — still, this is strong progress!",
+            "🥳 So close! The '{phone}' had a hint of '{sound_most_like}', but you're doing great.",
+            "🎉 You're doing great! That '{phone}' just sounded a bit like '{sound_most_like}'.",
+            "📣 The system picked up '{sound_most_like}' instead of '{phone}' — learning happens one sound at a time.",
+            "🚧 That '{phone}' leaned into '{sound_most_like}' — don’t worry, you're building real skills.",
+            "🧱 Building blocks: the '{phone}' sound turned into '{sound_most_like}' — still a great step forward.",
+            "🎬 The '{phone}' didn’t land quite right — it came across as '{sound_most_like}', but this helps us grow.",
+            "🧏 The system picked up '{sound_most_like}' instead of '{phone}', but your progress is showing!",
+            "🎨 That '{phone}' sound blended into '{sound_most_like}' — learning pronunciation is like shaping clay!",
+            "📦 Your '{phone}' was packed a little too close to '{sound_most_like}' — good chance to refine it.",
+            "🔬 Almost clear! Your '{phone}' slipped into '{sound_most_like}' — great focus so far.",
+            "💫 Great energy! The '{phone}' slid into '{sound_most_like}' — small shifts like this help you grow.",
+            "🚀 One small step! That '{phone}' echoed like '{sound_most_like}' — speech is a journey!",
+            "🌿 The '{phone}' sounded like '{sound_most_like}', but small sounds shape big learning!",
+            "🔈 The '{phone}' was heard more like '{sound_most_like}' — a small difference, but you're improving fast.",
+            "🎯 That '{phone}' got mixed with '{sound_most_like}' — and that’s totally okay in learning.",
+            "🎧 According to the system, your '{phone}' was heard more like '{sound_most_like}' — progress detected!",
+            "🌟 Pronunciation update: '{phone}' was detected as '{sound_most_like}' — you’re tuning your sounds well.",
+        ];
+
+        $wrongPhones = array_filter($phones, function ($phone) {
+            return isset($phone['sound_most_like'], $phone['phone']) &&
+                $phone['sound_most_like'] !== $phone['phone'];
+        });
+
+        if (empty($wrongPhones)) {
+            return null;
+        }
+
+        usort($wrongPhones, function ($a, $b) {
+            return ($a['quality_score'] ?? 100) <=> ($b['quality_score'] ?? 100);
+        });
+
+        $worst = $wrongPhones[0];
+        $template = $templates[array_rand($templates)];
+
+        return str_replace(
+            ['{phone}', '{sound_most_like}'],
+            [$worst['phone'], $worst['sound_most_like']],
+            $template
+        );
+    }
+
+    private function generateParentFeedback(array $phones, float $overallScore = 0): string
+    {
+        $praiseTemplates = [
+            "🌟 Your child is making wonderful progress in pronunciation!",
+            "🎉 Great news! Your child’s pronunciation is getting clearer and more confident.",
+            "💬 Your child showed great effort and improvement in speaking today.",
+            "🏆 Your child is showing strong development in speech clarity!",
+            "😊 You should be proud — your child is really growing in pronunciation skills!",
+            "📈 Your child is becoming more confident with every word spoken.",
+            "👏 Excellent effort! Your child’s voice is sounding clearer each time.",
+            "🗣️ Your child’s speaking skills are improving steadily — well done!",
+            "🎯 Strong performance! They're on track with their pronunciation goals.",
+            "📣 Your child is becoming a more confident speaker!",
+            "✨ Your child is learning fast — their pronunciation is improving day by day!",
+            "💡 We noticed clearer sounds and better confidence in your child’s speech.",
+            "🌈 Your child is making exciting progress in their speaking journey!",
+            "🎓 Great improvement — your child is sounding more fluent with every session.",
+            "🌟 Steady and strong! Your child’s effort in pronunciation really stands out.",
+            "🧠 Their hard work is paying off — we’re hearing more clarity each time!",
+            "🗨️ Your child spoke today with more confidence and precision — keep encouraging them!",
+            "📚 Practice is working — your child’s pronunciation is getting smoother.",
+            "📢 The improvement is clear — your child’s voice is getting stronger and more accurate.",
+            "💬 Clearer, louder, more confident — that’s how your child sounded today!",
+            "🌟 A big step forward — your child is mastering new sounds with ease.",
+            "💖 Your child’s voice is becoming clearer — and their confidence is blooming.",
+            "🎵 Their speech is starting to flow more naturally — great job!",
+            "📈 We’re seeing consistent improvement — your child is putting in great effort.",
+            "🚀 Your child is reaching new milestones in pronunciation. Amazing progress!",
+            "🌼 Soft but confident — your child’s pronunciation has noticeably improved.",
+            "🎯 Each attempt gets stronger — your child is working hard and it shows.",
+            "🥇 We’re proud to see how well your child is expressing their words now.",
+            "📋 Your child’s speech clarity was better than ever today!",
+            "🧩 Bit by bit, your child is building excellent speaking skills.",
+            "👂 We heard the progress today — your child is doing wonderfully!",
+            "📣 Louder and clearer — your child’s pronunciation is blossoming.",
+            "📦 That was a solid effort — your child’s growth in speaking is very noticeable.",
+            "💪 Your child is gaining the confidence to pronounce even tricky words.",
+            "🧒 Their improvement is inspiring — thank you for supporting their learning journey!",
+        ];
+
+        $gentlyImproveTemplates = [
+            "🧠 With a bit more practice, your child will pronounce some tricky sounds even better.",
+            "🔍 There are just a few sounds to work on, but your child is clearly improving.",
+            "🧱 A few sounds were a little unclear, but that’s part of the learning journey!",
+            "🌱 A couple of words were challenging, but practice is helping your child grow!",
+            "🎵 There’s a small opportunity to make some sounds clearer — and your child is on the right path.",
+            "📘 Some words could use a little more clarity, but your child is making great strides.",
+            "🗣️ A few sounds still need polishing, but your child is clearly progressing.",
+            "👂 With continued practice, your child’s pronunciation will become even clearer.",
+            "📖 Some tricky sounds popped up today, but your child is learning to handle them well.",
+            "🌤️ A little more focus on certain sounds will go a long way — progress is visible.",
+            "💬 Just a few pronunciation spots to fine-tune — nothing your child can’t handle!",
+            "🧭 Your child is headed in the right direction, with only a few minor pronunciation slips.",
+            "🎯 A few target sounds can still be improved — your child is doing the right work.",
+            "🏗️ Those challenging sounds are just building blocks — your child is laying a great foundation.",
+            "🚧 There were small bumps in pronunciation today, but growth is absolutely happening.",
+            "📈 Some improvements can still be made — but your child is already on track.",
+            "💡 A couple of sounds were tricky, but each session helps refine them.",
+            "🎓 Mastery takes time — your child is working through the hard parts with determination.",
+            "🧩 One or two sounds didn’t come through clearly, but that’s normal in learning.",
+            "🌻 Steady effort is making a difference — even the tough words are improving.",
+            "🎶 Some pronunciations need a little more practice, but the improvement is easy to hear.",
+            "🪴 Growth is happening! A few words need practice, but the progress is real.",
+            "📝 Just a few sounds to revisit — your child is picking things up well.",
+            "🛤️ Slight pronunciation detours today, but the journey is moving forward.",
+            "🔧 A little extra attention on pronunciation will make your child even more confident.",
+            "📢 We noticed a few unclear sounds — but we also noticed a lot of effort.",
+            "🪜 Your child is one step away from mastering those tricky sounds!",
+            "🧠 With focus and practice, those few rough sounds will soon be crystal clear.",
+            "📎 Just a bit more sharpening needed — your child is almost there!",
+            "🫶 These minor sound errors are part of learning — and your child is doing great overall!",
+            "🌈 Just a little more practice and your child will master even the tricky sounds.",
+            "🎯 One or two sounds needed refining today — but your child is clearly on the right path.",
+            "🧠 Your child is absorbing well — just a few sounds left to strengthen.",
+            "🗣️ Their speech is growing stronger, even if a few sounds still need attention.",
+            "📚 A couple of words didn’t come out as clearly, but that’s totally normal at this stage.",
+            "🔁 Consistent practice will smooth out the last few pronunciation hurdles.",
+            "🪶 Some sounds were a little soft — your child is learning to express them with more clarity.",
+            "🔭 There’s room to sharpen just a few sounds — your child is almost there!",
+            "🌟 The effort is there! A small boost in focus will perfect those sounds.",
+            "🧒 Your child may stumble over a sound or two — but every learner does!",
+            "🚸 It’s okay if a few sounds were unclear — they’re still doing an excellent job.",
+            "🛎️ Just a few gentle reminders needed for clearer speech in certain words.",
+            "🗺️ A few mispronunciations popped up, but they’re part of every speaker’s journey.",
+            "🎤 There’s progress in every attempt — even if a few words needed extra effort.",
+            "🎨 Speech is a work of art — and your child is refining the details beautifully.",
+        ];
+
+        if ($overallScore >= 90) {
+            return $praiseTemplates[array_rand($praiseTemplates)];
+        }
+        $wrongPhones = array_filter($phones, function ($phone) {
+            return isset($phone['sound_most_like'], $phone['phone']) &&
+                $phone['sound_most_like'] !== $phone['phone'];
+        });
+
+        if (empty($wrongPhones)) {
+            return $praiseTemplates[array_rand($praiseTemplates)];
+        }
+
+        $praise = $praiseTemplates[array_rand($praiseTemplates)];
+        $tip = $gentlyImproveTemplates[array_rand($gentlyImproveTemplates)];
+
+        return "$praise $tip";
+    }
+
+    public function generateTeacherPronunciationReport(array $data): string
+    {
+        $report = [];
+
+        $wordData = $data['words'][0] ?? null;
+        if (!$wordData) return "No word data found.";
+
+        $word = $wordData['word'] ?? 'N/A';
+        $report[] = "🗂 Pronunciation Report for '{$word}'";
+
+        $cefr = $data['cefr_pronunciation_score'] ?? 'N/A';
+        $ielts = $data['ielts_pronunciation_score'] ?? 'N/A';
+        $toeic = $data['toeic_pronunciation_score'] ?? 'N/A';
+        $pte = $data['pte_pronunciation_score'] ?? 'N/A';
+        $speechace = $data['speechace_pronunciation_score'] ?? 'N/A';
+
+        $report[] = "\n📊 Overall Scores:";
+        $report[] = "• CEFR: {$cefr}";
+        $report[] = "• IELTS: {$ielts}";
+        $report[] = "• TOEIC: {$toeic}";
+        $report[] = "• PTE: {$pte}";
+        $report[] = "• MIÓ: {$speechace}";
+
+        $phonemeIssues = [];
+        foreach ($wordData['phones'] as $phone) {
+            $actual = $phone['phone'] ?? '';
+            $heard = $phone['sound_most_like'] ?? '';
+            $score = $phone['quality_score'] ?? 0;
+
+            if ($actual !== $heard || $score < 95) {
+                $phonemeIssues[] = "• /{$actual}/ ➜ Heard as /{$heard}/ (Score: " . round($score, 1) . ")";
+            }
+
+            if (isset($phone['child_phones'])) {
+                foreach ($phone['child_phones'] as $child) {
+                    $childScore = $child['quality_score'] ?? 0;
+                    $childSound = $child['sound_most_like'] ?? '';
+                    if ($childScore < 95) {
+                        $phonemeIssues[] = "  ↳ Sub-sound heard as /{$childSound}/ (Score: " . round($childScore, 1) . ")";
+                    }
+                }
+            }
+        }
+
+        if (!empty($phonemeIssues)) {
+            $report[] = "\n🎯 Phoneme Accuracy:";
+            $report = array_merge($report, $phonemeIssues);
+        } else {
+            $report[] = "\n🎯 Phoneme Accuracy: All sounds were accurate and clear.";
+        }
+
+        $stressIssues = [];
+        if (isset($wordData['syllables'])) {
+            foreach ($wordData['syllables'] as $syllable) {
+                $letters = $syllable['letters'] ?? '';
+                $actualStress = $syllable['stress_level'] ?? null;
+                $expectedStress = $syllable['predicted_stress_level'] ?? null;
+
+                if ($actualStress !== $expectedStress) {
+                    $stressIssues[] = "• Syllable '{$letters}' stress mismatch (Expected: {$expectedStress}, Got: {$actualStress})";
+                }
+            }
+        }
+
+        if (!empty($stressIssues)) {
+            $report[] = "\n🧭 Stress Accuracy:";
+            $report = array_merge($report, $stressIssues);
+        } else {
+            $report[] = "\n🧭 Stress Accuracy: All syllables had correct stress.";
+        }
+
+        $report[] = "\n📌 Notes:";
+        if (empty($phonemeIssues) && empty($stressIssues)) {
+            $report[] = "No issues detected. Pronunciation is clear and proficient.";
+        } else {
+            $report[] = "Minor issues found. Review flagged sounds and stress patterns for targeted support.";
+        }
+
+        return implode("\n", $report);
+    }
+
+
     private function pronunciationScoreApi(string $audioPath, string $word): array
     {
         $audioPath = Str::after($audioPath, 'public/');
@@ -666,17 +954,31 @@ class SpecializedSpeechApi extends Controller
             $word = $answer['text'];
 
             $pronunciation_details = $this->pronunciationScoreApi($path, $word);
+            $phones = $pronunciation_details['words'][0]['phones'] ?? [];
+            $overallScore = $pronunciation_details['speechace_pronunciation_score'] ?? 0;
+
             $bucket = $this->storage->getBucket();
             $bucket->upload(
                 fopen($file->getPathName(), 'r'),
                 ['name' => $remotePath]
             );
 
+            $student_feedback = $this->generateStudentFeedback($phones, $overallScore);
+            $parent_feedback = $this->generateParentFeedback($phones, $overallScore);
+            $teacher_feedback = $this->generateTeacherPronunciationReport($pronunciation_details);
+
+            $feedbacks = [
+                'student' => $student_feedback,
+                'parent' => $parent_feedback,
+                'teacher' => $teacher_feedback,
+            ];
+
             $now = now()->toDateTimeString();
             $updatedAnswer = [
                 'audio_path' => $remotePath,
                 'answered_at' => $now,
                 'pronunciation_details' => $pronunciation_details,
+                'feedback' => $feedbacks,
             ];
 
             $this->database
@@ -688,6 +990,7 @@ class SpecializedSpeechApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Answer submitted successfully',
+                'feedback' => $student_feedback
             ], 200);
 
         } catch (\Exception $e) {

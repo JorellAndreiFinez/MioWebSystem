@@ -440,4 +440,144 @@ class TeacherApiController extends Controller
             ], 500);
         }
     }
+
+    public function getScores(Request $request, string $subjectId, string $activityType)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $activities = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/specialized/{$activityType}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($activities)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'not found'
+                ]);
+            }
+
+            $attempts = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $peoples = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $activity_list = [];
+
+            foreach ($activities as $difficultyName => $difficultyActivities) {
+                $lists = [];
+
+                foreach ($difficultyActivities as $index => $activity) {
+                    $lists[$index] = [
+                        'total_items' => $activity['total'] ?? 0,
+                        'students_answered' => isset($attempts[$index]) ? count($attempts[$index]) : 0,
+                        'total_students' => count($peoples)
+                    ];
+                }
+
+                $activity_list[$difficultyName] = $lists;
+            }
+
+            return response()->json([
+                'success' => true,
+                'activities' => $activity_list
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getStudents(Request $request, string $subjectId) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $peoples = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->orderByChild("last_name")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            return response()->json([
+                'success' => true,
+                'peoples' => $peoples
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getStudentAttempts(Request $request, string $subjectId, string $activityType, string $activityId, string $userId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $attempts = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}")
+                ->orderByChild("submitted_at")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $filtered = array_filter($attempts, function ($attempt) {
+                return isset($attempt['submitted_at']) && $attempt['submitted_at'] !== null && $attempt['submitted_at'] !== '';
+            });
+
+            return response()->json([
+                'success' => true,
+                'attempts' => $filtered
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getStudentActivity(Request $request, string $subjectId, string $activityType, string $activityId, string $userId, string $attemptId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $attempt = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            
+            $feedbacks = [];
+            foreach($attempt['answers'] as $itemId => $item){
+                $feedbacks[$itemId] = [
+                    'feedback' => $item['feedback']['teacher'] ?? 'No feedback provided'
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'feedbacks' => $feedbacks,
+                'overall_score' => $attempt['overall_score'],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
 }

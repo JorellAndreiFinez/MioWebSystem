@@ -758,20 +758,25 @@ class SpecializedAuditoryApi extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
+
+        
         $validated = $request->validate([
-            'answers' => 'required|array|min:1',
+            'answers' => 'required|array',
             'answers.*.image_id' => 'required|string|min:1',
             'answers.*.selected_at' => 'required|string|min:1',
 
             'audio_played' => 'required|array',
-            'audio_played.*.audio_id' => 'required|string|min:1',
+            'audio_played.*.audio_id' => 'required|string',
             'audio_played.*.played_at' => 'required|array',
             'audio_played.*.played_at.*' => 'required|string',
         ]);
 
+        
+        
+
         try {
             $now = now()->toDateTimeString();
-
+            
             $ref = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/bingo/{$activityId}/{$userId}/{$attemptId}");
 
             $activity = $this->database
@@ -788,7 +793,9 @@ class SpecializedAuditoryApi extends Controller
 
             $correctMap = [];
             foreach ($activity['correct_answers'] as $correct) {
-                $correctMap[$correct] = true;
+                if (is_array($correct) && isset($correct['image_id'])) {
+                    $correctMap[$correct['image_id']] = true;
+                }
             }
 
             $submittedMap = [];
