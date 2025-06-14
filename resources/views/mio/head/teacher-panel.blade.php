@@ -28,7 +28,7 @@
      @elseif($page === 'people')
         @vite(['resources/css/Mio/admin/panel.css', 'resources/js/Mio/admin/panel.js', 'resources/css/Mio/mio-app.css'])
 
-    @elseif (in_array($page, ['add-acads-quiz', 'edit-acads-quiz', 'attendance', 'teacher-settings']))
+    @elseif (in_array($page, ['add-acads-quiz', 'edit-acads-quiz', 'attendance', 'teacher-settings', 'speech-phrase', 'speech-pronunciation', 'speech-picture', 'speech-question', 'auditory-bingo', 'auditory-matching', 'language-fill', 'language-homonym']))
         @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css', 'resources/css/Mio/admin/panel.css'])
         @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/Mio/mio-app.css'])
 
@@ -74,6 +74,26 @@
         @include('mio.teacher-access.subject.quiz.add-acads-quiz')
     @elseif ($page === 'edit-acads-quiz')
         @include('mio.teacher-access.subject.quiz.edit-acads-quiz')
+
+    @elseif ($page === 'speech-phrase')
+        @include('mio.teacher-access.subject.quiz.speech.speech-phrase')
+    @elseif ($page === 'speech-pronunciation')
+        @include('mio.teacher-access.subject.quiz.speech.speech-pronunciation')
+    @elseif ($page === 'speech-picture')
+        @include('mio.teacher-access.subject.quiz.speech.speech-picture')
+    @elseif ($page === 'speech-question')
+        @include('mio.teacher-access.subject.quiz.speech.speech-question')
+
+    @elseif ($page === 'auditory-bingo')
+        @include('mio.teacher-access.subject.quiz.auditory.auditory-bingo')
+    @elseif ($page === 'auditory-matching')
+        @include('mio.teacher-access.subject.quiz.auditory.auditory-matching')
+
+    @elseif ($page === 'language-fill')
+        @include('mio.teacher-access.subject.quiz.language.language-fill')
+    @elseif ($page === 'language-homonym')
+        @include('mio.teacher-access.subject.quiz.language.language-homonym')
+    
 
     @elseif ($page === 'scores')
         @include('mio.teacher-access.subject.score.score')

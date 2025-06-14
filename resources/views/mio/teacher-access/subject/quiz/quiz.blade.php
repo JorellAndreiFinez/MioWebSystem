@@ -10,64 +10,121 @@
             </div>
             </div>
         </main>
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @elseif (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
 
-    <main class="main-assignment-content">
-        @foreach ($quizzes as $quiz)
-            <div class="assignment-card">
-                <div class="activity-info">
-                    <h3>{{ $quiz['title'] ?? 'Untitled Activity' }}</h3>
+        @include("mio.teacher-access.subject.quiz.academics-quiz")
+       
+        @if ($subject['subjectType'] === 'specialized' && $subject['specialized_type'] === 'auditory')
+            <div class="grid-container">
+
+            <!-- Begin Main-->
+            <main class="main">
+                <!--Begin Main Overview-->
+                <div class="main-overview">
+
+                <a href="{{ route('mio.subject-teacher.auditory-bingo', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Bingo</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
                 </div>
+                </a>
 
-                <div class="details">
-                    <div>
-                        <span>Publish at</span>
-                        <strong>
-                             \Carbon\Carbon::parse($quiz['publish_date'] . ' ' . ($quiz['start_time'] ?? '00:00'))->format('F j, Y g:i A')
-
-                        </strong>
-                    </div>
-                    <div>
-                        <span>Deadline</span>
-                        <strong>
-                            @if (!empty($quiz['deadline']))
-                                {{ \Carbon\Carbon::parse(\Carbon\Carbon::parse($quiz['deadline'])->format('Y-m-d') . ' ' . ($quiz['end_time'] ?? '00:00'))->format('F j, Y g:i A') }}
-                            @else
-                                No Due Date
-                            @endif
-                        </strong>
-                    </div>
-
-                        <div>
-                            <span>Points</span>
-                            <strong>{{ $quiz['total'] ?? '0' }}</strong>
-                        </div>
-                    <div>
-                        <span>Attempt/s</span>
-                        <strong>{{ $quiz['attempts'] ?? '1' }}</strong>
-                    </div>
+                <a href="{{ route('mio.subject-teacher.auditory-matching', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Matching Cards</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
                 </div>
+                </a>
+                </div>
+            <!--End Main Overview-->
 
-               <a href="{{ route('mio.subject-teacher.quiz-body', ['subjectId' => $subjectId, 'quizId' => $quiz['id']]) }}" class="take-quiz-btn">View Assignment</a>
 
-                <!-- Trash Icon Button -->
-            <form action="{{ route('mio.subject-teacher.deleteQuiz', ['subjectId' => $subjectId, 'quizId' => $quiz['id']]) }}" method="POST" style="display:inline;">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="delete-btn" style="background: none; border: none; cursor: pointer;">
-                    <i class="fas fa-trash-alt" style="color: red; font-size: 20px;"></i>  <!-- Trash icon -->
-                </button>
-            </form>
-
-            </div>
-        @endforeach
-
-         <div class="assignment-card">
-             <div class="add-assignment-container">
-                <a href="{{ route('mio.subject-teacher.add-acads-quiz', ['subjectId' => $subject['subject_id']]) }}" class="add-assignment-btn" id="openModal">+ Add Quiz</a>
-            </div>
+            </main>
+            <!-- End Main -->
         </div>
+        @endif
 
-    </main>
+
+        @if ($subject['subjectType'] === 'specialized' && $subject['specialized_type'] === 'speech')
+            <div class="grid-container">
+
+            <!-- Begin Main-->
+            <main class="main">
+                <!--Begin Main Overview-->
+                <div class="main-overview">
+
+                <a href="{{ route('mio.subject-teacher.speech-phrase', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Phrase</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+
+                <a href="{{ route('mio.subject-teacher.speech-pronunciation', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Pronunciation</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+
+                <a href="{{ route('mio.subject-teacher.speech-picture', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Picture</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+
+                <a href="{{ route('mio.subject-teacher.speech-question', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Question</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+
+                </div>
+            <!--End Main Overview-->
+
+
+            </main>
+            <!-- End Main -->
+        </div>
+        @endif
+
+        @if ($subject['subjectType'] === 'specialized' && $subject['specialized_type'] === 'language')
+            <div class="grid-container">
+
+            <!-- Begin Main-->
+            <main class="main">
+                <!--Begin Main Overview-->
+                <div class="main-overview">
+
+                <a href="{{ route('mio.subject-teacher.language-fill', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Fill</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+
+                <a href="{{ route('mio.subject-teacher.language-homonym', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
+                        <div class="overviewcard__icon"></div>
+                        <div class="overviewcard__info">Homonyms</div>
+                        <div class="overviewcard__arrow">&rsaquo;</div>
+                </div>
+                </a>
+                </div>
+            <!--End Main Overview-->
+
+
+            </main>
+            <!-- End Main -->
+        </div>
+        @endif
+
+
 
 
 

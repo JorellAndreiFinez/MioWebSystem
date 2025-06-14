@@ -16,6 +16,8 @@ use Google\Cloud\Storage\Bucket;
 use Google\Cloud\Storage\StorageObject;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Session;
+
 
 
 class TeacherController extends Controller
@@ -710,10 +712,10 @@ class TeacherController extends Controller
         }
 
 
-        // TEACHER QUIZZES
+    // TEACHER QUIZZES
         public function showQuizzes($subjectId)
         {
-            // Find grade level key
+            // Find grade level key and subject
             $subjectsRef = $this->database->getReference('subjects');
             $allSubjects = $subjectsRef->getValue() ?? [];
             $gradeLevelKey = null;
@@ -733,7 +735,7 @@ class TeacherController extends Controller
                 return abort(404, 'Subject not found.');
             }
 
-            // Fetch quizzes
+            // Fetch quizzes (optional)
             $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
             $rawQuizzes = $quizzesRef->getValue() ?? [];
 
@@ -743,13 +745,2671 @@ class TeacherController extends Controller
                 $quizzes[] = $quiz;
             }
 
+            // Fetch speech phrases
+            $phrasesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/phrase");
+            $phraseData = $phrasesRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($phraseData as $level => $phrasesByLevel) {
+                foreach ($phrasesByLevel as $setID => $setData) {
+                    $speech[$level][$setID] = [
+                        'activity_title' => $setData['activity_title'] ?? '',
+                        'activity_difficulty' => $setData['activity_difficulty'] ?? $level,
+                        'assessment_id' => $setData['assessment_id'] ?? $setID,
+                        'created_at' => $setData['created_at'] ?? '',
+                        'created_by' => $setData['created_by'] ?? '',
+                        'items' => [],
+                    ];
+
+                    if (isset($setData['items']) && is_array($setData['items'])) {
+                        foreach ($setData['items'] as $itemId => $item) {
+                            $speech[$level][$setID]['items'][$itemId] = [
+                                'text' => $item['text'] ?? '',
+                                'image_url' => $item['image_url'] ?? '',
+                            ];
+                        }
+                    }
+                }
+            }
+
+
+
+
             return view('mio.head.teacher-panel', [
                 'page' => 'quiz',
                 'quizzes' => $quizzes,
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
+                'speech' => $speech, // ⬅️ Add this
             ]);
         }
+
+        public function speechPhrase($subjectId)
+        {
+             // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // Fetch quizzes (optional)
+            $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+            $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+            $quizzes = [];
+            foreach ($rawQuizzes as $key => $quiz) {
+                $quiz['id'] = $key;
+                $quizzes[] = $quiz;
+            }
+
+            // Fetch speech phrases
+            $phrasesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/phrase");
+            $phraseData = $phrasesRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($phraseData as $level => $phrasesByLevel) {
+                foreach ($phrasesByLevel as $setID => $setData) {
+                    $speech[$level][$setID] = [
+                        'activity_title' => $setData['activity_title'] ?? '',
+                        'activity_difficulty' => $setData['activity_difficulty'] ?? $level,
+                        'assessment_id' => $setData['assessment_id'] ?? $setID,
+                        'created_at' => $setData['created_at'] ?? '',
+                        'created_by' => $setData['created_by'] ?? '',
+                        'items' => [],
+                    ];
+
+                    if (isset($setData['items']) && is_array($setData['items'])) {
+                        foreach ($setData['items'] as $itemId => $item) {
+                            $speech[$level][$setID]['items'][$itemId] = [
+                                'text' => $item['text'] ?? '',
+                                'image_path' => $item['image_path'] ?? '',
+                            ];
+                        }
+                    }
+                }
+            }
+
+
+
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'speech-phrase',
+                'quizzes' => $quizzes,
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // ⬅️ Add this
+            ]);
+        }
+
+        public function speechPronunciation($subjectId)
+        {
+             // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // Fetch quizzes (optional)
+            $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+            $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+            $quizzes = [];
+            foreach ($rawQuizzes as $key => $quiz) {
+                $quiz['id'] = $key;
+                $quizzes[] = $quiz;
+            }
+
+            // Fetch speech pronunciation
+            $pronunciationsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/pronunciation");
+            $pronunciationData = $pronunciationsRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($pronunciationData as $level => $pronunciationByLevel) {
+                foreach ($pronunciationByLevel as $setID => $setData) {
+                    $speech[$level][$setID] = [
+                        'activity_title' => $setData['activity_title'] ?? '',
+                        'activity_difficulty' => $setData['activity_difficulty'] ?? $level,
+                        'assessment_id' => $setData['assessment_id'] ?? $setID,
+                        'created_at' => $setData['created_at'] ?? '',
+                        'created_by' => $setData['created_by'] ?? '',
+                        'items' => [],
+                    ];
+
+                    if (isset($setData['items']) && is_array($setData['items'])) {
+                        foreach ($setData['items'] as $itemId => $item) {
+                            $speech[$level][$setID]['items'][$itemId] = [
+                                'text' => $item['text'] ?? '',
+                                'image_path' => $item['image_path'] ?? '',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'speech-pronunciation',
+                'quizzes' => $quizzes,
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // ⬅️ Add this
+            ]);
+        }
+
+        public function speechPicture($subjectId)
+        {
+             // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // Fetch quizzes (optional)
+            $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+            $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+            $quizzes = [];
+            foreach ($rawQuizzes as $key => $quiz) {
+                $quiz['id'] = $key;
+                $quizzes[] = $quiz;
+            }
+
+            // Fetch speech pronunciation
+            $picturesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/picture");
+            $pictureData = $picturesRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($pictureData as $level => $pictureByLevel) {
+                foreach ($pictureByLevel as $setID => $setData) {
+                    $speech[$level][$setID] = [
+                        'activity_title' => $setData['activity_title'] ?? '',
+                        'activity_difficulty' => $setData['activity_difficulty'] ?? $level,
+                        'assessment_id' => $setData['assessment_id'] ?? $setID,
+                        'created_at' => $setData['created_at'] ?? '',
+                        'created_by' => $setData['created_by'] ?? '',
+                        'items' => [],
+                    ];
+
+                    if (isset($setData['items']) && is_array($setData['items'])) {
+                        foreach ($setData['items'] as $itemId => $item) {
+                            $speech[$level][$setID]['items'][$itemId] = [
+                                'text' => $item['text'] ?? '',
+                                'image_path' => $item['image_path'] ?? '',
+                                'image_url' => $item['image_url'] ?? '',
+                            ];
+                        }
+                    }
+                }
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'speech-picture',
+                'quizzes' => $quizzes,
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // ⬅️ Add this
+            ]);
+        }
+
+        public function speechQuestion($subjectId)
+        {
+             // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // Fetch speech pronunciation
+            $questionsRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/question");
+            $questionData = $questionsRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($questionData as $level => $questionByLevel) {
+                foreach ($questionByLevel as $setID => $setData) {
+                    $speech[$level][$setID] = [
+                        'activity_title' => $setData['activity_title'] ?? '',
+                        'created_by' => $setData['created_by'] ?? '',
+                        'created_at' => $setData['created_at'] ?? '', // ✅ Add this line
+                        'items' => []
+                    ];
+
+                    foreach ($setData['items'] as $itemId => $item) {
+                        $choices = [];
+
+                        if (isset($item['choices']) && is_array($item['choices'])) {
+                            foreach ($item['choices'] as $choiceId => $choice) {
+                                $choices[$choiceId] = [
+                                    'text' => $choice['text_choice'] ?? '',
+                                ];
+                            }
+                        }
+
+                        $speech[$level][$setID]['items'][$itemId] = [
+                            'text' => $item['text'] ?? '',
+                            'image_path' => $item['image_path'] ?? '',
+                            'question_text' => $item['text'] ?? '',
+                            'items' => $choices,
+                            'image_url' => $item['image_url']?? '',
+                        ];
+                    }
+                }
+            }
+
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'speech-question',
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // ⬅️ Add this
+            ]);
+        }
+
+    // ----------- SPEECH
+
+        // PHRASE
+        public function addSpeechPhraseActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd'); // YYYYMMDD
+                $activityId = 'SP' . $dateCode . rand(10, 99); // SPYYYYMMDDXX
+
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'total' => count($request->items),
+                ];
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $imagePath = null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $filename = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+
+                        // ✅ Correct bucket usage
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $filename]);
+
+                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($filename) . '?alt=media';
+                    }
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'image_path' => $imagePath,
+                    ];
+                }
+
+                $activityData['items'] = $items;
+
+                // ✅ Locate correct grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Phrase activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add phrase activity: ' . $e->getMessage());
+            }
+        }
+
+        public function editSpeechPhraseActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                    'items.*.speechID' => 'nullable|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // Find grade level from subjects
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = $item['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+
+                    // 🟡 Fix: use old_image_path (from hidden input)
+                    $imagePath = $item['old_image_path'] ?? null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $imageName = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $imageName]);
+
+                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imageName) . '?alt=media';
+                    }
+
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'image_path' => $imagePath,
+                    ];
+                }
+
+                $updatedData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'activity_difficulty' => $difficulty,
+                    'total' => count($items),
+                    'items' => $items,
+                ];
+
+                $this->database->getReference($path)->update($updatedData);
+
+                return back()->with('message', '✅ Phrase activity added successfully!');
+            } catch (\Throwable $e) {
+                 return back()->with('error', 'Failed to add phrase activity: ' . $e->getMessage());
+            }
+        }
+
+        public function deleteSpeechPhraseActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Phrase activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+        // PRONUNCIATION
+
+        public function addSpeechPronunciationActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd'); // YYYYMMDD
+                $activityId = 'SP' . $dateCode . rand(10, 99); // SPYYYYMMDDXX
+
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'total' => count($request->items),
+                ];
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $imagePath = null;
+                    $imageUrl = null;
+                    $filenameOnly = null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+
+                        // Get lowercase text, safe for filenames
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+                        $extension = $file->getClientOriginalExtension();
+                        $filenameOnly = $safeText . '.' . $extension;
+
+                        // Final path with phraseId+text
+                        $storagePath = 'images/speech/picture/' . $phraseId . $filenameOnly;
+
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $storagePath]);
+
+                        $imagePath = $storagePath;
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($storagePath) . '?alt=media';
+                    }
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'filename' => $filenameOnly,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl, // ✅ Added field
+                    ];
+                }
+
+
+                $activityData['items'] = $items;
+
+                // ✅ Locate correct grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/pronunciation/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', 'Pronunciation activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add pronunciation activity: ' . $e->getMessage());
+            }
+        }
+
+        public function editSpeechPronunciationActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                    'items.*.speechID' => 'nullable|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // Find grade level from subjects
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/pronunciation/{$difficulty}/{$activityId}";
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = $item['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+
+                    // 🟡 Fix: use old_image_path (from hidden input)
+                    $imagePath = $item['old_image_path'] ?? null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $imageName = 'images/speech/pronunciation/' . $phraseId . '.' . $file->getClientOriginalExtension();
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $imageName]);
+
+                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imageName) . '?alt=media';
+                    }
+
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'image_path' => $imagePath,
+                    ];
+                }
+
+                $updatedData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'activity_difficulty' => $difficulty,
+                    'total' => count($items),
+                    'items' => $items,
+                ];
+
+                $this->database->getReference($path)->update($updatedData);
+
+                return back()->with('message', '✅ Pronunciation activity added successfully!');
+            } catch (\Throwable $e) {
+                 return back()->with('error', 'Failed to add pronunciation activity: ' . $e->getMessage());
+            }
+        }
+
+        public function deleteSpeechPronunciationActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/pronunciation/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Pronunciation activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+        // PICTURE
+
+        public function addSpeechPictureActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'required|file|image|max:10048',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SP' . $dateCode . rand(10, 99);
+
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'total' => count($request->items),
+                ];
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $imagePath = null;
+                    $imageUrl = null;
+                    $filenameOnly = null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+                        $extension = $file->getClientOriginalExtension();
+                        $filenameOnly = $safeText . '.' . $extension;
+
+                        $storagePath = 'images/speech/picture/' . $phraseId . $filenameOnly;
+
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $storagePath]);
+
+                        $imagePath = $storagePath;
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($storagePath) . '?alt=media';
+                    }
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'filename' => $filenameOnly,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl, // ✅ Set full URL for use in frontend
+                    ];
+                }
+
+                $activityData['items'] = $items;
+
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/picture/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', 'Picture activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add picture activity: ' . $e->getMessage());
+            }
+        }
+
+
+        public function editSpeechPictureActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.speechID' => 'nullable|string',
+                    'items.*.old_image_path' => 'nullable|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // 🔍 Get grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/picture/{$difficulty}/{$activityId}";
+
+                // 🔍 Fetch existing data
+                $currentData = $this->database->getReference($path)->getSnapshot()->getValue();
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = $item['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+                    $imagePath = $item['old_image_path'] ?? null;
+                    $filenameOnly = null;
+                    $imageUrl = null;
+
+                    // ✅ If no new upload, keep old filename from Firebase
+                    if (!$request->hasFile("items.$index.image") && isset($currentData['items'][$phraseId]['filename'])) {
+                        $filenameOnly = $currentData['items'][$phraseId]['filename'];
+                    }
+
+                    // ✅ If new image is uploaded, generate clean filename
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+                        $extension = $file->getClientOriginalExtension();
+                        $filenameOnly = $safeText . '.' . $extension;
+
+                        $storagePath = 'images/speech/picture/' . $phraseId . '/' . $filenameOnly;
+
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $storagePath]);
+
+                        $imagePath = $storagePath;
+                    }
+
+                    if (!$imagePath) {
+                        return back()->with('error', "Each phrase must have an image. Missing image at index " . ($index + 1));
+                    }
+
+                    $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'filename' => $filenameOnly ?? basename($imagePath),
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                    ];
+                }
+
+
+                $updatedData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => $currentData['created_at'] ?? now()->toDateTimeString(),
+                    'created_by' => $currentData['created_by'] ?? $uid,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                    'total' => count($items),
+                    'items' => $items,
+                ];
+
+                $this->database->getReference($path)->update($updatedData);
+
+                return back()->with('message', '📸 Picture activity updated successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to update picture activity: ' . $e->getMessage());
+            }
+        }
+
+        public function deleteSpeechPictureActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/picture/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Picture activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+
+        // QUESTION
+
+        public function addSpeechQuestionActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'questions' => 'required|array|min:1',
+                    'questions.*.question_text' => 'required|string',
+                    'questions.*.question_image' => 'nullable|file|image|max:2048',
+                    'questions.*.items' => 'required|array|min:1',
+                    'questions.*.items.*.text' => 'required|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SP' . $dateCode . rand(10, 99); // Activity ID
+
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'total' => count($request->questions),
+                ];
+
+                $items = [];
+
+                foreach ($request->questions as $qIndex => $question) {
+                    $speechId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $imagePath = null;
+                    $imageUrl = null;
+
+                    if ($request->hasFile("questions.$qIndex.question_image")) {
+                        $file = $request->file("questions.$qIndex.question_image");
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $question['question_text']));
+                        $ext = $file->getClientOriginalExtension();
+                        $filename = $speechId . $safeText . '.' . $ext;
+                        $storagePath = 'images/speech/question/' . $filename;
+
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($uploadedFile, ['name' => $storagePath]);
+
+                        $imagePath = $storagePath;
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($storagePath) . '?alt=media';
+                    }
+
+                    // Choices with 5-char random IDs
+                    $choices = [];
+                    foreach ($question['items'] as $choice) {
+                        $choiceId = 'CH' . substr(str_shuffle('1234567890'), 0, 3);
+                        $choices[$choiceId] = [
+                            'text_choice' => $choice['text']
+                        ];
+                    }
+
+                    $items[$speechId] = [
+                        'speechID' => $speechId,
+                        'text' => $question['question_text'],
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl, // ✅ Include the public link
+                        'choices' => $choices,
+                    ];
+                }
+
+
+                $activityData['items'] = $items;
+
+                // 🔍 Find correct grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/question/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', 'Speech question activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add speech picture activity: ' . $e->getMessage());
+            }
+        }
+
+
+        public function editSpeechQuestionActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'questions' => 'required|array|min:1',
+                    'questions.*.question_text' => 'required|string',
+                    'questions.*.question_image' => 'nullable|file|image|max:2048',
+                    'questions.*.items' => 'required|array|min:1',
+                    'questions.*.items.*.text' => 'required|string',
+                    'questions.*.speechID' => 'nullable|string',
+                    'questions.*.old_image_path' => 'nullable|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // 🔍 Find grade level from subjects
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/question/{$difficulty}/{$activityId}";
+
+                $items = [];
+
+                foreach ($request->questions as $qIndex => $question) {
+                    $speechId = $question['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+                    $imagePath = $question['old_image_path'] ?? null;
+
+                    // 🖼 Handle new image upload
+                    if ($request->hasFile("questions.$qIndex.question_image")) {
+                        $file = $request->file("questions.$qIndex.question_image");
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $question['question_text']));
+                        $ext = $file->getClientOriginalExtension();
+                        $filename = $speechId . $safeText . '.' . $ext;
+                        $storagePath = 'images/speech/question/' . $filename;
+
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($uploadedFile, ['name' => $storagePath]);
+
+                        $imagePath = $storagePath;
+                    }
+
+                    // ✅ Process choices
+                    $choices = [];
+                    foreach ($question['items'] as $choice) {
+                        $choiceId = 'CH' . substr(str_shuffle('1234567890'), 0, 3);
+                        $choices[$choiceId] = [
+                            'text_choice' => $choice['text']
+                        ];
+                    }
+
+                    $items[$speechId] = [
+                        'speechID' => $speechId,
+                        'text' => $question['question_text'],
+                        'image_path' => $imagePath,
+                        'choices' => $choices,
+                    ];
+                }
+
+                $updatedData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'activity_difficulty' => $difficulty,
+            'total' => count($items),
+            'items' => $items,
+        ];
+
+        $this->database->getReference($path)->update($updatedData);
+
+        return back()->with('message', '✅ Speech question activity updated successfully!');
+    } catch (\Throwable $e) {
+        return back()->with('error', '❌ Failed to update speech question activity: ' . $e->getMessage());
+    }
+}
+
+
+        public function deleteSpeechQuestionActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/question/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Question activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+
+    // ----------- AUDITORY
+
+        public function auditoryBingo($subjectId)
+        {
+            // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // ✅ Fetch BINGO Activities
+            $bingoRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/bingo");
+            $bingoData = $bingoRef->getValue() ?? [];
+
+            $speech = []; // Rename to $bingo if preferred
+
+            foreach (['easy', 'medium', 'hard'] as $difficulty) {
+                if (isset($bingoData[$difficulty])) {
+                    foreach ($bingoData[$difficulty] as $activityId => $activity) {
+                        $speech[$difficulty][$activityId] = [
+                            'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                            'created_at' => $activity['created_at'] ?? '',
+                            'created_by' => $activity['created_by'] ?? '',
+                            'items' => [],
+                            'audio_paths' => $activity['audio_paths'] ?? [],
+                            'correct_answers' => $activity['correct_answers'] ?? [],
+                        ];
+
+                        if (isset($activity['items']) && is_array($activity['items'])) {
+                            foreach ($activity['items'] as $itemId => $item) {
+                                $filename = $item['filename'] ?? '';
+                                $imageUrl = $item['image_url'] ?? (isset($item['image_path']) ? asset('storage/' . $item['image_path']) : '');
+                                $audioUrl = $item['audio_url'] ?? '';
+
+                                // Fallback audio matching: Match audio from audio_paths using itemId or filename basename
+                                if (!$audioUrl) {
+                                    $baseName = pathinfo($filename, PATHINFO_FILENAME);
+                                    foreach (($activity['audio_paths'] ?? []) as $audioId => $audio) {
+                                        $audioBase = pathinfo($audio['filename'] ?? '', PATHINFO_FILENAME);
+                                        if ($audioBase === $baseName || $audioId === $itemId) {
+                                            $audioUrl = $audio['audio_url'] ?? asset('storage/' . ($audio['audio_path'] ?? ''));
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                $speech[$difficulty][$activityId]['items'][$itemId] = [
+                                    'filename' => $filename,
+                                    'image_path' => $item['image_path'] ?? '',
+                                    'image_url' => $imageUrl,
+                                    'audio_url' => $audioUrl,
+                                    'text' => $item['text'] ?? '', // Optional: for displaying/editing text
+                                ];
+                            }
+
+                        }
+                    }
+                }
+    }
+
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'auditory-bingo',
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // This now includes Bingo activities
+            ]);
+        }
+    
+        public function auditoryMatching($subjectId)
+        {
+            // 1. Get grade level and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // 2. Get quizzes (optional)
+            $quizzesRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/quizzes");
+            $rawQuizzes = $quizzesRef->getValue() ?? [];
+
+            $quizzes = [];
+            foreach ($rawQuizzes as $key => $quiz) {
+                $quiz['id'] = $key;
+                $quizzes[] = $quiz;
+            }
+
+            // 3. Fetch auditory matching activities
+            $matchingRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/matching");
+            $rawMatchingData = $matchingRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($rawMatchingData as $difficulty => $activities) {
+                foreach ($activities as $activityId => $activity) {
+                    $items = [];
+
+                    if (isset($activity['items']) && is_array($activity['items'])) {
+                        foreach ($activity['items'] as $item) {
+                            $audioPath = $item['audio_path'] ?? '';
+                            $imagePath = $item['image_path'] ?? '';
+
+                            $items[] = [
+                                'text' => $item['text'] ?? '',
+                                'audio_filename' => $item['audio_filename'] ?? '',
+                                'audio_id' => $item['audio_id'] ?? '',
+                                'audio_path' => $audioPath,
+                                'audio_url' => !empty($audioPath)
+                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
+                                    : null,
+                                'image_filename' => $item['image_filename'] ?? '',
+                                'image_id' => $item['image_id'] ?? '',
+                                'image_path' => $imagePath,
+                                'image_url' => !empty($imagePath)
+                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media'
+                                    : null,
+                            ];
+                        }
+                    }
+
+                    $speech[$difficulty][$activityId] = [
+                        'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                        'created_at' => $activity['created_at'] ?? '',
+                        'total' => $activity['total'] ?? count($items),
+                        'items' => $items,
+                    ];
+                }
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'auditory-matching',
+                'quizzes' => $quizzes,
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech,
+            ]);
+        }
+
+
+        // BINGO
+        public function addAuditoryBingoActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'required|file|image|max:10048',
+                    'items.*.audio' => 'required|file|mimes:mp3,wav,ogg|max:20480',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SPE' . $dateCode . rand(10, 99);
+                $difficulty = $request->difficulty;
+
+                $items = [];
+                $audioPaths = [];
+                $correctAnswers = [];
+
+                foreach ($request->items as $index => $item) {
+                        $itemId = 'PH' . now()->format('Ymd') . str_pad($index + 1, 2, '0', STR_PAD_LEFT); // PH[YYYYMMDD]XX
+
+                        // Clean filename base from text
+                        $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+                        $imageExtension = $request->file("items.$index.image")->getClientOriginalExtension();
+                        $filenameImage = $safeText . '.' . $imageExtension;
+
+                        // Save image to Firebase Storage
+                        $imagePath = "images/auditory/{$itemId}{$filenameImage}";
+                        $imageFile = fopen($request->file("items.$index.image")->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($imageFile, ['name' => $imagePath]);
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+
+                        // Save audio to Firebase Storage
+                        $audioUUID = 'AU' . now()->format('Ymd') . rand(10, 99);
+                        $audioExtension = $request->file("items.$index.audio")->getClientOriginalExtension();
+                        $filenameAudio = $safeText . '.' . $audioExtension;
+                        $audioPath = "audio/auditory/{$audioUUID}{$filenameAudio}";
+                        $audioFile = fopen($request->file("items.$index.audio")->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($audioFile, ['name' => $audioPath]);
+                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+
+                        // Store audio path
+                        $audioPaths[$audioUUID] = [
+                            'audio_path' => $audioPath,
+                            'filename' => $filenameAudio,
+                            'audio_url' => $audioUrl,
+                        ];
+
+                        // Store item
+                        $items[$itemId] = [
+                            'text' => $item['text'],
+                            'filename' => $filenameImage,
+                            'image_path' => $imagePath,
+                            'image_url' => $imageUrl,
+                            'audio_url' => $audioUrl,
+                        ];
+
+                        // Mark as correct if checked
+                        if (!empty($item['is_correct'])) {
+                            $correctAnswers[] = [
+                                'image_id' => $itemId
+                            ];
+                        }
+                    }
+
+
+                // Structure final activity data
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'audio_paths' => $audioPaths,
+                    'correct_answers' => $correctAnswers,
+                    'created_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'items' => $items,
+                    'total' => count($items)
+                ];
+
+                // Get grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                // Save to Firebase
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Auditory Bingo activity saved successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to save Bingo activity: ' . $e->getMessage());
+            }
+        }
+
+
+        public function editAuditoryBingoActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:10048',
+                    'items.*.audio' => 'nullable|file|mimes:mp3,wav,ogg|max:20480',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // Find grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}";
+
+                // Get existing data
+                $existingData = $this->database->getReference($path)->getSnapshot()->getValue();
+                $existingItems = $existingData['items'] ?? [];
+                $existingAudioPaths = $existingData['audio_paths'] ?? [];
+
+                $items = [];
+                $audioPaths = [];
+                $correctAnswers = [];
+
+                foreach ($request->items as $index => $item) {
+                    $itemId = array_keys($existingItems)[$index] ?? ('PH' . now()->format('Ymd') . str_pad($index + 1, 2, '0', STR_PAD_LEFT));
+                    $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+
+                    // Handle image
+                    if (isset($item['image']) && $request->hasFile("items.$index.image")) {
+                        $imageExtension = $request->file("items.$index.image")->getClientOriginalExtension();
+                        $filenameImage = $safeText . '.' . $imageExtension;
+                        $imagePath = "images/auditory/{$itemId}{$filenameImage}";
+                        $imageFile = fopen($request->file("items.$index.image")->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($imageFile, ['name' => $imagePath]);
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+                    } else {
+                        $filenameImage = $existingItems[$itemId]['filename'] ?? '';
+                        $imagePath = $existingItems[$itemId]['image_path'] ?? '';
+                        $imageUrl = $existingItems[$itemId]['image_url'] ?? '';
+                    }
+
+                    // Handle audio
+                    if (isset($item['audio']) && $request->hasFile("items.$index.audio")) {
+                        $audioUUID = 'AU' . now()->format('Ymd') . rand(10, 99);
+                        $audioExtension = $request->file("items.$index.audio")->getClientOriginalExtension();
+                        $filenameAudio = $safeText . '.' . $audioExtension;
+                        $audioPath = "audio/auditory/{$audioUUID}{$filenameAudio}";
+                        $audioFile = fopen($request->file("items.$index.audio")->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($audioFile, ['name' => $audioPath]);
+                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+
+                        $audioPaths[$audioUUID] = [
+                            'audio_path' => $audioPath,
+                            'filename' => $filenameAudio,
+                            'audio_url' => $audioUrl,
+                        ];
+                    } else {
+                        // Copy existing audio UUID and reuse it
+                        $existingAudioUrl = $existingItems[$itemId]['audio_url'] ?? '';
+                        $existingAudioUUID = null;
+
+                        foreach ($existingAudioPaths as $uuid => $data) {
+                            if ($data['audio_url'] === $existingAudioUrl) {
+                                $existingAudioUUID = $uuid;
+                                $audioPaths[$uuid] = $data;
+                                break;
+                            }
+                        }
+
+                        $audioUrl = $existingAudioUrl;
+                    }
+
+                    $items[$itemId] = [
+                        'filename' => $filenameImage,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                        'audio_url' => $audioUrl,
+                    ];
+
+                    if (!empty($item['is_correct'])) {
+                        $correctAnswers[] = [
+                            'image_id' => $itemId
+                        ];
+                    }
+                }
+
+                // Save updated activity
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'audio_paths' => $audioPaths,
+                    'correct_answers' => $correctAnswers,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                    'items' => $items,
+                    'total' => count($items),
+                ];
+
+                $this->database->getReference($path)->update($activityData);
+
+                return back()->with('message', '✅ Auditory Bingo activity updated successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to update Bingo activity: ' . $e->getMessage());
+            }
+        }
+
+
+        public function deleteAuditoryBingoActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/bingo/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    // ✅ Delete images from items
+                    if (isset($activityData['items'])) {
+                        foreach ($activityData['items'] as $item) {
+                            if (!empty($item['image_path'])) {
+                                $this->deleteStorageFile($item['image_path'], $bucket);
+                            }
+                        }
+                    }
+
+                    // ✅ Delete audio files from audio_paths
+                    if (isset($activityData['audio_paths'])) {
+                        foreach ($activityData['audio_paths'] as $audio) {
+                            if (!empty($audio['audio_path'])) {
+                                $this->deleteStorageFile($audio['audio_path'], $bucket);
+                            }
+                        }
+                    }
+
+                    // ✅ Delete the Bingo activity data
+                    $this->database->getReference($path)->remove();
+                }
+
+                return back()->with('message', '🗑️ Auditory Bingo activity and all media deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete Bingo activity: ' . $e->getMessage());
+            }
+        }
+
+        /**
+         * Helper to delete a Firebase Storage file by path.
+         */
+        private function deleteStorageFile($storagePath, $bucket)
+        {
+            // Extract full path directly (already clean like "images/auditory/..." or "audio/auditory/...")
+            $objectName = urldecode($storagePath);
+
+            // Ensure query strings (if any) are removed
+            $objectName = explode('?', $objectName)[0];
+
+            $object = $bucket->object($objectName);
+            if ($object->exists()) {
+                $object->delete();
+            }
+        }
+
+
+        // MATCHING
+        public function addAuditoryMatchingActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'required|file|image|max:10048',
+                    'items.*.audio' => 'required|file|mimes:mp3,wav,ogg|max:20480',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SPE' . $dateCode . rand(10, 99);
+                $difficulty = $request->difficulty;
+
+                $matchingItems = [];
+
+                foreach ($request->items as $index => $item) {
+                    $itemId = 'PH' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT);
+
+                    $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+
+                    // ==== IMAGE ====
+                    $imageFile = $request->file("items.$index.image");
+                    $imageExtension = $imageFile->getClientOriginalExtension();
+                    $imageFilename = $safeText . '.' . $imageExtension;
+                    $imageUUID = (string) Str::uuid();
+                    $imagePath = "images/auditory/{$imageUUID}{$imageFilename}";
+                    $this->storageClient->bucket($this->bucketName)->upload(fopen($imageFile->getRealPath(), 'r'), ['name' => $imagePath]);
+
+                    // ==== AUDIO ====
+                    $audioFile = $request->file("items.$index.audio");
+                    $audioExtension = $audioFile->getClientOriginalExtension();
+                    $audioFilename = $safeText . '.' . $audioExtension;
+                    $audioUUID = (string) Str::uuid();
+                    $audioPath = "audio/auditory/{$audioUUID}{$audioFilename}";
+                    $this->storageClient->bucket($this->bucketName)->upload(fopen($audioFile->getRealPath(), 'r'), ['name' => $audioPath]);
+
+                    // ==== STORE IN /items ====
+                    $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+                    $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+
+                    $this->database->getReference("items/{$itemId}")->set([
+                        'audio_filename' => $audioFilename,
+                        'audio_id' => $audioUUID,
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'image_filename' => $imageFilename,
+                        'image_id' => $imageUUID,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                    ]);
+
+                    // ==== Add to matching activity ====
+                   $matchingItems[] = [
+                        'text' => $item['text'],
+                        'audio_filename' => $audioFilename,
+                        'audio_id' => $audioUUID,
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'image_filename' => $imageFilename,
+                        'image_id' => $imageUUID,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                    ];
+
+                }
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'created_at' => now()->toDateTimeString(),
+                    'items' => $matchingItems,
+                    'total' => count($matchingItems),
+                ];
+
+                // Get grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                // Save to matching activity node
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Matching Card activity saved successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to save Matching activity: ' . $e->getMessage());
+            }
+        }
+
+
+        public function editAuditoryMatchingActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required|string',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:10048',
+                    'items.*.audio' => 'nullable|file|mimes:mp3,wav,ogg|max:20480',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $activityId = $request->activity_id;
+                $difficulty = $request->difficulty;
+                $dateCode = now()->format('Ymd');
+
+                // Find grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}";
+
+                // Get existing data
+                $existingData = $this->database->getReference($path)->getSnapshot()->getValue();
+                $existingItems = $existingData['items'] ?? [];
+
+                $matchingItems = [];
+
+                foreach ($request->items as $index => $item) {
+                    $itemId = array_keys($existingItems)[$index] ?? ('PH' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT));
+                    $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
+
+                    // ==== IMAGE ====
+                    if ($request->hasFile("items.$index.image")) {
+                        $imageUUID = (string) Str::uuid();
+                        $imageFile = $request->file("items.$index.image");
+                        $imageExtension = $imageFile->getClientOriginalExtension();
+                        $imageFilename = $safeText . '.' . $imageExtension;
+                        $imagePath = "images/auditory/{$imageUUID}{$imageFilename}";
+                        $this->storageClient->bucket($this->bucketName)->upload(fopen($imageFile->getRealPath(), 'r'), ['name' => $imagePath]);
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+                    } else {
+                        $imageFilename = $existingItems[$index]['image_filename'] ?? '';
+                        $imagePath = $existingItems[$index]['image_path'] ?? '';
+                        $imageUUID = $existingItems[$index]['image_id'] ?? '';
+                        $imageUrl = $existingItems[$index]['image_url'] ?? '';
+                    }
+
+                    // ==== AUDIO ====
+                    if ($request->hasFile("items.$index.audio")) {
+                        $audioUUID = (string) Str::uuid();
+                        $audioFile = $request->file("items.$index.audio");
+                        $audioExtension = $audioFile->getClientOriginalExtension();
+                        $audioFilename = $safeText . '.' . $audioExtension;
+                        $audioPath = "audio/auditory/{$audioUUID}{$audioFilename}";
+                        $this->storageClient->bucket($this->bucketName)->upload(fopen($audioFile->getRealPath(), 'r'), ['name' => $audioPath]);
+                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+                    } else {
+                        $audioFilename = $existingItems[$index]['audio_filename'] ?? '';
+                        $audioPath = $existingItems[$index]['audio_path'] ?? '';
+                        $audioUUID = $existingItems[$index]['audio_id'] ?? '';
+                        $audioUrl = $existingItems[$index]['audio_url'] ?? '';
+                    }
+
+                    // Store item under /items
+                    $this->database->getReference("items/{$itemId}")->set([
+                        'audio_filename' => $audioFilename,
+                        'audio_id' => $audioUUID,
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'image_filename' => $imageFilename,
+                        'image_id' => $imageUUID,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                    ]);
+
+                    $matchingItems[] = [
+                        'text' => $item['text'],
+                        'audio_filename' => $audioFilename,
+                        'audio_id' => $audioUUID,
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'image_filename' => $imageFilename,
+                        'image_id' => $imageUUID,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                    ];
+                }
+
+                // Update full activity node
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                    'items' => $matchingItems,
+                    'total' => count($matchingItems),
+                ];
+
+                $this->database->getReference($path)->update($activityData);
+
+                return back()->with('message', '✅ Matching Card activity updated successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to update Matching activity: ' . $e->getMessage());
+            }
+        }
+
+        public function deleteAuditoryMatchingActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/matching/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch Matching activity data before deletion
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $item) {
+                        // ✅ Delete image if exists
+                        if (!empty($item['image_path'])) {
+                            $this->deleteStorageFile($item['image_path'], $bucket);
+                        }
+
+                        // ✅ Delete audio if exists
+                        if (!empty($item['audio_path'])) {
+                            $this->deleteStorageFile($item['audio_path'], $bucket);
+                        }
+                    }
+
+                    // ✅ Delete the entire matching activity node
+                    $this->database->getReference($path)->remove();
+                }
+
+                return back()->with('message', '🗑️ Matching Card activity and its media deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete Matching activity: ' . $e->getMessage());
+            }
+        }
+
+        // ----------- LANGUAGE
+
+        public function languageHomonym($subjectId)
+        {
+            // Find grade level key and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // ✅ Fetch BINGO Activities
+            $bingoRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/bingo");
+            $bingoData = $bingoRef->getValue() ?? [];
+
+            $speech = []; // Rename to $bingo if preferred
+
+            foreach (['easy', 'medium', 'hard'] as $difficulty) {
+                if (isset($bingoData[$difficulty])) {
+                    foreach ($bingoData[$difficulty] as $activityId => $activity) {
+                        $speech[$difficulty][$activityId] = [
+                            'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                            'created_at' => $activity['created_at'] ?? '',
+                            'created_by' => $activity['created_by'] ?? '',
+                            'items' => [],
+                            'audio_paths' => $activity['audio_paths'] ?? [],
+                            'correct_answers' => $activity['correct_answers'] ?? [],
+                        ];
+
+                        if (isset($activity['items']) && is_array($activity['items'])) {
+                            foreach ($activity['items'] as $itemId => $item) {
+                                $filename = $item['filename'] ?? '';
+                                $imageUrl = $item['image_url'] ?? (isset($item['image_path']) ? asset('storage/' . $item['image_path']) : '');
+                                $audioUrl = $item['audio_url'] ?? '';
+
+                                // Fallback audio matching: Match audio from audio_paths using itemId or filename basename
+                                if (!$audioUrl) {
+                                    $baseName = pathinfo($filename, PATHINFO_FILENAME);
+                                    foreach (($activity['audio_paths'] ?? []) as $audioId => $audio) {
+                                        $audioBase = pathinfo($audio['filename'] ?? '', PATHINFO_FILENAME);
+                                        if ($audioBase === $baseName || $audioId === $itemId) {
+                                            $audioUrl = $audio['audio_url'] ?? asset('storage/' . ($audio['audio_path'] ?? ''));
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                $speech[$difficulty][$activityId]['items'][$itemId] = [
+                                    'filename' => $filename,
+                                    'image_path' => $item['image_path'] ?? '',
+                                    'image_url' => $imageUrl,
+                                    'audio_url' => $audioUrl,
+                                    'text' => $item['text'] ?? '', // Optional: for displaying/editing text
+                                ];
+                            }
+
+                        }
+                    }
+                }
+    }
+
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'auditory-bingo',
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech, // This now includes Bingo activities
+            ]);
+        }
+    
+        public function languageFill($subjectId)
+        {
+            // 1. Get grade level and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // 2. Fetch fill-in-the-blank data
+            $fillRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/fill");
+            $rawFillData = $fillRef->getValue() ?? [];
+
+            $fill = [];
+
+            foreach ($rawFillData as $difficulty => $activities) {
+                foreach ($activities as $activityId => $activity) {
+                    $items = [];
+
+                    if (isset($activity['items']) && is_array($activity['items'])) {
+                        foreach ($activity['items'] as $itemId => $item) {
+                            $audioPath = $item['audio_path'] ?? '';
+
+                            $items[] = [
+                                'item_id' => $itemId,
+                                'audio_path' => $audioPath,
+                                'audio_url' => !empty($audioPath)
+                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
+                                    : null,
+                                'filename' => $item['filename'] ?? '',
+                                'sentence' => $item['sentence'] ?? '',
+                                'distractors' => $item['distractors'] ?? [],
+                            ];
+                        }
+                    }
+
+                    $fill[$difficulty][$activityId] = [
+                        'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                        'created_at' => $activity['created_at'] ?? '',
+                        'updated_at' => $activity['updated_at'] ?? '',
+                        'updated_by' => $activity['updated_by'] ?? '',
+                        'total' => $activity['total'] ?? count($items),
+                        'items' => $items,
+                    ];
+                }
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'language-fill',
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'fill' => $fill,
+            ]);
+        }
+
+
+        // HOMONYM
+        public function addLanguageHomonymActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd'); // YYYYMMDD
+                $activityId = 'SP' . $dateCode . rand(10, 99); // SPYYYYMMDDXX
+
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'activity_difficulty' => $difficulty,
+                    'assessment_id' => $activityId,
+                    'created_at' => now()->toDateTimeString(),
+                    'updated_at' => now()->toDateTimeString(),
+                    'created_by' => $uid,
+                    'total' => count($request->items),
+                ];
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $imagePath = null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $filename = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+
+                        // ✅ Correct bucket usage
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $filename]);
+
+                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($filename) . '?alt=media';
+                    }
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'image_path' => $imagePath,
+                    ];
+                }
+
+                $activityData['items'] = $items;
+
+                // ✅ Locate correct grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Phrase activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add phrase activity: ' . $e->getMessage());
+            }
+        }
+
+        public function editLanguageHomonymActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:2048',
+                    'items.*.speechID' => 'nullable|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // Find grade level from subjects
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+
+                $items = [];
+
+                foreach ($request->items as $index => $item) {
+                    $phraseId = $item['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+
+                    // 🟡 Fix: use old_image_path (from hidden input)
+                    $imagePath = $item['old_image_path'] ?? null;
+
+                    if ($request->hasFile("items.$index.image")) {
+                        $file = $request->file("items.$index.image");
+                        $imageName = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
+                        $uploadedFile = fopen($file->getRealPath(), 'r');
+
+                        $bucket = $this->storageClient->bucket($this->bucketName);
+                        $bucket->upload($uploadedFile, ['name' => $imageName]);
+
+                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imageName) . '?alt=media';
+                    }
+
+
+                    $items[$phraseId] = [
+                        'speechID' => $phraseId,
+                        'text' => $item['text'],
+                        'image_path' => $imagePath,
+                    ];
+                }
+
+                $updatedData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'activity_difficulty' => $difficulty,
+                    'total' => count($items),
+                    'items' => $items,
+                ];
+
+                $this->database->getReference($path)->update($updatedData);
+
+                return back()->with('message', '✅ Phrase activity added successfully!');
+            } catch (\Throwable $e) {
+                 return back()->with('error', 'Failed to add phrase activity: ' . $e->getMessage());
+            }
+        }
+
+        public function deleteLanguageHomonymActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Phrase activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+
+        // Fill
+
+        public function addLanguageFillActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'questions' => 'required|array|min:1',
+                    'questions.*.question_text' => 'required|string',
+                    'questions.*.question_image' => 'nullable|file|image|max:2048',
+                    'questions.*.question_audio' => 'required|file|mimes:mp3,wav,m4a|max:10240',
+                    'questions.*.items' => 'required|array|min:1',
+                    'questions.*.items.*.text' => 'required|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SP' . $dateCode . rand(100, 99); // Activity ID
+                $difficulty = $request->difficulty;
+
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                    'total' => count($request->questions),
+                ];
+
+                $items = [];
+
+                foreach ($request->questions as $qIndex => $question) {
+                    $itemId = 'PH' . now()->format('Ymd') . rand(10, 99);
+
+                    // ========== Image Upload (optional) ==========
+                    $imagePath = null;
+                    $imageUrl = null;
+
+                    if ($request->hasFile("questions.$qIndex.question_image")) {
+                        $image = $request->file("questions.$qIndex.question_image");
+                        $imgFilename = $itemId . '_img.' . $image->getClientOriginalExtension();
+                        $imgStoragePath = 'images/language/' . $imgFilename;
+
+                        $uploadedImage = fopen($image->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($uploadedImage, ['name' => $imgStoragePath]);
+
+                        $imagePath = $imgStoragePath;
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imgStoragePath) . '?alt=media';
+                    }
+
+                    // ========== Audio Upload (required) ==========
+                    $audio = $request->file("questions.$qIndex.question_audio");
+                    $audioFilename = $itemId . '_' . preg_replace('/[^a-zA-Z0-9]/', '', strtolower(pathinfo($audio->getClientOriginalName(), PATHINFO_FILENAME))) . '.' . $audio->getClientOriginalExtension();
+                    $audioStoragePath = 'audio/language/' . $audioFilename;
+
+                    $uploadedAudio = fopen($audio->getRealPath(), 'r');
+                    $this->storageClient->bucket($this->bucketName)->upload($uploadedAudio, ['name' => $audioStoragePath]);
+
+                    $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioStoragePath) . '?alt=media';
+
+                    // ========== Distractors ==========
+                    $distractors = array_map(function ($item) {
+                        return $item['text'];
+                    }, $question['items']);
+
+                    // ========== Final Structure ==========
+                    $items[$itemId] = [
+                        'sentence' => $question['question_text'],
+                        'audio_path' => $audioStoragePath,
+                        'audio_url' => $audioUrl,
+                        'filename' => $audioFilename,
+                        'distractors' => $distractors,
+                    ];
+
+                    if ($imagePath) {
+                        $items[$itemId]['image_path'] = $imagePath;
+                        $items[$itemId]['image_url'] = $imageUrl;
+                    }
+                }
+
+                    $activityData['items'] = $items;
+
+                    // 🔍 Find correct grade level
+                    $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                    $gradeLevel = null;
+                    foreach ($subjectGradeLevels as $level => $subjects) {
+                        if (isset($subjects[$subjectId])) {
+                            $gradeLevel = $level;
+                            break;
+                        }
+                    }
+
+                    if (!$gradeLevel) {
+                        return back()->with('error', 'Grade level not found for this subject.');
+                    }
+
+                    // ⛳ Save to Firebase
+                    $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
+                    $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Fill-in-the-Blanks activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add fill activity: ' . $e->getMessage());
+            }
+        }
+
+
+
+        public function editLanguageFillActivity(Request $request, $subjectId)
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'questions' => 'required|array|min:1',
+                    'questions.*.phrase_id' => 'required|string',
+                    'questions.*.question_text' => 'required|string',
+                    'questions.*.question_audio' => 'nullable|file|mimes:mp3,wav,m4a|max:10240',
+                    'questions.*.question_image' => 'nullable|file|image|max:2048',
+                    'questions.*.items' => 'required|array|min:1',
+                    'questions.*.items.*.text' => 'required|string',
+                    'questions.*.old_audio_path' => 'nullable|string',
+                    'questions.*.old_audio_url' => 'nullable|string',
+                    'questions.*.old_filename' => 'nullable|string',
+                    'questions.*.old_image_path' => 'nullable|string',
+                    'questions.*.old_image_url' => 'nullable|string',
+                ]);
+
+                $uid = session('firebase_user.uid');
+                $difficulty = $request->difficulty;
+                $activityId = $request->activity_id;
+
+                // 🔍 Get grade level of the subject
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $items = [];
+
+                foreach ($request->questions as $qIndex => $question) {
+                    $itemId = $question['phrase_id'];
+
+                    // === Image Handling ===
+                    $imagePath = $question['old_image_path'] ?? null;
+                    $imageUrl = $question['old_image_url'] ?? null;
+
+                    if ($request->hasFile("questions.$qIndex.question_image")) {
+                        $image = $request->file("questions.$qIndex.question_image");
+                        $imgFilename = $itemId . '_img.' . $image->getClientOriginalExtension();
+                        $imgStoragePath = 'images/language/' . $imgFilename;
+
+                        $uploadedImage = fopen($image->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($uploadedImage, ['name' => $imgStoragePath]);
+
+                        $imagePath = $imgStoragePath;
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imgStoragePath) . '?alt=media';
+                    }
+
+                    // === Audio Handling ===
+                    $audioPath = $question['old_audio_path'] ?? null;
+                    $audioUrl = $question['old_audio_url'] ?? null;
+                    $audioFilename = $question['old_filename'] ?? null;
+
+                    if ($request->hasFile("questions.$qIndex.question_audio")) {
+                        $audio = $request->file("questions.$qIndex.question_audio");
+                        $audioFilename = $itemId . '_' . preg_replace('/[^a-zA-Z0-9]/', '', strtolower(pathinfo($audio->getClientOriginalName(), PATHINFO_FILENAME))) . '.' . $audio->getClientOriginalExtension();
+                        $audioStoragePath = 'audio/language/' . $audioFilename;
+
+                        $uploadedAudio = fopen($audio->getRealPath(), 'r');
+                        $this->storageClient->bucket($this->bucketName)->upload($uploadedAudio, ['name' => $audioStoragePath]);
+
+                        $audioPath = $audioStoragePath;
+                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioStoragePath) . '?alt=media';
+                    }
+
+                    // === Distractor Mapping ===
+                    $distractors = array_map(function ($item) {
+                        return $item['text'];
+                    }, $question['items']);
+
+                    // === Final Question Structure ===
+                    $itemData = [
+                        'sentence' => $question['question_text'],
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'filename' => $audioFilename,
+                        'distractors' => $distractors,
+                    ];
+
+                    if ($imagePath) {
+                        $itemData['image_path'] = $imagePath;
+                        $itemData['image_url'] = $imageUrl;
+                    }
+
+                    $items[$itemId] = $itemData;
+                }
+
+                // === Final Activity Structure ===
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                    'total' => count($items),
+                    'items' => $items,
+                ];
+
+                // ✅ Save to Firebase
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Fill-in-the-Blanks activity updated successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to update fill activity: ' . $e->getMessage());
+            }
+        }
+
+
+
+
+
+        public function deleteLanguageFillActivity($subjectId, $difficulty, $activityId)
+        {
+            try {
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/question/{$difficulty}/{$activityId}";
+
+                // ✅ Fetch the activity data before removal
+                $activitySnapshot = $this->database->getReference($path)->getSnapshot();
+                $activityData = $activitySnapshot->exists() ? $activitySnapshot->getValue() : null;
+
+                if ($activityData && isset($activityData['items'])) {
+                    $bucket = $this->storageClient->bucket($this->bucketName);
+
+                    foreach ($activityData['items'] as $phrase) {
+                        if (!empty($phrase['image_path'])) {
+                            // Parse filename from image_path
+                            $parsed = parse_url($phrase['image_path']);
+                            if (isset($parsed['path'])) {
+                                // Extract after `/o/`
+                                $pathPart = explode('/o/', $parsed['path']);
+                                if (isset($pathPart[1])) {
+                                    $objectName = urldecode($pathPart[1]);
+
+                                    // Remove query parameters
+                                    $objectName = explode('?', $objectName)[0];
+
+                                    // ✅ Delete the file in the bucket
+                                    $object = $bucket->object($objectName);
+                                    if ($object->exists()) {
+                                        $object->delete();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ✅ Remove the phrase activity from database
+                $this->database->getReference($path)->remove();
+
+                return back()->with('message', '🗑️ Question activity and associated images deleted successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to delete activity: ' . $e->getMessage());
+            }
+        }
+
+
+
+
 
 
     public function addAcadsQuiz($subjectId)
@@ -1258,8 +3918,6 @@ class TeacherController extends Controller
         // Redirect back with success message
         return redirect()->back()->with('message', 'Attempt updated successfully.');
     }
-
-
 
 
     // TEACHER ASSIGNMENTS
@@ -2169,6 +4827,17 @@ class TeacherController extends Controller
 
 
 
+    private function generateUniqueId(string $prefix): string
+        {
+            $now = now();
+            $currentYear = $now->year;
+            $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT);
+            $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT);
+            $randomDigits = str_pad(rand(0, 999), 3, '0', STR_PAD_LEFT);
+            $announcementId = "{$prefix}{$currentYear}{$currentMonth}{$currentDay}{$randomDigits}";
+
+            return $announcementId;
+        }
 
 
     public function showPeople($subjectId)

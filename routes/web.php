@@ -19,6 +19,7 @@ use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\admin\AdminController;
 use App\Http\Controllers\admin\ScheduleController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\SpeechController;
 use App\Http\Middleware\AuthMiddleware;
 use App\Http\Middleware\EnrollAuthMiddleware;
 use App\Http\Middleware\RoleBasedAccess;
@@ -486,7 +487,92 @@ Route::prefix('mio/teacher')->middleware(
 
           Route::post('/{subjectId}/quiz/{quizId}/attempt/update', [TeacherController::class, 'updateEditAttempt'])->name('updateAttempt');
 
+    //--------------- Speech
 
+        // Phrase
+
+        Route::get('/{subjectId}/quiz-speech-phrase', [TeacherController::class, 'speechPhrase'])->name('speech-phrase');
+
+        Route::post('/{subjectId}/speech-phrase/add', [TeacherController::class, 'addSpeechPhraseActivity'])->name('speech-phrase.add');
+
+        Route::put('/{subjectId}/speech-phrase/edit', [TeacherController::class, 'editSpeechPhraseActivity'])->name('speech-phrase.edit');
+
+        Route::delete('/subject/{subjectId}/speech-phrase/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteSpeechPhraseActivity'])->name('speech-phrase.delete');
+
+        // Pronunciation
+
+        Route::get('/{subjectId}/quiz-speech-pronunciation', [TeacherController::class, 'speechPronunciation'])->name('speech-pronunciation');
+
+        Route::post('/{subjectId}/speech-pronunciation/add', [TeacherController::class, 'addSpeechPronunciationActivity'])->name('speech-pronunciation.add');
+
+        Route::put('/{subjectId}/speech-pronunciation/edit', [TeacherController::class, 'editSpeechPronunciationActivity'])->name('speech-pronunciation.edit');
+
+        Route::delete('/subject/{subjectId}/speech-pronunciation/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteSpeechPronunciationActivity'])->name('speech-pronunciation.delete');
+
+        // Picture
+
+        Route::get('/{subjectId}/quiz-speech-picture', [TeacherController::class, 'speechPicture'])->name('speech-picture');
+
+        Route::post('/{subjectId}/speech-picture/add', [TeacherController::class, 'addSpeechPictureActivity'])->name('speech-picture.add');
+
+        Route::put('/{subjectId}/speech-picture/edit', [TeacherController::class, 'editSpeechPictureActivity'])->name('speech-picture.edit');
+
+        Route::delete('/subject/{subjectId}/speech-picture/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteSpeechPictureActivity'])->name('speech-picture.delete');
+
+        // Question
+
+        Route::get('/{subjectId}/quiz-speech-question', [TeacherController::class, 'speechQuestion'])->name('speech-question');
+
+        Route::post('/{subjectId}/speech-question/add', [TeacherController::class, 'addSpeechQuestionActivity'])->name('speech-question.add');
+
+        Route::put('/{subjectId}/speech-question/edit', [TeacherController::class, 'editSpeechQuestionActivity'])->name('speech-question.edit');
+
+        Route::delete('/subject/{subjectId}/speech-question/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteSpeechQuestionActivity'])->name('speech-question.delete');
+
+    //--------------- AUDITORY 
+
+        // BINGO 
+        
+
+        Route::get('/{subjectId}/quiz-auditory-bingo', [TeacherController::class, 'auditoryBingo'])->name('auditory-bingo');
+
+        Route::post('/{subjectId}/auditory-bingo/add', [TeacherController::class, 'addAuditoryBingoActivity'])->name('auditory-bingo.add');
+
+        Route::put('/{subjectId}/auditory-bingo/edit', [TeacherController::class, 'editAuditoryBingoActivity'])->name('auditory-bingo.edit');
+
+        Route::delete('/subject/{subjectId}/auditory-bingo/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteAuditoryBingoActivity'])->name('auditory-bingo.delete');
+
+        // MATCHING 
+
+        Route::get('/{subjectId}/quiz-auditory-matching', [TeacherController::class, 'auditoryMatching'])->name('auditory-matching');
+
+        Route::post('/{subjectId}/auditory-matching/add', [TeacherController::class, 'addAuditoryMatchingActivity'])->name('auditory-matching.add');
+
+        Route::put('/{subjectId}/auditory-matching/edit', [TeacherController::class, 'editAuditoryMatchingActivity'])->name('auditory-matching.edit');
+
+        Route::delete('/subject/{subjectId}/auditory-matching/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteAuditoryMatchingActivity'])->name('auditory-matching.delete');
+
+    //--------------- LANGUAGE 
+
+        // FILL 
+    
+        Route::get('/{subjectId}/quiz-language-fill', [TeacherController::class, 'languageFill'])->name('language-fill');
+
+        Route::post('/{subjectId}/language-fill/add', [TeacherController::class, 'addLanguageFillActivity'])->name('language-fill.add');
+
+        Route::put('/{subjectId}/language-fill/edit', [TeacherController::class, 'editLanguageFillActivity'])->name('language-fill.edit');
+
+        Route::delete('/subject/{subjectId}/language-fill/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteLanguageFillActivity'])->name('language-fill.delete');
+
+        // MATCHING 
+
+        Route::get('/{subjectId}/quiz-language-homonym', [TeacherController::class, 'languageHomonym'])->name('language-homonym');
+
+        Route::post('/{subjectId}/language-homonym/add', [TeacherController::class, 'addLanguageHomonymActivity'])->name('language-homonym.add');
+
+        Route::put('/{subjectId}/language-homonym/edit', [TeacherController::class, 'editLanguageHomonymActivity'])->name('language-homonym.edit');
+
+        Route::delete('/subject/{subjectId}/language-homonym/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteLanguageHomonymActivity'])->name('language-homonym.delete');
 
 
     // SCORES
