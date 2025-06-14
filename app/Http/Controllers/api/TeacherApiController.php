@@ -567,10 +567,9 @@ class TeacherApiController extends Controller
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attempts/{$activityType}/{$activityId}/{$userId}/{$attemptId}")
                 ->getSnapshot()
                 ->getValue() ?? [];
-
             
             $feedbacks = [];
-            foreach($attempt['answers'] as $itemId => $item){
+            foreach($attempt['answers'] ?? [] as $itemId => $item){
                 $feedbacks[$itemId] = [
                     'feedback' => $item['feedback']['teacher'] ?? 'No feedback provided'
                 ];
@@ -578,8 +577,9 @@ class TeacherApiController extends Controller
 
             return response()->json([
                 'success' => true,
-                'feedbacks' => $feedbacks,
-                'overall_score' => $attempt['overall_score'],
+                'feedbacks' => $feedbacks ?? [],
+                'overall_score' => $attempt['overall_score'] ?? $attempt['score'] ?? 0,
+                'attempt' => $attempt
             ]);
 
         } catch (\Exception $e) {
@@ -590,4 +590,215 @@ class TeacherApiController extends Controller
         }
     }
 
+    public function getAttendance(Request $request, string $subjectId){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $attendance = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance")
+                ->getSnapshot()
+                ->getValue();
+
+            return response()->json([
+                'success' => true,
+                'attendance' => $attendance
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getAttendanceById(Request $request, string $subjectId, string $attendance_id){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try{
+            $attendance = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance/{$attendance_id}")
+                ->getSnapshot()
+                ->getValue();
+
+            return response()->json([
+                'success' => true,
+                'students' => $attendance['people'],
+                'date' => $attendance['date'],
+                'attendance_id' => $attendance_id,
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getAttendanceStudents(Request $request, string $subjectId) {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $peoples = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $students = [];
+
+            foreach ($peoples as $index => $people) {
+                if (isset($people['role']) && $people['role'] !== "teacher") {
+                    $students[$index] = $people;
+                }
+            }
+
+            $now = now();
+            $currentYear = $now->year;
+            $currentMonth = str_pad($now->month, 2, '0', STR_PAD_LEFT);
+            $currentDay = str_pad($now->day, 2, '0', STR_PAD_LEFT);
+
+            $attendance_id = $currentYear . $currentMonth . $currentDay . "_" . strtoupper($now->format('D'));
+
+            return response()->json([
+                'success' => true,
+                'students' => $students,
+                'date' => today()->toDateString(),
+                'attendance_id' => $attendance_id
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function AddAttendance(Request $request, string $subjectId, string $attendance_id)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'students' => 'required|array|min:1',
+            'students.*.student_id' => 'required|string|min:1',
+            'students.*.status' => 'required|string|in:present,late,absent',
+        ]);
+
+        try {
+            $existing = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance/{$attendance_id}")
+                ->getSnapshot()
+                ->exists();
+
+            if ($existing) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Attendance already exists for this date.',
+                ], 409);
+            }
+
+            $peoples = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $students = [];
+            $date = now()->toDateTimeString();
+
+            foreach ($validated['students'] as $student) {
+                $studentId = $student['student_id'];
+                if (isset($peoples[$studentId])) {
+                    $name = $peoples[$studentId]['first_name'] . " " . $peoples[$studentId]['last_name'];
+
+                    $students[$studentId] = [
+                        'name' => $name,
+                        'status' => $student['status'],
+                        'student_id' => $studentId,
+                        'timestamp' => $date,
+                    ];
+                }
+            }
+            
+            $attendance = [
+                'date' => today()->toDateString(),
+                'date_created' => $date,
+                'people' => $students,
+            ];
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance/{$attendance_id}")
+                ->set($attendance);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance successfully recorded.',
+                'attendance_id' => $attendance_id,
+                'peoples' => $attendance,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateAttendance(Request $request, string $subjectId, string $attendance_id){
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'students' => 'required|array|min:1',
+            'students.*.student_id' => 'required|string|min:1',
+            'students.*.status' => 'required|string|in:present,late,absent',
+        ]);
+
+        try{
+            $attendance = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance/{$attendance_id}")
+                ->getSnapshot()
+                ->getValue();
+
+            if (!$attendance) {
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Attendance record not found.',
+                ], 404);
+            }
+
+            $updatedStudents = [];
+            foreach ($validated['students'] as $student) {
+                $studentId = $student['student_id'];
+
+                if (isset($attendance[$studentId])) {
+                    $attendance[$studentId]['status'] = $student['status'];
+                    $attendance[$studentId]['timestamp'] = now()->toDateTimeString();
+
+                    $updatedStudents[$studentId] = $attendance[$studentId];
+                }
+            }
+
+            $date = now()->toDateTimeString();
+
+            $newAttendance = [
+                'date_created' => $attendance['date_created'],
+                'date' => $attendance['date'],
+                'date_updated' => $date
+            ];
+
+            $attendance = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/attendance/{$attendance_id}")
+                ->set($newAttendance);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance successfully updated.',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

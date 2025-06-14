@@ -9,6 +9,7 @@ use Kreait\Firebase\Auth as FirebaseAuth;
 use Kreait\Firebase\Exception\Auth\ExpiredIdToken;
 use Kreait\Firebase\Exception\Auth\InvalidIdToken;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class MobileAuthMiddleware
 {
@@ -56,6 +57,10 @@ class MobileAuthMiddleware
         } catch (InvalidIdToken $e) {
             return response()->json([
                 'message' => 'Unauthorized: Token is invalid.'
+            ], 401);
+        } catch (Throwable $e) {
+            return response()->json([
+                'message' => 'Unauthorized: Token verification failed.',
             ], 401);
         }
 
