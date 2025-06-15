@@ -26,6 +26,32 @@ class StudentApiController extends Controller
             ->withServiceAccount($path)
             ->withDatabaseUri('https://miolms-default-rtdb.firebaseio.com')
             ->createDatabase();
+
+        $this->storage = (new Factory())
+            ->withServiceAccount($path)
+            ->withDefaultStorageBucket('miolms.firebasestorage.app')
+            ->createStorage();
+    }
+
+    protected function uploadToFirebaseStorage($file, $storagePath)
+    {
+        $bucket = $this->storage->getBucket();
+        $fileName = $file->getClientOriginalName();
+        $firebasePath = "{$storagePath}" . '_' . $fileName;
+
+        $bucket->upload(
+            fopen($file->getRealPath(), 'r'),
+            ['name' => $firebasePath]
+        );
+
+        $object = $bucket->object($firebasePath);
+        $object->update([], ['predefinedAcl' => 'publicRead']);
+
+        return [
+            'name' => $fileName,
+            'path' => $firebasePath,
+            'url'  => "https://storage.googleapis.com/{$bucket->name()}/" . $firebasePath,
+        ];
     }
 
     private function generateUniqueId(string $prefix): string
@@ -339,5 +365,91 @@ class StudentApiController extends Controller
         }
     }
 
-    
+    public function getProfile(Request $request){
+        $userId = $request->get('firebase_user_id');
+
+        try{
+            $user_data = $this->database->getReference("users/{$userId}")->getSnapshot()->getValue();
+
+            $name = $user_data['fname'] . " " . $user_data['lname'];
+
+            return response()->json([
+                'success' => true,
+                'name' => $name,
+                'photo_url' => $user_data['photo_url']['url'] ?? null,
+                'biography' => $user_data['biography'] ?? null
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $userId = $request->get('firebase_user_id');
+
+        $validated = $request->validate([
+            'photo' => 'nullable|file|mimes:png,jpg,jpeg|max:5120',
+            'biography' => 'required|string|min:1|max:100'
+        ]);
+
+        try {
+            $updateData = [
+                'biography' => $validated['biography']
+            ];
+
+            $bucket = $this->storage->getBucket();
+
+            if (!empty($validated['photo'])) {
+                $prevPhotoPath = $this->database->getReference("users/{$userId}/photo_path")->getSnapshot()->getValue() ?? null;
+                if ($prevPhotoPath) {
+                    $bucket->object($prevPhotoPath)->delete();
+                }
+
+                $file = $validated['photo'];
+                $file_id = (string) Str::uuid();
+                $remotePath = "users/{$userId}/profile_pictures/{$file_id}";
+
+                $uploadResult = $this->uploadToFirebaseStorage($file, $remotePath);
+                $updateData['photo_url'] = $uploadResult;
+            }
+
+            $this->database->getReference("users/{$userId}")
+                ->update($updateData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Profile updated successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getProfilePic(Request $request){
+        $userId = $request->get('firebase_user_id');
+
+        try{
+            $photo_url = $this->database->getReference("users/{$userId}/photo_url")->getSnapshot()->getValue() ?? null;
+
+            return response()->json([
+                'success' => true,
+                'photo_url' => $photo_url['url'],
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

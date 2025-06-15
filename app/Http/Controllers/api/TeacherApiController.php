@@ -206,6 +206,30 @@ class TeacherApiController extends Controller
 
             $announcementId = $this->generateUniqueId('SUB-ANN');
 
+            $tokens = [];
+            $students = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/peoples")->getSnapshot()->getValue();
+            $users = $this->database->getReference("users")->getSnapshot()->getValue();
+
+            foreach($students as $student_id => $student){
+                $tokens[] = $users[$student_id]['fcm_token'] ?? "";
+            }
+
+            foreach($tokens as $token){
+                if($token){
+                    $message = CloudMessage::withTarget('token', $token)
+                    ->withNotification([
+                        'title' => "📢 New Announcement",
+                        'body' => $validated['title'],
+                    ])
+                    ->withData([
+                        'type' => 'message',
+                        'screen' => 'EmergencyScreen',
+                    ]);
+                        
+                $this->messaging->send($message);
+                }
+            }
+
             $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
                 ->set($announcementData);

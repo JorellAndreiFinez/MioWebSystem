@@ -35,6 +35,12 @@ Route::middleware([
 
     Route::post('/updateFCMToken/{student_id}', [EmergencyApi::class, 'updateFCMToken']); 
     Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
+    Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
+
+    //profile
+    Route::get('/profile', [StudentApiController::class, 'getProfile']);
+    Route::get('/profile/photo', [StudentApiController::class, 'getProfilePic']);
+    Route::post('/profile', [StudentApiController::class, 'updateProfile']);
 
     // messaging
     Route::get('/messages/inbox', [MessagingApi::class, 'getInboxMessages']);
