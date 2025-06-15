@@ -9,6 +9,7 @@ use App\Http\Controllers\api\TeacherApiController;
 use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
 use App\Http\Controllers\api\SpecializedLanguageApi;
+use App\Http\Controllers\api\EmergencyApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Session\Middleware\StartSession;
@@ -30,6 +31,9 @@ Route::middleware([
     Route::get('/subject/{subjectId}/quizzes', [StudentApiController::class, 'getSubjectQuizzesApi']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
     Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
+
+    Route::post('/updateFCMToken/{student_id}', [EmergencyApi::class, 'updateFCMToken']); 
+    Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
 });
 
 
@@ -115,4 +119,9 @@ Route::middleware([
     Route::post('/subject/{subjectId}/specialized/language/fill', [SpecializedLanguageApi::class, 'createFillActivity']);
     Route::post('/subject/{subjectId}/specialized/language/homonyms/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'editHomonymsActivity']);
     Route::post('/subject/{subjectId}/specialized/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'editFillActivity']);
+
+
+    // emergency
+
+    Route::post('/send', [EmergencyApi::class, 'send']);
 });
