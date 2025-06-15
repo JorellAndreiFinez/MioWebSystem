@@ -61,8 +61,6 @@ class MessagingApi extends Controller
                 'timestamp' => now()->timestamp
             ]);
 
-            $message_sent = false;
-
             if(!empty($user['fcm_token'])){
                 $name = $user['fname'] . " " . $user['lname'];
 
@@ -75,14 +73,11 @@ class MessagingApi extends Controller
                     ]);
                     
                 $this->messaging->send($message);
-
-                $message_sent = true;
             }
             
             return response()->json([
                 'success' => true,
                 'message' => 'Message sent successfully',
-                'message_sent' => $message_sent
             ]);
 
         } catch (\Throwable $e) {
@@ -122,11 +117,14 @@ class MessagingApi extends Controller
             ]);
 
             if(!empty($user['fcm_token'])){
+                $name = $user['fname'] . " " . $user['lname'];
+
                 $message = CloudMessage::withTarget('token', $user['fcm_token'])
-                    ->withNotification(['title' => $validated['subject'], 'body' => $validated['body']])
+                    ->withNotification(['title' => $name, 'body' => $validated['body']])
                     ->withData([
                         'type' => 'message',
                         'screen' => 'EmergencyScreen',
+                        'thread_id' => $message_info,
                     ]);
                     
                 $this->messaging->send($message);
