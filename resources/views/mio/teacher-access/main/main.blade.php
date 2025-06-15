@@ -32,7 +32,10 @@
                 <select id="subjectTypeFilter" class="dropdown" onchange="filterSubjectsByType()">
                 <option value="all">All Subjects</option>
                 <option value="academics">Academics</option>
-                <option value="specialized">Speech and Auditory</option>
+                <option value="speech">Speech</option>
+                <option value="auditory">Auditory</option>
+                <option value="language">Language</option>
+
             </select>
 
             </div>
@@ -40,7 +43,7 @@
         @forelse($allSubjects as $gradeLevel => $subjects)
         @foreach($subjects as $subject)
              @if(isset($subject['subject_id']) && !empty($subject['subject_id']))
-                    <div class="card-wrap" data-subject-type="{{ $subject['subjectType'] }}">
+                    <div class="card-wrap"  data-subject-type="{{ $subject['subjectType'] === 'specialized' ? $subject['specialized_type'] : 'academics' }}">
                         <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}" class="card-link">
                             <div class="card">
                                 <img src="{{ $subject['image_url'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($subject['title']) }}" class="card-img" />

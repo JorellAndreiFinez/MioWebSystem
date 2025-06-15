@@ -1,41 +1,46 @@
 {
+  "resources/css/EnrollPanel/enrollment-panel.css": {
+    "file": "assets/enrollment-panel-Cb3BVEC5.css",
+    "src": "resources/css/EnrollPanel/enrollment-panel.css",
+    "isEntry": true
+  },
   "resources/css/Mio/admin/panel.css": {
-    "file": "assets/panel-C1o7LSJU.css",
+    "file": "assets/panel-_gZaHIwE.css",
     "src": "resources/css/Mio/admin/panel.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/calendar.css": {
-    "file": "assets/calendar-DDqDr3VK.css",
+    "file": "assets/calendar-BGhFSCPt.css",
     "src": "resources/css/Mio/dashboard/calendar.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/dashboard.css": {
-    "file": "assets/dashboard-BSG_7oM0.css",
+    "file": "assets/dashboard-D6ZocReM.css",
     "src": "resources/css/Mio/dashboard/dashboard.css",
     "isEntry": true
   },
   "resources/css/Mio/dashboard/inbox.css": {
-    "file": "assets/inbox-BGxwkOrW.css",
+    "file": "assets/inbox-BnGDIari.css",
     "src": "resources/css/Mio/dashboard/inbox.css",
     "isEntry": true
   },
+  "resources/css/Mio/dashboard/settings.css": {
+    "file": "assets/settings-DDHurRrX.css",
+    "src": "resources/css/Mio/dashboard/settings.css",
+    "isEntry": true
+  },
   "resources/css/Mio/dashboard/subject-components.css": {
-    "file": "assets/subject-components-LVeuJvlL.css",
+    "file": "assets/subject-components-DKHVN4KG.css",
     "src": "resources/css/Mio/dashboard/subject-components.css",
     "isEntry": true
   },
-  "resources/css/Mio/dashboard/subject.css": {
-    "file": "assets/subject-DCxfq_lN.css",
-    "src": "resources/css/Mio/dashboard/subject.css",
-    "isEntry": true
-  },
   "resources/css/Mio/login.css": {
-    "file": "assets/login-CFc7-b7O.css",
+    "file": "assets/login-CqQzZhMj.css",
     "src": "resources/css/Mio/login.css",
     "isEntry": true
   },
   "resources/css/Mio/mio-app.css": {
-    "file": "assets/mio-app-DhBZxTHj.css",
+    "file": "assets/mio-app-gop6lVq0.css",
     "src": "resources/css/Mio/mio-app.css",
     "isEntry": true
   },
@@ -45,7 +50,7 @@
     "isEntry": true
   },
   "resources/css/cms/app.css": {
-    "file": "assets/app-BX6cODxx.css",
+    "file": "assets/app-BddBR2a4.css",
     "src": "resources/css/cms/app.css",
     "isEntry": true
   },
@@ -86,7 +91,7 @@
     "isEntry": true
   },
   "resources/js/Mio/dashboard/calendar.js": {
-    "file": "assets/calendar-DRu0Ylp-.js",
+    "file": "assets/calendar-l0sNRNKZ.js",
     "name": "calendar",
     "src": "resources/js/Mio/dashboard/calendar.js",
     "isEntry": true
@@ -95,12 +100,6 @@
     "file": "assets/dashboard-CGjomjav.js",
     "name": "dashboard",
     "src": "resources/js/Mio/dashboard/dashboard.js",
-    "isEntry": true
-  },
-  "resources/js/Mio/dashboard/subject.js": {
-    "file": "assets/subject-l0sNRNKZ.js",
-    "name": "subject",
-    "src": "resources/js/Mio/dashboard/subject.js",
     "isEntry": true
   },
   "resources/js/Mio/login.js": {

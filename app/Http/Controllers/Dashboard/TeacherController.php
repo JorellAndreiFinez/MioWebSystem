@@ -425,6 +425,21 @@ class TeacherController extends Controller
             $subject['teacher_id'] === $loggedInTeacherId &&
             $subject['schoolyear_id'] === $activeSchoolYear
             ) {
+                // Determine subject type
+                $subjectType = 'academics';
+                $specializedType = '';
+
+                if (isset($subject['specialized_type'])) {
+                    $specializedType = $subject['specialized_type'];
+                    if (in_array($specializedType, ['speech', 'language', 'auditory'])) {
+                        $subjectType = 'specialized';
+                    }
+                }
+
+                // Tag the subject with these values
+                $subject['subjectType'] = $subjectType;
+                $subject['specialized_type'] = $specializedType;
+
                 $modulesForTeacher[] = $subject;
             }
         }
@@ -2090,7 +2105,7 @@ class TeacherController extends Controller
                 'speech' => $speech, // This now includes Bingo activities
             ]);
         }
-    
+
         public function auditoryMatching($subjectId)
         {
             // 1. Get grade level and subject
@@ -2839,7 +2854,7 @@ class TeacherController extends Controller
             ]);
         }
 
-    
+
         public function languageFill($subjectId)
         {
             // 1. Get grade level and subject

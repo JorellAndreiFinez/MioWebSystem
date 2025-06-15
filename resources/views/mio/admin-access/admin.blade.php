@@ -37,7 +37,15 @@
 </div>
 
 <section class="home-section">
-<div class="text">Admins</div>
+<div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.accounts') }}">
+                Other Users
+            </a>
+        </div>
+        <div class="breadcrumb-item active">Admins</div>
+
+    </div>
 
 <div class="teacher-container">
     <!-- HEADER CONTROLS -->
@@ -47,7 +55,8 @@
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
         </div>
         <div class="button-group">
-            <button class="btn sort-btn">Newest ⬇</button>
+            <button class="btn sort-btn" onclick="sortTableByNewest()">Newest ⬇</button>
+
             @if ($isHeadAdmin)
                 <a href="{{ route('mio.AddAdmin') }}" class="btn add-btn">+ New Admin</a>
             @endif
@@ -63,20 +72,19 @@
                 <tr>
                     <th>Admin ID</th>
                     <th>Name</th>
-                    <th>Downloadable Files</th>
+                    <th>Created at</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($admins as $key => $item)
                     @if (isset($item['role']) && $item['role'] === 'admin')
-                        <tr>
+                        <tr data-date="{{ $item['date_created'] }}">
                             <td>{{ $item['adminid'] }}</td>
                             <td>{{ $item['fname'] }} {{ $item['lname'] }}</td>
                             <td>
-                                <button class="download-btn pdf-btn">PDF</button>
-                                <button class="download-btn csv-btn">CSV</button>
-                            </td>
+                            {{ \Carbon\Carbon::parse($item['date_created'])->format('M d, Y h:i A') }}
+                        </td>
 
                             @php
                                 $isSuperAdmin = (session('firebase_user')['category'] ?? '') === 'head_admin';
@@ -155,5 +163,47 @@ function verifyAdminPassword() {
     .catch(error => {
         document.getElementById('errorMessage').style.display = 'block';
     });
+}
+</script>
+
+<script>
+function searchCards() {
+    const searchInput = document.getElementById("searchBar").value.toLowerCase();
+    const rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        const teacherId = row.children[0].textContent.toLowerCase();
+        const name = row.children[1].textContent.toLowerCase();
+
+        if (teacherId.includes(searchInput) || name.includes(searchInput)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+</script>
+
+<script>
+let sortNewestFirst = true;
+
+function sortTableByNewest() {
+    const tbody = document.querySelector("table tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => row.querySelector("td")); // Skip no-data row
+
+    rows.sort((a, b) => {
+        const dateA = new Date(a.getAttribute("data-date"));
+        const dateB = new Date(b.getAttribute("data-date"));
+
+        return sortNewestFirst ? dateB - dateA : dateA - dateB;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+
+    // Toggle sort direction for next click
+    sortNewestFirst = !sortNewestFirst;
+
+    // Update button text
+    document.querySelector(".sort-btn").innerText = sortNewestFirst ? "Newest ⬇" : "Oldest ⬆";
 }
 </script>

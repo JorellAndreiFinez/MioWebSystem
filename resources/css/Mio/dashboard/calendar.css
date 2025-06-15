@@ -29,6 +29,16 @@
     margin-bottom: 2rem;
 }
 
+
+/* Fix overflowing content and layout */
+
+.card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: #4a148c;
+    font-weight: bold;
+}
+
 .card {
     background-color: #cbbcf6;
     padding: 1rem;
@@ -90,4 +100,25 @@
     font-size: 14px;
     padding: 10px;
     vertical-align: middle;
+}
+
+#schedule-overview,
+#agenda-this-week,
+#schedule-today {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+
+/* Occurrence blocks instead of list */
+
+.occurrence-block {
+    background: #ede7f6;
+    border-radius: 8px;
+    padding: 8px 10px;
+    margin: 5px 0;
+    font-size: 14px;
+    color: #333;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }

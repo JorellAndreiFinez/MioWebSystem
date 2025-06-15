@@ -28,7 +28,10 @@
      @elseif($page === 'people')
         @vite(['resources/css/Mio/admin/panel.css', 'resources/js/Mio/admin/panel.js', 'resources/css/Mio/mio-app.css'])
 
-    @elseif (in_array($page, ['add-acads-quiz', 'edit-acads-quiz', 'attendance', 'teacher-settings', 'speech-phrase', 'speech-pronunciation', 'speech-picture', 'speech-question', 'auditory-bingo', 'auditory-matching', 'language-fill', 'language-homonym']))
+    @elseif($page === 'teacher-settings')
+        @vite(['resources/css/Mio/admin/panel.css', 'resources/css/Mio/dashboard/settings.css', 'resources/css/Mio/mio-app.css'])
+
+    @elseif (in_array($page, ['add-acads-quiz', 'edit-acads-quiz', 'attendance', 'settings', 'speech-phrase', 'speech-pronunciation', 'speech-picture', 'speech-question', 'auditory-bingo', 'auditory-matching', 'language-fill', 'language-homonym', ]))
         @vite(['resources/css/Mio/dashboard/subject-components.css', 'resources/js/Mio/dashboard/subject-components.js', 'resources/css/Mio/mio-app.css', 'resources/css/Mio/admin/panel.css'])
         @vite(['resources/css/Mio/dashboard/dashboard.css', 'resources/js/Mio/dashboard/dashboard.js', 'resources/css/Mio/mio-app.css'])
 
@@ -45,7 +48,7 @@
         @include('mio.teacher-access.main.main')
 
     @elseif ($page === 'calendar')
-        @include('mio.student-access.calendar.calendar')
+        @include('mio.teacher-access.calendar.calendar')
 
     @elseif ($page === 'teacher-inbox')
         @include('mio.teacher-access.inbox.inbox')
@@ -93,7 +96,7 @@
         @include('mio.teacher-access.subject.quiz.language.language-fill')
     @elseif ($page === 'language-homonym')
         @include('mio.teacher-access.subject.quiz.language.language-homonym')
-    
+
 
     @elseif ($page === 'scores')
         @include('mio.teacher-access.subject.score.score')
@@ -108,7 +111,7 @@
         @include('mio.teacher-access.subject.people.people')
 
     @elseif ($page === 'teacher-settings')
-        @include('mio.teacher-access.settings.setting')
+        @include('mio.settings.settings')
 
     @elseif ($page === 'module')
         @include('mio.teacher-access.subject.module.module')

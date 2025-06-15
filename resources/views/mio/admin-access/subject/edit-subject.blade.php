@@ -20,7 +20,6 @@ function getFileIcon($filename) {
 <section class="home-section">
 <div class="text">Edit Subject</div>
 <div class="teacher-container">
-<pre>{{ json_encode($sectionSchedules, JSON_PRETTY_PRINT) }}</pre>
 
 <form action="{{ route('mio.UpdateSubject', ['grade' => $grade, 'subjectId' => $subject_id]) }}"
       method="post"
@@ -793,7 +792,7 @@ function getFileIcon($filename) {
             });
             </script>
 
-           
+
             <script>
                 let announcementCount = 0;
                 const announcementFileDataMap = {};

@@ -49,7 +49,8 @@
             <input type="text" id="searchBar" placeholder="Search..." onkeyup="searchCards()">
         </div>
         <div class="button-group">
-            <button class="btn sort-btn">Newest ⬇</button>
+            <button class="btn sort-btn" onclick="sortTableByNewest()">Newest ⬇</button>
+
             <a href="{{ route('mio.AddTeacher') }}" class="btn add-btn">+ New Teacher</a>
         </div>
     </div>
@@ -63,20 +64,20 @@
                 <tr>
                     <th>Teacher ID</th>
                     <th>Name</th>
-                    <th>Downloadable Files</th>
+                    <th>Created at</th>
                     <th>Action</th>
                 </tr>
             </thead>
             <tbody>
             @forelse ($teachers as $key => $item)
                 @if (isset($item['role']) && $item['role'] === 'teacher')
-                    <tr>
+                    <tr data-date="{{ $item['date_created'] }}">
                         <td>{{ $item['teacherid'] }}</td>
                         <td>{{ $item['fname'] }} {{ $item['lname'] }}</td>
                         <td>
-                            <button class="download-btn pdf-btn">PDF</button>
-                            <button class="download-btn csv-btn">CSV</button>
+                            {{ \Carbon\Carbon::parse($item['date_created'])->format('M d, Y h:i A') }}
                         </td>
+
                         <td class="action-icons">
                             <a href="{{ url('mio/admin/EditTeacher/'.$item['teacherid']) }}">
                                 <i class="fa fa-pencil"></i>
@@ -148,3 +149,46 @@ function verifyAdminPassword() {
     });
 }
 </script>
+
+<script>
+function searchCards() {
+    const searchInput = document.getElementById("searchBar").value.toLowerCase();
+    const rows = document.querySelectorAll("table tbody tr");
+
+    rows.forEach(row => {
+        const teacherId = row.children[0].textContent.toLowerCase();
+        const name = row.children[1].textContent.toLowerCase();
+
+        if (teacherId.includes(searchInput) || name.includes(searchInput)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+</script>
+
+<script>
+let sortNewestFirst = true;
+
+function sortTableByNewest() {
+    const tbody = document.querySelector("table tbody");
+    const rows = Array.from(tbody.querySelectorAll("tr")).filter(row => row.querySelector("td")); // Skip no-data row
+
+    rows.sort((a, b) => {
+        const dateA = new Date(a.getAttribute("data-date"));
+        const dateB = new Date(b.getAttribute("data-date"));
+
+        return sortNewestFirst ? dateB - dateA : dateA - dateB;
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+
+    // Toggle sort direction for next click
+    sortNewestFirst = !sortNewestFirst;
+
+    // Update button text
+    document.querySelector(".sort-btn").innerText = sortNewestFirst ? "Newest ⬇" : "Oldest ⬆";
+}
+</script>
+

@@ -18,7 +18,6 @@
             ],
             'Other' => [
                 ['route' => 'mio.teacher-profile', 'icon' => 'bx bx-user', 'label' => 'Profile'],
-                ['url' => '#', 'icon' => 'bx bx-info-circle', 'label' => 'Help & Report', 'custom_active' => request()->is('help')],
                 ['route' => 'mio.teacher-settings', 'icon' => 'bx bx-cog', 'label' => 'Setting', 'custom_active' => request()->is('settings')],
             ],
         ];

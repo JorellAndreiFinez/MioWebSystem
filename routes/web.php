@@ -399,9 +399,6 @@ Route::prefix('mio/student')->middleware([AuthMiddleware::class, RoleBasedAccess
 
          Route::post('/{subjectId}/quiz/{quizId}/save-answer/{questionId}', [StudentController::class, 'saveAnswer']) ->name('quiz-save-answer');
 
-
-
-
     });
 
 });
@@ -419,9 +416,8 @@ Route::prefix('mio/teacher')->middleware(
     Route::get('/subject/{subjectId}/announcement/{announcementId}', [TeacherController::class, 'showAnnouncementDetails'])->name('mio.teacher-announcements-body');
 
 
-    Route::get('/calendar', function () {
-        return view('mio.head.teacher-panel', ['page' => 'calendar']);
-    })->name('mio.teacher-calendar');
+    Route::get('/calendar', [CalendarController::class, 'showCalendarTeacher'])->name('mio.teacher-calendar');
+
 
     // INBOX MESSAGING
        Route::get('/messages', [MessagingController::class, 'showTeacherInbox'])->name('mio.teacher-inbox');
@@ -433,7 +429,6 @@ Route::prefix('mio/teacher')->middleware(
     Route::get('/profile', [TeacherController::class, 'showProfile'])->name('mio.teacher-profile');
 
     Route::post('/profile/update', [TeacherController::class, 'updateProfile'])->name('mio.updateProfile');
-
 
     Route::get('/settings', [SettingsController::class, 'showSettings'])->name('mio.teacher-settings');
 
@@ -529,10 +524,10 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('/subject/{subjectId}/speech-question/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteSpeechQuestionActivity'])->name('speech-question.delete');
 
-    //--------------- AUDITORY 
+    //--------------- AUDITORY
 
-        // BINGO 
-        
+        // BINGO
+
 
         Route::get('/{subjectId}/quiz-auditory-bingo', [TeacherController::class, 'auditoryBingo'])->name('auditory-bingo');
 
@@ -542,7 +537,7 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('/subject/{subjectId}/auditory-bingo/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteAuditoryBingoActivity'])->name('auditory-bingo.delete');
 
-        // MATCHING 
+        // MATCHING
 
         Route::get('/{subjectId}/quiz-auditory-matching', [TeacherController::class, 'auditoryMatching'])->name('auditory-matching');
 
@@ -552,10 +547,10 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('/subject/{subjectId}/auditory-matching/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteAuditoryMatchingActivity'])->name('auditory-matching.delete');
 
-    //--------------- LANGUAGE 
+    //--------------- LANGUAGE
 
-        // FILL 
-    
+        // FILL
+
         Route::get('/{subjectId}/quiz-language-fill', [TeacherController::class, 'languageFill'])->name('language-fill');
 
         Route::post('/{subjectId}/language-fill/add', [TeacherController::class, 'addLanguageFillActivity'])->name('language-fill.add');
@@ -564,7 +559,7 @@ Route::prefix('mio/teacher')->middleware(
 
         Route::delete('/subject/{subjectId}/language-fill/delete/{difficulty}/{activityId}', [TeacherController::class, 'deleteLanguageFillActivity'])->name('language-fill.delete');
 
-        // MATCHING 
+        // MATCHING
 
         Route::get('/{subjectId}/quiz-language-homonym', [TeacherController::class, 'languageHomonym'])->name('language-homonym');
 

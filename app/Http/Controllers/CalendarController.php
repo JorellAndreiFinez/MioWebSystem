@@ -107,14 +107,14 @@ class CalendarController extends Controller
                     'schedule_type' => $schedule['schedule_type'] ?? null,
                     'teacherid' => $schedule['teacherid'] ?? null,
                     'scheduleid' => $schedule['scheduleid'] ?? null,
-                    'type' => 'global', 
+                    'type' => 'global',
                 ];
 
 
             }
         }
 
-        
+
 
         // Get subject-based schedules
         $subjectSchedules = [];
@@ -122,7 +122,7 @@ class CalendarController extends Controller
             if (isset($subject['schedule']) &&
         isset($subject['schedule']['occurrence']) &&
         !empty($subject['schedule']['occurrence'])) {
-             
+
             Log::info("Adding subject schedule:", [
                 'subject_id' => $subject['subject_id'] ?? 'unknown',
                 'title' => $subject['title'] ?? 'unknown',
@@ -139,7 +139,7 @@ class CalendarController extends Controller
                     'schedule' => $subject['schedule'] ?? [],
                     'schoolyearid' => $subject['schoolyear_id'] ?? $activeSchoolYear['schoolyearid'],
                     'type' => 'subject', // <- ADD THIS
-                    
+
                 ];
 
             } else {
@@ -150,10 +150,10 @@ class CalendarController extends Controller
                     'subject' => $subject
                 ]);
             }
-            
-        } 
 
-        
+        }
+
+
 
         // Format for FullCalendar
         $events = [];
@@ -227,6 +227,168 @@ class CalendarController extends Controller
             'events' => $events
         ]);
     }
+
+   public function showCalendarTeacher()
+    {
+        $user = session('firebase_user');
+
+        if (!$user || !isset($user['uid']) || $user['role'] !== 'teacher') {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $teacherId = $user['uid'];
+        $schoolYears = $this->database->getReference("schoolyears")->getValue();
+        $activeSchoolYear = collect($schoolYears)->firstWhere('status', 'active');
+
+        if (!$activeSchoolYear) {
+            return response()->json(['error' => 'Active school year not found'], 500);
+        }
+
+        $monthMap = [
+            'January' => 1, 'February' => 2, 'March' => 3, 'April' => 4,
+            'May' => 5, 'June' => 6, 'July' => 7, 'August' => 8,
+            'September' => 9, 'October' => 10, 'November' => 11, 'December' => 12
+        ];
+        $schoolYearsById = collect($schoolYears)->keyBy('schoolyearid');
+
+        $globalEvents = [];
+        $subjectEvents = [];
+
+        // ✅ Global Schedules
+        $schedules = $this->database->getReference("schedules")->getValue();
+        foreach ($schedules as $scheduleId => $schedule) {
+            if (
+                isset($schedule['teacherid']) &&
+                $schedule['teacherid'] === $teacherId &&
+                $schedule['schoolyearid'] === $activeSchoolYear['schoolyearid']
+            ) {
+                $startMonth = $monthMap[$activeSchoolYear['start_month']];
+                $endMonth = $monthMap[$activeSchoolYear['end_month']];
+                $yearCreated = \Carbon\Carbon::parse($activeSchoolYear['created_at'])->year;
+                $startYear = $yearCreated;
+                $endYear = $startMonth > $endMonth ? $yearCreated + 1 : $yearCreated;
+
+                $startOfMonth = \Carbon\Carbon::create($startYear, $startMonth, 1)->startOfMonth();
+                $endOfMonth = \Carbon\Carbon::create($endYear, $endMonth, 1)->endOfMonth();
+
+                foreach ($schedule['occurrences'] ?? [] as $day => $time) {
+                    $startTime = $time['start_time'] ?? $time['start'] ?? null;
+                    $endTime = $time['end_time'] ?? $time['end'] ?? null;
+                    if (!$startTime || !$endTime) continue;
+
+                    $validDays = [
+                        'Mon' => 'Monday', 'Tue' => 'Tuesday', 'Wed' => 'Wednesday',
+                        'Thu' => 'Thursday', 'Fri' => 'Friday', 'Sat' => 'Saturday', 'Sun' => 'Sunday',
+                    ];
+                    $dayNormalized = $validDays[$day] ?? $day;
+                    if (!in_array($dayNormalized, array_values($validDays))) continue;
+
+                    $current = $startOfMonth->copy()->modify('last ' . $dayNormalized);
+                    while ($current->addWeek()->lte($endOfMonth)) {
+                        $start = $current->copy()->setTimeFromTimeString($startTime);
+                        $end = $current->copy()->setTimeFromTimeString($endTime);
+
+                        $globalEvents[] = [
+                            'title' => $schedule['schedule_name'] ?? 'Unnamed Schedule',
+                            'start' => $start->toIso8601String(),
+                            'end' => $end->toIso8601String(),
+                            'type' => 'global',
+                            'data' => $schedule,
+                            'color' => '#2196f3' // blue for global
+                        ];
+                    }
+                }
+            }
+        }
+
+        // ✅ Subject Schedules from subjects/gradelevel/subjectID/schedule
+       // ✅ Subject Schedules from subjects/gradelevel/subjectID/schedule
+        $subjectsPath = $this->database->getReference("subjects")->getValue();
+
+        foreach ($subjectsPath as $gradeLevel => $subjects) {
+            foreach ($subjects as $subjectId => $subject) {
+                // ✅ Ensure the subject has a teacher_id and it matches the logged-in teacher
+                if (
+                    isset($subject['teacher_id']) && // make sure key is 'teacher_id' not 'teacherid'
+                    $subject['teacher_id'] === $teacherId &&
+                    isset($subject['schedule']['occurrence'])
+                ) {
+                    Log::info("✔️ Including subject for schedule:", [
+                        'subject_id' => $subjectId,
+                        'grade_level' => $gradeLevel,
+                        'teacher_id' => $subject['teacher_id'],
+                        'subject_name' => $subject['subject_name'] ?? 'Unnamed'
+                    ]);
+
+                    $occurrences = $subject['schedule']['occurrence'];
+                    $startMonth = $monthMap[$activeSchoolYear['start_month']];
+                    $endMonth = $monthMap[$activeSchoolYear['end_month']];
+                    $yearCreated = \Carbon\Carbon::parse($activeSchoolYear['created_at'])->year;
+                    $startYear = $yearCreated;
+                    $endYear = $startMonth > $endMonth ? $yearCreated + 1 : $yearCreated;
+
+                    $startOfMonth = \Carbon\Carbon::create($startYear, $startMonth, 1)->startOfMonth();
+                    $endOfMonth = \Carbon\Carbon::create($endYear, $endMonth, 1)->endOfMonth();
+
+                    foreach ($occurrences as $day => $time) {
+                        $startTime = $time['start_time'] ?? $time['start'] ?? null;
+                        $endTime = $time['end_time'] ?? $time['end'] ?? null;
+                        if (!$startTime || !$endTime) continue;
+
+                        $validDays = [
+                            'Mon' => 'Monday', 'Tue' => 'Tuesday', 'Wed' => 'Wednesday',
+                            'Thu' => 'Thursday', 'Fri' => 'Friday', 'Sat' => 'Saturday', 'Sun' => 'Sunday',
+                        ];
+                        $dayNormalized = $validDays[$day] ?? $day;
+                        if (!in_array($dayNormalized, array_values($validDays))) continue;
+
+                        $current = $startOfMonth->copy()->modify('last ' . $dayNormalized);
+                        while ($current->addWeek()->lte($endOfMonth)) {
+                            $start = $current->copy()->setTimeFromTimeString($startTime);
+                            $end = $current->copy()->setTimeFromTimeString($endTime);
+
+                            $subjectEvents[] = [
+                                'title' => $subject['title'] ?? 'Unnamed Subject',
+                                'start' => $start->toIso8601String(),
+                                'end' => $end->toIso8601String(),
+                                'type' => 'subject',
+                                'data' => [
+                                    'title' => $subject['title'] ?? null,
+                                    'code' => $subject['code'] ?? null,
+                                    'gradelevel' => $gradeLevel,
+                                    'subjectid' => $subjectId,
+                                    'schedule' => $subject['schedule'],
+                                    'teacher_id' => $subject['teacher_id'] ?? null,
+                                    'people' => $subject['people'] ?? null
+                                ],
+                                'color' => '#4caf50'
+                            ];
+                        }
+                    }
+                } else {
+                    Log::info("❌ Skipping subject:", [
+                        'subject_id' => $subjectId,
+                        'has_teacher_id' => isset($subject['teacher_id']),
+                        'teacher_id' => $subject['teacher_id'] ?? 'N/A',
+                        'matches_logged_in_teacher' => ($subject['teacher_id'] ?? '') === $teacherId,
+                        'has_schedule' => isset($subject['schedule']['occurrence'])
+                    ]);
+                }
+            }
+        }
+
+
+
+
+
+        return view('mio.head.teacher-panel', [
+            'page' => 'calendar',
+            'globalEvents' => $globalEvents,
+            'subjectEvents' => $subjectEvents
+        ]);
+    }
+
+
 
 
 

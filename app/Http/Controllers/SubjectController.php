@@ -82,12 +82,41 @@ class SubjectController extends Controller
         $subjects = $this->database->getReference("subjects/{$grade}")->getSnapshot()->getValue() ?? [];
         $gradeLevel = $this->database->getReference("gradelevel/$grade")->getValue();
 
+        foreach ($subjects as $subjectId => &$subject) {
+            // Handle teacher name
+            $teacherId = $subject['teacher_id'] ?? null;
+            $teacherName = 'Unknown';
+
+            if (isset($subject['people'][$teacherId])) {
+                $teacher = $subject['people'][$teacherId];
+                $first = $teacher['first_name'] ?? '';
+                $last = $teacher['last_name'] ?? '';
+                $teacherName = trim("$first $last");
+            }
+            $subject['teacher_name'] = $teacherName;
+
+            // Handle section name
+            $sectionId = $subject['section_id'] ?? null;
+            $sectionName = 'Unknown';
+
+            if ($sectionId) {
+                $section = $this->database->getReference("sections/{$sectionId}")->getValue();
+                if ($section && isset($section['section_name'])) {
+                    $sectionName = $section['section_name'];
+                }
+            }
+
+            $subject['section_name'] = $sectionName;
+        }
+
         return view('mio.head.admin-panel', [
             'page' => 'view-subject',
             'subjects' => $subjects,
             'gradeLevel' => $gradeLevel
         ], compact('subjects', 'grade'));
     }
+
+
 
     public function viewSubjectsApi(Request $request)
     {
@@ -788,6 +817,37 @@ class SubjectController extends Controller
         }
 
         $updateData['schedule'] = $schedule;
+
+        // Fetch existing 'people' for this subject
+        $existingPeople = $existing['people'] ?? [];
+
+        // Get old and new teacher IDs
+        $oldTeacherId = $existing['teacher_id'] ?? null;
+        $newTeacherId = $validatedData['teacher_id'];
+
+        // Initialize people array with existing students (excluding teacher)
+        $updatedPeople = [];
+        foreach ($existingPeople as $personId => $personData) {
+            // Keep only non-teachers
+            if (!isset($personData['role']) || $personData['role'] !== 'teacher') {
+                $updatedPeople[$personId] = $personData;
+            }
+        }
+
+        // Fetch and add the new teacher from users/
+        $newTeacherSnapshot = $this->database->getReference("users/{$newTeacherId}")->getValue();
+        if ($newTeacherSnapshot) {
+            $updatedPeople[$newTeacherId] = [
+                'first_name' => $newTeacherSnapshot['fname'] ?? '',
+                'last_name' => $newTeacherSnapshot['lname'] ?? '',
+                'role' => 'teacher',
+            ];
+        }
+
+
+        // Now assign correctly
+        $updateData['people'] = $updatedPeople;
+
 
 
         // Update data in Firebase

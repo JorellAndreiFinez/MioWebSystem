@@ -40,13 +40,9 @@ class SettingsController extends Controller
             return redirect()->route('login')->with('error', 'You must be logged in to access settings.');
         }
 
-        // Optional: Check for role-based customizations
-        $role = $firebaseUser['role'] ?? 'student'; // or 'teacher', depending on your structure
-
         return view('mio.head.teacher-panel',[
             'page' => 'teacher-settings',
             'firebaseUser' => $firebaseUser,
-            'role' => $role,
         ]);
     }
 

@@ -20,7 +20,7 @@
 
 <section class="home-section">
     <div class="text">School</div>
-    <section class="grade-section">
+    <section class="grade-section" style="background: var(--primary-color); padding: 2rem;" >
     <div class="grade-grid">
        <a href="{{ route('mio.ViewDepartment') }}">
        <div class="grade-card">
@@ -57,13 +57,15 @@
     </div>
     </section>
 
-<section class="announcements-section">
+    <hr style="margin-left: 3rem; margin-right: 3rem;">
+
+<section class="announcements-section" style="background: none;">
 @include('mio.dashboard.status-message')
 
     <div class="header" style="margin-top: 1.2rem">
-        <h2 style="font-size: 2rem; margin-left: 1rem;">Announcements</h2>
+        <h2 style="font-size: 1.5rem; margin-left: 4.5rem;">Announcements</h2>
         <a href="{{ route('mio.AddAnnouncement') }}">
-        <button class="new-announcement">+ New Announcement</button>
+        <button class="new-announcement" style=" margin-right: 4.5rem;">+ New Announcement</button>
         </a>
     </div>
     <div class="table-container">
