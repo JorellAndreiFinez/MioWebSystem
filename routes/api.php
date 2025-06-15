@@ -9,6 +9,7 @@ use App\Http\Controllers\api\TeacherApiController;
 use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
 use App\Http\Controllers\api\SpecializedLanguageApi;
+use App\Http\Controllers\api\MessagingApi;
 use App\Http\Controllers\api\EmergencyApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -34,6 +35,14 @@ Route::middleware([
 
     Route::post('/updateFCMToken/{student_id}', [EmergencyApi::class, 'updateFCMToken']); 
     Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
+
+    // messaging
+    Route::get('/messages/inbox', [MessagingApi::class, 'getInboxMessages']);
+    Route::get('/messages/sent', [MessagingApi::class, 'getSentMessages']);
+    Route::get('/message/reply/{conversation_id}', [MessagingApi::class, 'getConversation']);
+    Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
+    Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']); // it should be create new
+    Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
 });
 
 
@@ -123,5 +132,5 @@ Route::middleware([
 
     // emergency
 
-    Route::post('/send', [EmergencyApi::class, 'send']);
+    Route::post('/send', [EmergencyApi::class, 'sendEmergencyEarthquake']);
 });

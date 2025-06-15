@@ -33,26 +33,35 @@ class EmergencyApi extends Controller
             ->createMessaging();
     }
 
-    public function send(Request $request)
+    public function sendEmergencyEarthquake(Request $request)
     {
-        $token = 'dyZcpJqySDetEEWWeU_yem:APA91bHmnvu15yxLjRYYInSOqrlIyHMsF9eA9fTDD_9_W_ORqq9ZDZ4awL8KGG5-nzRtnnh4D3YuSlaQwtJ6hw117zUEZqsKf2t3BIPfU7EemKk1MqDuHUY';
-        $title = 'Emergency Alert!';
-        $body = 'Drop, cover, and hold! Stay safe and follow emergency instructions promptly.';
-
         try {
-            $message = CloudMessage::withTarget('token', $token)
-                ->withNotification(['title' => $title, 'body' => $body])
-                ->withData([
-                    'type' => 'emergency',
-                    'screen' => 'EmergencyScreen',
-                ]);
-                
+            $users = $this->database->getReference("users")->getSnapshot()->getValue();
 
-            $this->messaging->send($message);
+            $tokens = [];
+            foreach ($users as $user) {
+                if (!empty($user['fcm_token'])) {
+                    $tokens[] = $user['fcm_token'];
+                }
+            }
+
+            $title = 'Emergency Alert!';
+            $body = 'Drop, cover, and hold! Stay safe and follow emergency instructions promptly.';
+
+            foreach($tokens as $token){
+                $message = CloudMessage::withTarget('token', $token)
+                    ->withNotification(['title' => $title, 'body' => $body])
+                    ->withData([
+                        'type' => 'earthquake',
+                        'screen' => 'EmergencyScreen',
+                    ]);
+                
+                $this->messaging->send($message);
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Notification sent successfully'
+                'message' => 'Notification sent successfully',  
             ]);
         } catch (\Throwable $e) {
             Log::error('FCM Send Failed: ' . $e->getMessage());
