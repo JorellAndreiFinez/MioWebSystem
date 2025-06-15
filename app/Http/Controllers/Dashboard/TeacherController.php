@@ -2755,7 +2755,7 @@ class TeacherController extends Controller
 
         public function languageHomonym($subjectId)
         {
-            // Find grade level key and subject
+            // Step 1: Find grade level key and subject
             $subjectsRef = $this->database->getReference('subjects');
             $allSubjects = $subjectsRef->getValue() ?? [];
             $gradeLevelKey = null;
@@ -2775,64 +2775,70 @@ class TeacherController extends Controller
                 return abort(404, 'Subject not found.');
             }
 
-            // ✅ Fetch BINGO Activities
-            $bingoRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/bingo");
-            $bingoData = $bingoRef->getValue() ?? [];
+            // Step 2: Fetch HOMONYM Activities
+            $homonymRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/homonyms");
+            $homonymData = $homonymRef->getValue() ?? [];
 
-            $speech = []; // Rename to $bingo if preferred
+            $speech = [];
 
             foreach (['easy', 'medium', 'hard'] as $difficulty) {
-                if (isset($bingoData[$difficulty])) {
-                    foreach ($bingoData[$difficulty] as $activityId => $activity) {
+                if (isset($homonymData[$difficulty])) {
+                    foreach ($homonymData[$difficulty] as $activityId => $activity) {
                         $speech[$difficulty][$activityId] = [
                             'activity_title' => $activity['activity_title'] ?? 'Untitled',
                             'created_at' => $activity['created_at'] ?? '',
                             'created_by' => $activity['created_by'] ?? '',
                             'items' => [],
-                            'audio_paths' => $activity['audio_paths'] ?? [],
-                            'correct_answers' => $activity['correct_answers'] ?? [],
                         ];
 
                         if (isset($activity['items']) && is_array($activity['items'])) {
-                            foreach ($activity['items'] as $itemId => $item) {
-                                $filename = $item['filename'] ?? '';
-                                $imageUrl = $item['image_url'] ?? (isset($item['image_path']) ? asset('storage/' . $item['image_path']) : '');
-                                $audioUrl = $item['audio_url'] ?? '';
+                            foreach ($activity['items'] as $itemId => $itemData) {
+                                $answers = [];
+                                $audios = [];
+                                $corrects = [];
+                                $sentences = [];
 
-                                // Fallback audio matching: Match audio from audio_paths using itemId or filename basename
-                                if (!$audioUrl) {
-                                    $baseName = pathinfo($filename, PATHINFO_FILENAME);
-                                    foreach (($activity['audio_paths'] ?? []) as $audioId => $audio) {
-                                        $audioBase = pathinfo($audio['filename'] ?? '', PATHINFO_FILENAME);
-                                        if ($audioBase === $baseName || $audioId === $itemId) {
-                                            $audioUrl = $audio['audio_url'] ?? asset('storage/' . ($audio['audio_path'] ?? ''));
-                                            break;
-                                        }
+                                foreach ($itemData as $key => $value) {
+                                    if (Str::startsWith($key, 'answer_')) {
+                                        $index = Str::after($key, 'answer_');
+                                        $answers[$index] = $value;
+                                    }
+                                    if (Str::startsWith($key, 'audio_path_')) {
+                                        $index = Str::after($key, 'audio_path_');
+                                        $audios[$index] = $value;
+                                    }
+                                    if (Str::startsWith($key, 'correct_')) {
+                                        $index = Str::after($key, 'correct_');
+                                        $corrects[$index] = $value;
+                                    }
+                                    if (Str::startsWith($key, 'sentence_')) {
+                                        $index = Str::after($key, 'sentence_');
+                                        $sentences[$index] = $value;
                                     }
                                 }
 
                                 $speech[$difficulty][$activityId]['items'][$itemId] = [
-                                    'filename' => $filename,
-                                    'image_path' => $item['image_path'] ?? '',
-                                    'image_url' => $imageUrl,
-                                    'audio_url' => $audioUrl,
-                                    'text' => $item['text'] ?? '', // Optional: for displaying/editing text
+                                    'answers' => $answers,
+                                    'audio_paths' => $audios,
+                                    'correct_answers' => $corrects,
+                                    'sentences' => $sentences,
+                                    'choices' => $itemData['choices'] ?? [],
+                                    'distractors' => $itemData['distractors'] ?? [],
                                 ];
                             }
-
                         }
                     }
                 }
-    }
-
+            }
 
             return view('mio.head.teacher-panel', [
-                'page' => 'auditory-bingo',
+                'page' => 'language-homonym',
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'speech' => $speech, // This now includes Bingo activities
+                'speech' => $speech,
             ]);
         }
+
     
         public function languageFill($subjectId)
         {
@@ -2866,22 +2872,27 @@ class TeacherController extends Controller
                 foreach ($activities as $activityId => $activity) {
                     $items = [];
 
-                    if (isset($activity['items']) && is_array($activity['items'])) {
-                        foreach ($activity['items'] as $itemId => $item) {
-                            $audioPath = $item['audio_path'] ?? '';
+                if (isset($activity['items']) && is_array($activity['items'])) {
+                    foreach ($activity['items'] as $itemId => $item) {
+                        $audioPath = $item['audio_path'] ?? '';
+                        $audioUrl = !empty($audioPath)
+                            ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
+                            : null;
 
-                            $items[] = [
-                                'item_id' => $itemId,
-                                'audio_path' => $audioPath,
-                                'audio_url' => !empty($audioPath)
-                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
-                                    : null,
-                                'filename' => $item['filename'] ?? '',
-                                'sentence' => $item['sentence'] ?? '',
-                                'distractors' => $item['distractors'] ?? [],
-                            ];
-                        }
+                        $items[$itemId] = [
+                            'item_id' => $itemId,
+                            'audio_path' => $audioPath,
+                            'audio_url' => $audioUrl,
+                            'audio_filename' => $item['filename'] ?? '',
+                            'sentence' => $item['sentence'] ?? '',
+                            'distractors' => $item['distractors'] ?? [],
+                            'image_url' => $item['image_url'] ?? '', // optional if supported
+                            'image_path' => $item['image_path'] ?? '',
+                            'image_filename' => $item['image_filename'] ?? '',
+                        ];
                     }
+                }
+
 
                     $fill[$difficulty][$activityId] = [
                         'activity_title' => $activity['activity_title'] ?? 'Untitled',
@@ -2911,22 +2922,16 @@ class TeacherController extends Controller
                     'activity_title' => 'required|string|max:255',
                     'difficulty' => 'required|in:easy,medium,hard',
                     'items' => 'required|array|min:1',
-                    'items.*.text' => 'required|string',
-                    'items.*.image' => 'nullable|file|image|max:2048',
                 ]);
 
                 $uid = session('firebase_user.uid');
-                $dateCode = now()->format('Ymd'); // YYYYMMDD
-                $activityId = 'SP' . $dateCode . rand(10, 99); // SPYYYYMMDDXX
-
+                $dateCode = now()->format('Ymd');
+                $activityId = 'SPE' . now()->format('YmdHis') . rand(100, 999); // Unique
                 $difficulty = $request->difficulty;
 
                 $activityData = [
                     'activity_title' => $request->activity_title,
-                    'activity_difficulty' => $difficulty,
-                    'assessment_id' => $activityId,
                     'created_at' => now()->toDateTimeString(),
-                    'updated_at' => now()->toDateTimeString(),
                     'created_by' => $uid,
                     'total' => count($request->items),
                 ];
@@ -2934,53 +2939,78 @@ class TeacherController extends Controller
                 $items = [];
 
                 foreach ($request->items as $index => $item) {
-                    $phraseId = 'PH' . now()->format('Ymd') . rand(10, 99);
-                    $imagePath = null;
+                    $uuid = Str::uuid()->toString();
+                    $itemData = [];
+                    $x = 1;
 
-                    if ($request->hasFile("items.$index.image")) {
-                        $file = $request->file("items.$index.image");
-                        $filename = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
-                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                    // Handle multiple answer_x / sentence_x / audio_x
+                    while (
+                        isset($item["sentence_{$x}"]) ||
+                        isset($item["answer_{$x}"]) ||
+                        $request->hasFile("items.$index.audio_{$x}")
+                    ) {
+                        $itemData["sentence_{$x}"] = $item["sentence_{$x}"] ?? null;
+                        $itemData["answer_{$x}"] = $item["answer_{$x}"] ?? null;
 
-                        // ✅ Correct bucket usage
-                        $bucket = $this->storageClient->bucket($this->bucketName);
-                        $bucket->upload($uploadedFile, ['name' => $filename]);
+                        if ($request->hasFile("items.$index.audio_{$x}")) {
+                            $file = $request->file("items.$index.audio_{$x}");
+                            $filename = $uuid . $itemData["answer_{$x}"] . '.' . $file->getClientOriginalExtension();
+                            $storagePath = "audio/language/{$filename}";
 
-                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($filename) . '?alt=media';
+                            $bucket = $this->storageClient->bucket($this->bucketName);
+                            $bucket->upload(fopen($file->getRealPath(), 'r'), ['name' => $storagePath]);
+
+                            $itemData["audio_path_{$x}"] = $storagePath;
+                            $itemData["filename_{$x}"] = $file->getClientOriginalName();
+                        }
+
+                        $x++;
                     }
 
-                    $items[$phraseId] = [
-                        'speechID' => $phraseId,
-                        'text' => $item['text'],
-                        'image_path' => $imagePath,
-                    ];
+                    // Handle distractors
+                    $choices = [];
+                    if (!empty($itemData)) {
+                        foreach ($itemData as $key => $value) {
+                            if (Str::startsWith($key, 'answer_') && $value) {
+                                $choices[] = $value;
+                            }
+                        }
+                    }
+
+                    $distractors = isset($item['distractors']) ? array_values(array_filter($item['distractors'])) : [];
+                    $choices = array_merge($choices, $distractors);
+
+                    $itemData['distractors'] = $distractors;
+                    $itemData['choices'] = $choices;
+
+                    $items[$uuid] = $itemData;
                 }
 
                 $activityData['items'] = $items;
 
-                // ✅ Locate correct grade level
+                // Find grade level
                 $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
                 $gradeLevel = null;
-
                 foreach ($subjectGradeLevels as $level => $subjects) {
                     if (isset($subjects[$subjectId])) {
                         $gradeLevel = $level;
                         break;
-                    }
-                }
-
-                if (!$gradeLevel) {
-                    return back()->with('error', 'Grade level not found for this subject.');
-                }
-
-                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
-                $this->database->getReference($path)->set($activityData);
-
-                return back()->with('message', '✅ Phrase activity added successfully!');
-            } catch (\Throwable $e) {
-                return back()->with('error', '❌ Failed to add phrase activity: ' . $e->getMessage());
             }
         }
+
+        if (!$gradeLevel) {
+            return back()->with('error', 'Grade level not found for this subject.');
+        }
+
+        $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}";
+        $this->database->getReference($path)->set($activityData);
+
+        return back()->with('message', '✅ Homonym activity added successfully!');
+    } catch (\Throwable $e) {
+        return back()->with('error', '❌ Failed to add homonym activity: ' . $e->getMessage());
+    }
+}
+
 
         public function editLanguageHomonymActivity(Request $request, $subjectId)
         {
@@ -3227,122 +3257,155 @@ class TeacherController extends Controller
 
 
         public function editLanguageFillActivity(Request $request, $subjectId)
-        {
-            try {
-                $request->validate([
-                    'activity_id' => 'required',
-                    'activity_title' => 'required|string|max:255',
-                    'difficulty' => 'required|in:easy,medium,hard',
-                    'questions' => 'required|array|min:1',
-                    'questions.*.phrase_id' => 'required|string',
-                    'questions.*.question_text' => 'required|string',
-                    'questions.*.question_audio' => 'nullable|file|mimes:mp3,wav,m4a|max:10240',
-                    'questions.*.question_image' => 'nullable|file|image|max:2048',
-                    'questions.*.items' => 'required|array|min:1',
-                    'questions.*.items.*.text' => 'required|string',
-                    'questions.*.old_audio_path' => 'nullable|string',
-                    'questions.*.old_audio_url' => 'nullable|string',
-                    'questions.*.old_filename' => 'nullable|string',
-                    'questions.*.old_image_path' => 'nullable|string',
-                    'questions.*.old_image_url' => 'nullable|string',
-                ]);
+{
+    try {
+        $request->validate([
+            'activity_id' => 'required|string',
+            'activity_title' => 'required|string|max:255',
+            'difficulty' => 'required|in:easy,medium,hard',
 
-                $uid = session('firebase_user.uid');
-                $difficulty = $request->difficulty;
-                $activityId = $request->activity_id;
+            'questions' => 'required|array|min:1',
+            'questions.*.question_text' => 'required|string',
 
-                // 🔍 Get grade level of the subject
-                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
-                $gradeLevel = null;
-                foreach ($subjectGradeLevels as $level => $subjects) {
-                    if (isset($subjects[$subjectId])) {
-                        $gradeLevel = $level;
-                        break;
-                    }
-                }
+            'questions.*.items' => 'required|array|min:1',
+            'questions.*.items.*.text' => 'required|string',
 
-                if (!$gradeLevel) {
-                    return back()->with('error', 'Grade level not found for this subject.');
-                }
+            'questions.*.question_image' => 'nullable|image|max:10048',
+            'questions.*.question_audio' => 'nullable|file|mimes:mp3,wav,ogg|max:20480',
 
-                $items = [];
+            'questions.*.old_audio_path' => 'nullable|string',
+            'questions.*.old_image_path' => 'nullable|string',
+            'questions.*.old_audio_id' => 'nullable|string',
+            'questions.*.old_image_id' => 'nullable|string',
+            'questions.*.old_audio_filename' => 'nullable|string',
+            'questions.*.old_image_filename' => 'nullable|string',
+            'questions.*.old_audio_url' => 'nullable|string',
+            'questions.*.old_image_url' => 'nullable|string',
+        ]);
 
-                foreach ($request->questions as $qIndex => $question) {
-                    $itemId = $question['phrase_id'];
+        $uid = session('firebase_user.uid');
+        $activityId = $request->activity_id;
+        $difficulty = $request->difficulty;
+        $dateCode = now()->format('Ymd');
 
-                    // === Image Handling ===
-                    $imagePath = $question['old_image_path'] ?? null;
-                    $imageUrl = $question['old_image_url'] ?? null;
+        // Get grade level
+        $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+        $gradeLevel = null;
 
-                    if ($request->hasFile("questions.$qIndex.question_image")) {
-                        $image = $request->file("questions.$qIndex.question_image");
-                        $imgFilename = $itemId . '_img.' . $image->getClientOriginalExtension();
-                        $imgStoragePath = 'images/language/' . $imgFilename;
-
-                        $uploadedImage = fopen($image->getRealPath(), 'r');
-                        $this->storageClient->bucket($this->bucketName)->upload($uploadedImage, ['name' => $imgStoragePath]);
-
-                        $imagePath = $imgStoragePath;
-                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imgStoragePath) . '?alt=media';
-                    }
-
-                    // === Audio Handling ===
-                    $audioPath = $question['old_audio_path'] ?? null;
-                    $audioUrl = $question['old_audio_url'] ?? null;
-                    $audioFilename = $question['old_filename'] ?? null;
-
-                    if ($request->hasFile("questions.$qIndex.question_audio")) {
-                        $audio = $request->file("questions.$qIndex.question_audio");
-                        $audioFilename = $itemId . '_' . preg_replace('/[^a-zA-Z0-9]/', '', strtolower(pathinfo($audio->getClientOriginalName(), PATHINFO_FILENAME))) . '.' . $audio->getClientOriginalExtension();
-                        $audioStoragePath = 'audio/language/' . $audioFilename;
-
-                        $uploadedAudio = fopen($audio->getRealPath(), 'r');
-                        $this->storageClient->bucket($this->bucketName)->upload($uploadedAudio, ['name' => $audioStoragePath]);
-
-                        $audioPath = $audioStoragePath;
-                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioStoragePath) . '?alt=media';
-                    }
-
-                    // === Distractor Mapping ===
-                    $distractors = array_map(function ($item) {
-                        return $item['text'];
-                    }, $question['items']);
-
-                    // === Final Question Structure ===
-                    $itemData = [
-                        'sentence' => $question['question_text'],
-                        'audio_path' => $audioPath,
-                        'audio_url' => $audioUrl,
-                        'filename' => $audioFilename,
-                        'distractors' => $distractors,
-                    ];
-
-                    if ($imagePath) {
-                        $itemData['image_path'] = $imagePath;
-                        $itemData['image_url'] = $imageUrl;
-                    }
-
-                    $items[$itemId] = $itemData;
-                }
-
-                // === Final Activity Structure ===
-                $activityData = [
-                    'activity_title' => $request->activity_title,
-                    'updated_at' => now()->toDateTimeString(),
-                    'updated_by' => $uid,
-                    'total' => count($items),
-                    'items' => $items,
-                ];
-
-                // ✅ Save to Firebase
-                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
-                $this->database->getReference($path)->set($activityData);
-
-                return back()->with('message', '✅ Fill-in-the-Blanks activity updated successfully!');
-            } catch (\Throwable $e) {
-                return back()->with('error', '❌ Failed to update fill activity: ' . $e->getMessage());
+        foreach ($subjectGradeLevels as $level => $subjects) {
+            if (isset($subjects[$subjectId])) {
+                $gradeLevel = $level;
+                break;
             }
         }
+
+        if (!$gradeLevel) {
+            return back()->with('error', 'Grade level not found.');
+        }
+
+        $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
+        $fillItems = [];
+
+        foreach ($request->questions as $index => $item) {
+            $itemId = $item['item_id'] ?? ('FB' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT));
+            $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['question_text']));
+
+            // === IMAGE ===
+            if ($request->hasFile("questions.$index.question_image")) {
+                $imageUUID = (string) Str::uuid();
+                $imageFile = $request->file("questions.$index.question_image");
+                $imageExt = $imageFile->getClientOriginalExtension();
+                $imageFilename = $safeText . '.' . $imageExt;
+                $imagePath = "images/fill/{$imageUUID}{$imageFilename}";
+                $this->storageClient->bucket($this->bucketName)->upload(
+                    fopen($imageFile->getRealPath(), 'r'),
+                    ['name' => $imagePath]
+                );
+                $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+            } elseif (!empty($item['old_image_path'])) {
+                $imageFilename = $item['old_image_filename'] ?? '';
+                $imagePath = $item['old_image_path'];
+                $imageUUID = $item['old_image_id'] ?? '';
+                $imageUrl = $item['old_image_url'] ?? '';
+            } else {
+                $imageFilename = '';
+                $imagePath = '';
+                $imageUUID = '';
+                $imageUrl = '';
+            }
+
+            // === AUDIO ===
+            if ($request->hasFile("questions.$index.question_audio")) {
+                $audioUUID = (string) Str::uuid();
+                $audioFile = $request->file("questions.$index.question_audio");
+                $audioExt = $audioFile->getClientOriginalExtension();
+                $audioFilename = $safeText . '.' . $audioExt;
+                $audioPath = "audio/fill/{$audioUUID}{$audioFilename}";
+                $this->storageClient->bucket($this->bucketName)->upload(
+                    fopen($audioFile->getRealPath(), 'r'),
+                    ['name' => $audioPath]
+                );
+                $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+            } elseif (!empty($item['old_audio_path'])) {
+                $audioFilename = $item['old_audio_filename'] ?? '';
+                $audioPath = $item['old_audio_path'];
+                $audioUUID = $item['old_audio_id'] ?? '';
+                $audioUrl = $item['old_audio_url'] ?? '';
+            } else {
+                $audioFilename = '';
+                $audioPath = '';
+                $audioUUID = '';
+                $audioUrl = '';
+            }
+
+            $distractorTexts = array_map(function ($distractor) {
+                return $distractor['text'] ?? '';
+            }, $item['items']);
+
+            // Save media in common item DB
+            $this->database->getReference("items/{$itemId}")->set([
+                'audio_filename' => $audioFilename,
+                'audio_id' => $audioUUID,
+                'audio_path' => $audioPath,
+                'audio_url' => $audioUrl,
+                'image_filename' => $imageFilename,
+                'image_id' => $imageUUID,
+                'image_path' => $imagePath,
+                'image_url' => $imageUrl,
+            ]);
+
+            // Add item to fill activity
+            $fillItems[$itemId] = [
+                'sentence' => $item['question_text'],
+                'distractors' => $distractorTexts,
+                'audio_filename' => $audioFilename,
+                'audio_id' => $audioUUID,
+                'audio_path' => $audioPath,
+                'audio_url' => $audioUrl,
+                'image_filename' => $imageFilename,
+                'image_id' => $imageUUID,
+                'image_path' => $imagePath,
+                'image_url' => $imageUrl,
+            ];
+        }
+
+        $activityData = [
+            'activity_title' => $request->activity_title,
+            'updated_by' => $uid,
+            'updated_at' => now()->toDateTimeString(),
+            'items' => $fillItems,
+            'total' => count($fillItems),
+        ];
+
+        $this->database->getReference($path)->update($activityData);
+
+        return back()->with('message', '✅ Fill activity updated successfully!');
+    } catch (\Throwable $e) {
+        return back()->with('error', '❌ Failed to update Fill activity: ' . $e->getMessage());
+    }
+}
+
+
 
 
 
@@ -3365,7 +3428,7 @@ class TeacherController extends Controller
                     return back()->with('error', 'Grade level not found for this subject.');
                 }
 
-                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/question/{$difficulty}/{$activityId}";
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
 
                 // ✅ Fetch the activity data before removal
                 $activitySnapshot = $this->database->getReference($path)->getSnapshot();

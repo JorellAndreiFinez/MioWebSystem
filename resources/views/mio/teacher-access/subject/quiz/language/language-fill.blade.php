@@ -33,18 +33,40 @@
                             </div>
                         </div>
 
+                        @php
+                            $mappedActivity = [
+                                'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                                'items' => collect($activity['items'] ?? [])->map(function ($item, $itemId) {
+                                    return [
+                                        'qid' => $itemId,
+                                        'question_text' => $item['sentence'] ?? '',
+                                        'audio_path' => $item['audio_path'] ?? '',
+                                        'filename' => $item['filename'] ?? '',
+                                        'image_url' => null,
+                                        'items' => collect($item['distractors'] ?? [])->map(function ($text) {
+                                            return ['text' => $text];
+                                        })->values()
+                                    ];
+                                })->values()
+                            ];
+                        @endphp
+
+
                         <div class="activity-actions" style="margin-top: 10px; display: flex; gap: 10px;">
                             <!-- Edit Button -->
-                            <a href="#" class="take-quiz-btn"
-                                data-activity='@json($activity)'
+                            <button
+                                onclick="handleEditButtonClick(this)"
                                 data-activity-id="{{ $activityId }}"
                                 data-difficulty="{{ $difficulty }}"
-                                onclick="event.stopPropagation(); handleEditButtonClick(this)">
-                                ✏️ Edit Activity
-                            </a>
+                                data-activity='@json($mappedActivity)'>
+                                ✏️ Edit
+                            </button>
+
+
+
 
                             <!-- Delete Button -->
-                            <form action="{{ route('mio.subject-teacher.auditory-matching.delete', ['subjectId' => request()->route('subjectId'), 'difficulty' => $difficulty, 'activityId' => $activityId]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this activity?');" style="margin: 0;">
+                            <form action="{{ route('mio.subject-teacher.language-fill.delete', ['subjectId' => request()->route('subjectId'), 'difficulty' => $difficulty, 'activityId' => $activityId]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this activity?');" style="margin: 0;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="take-quiz-btn" style="background-color: #e74c3c;" onclick="event.stopPropagation();">🗑️ Delete</button>
@@ -82,14 +104,14 @@
                                     </div>
                                 @endforeach
                             @else
-                                <p>No fill-in-the-blank items found for this activity.</p>
+                                <p>No fillitems found for this activity.</p>
                             @endif
                         </div>
                     </div>
                 @endforeach
             @endforeach
         @else
-            <p>No fill-in-the-blank activities found.</p>
+            <p>No fill activities found.</p>
         @endif
 
         <!-- Add New Activity Button -->
@@ -132,10 +154,10 @@
                 <label>Sentence</label>
                 <input type="text" name="questions[0][question_text]" placeholder="Enter your question here" required>
 
-                <label>Add Image for Question (optional)</label>
+                <label>Add Image (optional)</label>
                 <input type="file" name="questions[0][question_image]" accept="image/*">
 
-                <label>Upload Audio for Question <span style="color:red">*</span></label>
+                <label>Upload Audio<span style="color:red">*</span></label>
                 <input type="file" name="questions[0][question_audio]" accept="audio/*" required onchange="previewQuestionAudio(this, 0)">
                 <div id="waveform-preview-question-0" style="margin-top: 10px;"></div>
 
@@ -196,130 +218,30 @@
     </div>
     </div>
 
-
-
-
 </section>
 
-<script>
-let questionIndex = 1;
-const waveSurfers = {};
-
-function addNewQuestion() {
-  const container = document.getElementById('questions-container');
-
-  const newQuestion = document.createElement('div');
-  newQuestion.classList.add('question-block');
-  newQuestion.dataset.qindex = questionIndex;
-  newQuestion.style.position = 'relative';
-
-  newQuestion.innerHTML = `
-    <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" style="position: absolute; top: -10px; right: -10px; background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
-
-    <hr>
-
-    <label>Sentence</label>
-    <input type="text" name="questions[${questionIndex}][question_text]" placeholder="Enter your question here" required>
-
-    <label>Add Image for Question (optional)</label>
-    <input type="file" name="questions[${questionIndex}][question_image]" accept="image/*">
-
-    <label>Upload Audio for Question <span style="color:red">*</span></label>
-    <input type="file" name="questions[${questionIndex}][question_audio]" accept="audio/*" required onchange="previewQuestionAudio(this, ${questionIndex})">
-    <div id="waveform-preview-question-${questionIndex}" style="margin-top: 10px;"></div>
-
-    <hr>
-
-    <label>Distractors</label>
-    <div class="choices-container">
-      <div class="choice-item">
-        <input type="text" name="questions[${questionIndex}][items][0][text]" placeholder="Choice text (e.g. 'Dog')" required>
-        <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-      </div>
-    </div>
-    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Distractor">➕ Add Distractor</button>
-  `;
-
-  container.appendChild(newQuestion);
-  questionIndex++;
-}
-
-function removeQuestionBlock(button) {
-  const questionBlock = button.closest('.question-block');
-  if (questionBlock) questionBlock.remove();
-}
-
-function previewQuestionAudio(input, index) {
-  const containerId = `waveform-preview-question-${index}`;
-  const container = document.getElementById(containerId);
-
-  if (!input.files || input.files.length === 0) return;
-
-  const file = input.files[0];
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    container.innerHTML = `
-      <div id="waveform-${index}"></div>
-      <button type="button" onclick="togglePlayback(${index})" id="play-btn-${index}">▶️ Play</button>
-    `;
-
-    const wavesurfer = WaveSurfer.create({
-      container: `#waveform-${index}`,
-      waveColor: '#d9dcff',
-      progressColor: '#4353ff',
-      height: 60,
-      backend: 'MediaElement',
-      mediaControls: false,
-    });
-
-    waveSurfers[index] = wavesurfer;
-    wavesurfer.load(e.target.result);
-
-    wavesurfer.on('finish', () => {
-      const btn = document.getElementById(`play-btn-${index}`);
-      if (btn) btn.innerText = '▶️ Play';
-    });
-  };
-
-  reader.readAsDataURL(file);
-}
-
-function togglePlayback(index) {
-  const wavesurfer = waveSurfers[index];
-  const btn = document.getElementById(`play-btn-${index}`);
-  if (!wavesurfer) return;
-
-  if (wavesurfer.isPlaying()) {
-    wavesurfer.pause();
-    btn.innerText = '▶️ Play';
-  } else {
-    wavesurfer.play();
-    btn.innerText = '⏸️ Pause';
-  }
-}
-</script>
 
 <script>
 let choiceIndex = 1;
 
 function addChoiceItem(button) {
-  const questionBlock = button.closest('.question-block');
-  const choicesContainer = questionBlock.querySelector('.choices-container');
-  const qIndex = questionBlock.dataset.qindex;
+    const questionBlock = button.closest('.question-block');
+    const choicesContainer = questionBlock.querySelector('.choices-container');
+    const qIndex = questionBlock.dataset.qindex;
 
-  const currentChoicesCount = choicesContainer.querySelectorAll('.choice-item').length;
+    const currentChoicesCount = choicesContainer.querySelectorAll('.choice-item').length;
 
-  const itemDiv = document.createElement('div');
-  itemDiv.classList.add('choice-item');
+    const itemDiv = document.createElement('div');
+    itemDiv.classList.add('choice-item');
 
-  itemDiv.innerHTML = `
-    <input type="text" name="questions[${qIndex}][items][${currentChoicesCount}][text]" placeholder="Choice text (e.g. 'Dog')" required>
-    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-  `;
+    itemDiv.innerHTML = `
+        <input type="text" name="items[${qIndex}][distractors][${currentChoicesCount}]" placeholder="Choice text (e.g. 'Dog')" required>
+        <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+    `;
 
-  choicesContainer.appendChild(itemDiv);
+    choicesContainer.appendChild(itemDiv);
 }
+
 
 
 function removeChoiceItem(button) {
@@ -331,123 +253,248 @@ function removeChoiceItem(button) {
 </script>
 
 <script>
-    function handleEditButtonClick(el) {
-        const activity = JSON.parse(el.getAttribute('data-activity'));
-        const activityId = el.getAttribute('data-activity-id');
-        const difficulty = el.getAttribute('data-difficulty');
+let questionIndex = 1; // Start from 1 because 0 is already in DOM
 
-        const items = [];
-        for (const itemId in activity.items) {
-            const item = activity.items[itemId];
-            items.push({
-                phrase_id: itemId, // ✅ PRESERVE CORRECT ID
-                question_text: item.sentence || '',
-                question_image_url: item.image_url || '',
-                old_image_url: item.image_url || '',
-                old_image_path: item.image_path || '',
-                audio_url: item.audio_url || '',
-                old_audio_url: item.audio_url || '',
-                old_audio_path: item.audio_path || '',
-                old_filename: item.filename || '',
-                items: (item.distractors || []).map(text => ({ text }))
-            });
-        }
+function addNewQuestion() {
+    const container = document.getElementById('questions-container');
+
+    const newQuestion = document.createElement('div');
+    newQuestion.classList.add('question-block');
+    newQuestion.dataset.qindex = questionIndex;
+
+    newQuestion.innerHTML = `
+    <hr>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" title="Remove Sentence" style="background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
+    </div>
+
+    <label>Sentence</label>
+    <input type="text" name="questions[${questionIndex}][question_text]" placeholder="Enter your question here" required>
+
+    <label>Add Image (optional)</label>
+    <input type="file" name="questions[${questionIndex}][question_image]" accept="image/*">
+
+    <label>Upload Audio<span style="color:red">*</span></label>
+    <input type="file" name="questions[${questionIndex}][question_audio]" accept="audio/*" required onchange="previewQuestionAudio(this, ${questionIndex})">
+    <div id="waveform-preview-question-${questionIndex}" style="margin-top: 10px;"></div>
+
+    <hr>
+
+    <label>Distractors</label>
+    <div class="choices-container">
+        <div class="choice-item">
+            <input type="text" name="questions[${questionIndex}][items][0][text]" placeholder="Choice text (e.g. 'Dog')" required>
+            <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+        </div>
+    </div>
+    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Distractor">➕ Add Distractor</button>
+    `;
+
+    container.appendChild(newQuestion);
+    questionIndex++;
+}
+
+// This function adds a choice input inside the relevant question block
+function addChoiceItem(button) {
+  // The button is inside question-block > find its .choices-container sibling
+  let questionBlock = button.closest('.question-block');
+  let choicesContainer = questionBlock.querySelector('.choices-container');
+
+  // Count existing choices to index new one properly
+  const qIndex = questionBlock.dataset.qindex;
+  const currentChoicesCount = choicesContainer.querySelectorAll('.choice-item').length;
+
+  // Create new choice item div
+  const itemDiv = document.createElement('div');
+  itemDiv.classList.add('choice-item');
+
+  itemDiv.innerHTML = `
+    <input type="text" name="questions[${qIndex}][items][${currentChoicesCount}][text]" placeholder="Choice text (e.g. 'Dog')" required>
+    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+  `;
+
+  choicesContainer.appendChild(itemDiv);
+}
+
+function removeChoiceItem(button) {
+  const itemDiv = button.closest('.choice-item');
+  if (itemDiv) itemDiv.remove();
+}
+
+function removeQuestionBlock(button) {
+    const questionBlock = button.closest('.question-block');
+    if (questionBlock) questionBlock.remove();
+}
+
+</script>
 
 
-        openEditActivityModal(activityId, activity.activity_title, difficulty, items);
+<script>
+function handleEditButtonClick(element) {
+    try {
+        const activity = JSON.parse(element.getAttribute('data-activity'));
+        const activityId = element.getAttribute('data-activity-id');
+        const difficulty = element.getAttribute('data-difficulty');
+
+        openEditModal(activity, activityId, difficulty);
+    } catch (err) {
+        console.error('Failed to open edit modal:', err);
+    }
+}
+
+    function toggleActivityDetails(id) {
+        const section = document.getElementById(`activity-${id}`);
+        section.style.display = section.style.display === 'none' ? 'grid' : 'none';
     }
 
-    function openEditActivityModal(activityId, activityTitle, difficulty, questions) {
+let editQuestionIndex = 0;
+
+function openEditModal(activity, activityId, difficulty) {
     document.getElementById('editActivityId').value = activityId;
-    document.getElementById('editActivityTitle').value = activityTitle;
+    document.getElementById('editActivityTitle').value = activity.activity_title || '';
     document.getElementById('editActivityDifficultySelect').value = difficulty;
 
     const container = document.getElementById('edit-questions-container');
-    container.innerHTML = ''; // clear existing
+    container.innerHTML = '';
+    editQuestionIndex = 0;
 
-    let qIndex = 0;
-    for (const question of questions) {
-        addEditQuestionBlock(qIndex, question);
-        qIndex++;
+    if (activity.items) {
+        activity.items.forEach((question, qIdx) => {
+            const questionBlock = document.createElement('div');
+            questionBlock.classList.add('question-block');
+            questionBlock.dataset.qindex = editQuestionIndex;
+
+            const choiceItems = question.items.map((choice, cIdx) => `
+                <div class="choice-item">
+                    <input type="text" name="questions[${editQuestionIndex}][items][${cIdx}][text]" value="${choice.text}" required>
+                    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+                </div>
+            `).join('');
+
+            questionBlock.innerHTML = `
+                <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" style="position: absolute; top: -10px; right: -10px; background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
+
+                <hr>
+
+                <label>Sentence</label>
+                <input type="text" name="questions[${editQuestionIndex}][question_text]" value="${question.question_text}" required>
+                
+
+                <label>Add Image (optional)</label>
+                <input type="file" name="questions[${editQuestionIndex}][question_image]" accept="image/*">
+
+                <label>Upload Audio<span style="color:red">*</span></label>
+                <input type="hidden" name="questions[${editQuestionIndex}][old_audio_path]" value="${question.audio_path || ''}">
+                <input type="hidden" name="questions[${editQuestionIndex}][old_audio_filename]" value="${question.audio_filename || ''}">
+                <input type="hidden" name="questions[${editQuestionIndex}][old_audio_id]" value="${question.audio_id || ''}">
+                <input type="text" name="questions[${editQuestionIndex}][old_audio_url]" value="${question.audio_url || ''}">
+
+                <input type="hidden" name="questions[${editQuestionIndex}][old_image_path]" value="${question.image_path || ''}">
+                <input type="hidden" name="questions[${editQuestionIndex}][old_image_filename]" value="${question.image_filename || ''}">
+                <input type="hidden" name="questions[${editQuestionIndex}][old_image_id]" value="${question.image_id || ''}">
+                <input type="hidden" name="questions[${editQuestionIndex}][old_image_url]" value="${question.image_url || ''}">
+
+                <audio controls style="margin-top: 10px;" id="fallback-audio-${editQuestionIndex}">
+                    <source src="${question.audio_url || ''}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+
+                <div id="waveform-preview-question-${editQuestionIndex}" style="margin-top: 10px;"></div>
+
+                <hr>
+
+                <label>Distractors</label>
+                <div class="choices-container">
+                    ${choiceItems}
+                </div>
+                <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Distractor">➕ Add Distractor</button>
+            `;
+
+            container.appendChild(questionBlock);
+
+            const audioPreviewURL = question.audio_url || question.audio_path;
+            if (audioPreviewURL) {
+                setTimeout(() => {
+                    previewExistingAudio(audioPreviewURL, editQuestionIndex);
+                }, 100);
+            }
+
+
+            editQuestionIndex++;
+        });
     }
-
-    questionIndex = qIndex; // update global index so new additions don’t overlap
 
     toggleModal('editActivityModal');
 }
-function generateUniquePhraseId() {
-    const now = new Date();
-    const timestamp = now.getTime();
-    const random = Math.floor(Math.random() * 10000);
-    return 'PH' + timestamp + random;
+
+function previewExistingAudio(audioUrl, index) {
+    const container = document.getElementById(`waveform-preview-question-${index}`);
+    if (!container || !audioUrl) return;
+
+    // Clear existing content inside the container
+    container.innerHTML = '';
+
+    // Create a native <audio> element
+    const audioElement = document.createElement('audio');
+    audioElement.controls = true;
+    audioElement.style.marginTop = '10px';
+
+    const source = document.createElement('source');
+    source.src = audioUrl;
+    source.type = 'audio/mpeg';
+
+    audioElement.appendChild(source);
+    container.appendChild(audioElement);
 }
 
-function addEditQuestionBlock(qIndex, data = {}) {
+
+
+
+function addEditQuestion() {
     const container = document.getElementById('edit-questions-container');
 
-    const block = document.createElement('div');
-    block.classList.add('question-block');
-    block.dataset.qindex = qIndex;
-    block.style.position = 'relative';
+    const questionBlock = document.createElement('div');
+    questionBlock.classList.add('question-block');
+    questionBlock.dataset.qindex = editQuestionIndex;
 
-    block.innerHTML = `
-    <input type="hidden" name="questions[${qIndex}][phrase_id]" value="${data.phrase_id || generateUniquePhraseId()}">
-    <input type="hidden" name="questions[${qIndex}][old_audio_path]" value="${data.old_audio_path || ''}">
-    <input type="hidden" name="questions[${qIndex}][old_audio_url]" value="${data.old_audio_url || ''}">
-    <input type="hidden" name="questions[${qIndex}][old_filename]" value="${data.old_filename || ''}">
-    <input type="hidden" name="questions[${qIndex}][old_image_path]" value="${data.old_image_path || ''}">
-    <input type="hidden" name="questions[${qIndex}][old_image_url]" value="${data.old_image_url || ''}">
+    questionBlock.innerHTML = `
+    <hr>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" title="Remove Sentence" style="background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
+    </div>
 
-        <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" style="position: absolute; top: -10px; right: -10px; background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
+    <label>Sentence</label>
+    <input type="text" name="questions[${editQuestionIndex}][question_text]" placeholder="Enter your question here" required>
 
-        <hr>
-        <input type="hidden" name="questions[${qIndex}][phrase_id]" value="${data.phrase_id || generateUniquePhraseId()}">
+    <label>Add Image (optional)</label>
+    <input type="file" name="questions[${editQuestionIndex}][question_image]" accept="image/*">
 
+    <label>Upload Audio<span style="color:red">*</span></label>
+    <input type="file" name="questions[${editQuestionIndex}][question_audio]" accept="audio/*" required onchange="previewQuestionAudio(this, ${editQuestionIndex})">
+    <div id="waveform-preview-question-${editQuestionIndex}" style="margin-top: 10px;"></div>
 
-        <label>Sentence</label>
-        <input type="text" name="questions[${qIndex}][question_text]" placeholder="Enter your question here" value="${data.question_text || ''}" required>
+    <hr>
 
-        <label>Add Image for Question (optional)</label>
-        <input type="file" name="questions[${qIndex}][question_image]" accept="image/*">
-        ${data.question_image_url ? `<p>📷 Existing Image: <a href="${data.question_image_url}" target="_blank">View</a></p>` : ''}
-
-        <label>Upload Audio for Question <span style="color:red">*</span></label>
-        <input type="file" name="questions[${qIndex}][question_audio]" accept="audio/*" onchange="previewQuestionAudio(this, ${qIndex})">
-        <div id="waveform-preview-question-${qIndex}" style="margin-top: 10px;"></div>
-        ${data.audio_url ? `
-        <audio controls style="margin-top: 10px;">
-            <source src="${data.audio_url}" type="audio/mpeg">
-            Your browser does not support the audio element.
-        </audio>
-        ` : ''}
-
-        <hr>
-
-        <label>Distractors</label>
-        <div class="choices-container">
-            ${(data.items || []).map((item, i) => `
-                <div class="choice-item">
-                    <input type="text" name="questions[${qIndex}][items][${i}][text]" placeholder="Choice text" value="${item.text}" required>
-                    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-                </div>
-            `).join('')}
+    <label>Distractors</label>
+    <div class="choices-container">
+        <div class="choice-item">
+            <input type="text" name="questions[${editQuestionIndex}][items][0][text]" placeholder="Choice text (e.g. 'Dog')" required>
+            <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
         </div>
-        <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Distractor">➕ Add Distractor</button>
+    </div>
+    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Distractor">➕ Add Distractor</button>
     `;
 
-    container.appendChild(block);
+    container.appendChild(questionBlock);
+    editQuestionIndex++;
 }
-function addEditQuestion() {
-    addEditQuestionBlock(questionIndex, {});
-    questionIndex++;
-}
-function toggleModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
-    }
+
+function removePhraseItem(button) {
+    const itemDiv = button.closest('.phrase-item');
+    if (itemDiv) itemDiv.remove();
 }
 </script>
+
 
 
 <script src="https://unpkg.com/wavesurfer.js"></script>
@@ -503,11 +550,6 @@ function toggleModal(modalId) {
     }
   }
 </script>
-
-
-
-
-
 
 
 <script>
