@@ -488,17 +488,16 @@ class SpecializedSpeechApi extends Controller
 
             $items = [];
             $latestTimestamp = null;
-            $lastAnsweredIndex = -1;
+            $lastAnsweredIndex = 0;
             foreach ($attempt['answers'] as $index => $answer) {
                 if (!empty($answer['answered_at'])) {
                     if (!$latestTimestamp || $answer['answered_at'] > $latestTimestamp) {
                         $latestTimestamp = $answer['answered_at'];
-                        $lastAnsweredIndex = $index;
                         $lastAnsweredIndex = (int) $index;
                     }
                 }
 
-                if(empty($answer['image_path'])){
+                if(!empty($answer['image_path'])){
                     $image_url = $bucket->object($answer['image_path'])->signedUrl(now()->addMinutes(15));
                     $items[$index] = [
                         'text' => $answer['text'],
