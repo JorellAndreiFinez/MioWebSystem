@@ -1,9 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+.montserrat-font {
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 100;
+    font-style: normal;
+}
+
 body {
-    line-height: 2;
-    font-family: 'Montserrat', Arial, sans-serif;
-    font-weight: 500;
-    font-size: 16px;
+    font-size: 14px;
     overflow-x: hidden;
+    font-family: "Montserrat", serif;
     --dark: var(--secondary-color);
     --dust: var(--primary-color);
     --pumpkin: var(--background-color);
@@ -51,35 +57,32 @@ section p:last-of-type {
 
 .about-header {
     position: relative;
-    width: 100%;
-    height: 400px;
-    background: linear-gradient(to bottom, #000000, #333333);
+    background-color: #1a1a1a;
     color: #ffffff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     text-align: center;
-    padding: 20px;
+    padding: 100px 20px;
     overflow: hidden;
+    height: 400px;
+    margin-bottom: 4rem;
 }
 
 
 /* ---- Content Styling ---- */
 
 .about-content h1 {
-    margin-top: 10rem;
-    font-size: 36px;
+    margin-top: 6rem;
+    font-size: 32px;
     font-weight: 700;
-    color: #ffc107;
-    margin-bottom: 15px;
+    color: #ffca28;
+    margin-bottom: 20px;
 }
 
 .about-content p {
     font-size: 18px;
-    font-weight: 400;
     line-height: 1.6;
-    color: #ddd;
-    margin: 0 20rem 0 20rem;
+    color: #e0e0e0;
+    max-width: 700px;
+    margin: 0 auto;
 }
 
 
@@ -120,10 +123,6 @@ section p:last-of-type {
 }
 
 @media (max-width: 768px) {
-    .about-header {
-        height: auto;
-        padding: 40px 20px;
-    }
     .about-content h1 {
         font-size: 28px;
     }
@@ -224,7 +223,7 @@ section p:last-of-type {
 /* ----- FIRST PART ----- */
 
 .info-section {
-    margin-top: 10rem;
+    margin-top: 3rem;
     width: 100%;
     padding: 50px;
     display: flex;
@@ -233,7 +232,7 @@ section p:last-of-type {
 
 .info-content {
     display: flex;
-    max-width: 1200px;
+    max-width: 1150px;
     align-items: center;
     gap: 10px;
 }
@@ -256,14 +255,14 @@ section p:last-of-type {
 
 .tagline {
     color: #ffca28;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     text-transform: uppercase;
 }
 
 .info-text h1 {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 800;
     color: #212121;
     margin: 10px 0;
 }
@@ -315,21 +314,21 @@ section p:last-of-type {
 }
 
 .mission-content {
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
 .highlight {
     color: #ffca28;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .mission-content h2 {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: #212121;
     margin: 10px 0;
 }
@@ -338,24 +337,24 @@ section p:last-of-type {
     font-size: 16px;
     line-height: 1.6;
     color: #616161;
-    margin-bottom: 30px;
+    margin-bottom: 40px;
 }
 
 .mission-cards {
     display: flex;
-    gap: 20px;
-    justify-content: center;
     flex-wrap: wrap;
+    gap: 50px;
+    justify-content: center;
 }
 
 .card {
     background-color: #ffffff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    width: 100%;
-    max-width: 400px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 10px 30px;
+    padding-top: 40px;
+    width: 330px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s ease;
 }
 
@@ -470,7 +469,7 @@ section p:last-of-type {
 
 .highlight {
     color: #ffca28;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -478,7 +477,7 @@ section p:last-of-type {
 
 .overlay h2 {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 800;
     margin: 5px 0;
     color: #ffffff;
 }
@@ -486,8 +485,9 @@ section p:last-of-type {
 .history-content {
     padding: 40px 20px;
     background-color: #ffffff;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
+    text-align: justify;
 }
 
 .history-content p {
@@ -532,26 +532,25 @@ section p:last-of-type {
 
 .institution-section {
     padding: 40px 20px;
-    max-width: 1000px;
+    max-width: 1200px;
     margin: 0 auto;
 }
 
 .institution-highlight {
     margin-top: 10rem;
     color: #ffca28;
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     text-transform: uppercase;
     display: block;
     margin-bottom: 5px;
-    letter-spacing: 1px;
     text-align: center;
 }
 
 .institution-title {
     text-align: center;
-    font-size: 24px;
-    font-weight: 700;
+    font-size: 28px;
+    font-weight: 800;
     color: #212121;
     margin-bottom: 20px;
     margin-bottom: 5rem;
@@ -559,6 +558,7 @@ section p:last-of-type {
 
 .institution-box {
     border: 1px solid #333333;
+    color: #212121;
     border-radius: 20px;
 }
 
@@ -573,7 +573,7 @@ section p:last-of-type {
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 5px;
-    color: #212121;
+    color: #2264DC;
 }
 
 .institution-purpose p {
@@ -586,16 +586,16 @@ section p:last-of-type {
 /* ---- Vision and Mission ---- */
 
 .institution-vision-mission {
-    background-color: #212121;
     display: flex;
     flex-direction: row;
     gap: 20px;
     margin-top: 20px;
+    border: 1px solid #e0e0e0;
 }
 
 .vision,
 .mission {
-    color: #ffffff;
+    color: #616161;
     padding: 20px;
     flex: 1;
 }
@@ -605,21 +605,23 @@ section p:last-of-type {
     font-size: 18px;
     font-weight: 700;
     margin-bottom: 10px;
+    color: #2b6dd8;
 }
 
 
 /* ---- Core Values ---- */
 
 .institution-core-values {
-    background-color: #1976d2;
     color: #ffffff;
-    padding: 20px;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
 }
 
 .institution-core-values h3 {
     margin: 10px;
-    font-size: 20px;
-    font-weight: 600;
+    color: #2b6dd8;
+    font-size: 18px;
+    font-weight: 700;
 }
 
 
@@ -630,7 +632,8 @@ section p:last-of-type {
 }
 
 .value-item {
-    padding: 15px 30px 15px 30px;
+    margin-top: 20px;
+    padding: 10px 20px 15px 20px;
     border-bottom: 1px solid #e0e0e0;
 }
 
@@ -649,7 +652,6 @@ section p:last-of-type {
 .value-item p {
     font-size: 14px;
     color: #616161;
-    line-height: 1.6;
 }
 
 
@@ -693,12 +695,6 @@ section p:last-of-type {
         font-size: 12px;
     }
 }
-
-
-/* -----  FIFTH PART ----- */
-
-
-/* -----  SIXTH PART  ----- */
 
 
 /* -----  ORG CHART   ----- */
