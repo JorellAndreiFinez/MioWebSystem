@@ -179,8 +179,9 @@
 
                             {{-- Students --}}
                             @foreach ($section['student_photos'] as $photo)
-                                <img src="{{ $photo }}" alt="Student">
+                                <img src="{{ $photo['url'] }}" alt="Student">
                             @endforeach
+
                         </div>
                     </div>
                 @endforeach

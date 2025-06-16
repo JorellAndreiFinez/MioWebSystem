@@ -99,12 +99,12 @@ public function login(Request $request)
             default   => redirect()->back()->with('error', 'Unrecognized role.'),
         };
 
-    } catch (\Kreait\Firebase\Exception\AuthException $e) {
-                return redirect()->back()->with('error', 'Invalid Credentials');
+    } catch (\Kreait\Firebase\Exception\Auth\FailedToSignIn $e) {
+    return redirect()->back()->with('error', 'Invalid email or password.');
+        } catch (\Throwable $e) {
+            return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
+        }
 
-    } catch (\Throwable $e) {
-        return redirect()->back()->with('error', 'Login failed: ' . $e->getMessage());
-    }
 }
 
 
