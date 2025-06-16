@@ -101,8 +101,8 @@ Route::middleware([
 
     //attendance
     Route::get('/subject/{subjectId}/attendance', [TeacherApiController::class, 'getAttendance']);
-    Route::get('/subject/{subjectId}/attendance/{attendance_id}', [TeacherApiController::class, 'getAttendanceById']);
     Route::get('/subject/{subjectId}/attendance/students', [TeacherApiController::class, 'getAttendanceStudents']);
+    Route::get('/subject/{subjectId}/attendance/{attendance_id}', [TeacherApiController::class, 'getAttendanceById']);
     Route::post('/subject/{subjectId}/attendance/{attendanceId}', [TeacherApiController::class, 'AddAttendance']);
     Route::put('/subject/{subjectId}/attendance/{attendanceId}', [TeacherApiController::class, 'updateAttendance']);
 
