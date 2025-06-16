@@ -1,25 +1,31 @@
 
 <!-- HEADER -->
-<header class="header">
-  <div class="overlay">
-    <div class="header-container">
-      <h1>Assessment Guide</h1>
-      <p>
-      After enrollment, students will undergo an assessment to determine their learning needs and proper placement.
-      </p>
-    </div>
-  </div>
-</header>
+<div class="assess-header">
+    <div class="assess-content">
+        <h1>Assessment Guide</h1>
+        <p>
+            After enrollment, students will undergo an assessment to determine their learning needs and proper placement.
+        </p>
+</div>
+    <div class="assess-circle assess-blue-circle"></div>
+    <div class="assess-circle assess-yellow-circle"></div>
+    <div class="assess-circle assess-orange-circle"></div>
+</div>
 
 <!-- FIRST PART -->
 
+<div class="info-section">
+    <div class="info-content">
+        <div class="info-text">
+            <span class="tagline">IMPORTANCE</span>
+            <h1>Why It's Important to Assess</h1>
+            <p>This process helps us understand each student’s strengths and areas for growth, ensuring they receive the right support, resources, and learning environment for success.</p>
+        </div>
+    </div>
+</div>
+
+
 <section class="assessment-section">
-        <h3 class="section-title">IMPORTANCE</h3>
-        <h2 class="heading">Why Assessment Matters <span class="highlight"></span></h2>
-        <p class="description">
-            This process helps us understand each student’s strengths and areas for growth,
-            ensuring they receive the right support, resources, and learning environment for success.
-        </p>
     <div class="assessment-guide">
         <!-- Physical Evaluation -->
         <div class="evaluation">
@@ -88,7 +94,6 @@
                     <img src="{{ asset('storage/assets/images/icons/test-1.png') }}" alt="Speech Icon">
                     <h3>Speech & Auditory Test</h3>
                     <p>Identifying images and video demonstrations.</p>
-                    <a href="#">See Tutorial</a>
                 </div>
 
 
@@ -97,9 +102,3 @@
 
         </div>
     </section>
-
-
-
-
-
-
