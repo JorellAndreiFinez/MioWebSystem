@@ -1,15 +1,16 @@
 
 <!-- HEADER -->
-<header class="header">
-  <div class="overlay">
-    <div class="header-container">
-      <h1>Payment</h1>
-      <p>
-      We offer convenient payment options to complete your enrollment. Choose between bank deposit or GCash transfer, and submit your proof of payment for verification.
-      </p>
+<div class="pay-header">
+    <div class="pay-content">
+        <h1>Payment</h1>
+        <p>
+            We offer convenient payment options to complete your enrollment. Choose between bank deposit or GCash transfer, and submit your proof of payment for verification.        </p>
     </div>
-  </div>
-</header>
+    <div class="pay-circle pay-blue-circle"></div>
+    <div class="pay-circle pay-yellow-circle"></div>
+    <div class="pay-circle pay-orange-circle"></div>
+
+</div>
 
 <!-- FIRST PART -->
 
@@ -27,8 +28,11 @@
 
             <div class="payment-info">
             <div class="icon">&#9733;</div> <h3>UNIONBANK</h3>
-                <p><strong>Account Name:</strong> Sergia Esguerra Memorial Foundation Inc.</p>
-                <p><strong>Account Number:</strong> 00-030-001202-0</p>
+                <div class="paragraphs">
+                    <p>Account Name: Sergia Esguerra Memorial Foundation Inc.</p>
+                    <p>Account Number: 00-030-001202-0</p>
+
+                </div>
             </div>
             <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZJ4e0jC48bjJd7M9xt5515BWSsnU4DU-nBGZ0Nq6YfXvqJZUym_6ZtoGsW1KIKXBWFjI&usqp=CAU" alt="UnionBank Logo" class="bank-logo">
         </div>
@@ -56,11 +60,3 @@
         <p><em>You may also email it to <a href="mailto:pidmanila@gmail.com">pidmanila@gmail.com</a>.</em></p>
     </div>
 </section>
-
-
-
-
-
-
-
-

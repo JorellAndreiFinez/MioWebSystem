@@ -13,7 +13,7 @@
     </header> -->
 
 
-    <div class="about-header">
+<div class="about-header">
     <div class="about-content">
         <h1>About Us</h1>
         <p>
