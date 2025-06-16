@@ -889,14 +889,14 @@ class SpecializedLanguageApi extends Controller
             'answers.*.sentence' => 'required|string|min:1',
 
             'answer_logs' => 'required|array|min:1',
-            'answer_logs.*.item_id' => 'required|string|uuid',
+            'answer_logs.*.item_id' => 'required|string|min:1',
             'answer_logs.*.answers' => 'required|array|min:1',
             'answer_logs.*.answers.*' => 'required|string|min:1',
             'answer_logs.*.answered_at' => 'required|array|min:1',
             'answer_logs.*.answered_at.*' => 'required|string|min:1',
 
             'audio_logs' => 'required|array|min:1',
-            'audio_logs.*.item_id' => 'required|string|uuid',
+            'audio_logs.*.item_id' => 'required|string|min:1',
             'audio_logs.*.played_at' => 'required|array|min:1',
         ]);
 
@@ -928,22 +928,54 @@ class SpecializedLanguageApi extends Controller
                     $correct_words = explode(" ", $correct_sentence);
 
                     $itemCorrectCount = 0;
+                    $correct_index = 0;
+                    $student_index = 0;
 
-                    foreach ($correct_words as $index => $word) {
-                        if (isset($student_words[$index]) && $student_words[$index] === $word) {
+                    $missingWords = [];
+                    $extraWords = [];
+
+                    while ($correct_index < count($correct_words) && $student_index < count($student_words)) {
+                        if ($correct_words[$correct_index] === $student_words[$student_index]) {
                             $itemCorrectCount++;
+                            $correct_index++;
+                            $student_index++;
+                        } else {
+                            if (!in_array($correct_words[$correct_index], $student_words)) {
+                                $missingWords[] = $correct_words[$correct_index];
+                                $correct_index++;
+                            } elseif (!in_array($student_words[$student_index], $correct_words)) {
+                                $extraWords[] = $student_words[$student_index];
+                                $student_index++;
+                            } else {
+                                $missingWords[] = $correct_words[$correct_index];
+                                $extraWords[] = $student_words[$student_index];
+                                $correct_index++;
+                                $student_index++;
+                            }
                         }
                     }
 
-                    $totalWords += count($correct_words);
+                    while ($correct_index < count($correct_words)) {
+                        $missingWords[] = $correct_words[$correct_index++];
+                    }
+                    while ($student_index < count($student_words)) {
+                        $extraWords[] = $student_words[$student_index++];
+                    }
+
+                    $wordPenalty = count($missingWords) + count($extraWords);
+                    $totalEvaluatedWords = $itemCorrectCount + $wordPenalty;
+
                     $correctWords += $itemCorrectCount;
+                    $totalWords += $totalEvaluatedWords;
 
                     $attempt_items[$item_id] = [
                         'student_answer' => $answer['sentence'],
                         'correct_answer' => $activity[$item_id]['sentence'],
                         'correct_words' => $itemCorrectCount,
                         'total_words' => count($correct_words),
-                        'is_correct' => $student_sentence === $correct_sentence,
+                        'extra_words' => $extraWords,
+                        'missing_words' => $missingWords,
+                        'is_correct' => $itemCorrectCount === count($correct_words) && count($extraWords) === 0,
                     ];
                 }
             }
