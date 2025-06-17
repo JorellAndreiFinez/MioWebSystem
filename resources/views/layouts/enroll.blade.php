@@ -17,6 +17,9 @@
 <!----- FOOTER ----->
 @extends('layouts.footer')
 
+@include('layouts.enroll.enroll-styles')
+@include('mio-styles')
+
 
 </body>
 </html>

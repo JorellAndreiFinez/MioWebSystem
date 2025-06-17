@@ -1,9 +1,16 @@
 <section class="home-section">
+
+<div class="text">
+
+        <div class="breadcrumb-item active">Quizzes</div>
+
+    </div>
+
 <main class="main-banner">
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
-            <h5>Available Quizzes</h5>
+            <h5>Quizzes</h5>
 
             </div>
 
@@ -59,18 +66,10 @@
 
                 <a href="{{ route('mio.subject-teacher.speech-phrase', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
                         <div class="overviewcard__icon"></div>
-                        <div class="overviewcard__info">Phrase</div>
+                        <div class="overviewcard__info">Reading</div>
                         <div class="overviewcard__arrow">&rsaquo;</div>
                 </div>
                 </a>
-
-                <a href="{{ route('mio.subject-teacher.speech-pronunciation', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
-                        <div class="overviewcard__icon"></div>
-                        <div class="overviewcard__info">Pronunciation</div>
-                        <div class="overviewcard__arrow">&rsaquo;</div>
-                </div>
-                </a>
-
                 <a href="{{ route('mio.subject-teacher.speech-picture', ['subjectId' => $subject['subject_id']]) }}"><div class="overviewcard">
                         <div class="overviewcard__icon"></div>
                         <div class="overviewcard__info">Picture</div>

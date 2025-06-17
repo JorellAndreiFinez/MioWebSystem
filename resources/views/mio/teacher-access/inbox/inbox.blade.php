@@ -22,10 +22,21 @@
                         </div>
                     @else
                         @foreach($contacts as $contact)
-                            <div class="contact" data-contact-id="{{ $contact['id'] }}" data-contact-name="{{ $contact['name'] }}" data-contact-role="{{ $contact['role'] }}" data-contact-image="{{ $contact['profile_pic'] }}">
+                            <div class="contact {{ $contact['has_unread'] ? 'has-unread' : '' }}" 
+                                data-contact-id="{{ $contact['id'] }}"
+                                data-contact-name="{{ $contact['name'] }}"
+                                data-contact-role="{{ $contact['role'] }}"
+                                data-contact-image="{{ $contact['profile_pic'] }}">
+                                
                                 <img src="{{ $contact['profile_pic'] ?? 'https://ui-avatars.com/api/?name=' . urlencode($contact['name']) }}" class="profile-pic" />
+                                
                                 <div class="contact-info">
-                                    <p class="name">{{ $contact['name'] }}</p>
+                                    <p class="name" style="{{ $contact['has_unread'] ? 'font-weight: bold;' : '' }}">
+                                        {{ $contact['name'] }}
+                                        @if($contact['has_unread'])
+                                            <span class="red-dot"></span>
+                                        @endif
+                                    </p>
                                     <p class="role">{{ $contact['role'] }}</p>
                                 </div>
                             </div>
@@ -52,8 +63,8 @@
 
                     <div class="chat-content hidden">
                         <div class="header">
-                                <h2>Leo Kenter</h2>
-                                <p class="subtitle">Speech Development</p>
+                                <h2></h2>
+                                <p class="subtitle"></p>
                             </div>
 
 
@@ -68,6 +79,7 @@
                             </div>
                     </div>
                     </div>
+                    
                     <!-- MESSAGE LOADER! -->
                      <div class="line-wobble" id="messageLoader" style="display: none;"></div>
 
@@ -100,10 +112,6 @@
                                 <select id="people-select" name="receiver_id">
                                     <option value="">Select Person</option>
                                 </select>
-
-
-                            <label for="subject">Subject:</label>
-                            <input type="text" id="subject" placeholder="Enter subject (optional)" name="subject">
 
                             <label for="message">Message:</label>
                             <textarea id="message" rows="6" placeholder="Type your message..." name="message"></textarea>
@@ -313,6 +321,35 @@ document.querySelectorAll(".contact").forEach(contact => {
             .then(res => res.json())
             .then(data => {
                 chatSection.innerHTML = '';
+
+            // Remove bold & red dot
+            const contactEl = document.querySelector(`[data-contact-id="${receiverId}"]`);
+            const nameEl = contactEl.querySelector(".name");
+            nameEl.style.fontWeight = 'normal';
+            const redDot = nameEl.querySelector(".red-dot");
+            if (redDot) redDot.remove();
+            contactEl.classList.remove('has-unread');
+
+            // Mark messages as read in Firebase
+            const threadId = [userId, receiverId].sort().join('_');
+            const messagesRef = firebase.database().ref(`messages/${threadId}`);
+
+            messagesRef.once('value').then(snapshot => {
+                snapshot.forEach(childSnapshot => {
+                    const msgKey = childSnapshot.key;
+                    const msgData = childSnapshot.val();
+
+                    // Only update if this message was sent to the current user and is unread
+                    if (msgData.receiver_id === userId && !msgData.read) {
+                        messagesRef.child(msgKey).update({ read: true });
+                    }
+                });
+            });
+
+
+
+                // Sort and display messages
+                data.messages.sort((a, b) => a.timestamp - b.timestamp);
                 data.messages.forEach(msg => {
                     const sender = msg.sender_id === userId ? 'sender' : 'response';
                     const messageHTML = `
@@ -322,7 +359,6 @@ document.querySelectorAll(".contact").forEach(contact => {
                                 <p class="time">${new Date(msg.timestamp * 1000).toLocaleString()}</p>
                             </div>
                             <p class="message-content">${msg.message}</p>
-
                         </div>`;
                     chatSection.innerHTML += messageHTML;
                 });
@@ -340,6 +376,24 @@ document.querySelectorAll(".contact").forEach(contact => {
     <button class="action-btn">🗑</button>
 </div> -->
 
+
+<!-- Firebase v8 (Compatible with your code) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBfzT0dZZAcgsc0CGKugR2H3jEB_G6jG50",
+    authDomain: "miolms.firebaseapp.com",
+    databaseURL: "https://miolms-default-rtdb.firebaseio.com",
+    projectId: "miolms",
+    storageBucket: "miolms.firebasestorage.app",
+    messagingSenderId: "720846720525",
+    appId: "1:720846720525:web:65747f3c00aef3fbeb4f44",
+    measurementId: "G-2RXBR538B6"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+</script>
 
 
 

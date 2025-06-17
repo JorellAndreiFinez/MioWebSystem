@@ -30,6 +30,11 @@
 @include('layouts.landing.content')
 
 
+@include('layouts.landing.landing-styles')
+@include('mio-styles')
+@include('main-app-styles')
+
+
 
 <!----- FOOTER ----->
 @extends('layouts.footer')

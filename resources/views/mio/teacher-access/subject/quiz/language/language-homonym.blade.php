@@ -44,41 +44,75 @@
                             </a>
 
                             <!-- Delete Button -->
-                            <form action="{{ route('mio.subject-teacher.speech-question.delete', ['subjectId' => request()->route('subjectId'), 'difficulty' => $difficulty, 'activityId' => $activityId]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this activity?');" style="margin: 0;">
+                            <form action="{{ route('mio.subject-teacher.language-homonym.delete', ['subjectId' => request()->route('subjectId'), 'difficulty' => $difficulty, 'activityId' => $activityId]) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this activity?');" style="margin: 0;">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="take-quiz-btn" style="background-color: #e74c3c;" onclick="event.stopPropagation();">🗑️ Delete</button>
                             </form>
                         </div>
 
-                        {{-- Hidden Picture Grid (toggle on click) --}}
-                        {{-- Picture Items --}}
+                        {{-- Hidden Phrase Grid (toggle on click) --}}
                         <div class="phrase-items-grid" id="activity-{{ $activityId }}" style="display: none;">
                             @if(isset($activity['items']) && is_array($activity['items']))
-                                @foreach($activity['items'] as $phraseId => $item)
-                                    <div class="phrase-card" style="border: 1px solid #ddd; padding: 10px; margin: 10px 0; width: 100%; max-width: 300px;">
-                                        <div class="phrase-text" style="font-weight: bold;">{{ $item['text'] ?? 'No text' }}</div>
-                                        <div class="phrase-image" style="margin-top: 8px;">
-                                            @if(!empty($item['image_url']))
-                                                <img src="{{ $item['image_url'] }}" alt="Phrase Image" style="width: 100%; height: auto; max-height: 200px; object-fit: contain; border: 1px solid #ccc;">
-                                            @else
-                                                <div class="no-image" style="color: #aaa;">No image</div>
-                                            @endif
+                                @foreach($activity['items'] as $item)
+                                    {{-- Sentence 1 --}}
+                                    <div class="phrase-card">
+                                        <div class="phrase-text" style="font-weight: bold;">
+                                            {{ $item['sentence_1'] ?? 'No sentence' }}
                                         </div>
+
+                                        {{-- Audio 1 --}}
+                                        @if(!empty($item['audio_url_1']))
+                                            <div class="phrase-audio" style="margin-top: 10px;">
+                                                <audio controls style="width: 100%;">
+                                                    <source src="{{ $item['audio_url_1'] }}" type="audio/mp3">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                        @endif
+
+                                        {{-- Distractors --}}
+                                        @if(!empty($item['distractors']) && is_array($item['distractors']))
+                                            <div class="phrase-distractors" style="margin-top: 10px;">
+                                                <strong>Distractors:</strong>
+                                                <ul>
+                                                    @foreach($item['distractors'] as $distractor)
+                                                        | {{ $distractor }}
+                                                    @endforeach
+                                                </ul>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    {{-- Sentence 2 --}}
+                                    <div class="phrase-card">
+                                        <div class="phrase-text" style="font-weight: bold;">
+                                            {{ $item['sentence_2'] ?? 'No sentence' }}
+                                        </div>
+
+                                        {{-- Audio 2 --}}
+                                        @if(!empty($item['audio_url_2']))
+                                            <div class="phrase-audio" style="margin-top: 10px;">
+                                                <audio controls style="width: 100%;">
+                                                    <source src="{{ $item['audio_url_2'] }}" type="audio/mp3">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                        @endif
+
+                                        {{-- Distractors (again if needed, or omit) --}}
+                                        {{-- <div class="phrase-distractors" style="margin-top: 10px;">... </div> --}}
                                     </div>
                                 @endforeach
                             @else
-                                <p>No phrase items found for this activity.</p>
+                                <p>No matching items found for this activity.</p>
                             @endif
                         </div>
-
                     </div>
-
                 @endforeach
-
             @endforeach
         @else
-            <p>No question activities found.</p>
+            <p>No matching activities found.</p>
         @endif
 
         <!-- Add New Activity Button -->
@@ -89,390 +123,394 @@
         </div>
     </main>
 
-    <br>
 
     <!-- Add Activity Modal -->
+    <div id="addActivityModal" class="modal assignment-modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="toggleModal('addActivityModal')">&times;</span>
+        <h2>Add Homonyms Activity</h2>
 
-    <div id="addActivityModal" class="modal assignment-modal" style="display: none; margin-top: 2rem;">
-        <div class="modal-content">
-            <span class="close" onclick="toggleModal('addActivityModal')">&times;</span>
-            <h2>Add Homonym Activity</h2>
-            <form action="{{ route('mio.subject-teacher.speech-question.add', ['subjectId' => request()->route('subjectId')]) }}" method="POST" enctype="multipart/form-data">
-                @csrf
+        <form action="{{ route('mio.subject-teacher.language-homonym.add', ['subjectId' => request()->route('subjectId')]) }}" method="POST" enctype="multipart/form-data">
+            @csrf
 
-                <label for="activity_title">Activity Title</label>
-                <input type="text" name="activity_title" required>
+            <label for="activity_title">Activity Title</label>
+            <input type="text" name="activity_title" required>
 
-                <label for="difficulty">Difficulty</label>
-                <select name="difficulty" required style="margin-bottom: 2rem;">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard">Hard</option>
-                </select>
+            <label for="difficulty">Difficulty</label>
+            <select name="difficulty" required>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
 
-                <div id="homonym-container">
-                    <!-- Initial Block -->
-                    <div class="homonym-block" data-index="0">
-                        <hr>
-                        <label>Sentence 1</label>
-                        <input type="text" name="items[0][sentence]" placeholder="e.g. It was dark and stormy ____" required>
+            <!-- Phrase Items Section -->
+            <div id="phrase-items-container">
+                <label>Homonyms Items</label>
 
-                        <label>Answer 1</label>
-                        <input type="text" name="items[0][answer]" placeholder="e.g. night" required>
+                <div class="phrase-item" data-index="0">
+                    <!-- Sentence Container -->
+                    <div class="sentences-container" id="sentences-0"></div>
+                    <button type="button" onclick="addSentence(0)">+ Add Sentence</button>
 
-                        <label>Audio for Answer 1</label>
-                        <input type="file" name="items[0][audio]" accept="audio/*" required>
+                    <hr>
 
-                        <br><br>
-
-                        <label>Distractor Choices</label>
-                        <div class="distractor-container"></div>
-                        <button type="button" class="add-distractor-btn" onclick="addDistractorChoice(this)">➕ Add Distractor</button>
-
-                        <button type="button" class="remove-block-btn" onclick="removeHomonymBlock(this)" style="margin-top: 10px; background-color: #f44336; color: white;">🗑️ Remove Block</button>
+                    <!-- Choices -->
+                    <div id="choices-container-0">
+                        <label>Distractors</label>
+                        <div class="choice-input" style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                            <input type="text" name="items[0][choices][]" placeholder="Enter choice">
+                            <button type="button" onclick="removeChoice(this)">🗑️</button>
+                        </div>
                     </div>
+                    <button type="button" onclick="addChoice(0)">+ Add Choice</button>
                 </div>
-
-                <button type="button" onclick="addHomonymBlock()" class="add-question-btn" style="margin-top: 20px;">+ Add Another</button>
-
-                <div class="form-footer" style="margin-top: 30px;">
-                    <button type="submit">Save Activity</button>
-                </div>
-            </form>
-        </div>
+            </div>
+            <hr>
+            <button type="submit">Save Activity</button>
+        </form>
     </div>
-
+</div>
 
 
 
 
     <!-- Edit Activity Modal -->
     <div id="editActivityModal" class="modal assignment-modal" style="display: none;">
-  <div class="modal-content">
-    <span class="close" onclick="toggleModal('editActivityModal')">&times;</span>
-    <h2>Edit Question Activity</h2>
-    <form id="editActivityForm" method="POST" action="{{ route('mio.subject-teacher.speech-question.edit', ['subjectId' => request()->route('subjectId')]) }}" enctype="multipart/form-data">
-      @csrf
-      @method('PUT')
+        <div class="modal-content">
+            <span class="close" onclick="document.getElementById('editActivityModal').style.display='none'">&times;</span>
 
-      <input type="hidden" name="activity_id" id="editActivityId">
+            <h2>Edit Phrase Activity</h2>
+            <form id="editActivityForm" method="POST" action="{{ route('mio.subject-teacher.language-homonym.edit', ['subjectId' => request()->route('subjectId')]) }}" enctype="multipart/form-data">
+                @csrf
+                @method('PUT')
 
-      <label for="editActivityTitle">Activity Title</label>
-      <input type="text" name="activity_title" id="editActivityTitle" required>
+                <input type="hidden" name="activity_id" id="editActivityId">
 
-      <label for="editActivityDifficulty">Difficulty</label>
-      <select name="difficulty" id="editActivityDifficultySelect" required style="margin-bottom: 2rem;">
-        <option value="easy">Easy</option>
-        <option value="medium">Medium</option>
-        <option value="hard">Hard</option>
-      </select>
+                <label for="editActivityTitle">Activity Title</label>
+                <input type="text" name="activity_title" id="editActivityTitle" required>
 
-      <div id="edit-questions-container"></div>
+                <label for="editActivityDifficulty">Difficulty</label>
+                <select name="difficulty" id="editActivityDifficultySelect" required>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
 
-      <button type="button" onclick="addEditQuestion()" class="add-question-btn" style="margin-top: 20px;">+ Add Question</button>
+                <hr>
 
-      <div class="form-footer" style="margin-top: 30px;">
-        <button type="submit">Update Activity</button>
-      </div>
-    </form>
-  </div>
-</div>
+                <!-- Phrase Items Section -->
+                <div id="edit-phrase-items-container">
+                    <label>Matching Items</label>
+                    <!-- Items will be dynamically inserted via JS -->
+                </div>
+
+                <button type="submit">Update Activity</button>
+            </form>
+        </div>
+    </div>
 
 
 
 </section>
 
-<!-- HOMONYM -->
+    <script src="https://unpkg.com/wavesurfer.js"></script>
+
+<!-- ADD/REMOVE -->
+
 <script>
-let homonymIndex = 1;
+let phraseIndex = 1;
+let sentenceCounters = { 0: 0 };
+addSentence(0);
+function addPhraseItem() {
+    const container = document.getElementById('phrase-items-container');
 
-function addHomonymBlock() {
-    const container = document.getElementById('homonym-container');
-    const block = document.createElement('div');
-    block.classList.add('homonym-block');
-    block.dataset.index = homonymIndex;
+    sentenceCounters[phraseIndex] = 0;
 
-    block.innerHTML = `
-        <hr>
+    const html = `
+        <br><hr>
+        <div class="phrase-item" data-index="${phraseIndex}">
+            <div class="sentences-container" id="sentences-${phraseIndex}"></div>
+            <button type="button" onclick="addSentence(${phraseIndex})">+ Add Sentence</button>
 
-        <label>Sentence 1</label>
-        <input type="text" name="items[${homonymIndex}][sentence]" required placeholder="e.g. It was dark and stormy ____">
+            <hr>
 
-        <label>Answer 1</label>
-        <input type="text" name="items[${homonymIndex}][answer]" required placeholder="e.g. night">
+            <div id="choices-container-${phraseIndex}">
+                <label>Distractors</label>
+                <div class="choice-input" style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <input type="text" name="items[${phraseIndex}][choices][]" placeholder="Enter choice">
 
-        <label>Audio for Answer 1</label>
-        <input type="file" name="items[${homonymIndex}][audio]" accept="audio/*" required>
-
-        <br><br>
-
-        <br><br>
-
-        <label>Distractor Choices</label>
-        <div class="distractor-container"></div>
-        <button type="button" class="add-distractor-btn" onclick="addDistractorChoice(this)">➕ Add Distractor</button>
-
-        <button type="button" class="remove-block-btn" onclick="removeHomonymBlock(this)" style="margin-top: 10px; background-color: #f44336; color: white;">🗑️ Remove Block</button>
-    `;
-
-    container.appendChild(block);
-    homonymIndex++;
-}
-
-function removeHomonymBlock(button) {
-    const block = button.closest('.homonym-block');
-    if (block) block.remove();
-}
-
-function addDistractorChoice(button) {
-    const block = button.closest('.homonym-block');
-    const dIndex = block.dataset.index;
-    const distractorContainer = block.querySelector('.distractor-container');
-    const count = distractorContainer.querySelectorAll('.distractor-item').length;
-
-    const div = document.createElement('div');
-    div.classList.add('distractor-item');
-    div.style.marginBottom = '5px';
-
-    div.innerHTML = `
-        <input type="text" name="items[${dIndex}][distractors][]" placeholder="Distractor (e.g. light)" required>
-        <button type="button" onclick="this.parentNode.remove()">🗑️</button>
-    `;
-
-    distractorContainer.appendChild(div);
-}
-</script>
-
-
-
-<!-- CHOICES -->
-<script>
-let choiceIndex = 1;
-
-function addChoiceItem(button) {
-  const questionBlock = button.closest('.question-block');
-  const choicesContainer = questionBlock.querySelector('.choices-container');
-  const qIndex = questionBlock.dataset.qindex;
-
-  const currentChoicesCount = choicesContainer.querySelectorAll('.choice-item').length;
-
-  const itemDiv = document.createElement('div');
-  itemDiv.classList.add('choice-item');
-
-  itemDiv.innerHTML = `
-    <input type="text" name="questions[${qIndex}][items][${currentChoicesCount}][text]" placeholder="Choice text (e.g. 'Dog')" required>
-    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-  `;
-
-  choicesContainer.appendChild(itemDiv);
-}
-
-
-function removeChoiceItem(button) {
-    const itemDiv = button.closest('.choice-item');
-    if (itemDiv) itemDiv.remove();
-}
-</script>
-
-<!-- NEW QUESTION -->
-<script>
-let questionIndex = 1; // Start from 1 because 0 is already in DOM
-
-function addNewQuestion() {
-  const container = document.getElementById('questions-container');
-
-  // Create new question block
-  const newQuestion = document.createElement('div');
-  newQuestion.classList.add('question-block');
-  newQuestion.dataset.qindex = questionIndex;
-
-  newQuestion.innerHTML = `
-    <hr>
-    <h3>Question ${questionIndex + 1}</h3>
-
-    <label>Question Text</label>
-    <input type="text" name="questions[${questionIndex}][question_text]" placeholder="Enter your question here" required>
-
-    <label>Add Image for Question (optional)</label>
-    <input type="file" name="questions[${questionIndex}][question_image]" accept="image/*">
-
-    <label>Choices</label>
-    <div class="choices-container">
-      <div class="choice-item">
-        <input type="text" name="questions[${questionIndex}][items][0][text]" placeholder="Choice text (e.g. 'Dog')" required>
-        <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-      </div>
-    </div>
-    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Choice">➕ Add Choice</button>
-  `;
-
-  container.appendChild(newQuestion);
-  questionIndex++;
-}
-
-// This function adds a choice input inside the relevant question block
-function addChoiceItem(button) {
-  // The button is inside question-block > find its .choices-container sibling
-  let questionBlock = button.closest('.question-block');
-  let choicesContainer = questionBlock.querySelector('.choices-container');
-
-  // Count existing choices to index new one properly
-  const qIndex = questionBlock.dataset.qindex;
-  const currentChoicesCount = choicesContainer.querySelectorAll('.choice-item').length;
-
-  // Create new choice item div
-  const itemDiv = document.createElement('div');
-  itemDiv.classList.add('choice-item');
-
-  itemDiv.innerHTML = `
-    <input type="text" name="questions[${qIndex}][items][${currentChoicesCount}][text]" placeholder="Choice text (e.g. 'Dog')" required>
-    <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
-  `;
-
-  choicesContainer.appendChild(itemDiv);
-}
-
-function removeChoiceItem(button) {
-  const itemDiv = button.closest('.choice-item');
-  if (itemDiv) itemDiv.remove();
-}
-
-function removeQuestionBlock(button) {
-    const questionBlock = button.closest('.question-block');
-    if (questionBlock) questionBlock.remove();
-}
-
-</script>
-
-<!-- EDITING -->
-<script>
-function handleEditButtonClick(element) {
-    try {
-        const activity = JSON.parse(element.getAttribute('data-activity'));
-        const activityId = element.getAttribute('data-activity-id');
-        const difficulty = element.getAttribute('data-difficulty');
-
-        openEditModal(activity, activityId, difficulty);
-    } catch (err) {
-        console.error('Failed to open edit modal:', err);
-    }
-}
-
-    function toggleActivityDetails(id) {
-        const section = document.getElementById(`activity-${id}`);
-        section.style.display = section.style.display === 'none' ? 'grid' : 'none';
-    }
-
-let editQuestionIndex = 0;
-
-function openEditModal(activity, activityId, difficulty) {
-    document.getElementById('editActivityId').value = activityId;
-    document.getElementById('editActivityTitle').value = activity.activity_title || '';
-    document.getElementById('editActivityDifficultySelect').value = difficulty;
-
-    const container = document.getElementById('edit-questions-container');
-    container.innerHTML = '';
-    editQuestionIndex = 0;
-
-    if (activity.items) {
-        Object.entries(activity.items).forEach(([qid, question]) => {
-            const questionBlock = document.createElement('div');
-            questionBlock.classList.add('question-block');
-            questionBlock.dataset.qindex = editQuestionIndex;
-
-            let imagePreview = '';
-            if (question.image_url) {
-                imagePreview = `
-                    <div>
-                        <small>Current Image:</small><br>
-                        <img src="${question.image_url}" style="max-width: 100px; max-height: 80px;">
-                    </div>
-                `;
-            }
-
-            const choiceItems = Object.entries(question.items || {}).map(([cid, choice], i) => `
-                <div class="choice-item">
-                  <input type="hidden" name="questions[${editQuestionIndex}][items][${i}][cid]" value="${cid}">
-                  <input type="text" name="questions[${editQuestionIndex}][items][${i}][text]" value="${choice.text}" required>
-                  <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+                    <button type="button" onclick="removeChoice(this)">🗑️</button>
                 </div>
-            `).join('');
+            </div>
+            <button type="button" onclick="addChoice(${phraseIndex})">+ Add Choice</button>
+        </div>
+    `;
 
-            questionBlock.innerHTML = `
-    <hr>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>Question ${editQuestionIndex + 1}</h3>
-        <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" title="Remove Question" style="background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
-    </div>
-
-    <input type="hidden" name="questions[${editQuestionIndex}][qid]" value="${qid}">
-    <label>Question Text</label>
-    <input type="text" name="questions[${editQuestionIndex}][question_text]" value="${question.question_text}" required>
-
-    <label>Update Image (optional)</label>
-    <input type="hidden" name="questions[${editQuestionIndex}][old_image_path]" value="${question.image_path || ''}">
-    <input type="file" name="questions[${editQuestionIndex}][question_image]" accept="image/*">
-    ${imagePreview}
-
-    <label>Choices</label>
-    <div class="choices-container">
-        ${choiceItems}
-    </div>
-    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Choice">➕ Add Choice</button>
-`;
-
-
-            container.appendChild(questionBlock);
-            editQuestionIndex++;
-        });
-    }
-
-    toggleModal('editActivityModal');
+    container.insertAdjacentHTML('beforeend', html);
+    addSentence(phraseIndex); // Add 1 default sentence
+    phraseIndex++;
 }
 
+function addSentence(index) {
+    const container = document.getElementById(`sentences-${index}`);
+    const sentenceIndex = sentenceCounters[index]++;
 
-function addEditQuestion() {
-    const container = document.getElementById('edit-questions-container');
+    const html = `
+        <div class="sentence-item" data-sentence-index="${sentenceIndex}" style="border: 1px dashed #ccc; padding: 10px; margin-bottom: 10px;">
+            <label>Sentence</label>
+            <input type="text" name="items[${index}][sentences][${sentenceIndex}][sentence]" placeholder="Enter sentence" required>
 
-    const questionBlock = document.createElement('div');
-    questionBlock.classList.add('question-block');
-    questionBlock.dataset.qindex = editQuestionIndex;
+            <label>Correct Answer</label>
+            <input type="text" name="items[${index}][sentences][${sentenceIndex}][answer]" placeholder="Correct answer" required>
 
-    questionBlock.innerHTML = `
-    <hr>
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h3>Question ${editQuestionIndex + 1}</h3>
-        <button type="button" class="remove-question-btn" onclick="removeQuestionBlock(this)" title="Remove Question" style="background: none; border: none; font-size: 20px; cursor: pointer;">🗑️</button>
-    </div>
+            <label>Audio</label>
+            <input type="file" name="items[${index}][sentences][${sentenceIndex}][audio]" accept="audio/*">
 
-    <label>Question Text</label>
-    <input type="text" name="questions[${editQuestionIndex}][question_text]" placeholder="Enter your question here" required>
+            <label>Image (Optional)</label>
+            <input type="file" name="items[${index}][sentences][${sentenceIndex}][image]" accept="image/*">
 
-    <label>Add Image for Question (optional)</label>
-    <input type="file" name="questions[${editQuestionIndex}][question_image]" accept="image/*">
-
-    <label>Choices</label>
-    <div class="choices-container">
-        <div class="choice-item">
-            <input type="text" name="questions[${editQuestionIndex}][items][0][text]" placeholder="Choice text (e.g. 'Dog')" required>
-            <button type="button" class="remove-item-btn" onclick="removeChoiceItem(this)">🗑️</button>
+            <div style="margin-top: 5px;">
+                <button type="button" onclick="removeSentence(this)">🗑️ Remove Sentence</button>
+            </div>
         </div>
-    </div>
-    <button type="button" class="add-icon-btn" onclick="addChoiceItem(this)" title="Add Choice">➕ Add Choice</button>
-`;
+    `;
 
+    container.insertAdjacentHTML('beforeend', html);
+}
 
-    container.appendChild(questionBlock);
-    editQuestionIndex++;
+function removeSentence(button) {
+    const div = button.closest('.sentence-item');
+    if (div) div.remove();
+}
+
+function addChoice(index) {
+    const container = document.getElementById(`choices-container-${index}`);
+    const choiceCount = container.querySelectorAll('.choice-input').length;
+
+    const html = `
+        <div class="choice-input" style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+            <input type="text" name="items[${index}][choices][]" placeholder="Enter choice">
+            <button type="button" onclick="removeChoice(this)">🗑️</button>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+function removeChoice(button) {
+    const div = button.closest('.choice-input');
+    if (div) div.remove();
 }
 
 function removePhraseItem(button) {
     const itemDiv = button.closest('.phrase-item');
-    if (itemDiv) itemDiv.remove();
+    if (!itemDiv) return;
+    const index = itemDiv.getAttribute('data-index');
+    delete sentenceCounters[index];
+    itemDiv.remove();
 }
 </script>
 
-<!-- MODAL -->
+
+<!-- EDIT -->
+<script>
+    let editPhraseIndex = 0;
+
+    function addEditPhraseItem(item = {}, indexOverride = null) {
+        const container = document.getElementById('edit-phrase-items-container');
+        const index = indexOverride !== null ? indexOverride : editPhraseIndex++;
+        sentenceCounters[index] = 0;
+console.log('Adding sentence to index:', index);
+        console.log('Current sentence counter:', sentenceCounters[index]);
+        const sentences = item.sentences || {};
+        const choices = item.choices || [];
+
+        let sentenceHTML = '';
+        let sentenceCounter = 0;
+
+        for (const sentenceId in sentences) {
+            const sentence = sentences[sentenceId];
+
+            sentenceHTML += `
+                <div class="sentence-item" data-sentence-index="${sentenceCounter}" style="border: 1px dashed #ccc; padding: 10px; margin-bottom: 10px;">
+                    <label>Sentence</label>
+                    <input type="text" name="items[${index}][sentences][${sentenceCounter}][sentence]" placeholder="Enter sentence" value="${sentence.sentence}" required>
+
+                    <label>Correct Answer</label>
+                    <input type="text" name="items[${index}][sentences][${sentenceCounter}][answer]" placeholder="Correct answer" value="${sentence.answer}" required>
+
+                    <label>Audio</label>
+                    <input type="file" name="items[${index}][sentences][${sentenceCounter}][audio]" accept="audio/*">
+                    ${sentence.audio_url ? `
+                        <br><small>Current Audio:</small><br>
+                        <audio controls style="width: 100%;">
+                            <source src="${sentence.audio_url}" type="audio/mpeg">
+                        </audio>` : ''}
+
+                    <label>Image (Optional)</label>
+                    <input type="file" name="items[${index}][sentences][${sentenceCounter}][image]" accept="image/*">
+
+                    <div style="margin-top: 5px;">
+                        <button type="button" onclick="removeSentence(this)">🗑️ Remove Sentence</button>
+                    </div>
+                </div>
+            `;
+
+            sentenceCounter++;
+        }
+
+        sentenceCounters[index] = sentenceCounter;
+
+        // If no sentence found, insert 1 default sentence via JS
+        if (sentenceCounter === 0) {
+            setTimeout(() => addSentence(index), 0); // delay ensures container is in DOM
+        }
+
+        // Choices and distractors
+        let choiceHTML = '';
+        for (const choice of choices) {
+            choiceHTML += `
+                <div class="choice-input" style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
+                    <input type="text" name="items[${index}][choices][]" value="${choice}" placeholder="Enter choice">
+                    <button type="button" onclick="removeChoice(this)">🗑️</button>
+                </div>
+            `;
+        }
+
+        const itemHTML = `
+            <br><hr>
+            <div class="phrase-item" data-index="${index}">
+                <div class="sentences-container" id="sentences-${index}">
+                    ${sentenceHTML}
+                </div>
+                <button type="button" onclick="addSentence(${index})">+ Add Sentence</button>
+
+                <hr>
+
+                <div id="choices-container-${index}">
+                    <label>Distractors</label>
+                    ${choiceHTML}
+                </div>
+                <button type="button" onclick="addChoice(${index})">+ Add Choice</button>
+
+            </div>
+        `;
+
+        container.insertAdjacentHTML('beforeend', itemHTML);
+    }
+
+
+    function addEditDistractor(index) {
+        const container = document.getElementById(`edit-distractors-container-${index}`);
+        if (!container) return;
+
+        const inputHTML = `
+            <div class="distractor-input" style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+                <input type="text" name="items[${index}][distractors][]" placeholder="Enter distractor">
+                <button type="button" onclick="removeDistractor(this)">🗑️</button>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', inputHTML);
+    }
+
+    function removeDistractor(button) {
+        const distractorDiv = button.closest('.distractor-input');
+        if (distractorDiv) distractorDiv.remove();
+    }
+
+
+
+function previewEditAudio(input, index) {
+    const container = document.getElementById(`audio-preview-${index}`);
+
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        // Clear any existing waveform preview
+        if (waveSurfers[index]) {
+            waveSurfers[index].destroy();
+            delete waveSurfers[index];
+        }
+
+        container.innerHTML = `
+            <div id="waveform-${index}" style="margin-bottom: 5px;"></div>
+            <button type="button" onclick="togglePlayback(${index})" id="play-btn-${index}">▶️ Play</button>
+        `;
+
+        const wavesurfer = WaveSurfer.create({
+            container: `#waveform-${index}`,
+            waveColor: '#d9dcff',
+            progressColor: '#4353ff',
+            height: 60,
+            backend: 'MediaElement',
+            mediaControls: false,
+        });
+
+        waveSurfers[index] = wavesurfer;
+        wavesurfer.load(e.target.result);
+
+        wavesurfer.on('finish', () => {
+            const playBtn = document.getElementById(`play-btn-${index}`);
+            if (playBtn) playBtn.innerText = '▶️ Play';
+        });
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+function populateEditItems(itemsObj = {}) {
+    const container = document.getElementById('edit-phrase-items-container');
+    container.innerHTML = '';
+    editPhraseIndex = 0;
+
+    Object.values(itemsObj).forEach((item, idx) => {
+        addEditPhraseItem(item, idx);
+        editPhraseIndex = idx + 1;
+    });
+}
+
+
+
+
+
+function handleEditButtonClick(element) {
+    const modal = document.getElementById('editActivityModal');
+    const activityData = JSON.parse(element.getAttribute('data-activity'));
+    const activityId = element.getAttribute('data-activity-id');
+    const difficulty = element.getAttribute('data-difficulty');
+
+    // Show modal
+    modal.style.display = 'block';
+
+    // Fill basic fields
+    document.getElementById('editActivityId').value = activityId;
+    document.getElementById('editActivityTitle').value = activityData.activity_title || '';
+    document.getElementById('editActivityDifficultySelect').value = difficulty;
+
+    // Populate items
+    const items = activityData.items || {};
+    populateEditItems(items);
+}
+
+
+function previewImage(input, index) {
+    const container = document.getElementById(`image-preview-${index}`);
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        container.innerHTML = `<img src="${e.target.result}" style="max-height: 100px;">`;
+    };
+    reader.readAsDataURL(file);
+}
+
+</script>
+
+
+
 <script>
 function toggleModal(id) {
     const modal = document.getElementById(id);
@@ -494,108 +532,72 @@ window.onclick = function(event) {
         }
     });
 };
+
+
+</script>
+
+<script>
+    function togglePlayback(index) {
+    const wavesurfer = waveSurfers[index];
+    const btn = document.getElementById(`play-btn-${index}`);
+    if (!wavesurfer) return;
+
+    if (wavesurfer.isPlaying()) {
+        wavesurfer.pause();
+        btn.innerText = '▶️ Play';
+    } else {
+        wavesurfer.play();
+        btn.innerText = '⏸️ Pause';
+    }
+}
+
+
+    function toggleActivityDetails(id) {
+        const section = document.getElementById(`activity-${id}`);
+        section.style.display = section.style.display === 'none' ? 'grid' : 'none';
+    }
+
 </script>
 
 
-
-
 <style>
-    input[type="file"] {
-    margin-top: 5px;
-    margin-bottom: 10px;
-}
-
-.question-block {
-  border: 1px solid #ccc;
-  padding: 15px;
-  margin-bottom: 20px;
-  border-radius: 5px;
-  background: #f9f9f9;
-}
- .choice-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.add-icon-btn {
-    margin-top: 10px;
-    background: none;
-    border: none;
-    font-size: 1em;
-    color: #007bff;
-    cursor: pointer;
-}
-
-.add-icon-btn:hover {
-    text-decoration: underline;
-}
-
-.remove-item-btn {
-    background: none;
-    border: none;
-    font-size: 1.2em;
-    color: red;
-    cursor: pointer;
-}
-
-.form-footer {
-    margin-top: 20px;
-    display: flex;
-    gap: 10px;
-}
-
-.add-question-btn {
-    margin-left: 10px;
-    padding: 6px 12px;
-    background-color: #28a745;
-    border: none;
-    color: white;
-    cursor: pointer;
-    border-radius: 4px;
-}
-
-.add-question-btn:hover {
-    background-color: #218838;
-}
     .phrase-items-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 16px;
-    padding: 15px;
-    margin-top: 15px;
-    border-top: 1px solid #ccc;
-    background: #f9f9f9;
-    border-radius: 6px;
-}
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 16px;
+        padding: 15px;
+        margin-top: 15px;
+        border-top: 1px solid #ccc;
+        background: #f9f9f9;
+        border-radius: 6px;
+    }
 
-.phrase-card {
-    background: #fff;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px;
-    text-align: center;
-}
+    .phrase-card {
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        padding: 10px;
+        text-align: center;
+    }
 
-.phrase-image img {
-    max-width: 100%;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-top: 6px;
-}
+    .phrase-image img {
+        max-width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-top: 6px;
+    }
 
-.no-image {
-    width: 100%;
-    height: 100px;
-    background: #e0e0e0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #666;
-    font-size: 14px;
-    margin-top: 6px;
-}
+    .no-image {
+        width: 100%;
+        height: 100px;
+        background: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+        font-size: 14px;
+        margin-top: 6px;
+    }
 
 </style>

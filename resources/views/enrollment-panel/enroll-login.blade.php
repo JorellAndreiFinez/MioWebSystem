@@ -36,11 +36,10 @@
         <div id="signup-tab-content" class="">
             <form class="signup-form" action="{{ route('enroll.signup') }}" method="post">
                 @csrf
-                <input type="email" name="user_email" class="input" id="user_email" autocomplete="off" placeholder="Email" required value="jorellandrei12345@fit.edu.ph
-">
-                <input type="text" name="fname" class="input" id="fname" autocomplete="off" placeholder="First Name" required value="jj">
+                <input type="email" name="user_email" class="input" id="user_email" autocomplete="off" placeholder="Email" required>
+                <input type="text" name="fname" class="input" id="fname" autocomplete="off" placeholder="First Name" required>
 
-                <input type="text" name="lname" class="input" id="lname" autocomplete="off" placeholder="Last Name" required value="andrei">
+                <input type="text" name="lname" class="input" id="lname" autocomplete="off" placeholder="Last Name" required>
 
                 <!-- Sign Up Password -->
                 <div class="password-wrap">

@@ -34,135 +34,137 @@
         @csrf
         <div class="form-container">
                     <!-- Personal Information Section -->
-                        <div class="section-header">Personal Information</div>
-                        <div class="section-content">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>First Name <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="first_name" placeholder="First Name"required />
-                                </div>
-                                <div class="form-group">
-                                    <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="last_name" placeholder="Last Name" required />
-                                </div>
-                            </div>
-
-                            <hr>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                <label>Gender <span style="color: red; font-weight:700">*</span></label>
-                                <select name="gender" required>
-                                    <option value="" disabled selected>Select Gender</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Age <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="number" id="age" name="age" placeholder="Age" required />
-                                </div>
-                                <div class="form-group">
-                                    <label>Birthday <span style="color: red; font-weight:700;">*</span></label>
-                                    <input
-                                        type="date"
-                                        id="birthday"
-                                        name="birthday"
-                                        required
-                                        min="1900-01-01"
-                                        max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
-                                        />
-                                </div>
-
-                                 <div class="form-group">
-                                    <label> Contact Number <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="contact_number" placeholder="Contact Number" required />
-                                </div>
-
-                            </div>
-
-                            <hr>
-
-                            <div class="form-row">
-                                <div class="form-group wide">
-                                <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
-                                <select id="region" name="region" required>
-                                        <option value="" disabled selected>Select Region</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group wide">
-                                <label>Province <span style="color: red; font-weight:700">*</span></label>
-                                <select id="province" name="province" required disabled>
-                                <option value="" disabled selected>Select Province</option>
-                                </select>
-                                </div>
-
-                                <div class="form-group wide">
-                                <label>City/ Municipality <span style="color: red; font-weight:700">*</span></label>
-                                <select id="city" name="city" required disabled>
-                                    <option value="" disabled selected>Select City/Municipality</option>
-                                </select>
-                                </div>
-
-                                <div class="form-group wide">
-                                <label>Barangay <span style="color: red; font-weight:700">*</span> </label>
-                                <select id="barangay" name="barangay"  required disabled>
-                                    <option value="" disabled selected>Select Barangay</option>
-                                </select>
-                                </div>
-
-                            </div>
-
-                            <div class="form-row">
-
-                            <div class="form-group wide">
-                                <label>Building/House No., Street <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="address" placeholder="Home Address" required />
-                                </div>
-
-                                <div class="form-group">
-                                <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
-                                <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" maxlength="4" required />
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div class="section-header">Parent/Guardian Information</div>
-                        <div class="section-content">
-
-                         <div class="form-row">
-                            <div class="form-group wide">
+                    <div class="section-header">Personal Information</div>
+                    <div class="section-content">
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label>First Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="parent_firstname" placeholder="Parent First Name" required />
+                                <input type="text" name="first_name" placeholder="First Name" required value="{{ old('first_name', $enrollee['fname'] ?? '') }}"/>
                             </div>
-
-                            <div class="form-group wide">
+                            <div class="form-group">
                                 <label>Last Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="parent_lastname" placeholder="Parent Last Name" required />
+                                <input type="text" name="last_name" placeholder="Last Name" required value="{{ old('last_name', $enrollee['lname'] ?? '') }}"/>
                             </div>
                         </div>
 
                         <hr>
-                              <div class="form-row">
-                                <div class="form-group">
-                                    <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="emergency_contact" placeholder="Emergency Number"  required />
-                                </div>
-                                <div class="form-group">
-                                <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
-                                <select name="parent_role" required>
-                                    <option value="" disabled selected>Select role</option>
-                                    <option value="father">Father</option>
-                                    <option value="mother">Mother</option>
-                                    <option value="guardian">Guardian</option>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Gender <span style="color: red; font-weight:700">*</span></label>
+                                <select name="gender" required>
+                                    <option value="" disabled {{ old('gender') ? '' : 'selected' }}>Select Gender</option>
+                                    <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
+                                    <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
+                                    <option value="Other" {{ old('gender') == 'Other' ? 'selected' : '' }}>Other</option>
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <label>Age <span style="color: red; font-weight:700">*</span></label>
+                                <input type="number" id="age" name="age" placeholder="Age" required value="{{ old('age') }}"/>
+                            </div>
+                            <div class="form-group">
+                                <label>Birthday <span style="color: red; font-weight:700;">*</span></label>
+                                <input
+                                    type="date"
+                                    id="birthday"
+                                    name="birthday"
+                                    required
+                                    min="1900-01-01"
+                                    max="{{ \Carbon\Carbon::now()->format('Y-m-d') }}"
+                                    value="{{ old('birthday') }}"
+                                />
+                            </div>
+
+                            <div class="form-group">
+                                <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="contact_number" placeholder="Contact Number" required value="{{ old('contact_number') }}"/>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="form-row">
+                            <div class="form-group wide">
+                                <label for="region">Region <span style="color: red; font-weight:700">*</span></label>
+                                <select id="region" name="region" required>
+                                    <option value="" disabled {{ old('region') ? '' : 'selected' }}>Select Region</option>
+                                    {{-- Options should be filled dynamically via JavaScript --}}
+                                </select>
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>Province <span style="color: red; font-weight:700">*</span></label>
+                                <select id="province" name="province" required disabled>
+                                    <option value="" disabled {{ old('province') ? '' : 'selected' }}>Select Province</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>City/ Municipality <span style="color: red; font-weight:700">*</span></label>
+                                <select id="city" name="city" required disabled>
+                                    <option value="" disabled {{ old('city') ? '' : 'selected' }}>Select City/Municipality</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group wide">
+                                <label>Barangay <span style="color: red; font-weight:700">*</span></label>
+                                <select id="barangay" name="barangay" required disabled>
+                                    <option value="" disabled {{ old('barangay') ? '' : 'selected' }}>Select Barangay</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group wide">
+                                <label>Building/House No., Street <span style="color: red; font-weight:700">*</span></label>
+                                <input type="text" name="address" placeholder="Home Address" required value="{{ old('address') }}"/>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Zip Code <span style="color: red; font-weight:700">*</span></label>
+                                <input type="number" name="zip_code" placeholder="Zip Code" minlength="4" maxlength="4" required value="{{ old('zip_code') }}"/>
+                            </div>
+                        </div>
+                    </div>
+
+
+                        <div class="section-header">Parent/Guardian Information</div>
+                        <div class="section-content">
+
+                            <div class="form-row">
+                                <div class="form-group wide">
+                                    <label>First Name <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="parent_firstname" placeholder="Parent First Name" required value="{{ old('parent_firstname') }}"/>
+                                </div>
+
+                                <div class="form-group wide">
+                                    <label>Last Name <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="parent_lastname" placeholder="Parent Last Name" required value="{{ old('parent_lastname') }}"/>
+                                </div>
+                            </div>
+
+                            <hr>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Contact Number <span style="color: red; font-weight:700">*</span></label>
+                                    <input type="text" name="emergency_contact" placeholder="Emergency Number" required value="{{ old('emergency_contact') }}"/>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Parent Role <span style="color: red; font-weight:700">*</span></label>
+                                    <select name="parent_role" required>
+                                        <option value="" disabled {{ old('parent_role') ? '' : 'selected' }}>Select role</option>
+                                        <option value="father" {{ old('parent_role') == 'father' ? 'selected' : '' }}>Father</option>
+                                        <option value="mother" {{ old('parent_role') == 'mother' ? 'selected' : '' }}>Mother</option>
+                                        <option value="guardian" {{ old('parent_role') == 'guardian' ? 'selected' : '' }}>Guardian</option>
+                                    </select>
+                                </div>
                             </div>
 
                         </div>
+
 
                         <!-- Academic Information Section -->
                         <div class="section-header">Academic Information</div>
@@ -170,61 +172,67 @@
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Previous School Attended <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="previous_school" placeholder="Previous School" required />
+                                    <input type="text" name="previous_school" placeholder="Previous School" required value="{{ old('previous_school') }}" />
                                 </div>
                                 <div class="form-group">
                                     <label>Previous Grade Level <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required />
+                                    <input type="number" name="previous_grade_level" placeholder="Previous Grade Level" required value="{{ old('previous_grade_level') }}" />
                                 </div>
                             </div>
+
                             <hr>
+
                             <div class="form-group">
                                 <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
                                 <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()">
-                                    <option value="" disabled selected>Select one</option>
-                                    <option value="kinder">Kinder</option>
-                                    <option value="elementary">Elementary</option>
-                                    <option value="junior-highschool">Junior High School</option>
-                                    <option value="senior-highschool">Senior High School</option>
-                                    <option value="one-on-one-therapy">One-on-One Therapy</option>
+                                    <option value="" disabled {{ old('enrollment_grade') ? '' : 'selected' }}>Select one</option>
+                                    <option value="kinder" {{ old('enrollment_grade') == 'kinder' ? 'selected' : '' }}>Kinder</option>
+                                    <option value="elementary" {{ old('enrollment_grade') == 'elementary' ? 'selected' : '' }}>Elementary</option>
+                                    <option value="junior-highschool" {{ old('enrollment_grade') == 'junior-highschool' ? 'selected' : '' }}>Junior High School</option>
+                                    <option value="senior-highschool" {{ old('enrollment_grade') == 'senior-highschool' ? 'selected' : '' }}>Senior High School</option>
+                                    <option value="one-on-one-therapy" {{ old('enrollment_grade') == 'one-on-one-therapy' ? 'selected' : '' }}>One-on-One Therapy</option>
                                 </select>
                             </div>
 
                             <!-- Grade Level Selector (Initially Hidden) -->
-                            <div class="form-group" id="grade_level_group" style="display: none;">
+                            <div class="form-group" id="grade_level_group" style="{{ old('grade_level') ? '' : 'display: none;' }}">
                                 <label>Select Grade Level <span style="color: red; font-weight:700">*</span></label>
                                 <select name="grade_level" id="grade_level">
-                                    <option value="" disabled selected>Select grade level</option>
+                                    <option value="" disabled {{ old('grade_level') ? '' : 'selected' }}>Select grade level</option>
+                                    @for ($i = 1; $i <= 12; $i++)
+                                        <option value="grade-{{ $i }}" {{ old('grade_level') == 'grade-'.$i ? 'selected' : '' }}>Grade {{ $i }}</option>
+                                    @endfor
                                 </select>
                             </div>
 
                             <!-- Senior High School Strand Selector (Initially Hidden) -->
-                            <div class="form-group" id="strand_group" style="display: none;">
+                            <div class="form-group" id="strand_group" style="{{ old('strand') ? '' : 'display: none;' }}">
                                 <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
                                 <select name="strand">
-                                    <option value="" disabled selected>Select strand</option>
-                                    <option value="agri-fishery">Agri-Fishery Arts</option>
-                                    <option value="home-economics">Home Economics</option>
-                                    <option value="industrial-arts">Industrial Arts</option>
-                                    <option value="ict">Information, Communications, & Technology</option>
-                                    <option value="entrepreneurship">Entrepreneurship & Financial Management</option>
-                                    <option value="culinary">Culinary Skills Development</option>
-                                    <option value="fashion-beauty">Fashion Beauty Skills</option>
+                                    <option value="" disabled {{ old('strand') ? '' : 'selected' }}>Select strand</option>
+                                    <option value="agri-fishery" {{ old('strand') == 'agri-fishery' ? 'selected' : '' }}>Agri-Fishery Arts</option>
+                                    <option value="home-economics" {{ old('strand') == 'home-economics' ? 'selected' : '' }}>Home Economics</option>
+                                    <option value="industrial-arts" {{ old('strand') == 'industrial-arts' ? 'selected' : '' }}>Industrial Arts</option>
+                                    <option value="ict" {{ old('strand') == 'ict' ? 'selected' : '' }}>Information, Communications, & Technology</option>
+                                    <option value="entrepreneurship" {{ old('strand') == 'entrepreneurship' ? 'selected' : '' }}>Entrepreneurship & Financial Management</option>
+                                    <option value="culinary" {{ old('strand') == 'culinary' ? 'selected' : '' }}>Culinary Skills Development</option>
+                                    <option value="fashion-beauty" {{ old('strand') == 'fashion-beauty' ? 'selected' : '' }}>Fashion Beauty Skills</option>
                                 </select>
                             </div>
                         </div>
+
 
                         <!-- Health Information Section -->
                         <div class="section-header">Health Information</div>
                         <div class="section-content">
                             <div class="form-row">
                                 <div class="form-group">
-                                    <label>Medical History <span style="color: red; font-weight:700">*</span></label>
-                                    <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." required />
+                                    <label>Medical History</label>
+                                    <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ old('medical_history') }}" />
                                 </div>
                                 <div class="form-group">
                                     <label>Type of Hearing Loss (if applicable)</label>
-                                    <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" />
+                                    <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" value="{{ old('hearing_loss') }}" />
                                 </div>
                             </div>
 
@@ -232,86 +240,117 @@
                                 <div class="form-group">
                                     <label>Do you identify as? <span style="color: red; font-weight:700">*</span></label>
                                     <select name="hearing_identity" required>
-                                        <option value="" disabled selected>Select one</option>
-                                        <option value="deaf" >Deaf</option>
-                                        <option value="hard-of-hearing">Hard of Hearing</option>
-                                        <option value="speech-delay">Speech Delay</option>
-                                        <option value="none">Neither</option>
+                                        <option value="" disabled {{ old('hearing_identity') ? '' : 'selected' }}>Select one</option>
+                                        <option value="deaf" {{ old('hearing_identity') == 'deaf' ? 'selected' : '' }}>Deaf</option>
+                                        <option value="hard-of-hearing" {{ old('hearing_identity') == 'hard-of-hearing' ? 'selected' : '' }}>Hard of Hearing</option>
+                                        <option value="speech-delay" {{ old('hearing_identity') == 'speech-delay' ? 'selected' : '' }}>Speech Delay</option>
+                                        <option value="none" {{ old('hearing_identity') == 'none' ? 'selected' : '' }}>Neither</option>
                                     </select>
                                 </div>
                                 <div class="form-group">
                                     <label>Assistive Devices Used</label>
-                                    <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None"/>
+                                    <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None" value="{{ old('assistive_devices') }}" />
                                 </div>
                             </div>
 
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Other Notes or Health Concerns</label>
-                                    <input type="text" name="health_notes" placeholder="Specify any other relevant information" />
+                                    <input type="text" name="health_notes" placeholder="Specify any other relevant information" value="{{ old('health_notes') }}" />
                                 </div>
                             </div>
                         </div>
 
+
                         <!-- Payment Section -->
                         <div class="section-header">Proof of Payment Upload</div>
-                            <div class="section-content">
-                        <div class="form-row">
+                        <div class="section-content">
+                            <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Proof of Payment <span style="color: red; font-weight:700">*</span></label>
                                     <div class="file-upload-box drop-area">
                                         <input type="file" name="payment" class="fileInput" hidden>
                                     </div>
-                                    <div class="file-preview"></div>
+                                    <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
+                                    <div class="file-preview">
+                                        @if(!empty($enrollee['payment_file_url']))
+                                            <a href="{{ $enrollee['payment_file_url'] }}" target="_blank">View uploaded file</a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
-
-
-                            </div>
+                        </div>
 
                         <!-- File Upload Section -->
                         <div class="section-header">File Upload</div>
                         <div class="section-content">
+
+                            {{-- Good Moral --}}
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Good Moral <span style="color: red; font-weight:700">*</span></label>
                                     <div class="file-upload-box drop-area">
                                         <input type="file" name="good_moral_file" class="fileInput" hidden>
                                     </div>
-                                    <div class="file-preview"></div>
+                                    <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
+                                    <div class="file-preview">
+                                        @if(!empty($enrollee['good_moral_file_url']))
+                                            <a href="{{ $enrollee['good_moral_file_url'] }}" target="_blank">View uploaded file</a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
+                            {{-- Health Certificate --}}
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Health Certificate <span style="color: red; font-weight:700">*</span></label>
                                     <div class="file-upload-box drop-area">
                                         <input type="file" name="health_certificate_file" class="fileInput" hidden>
                                     </div>
-                                    <div class="file-preview"></div>
+                                    <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
+                                    <div class="file-preview">
+                                        @if(!empty($enrollee['health_certificate_file_url']))
+                                            <a href="{{ $enrollee['health_certificate_file_url'] }}" target="_blank">View uploaded file</a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
+                            {{-- PSA Birth Certificate --}}
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>PSA Birth Certificate <span style="color: red; font-weight:700">*</span></label>
                                     <div class="file-upload-box drop-area">
                                         <input type="file" name="psa_birth_certificate_file" class="fileInput" hidden>
                                     </div>
-                                    <div class="file-preview"></div>
+                                    <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
+                                    <div class="file-preview">
+                                        @if(!empty($enrollee['psa_birth_certificate_file_url']))
+                                            <a href="{{ $enrollee['psa_birth_certificate_file_url'] }}" target="_blank">View uploaded file</a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
 
+                            {{-- Form 137 --}}
                             <div class="form-row">
                                 <div class="form-group wide">
                                     <label>Form 137 <span style="color: red; font-weight:700">*</span></label>
                                     <div class="file-upload-box drop-area">
                                         <input type="file" name="form_137_file" class="fileInput" hidden>
                                     </div>
-                                    <div class="file-preview"></div>
+                                    <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
+                                    <div class="file-preview">
+                                        @if(!empty($enrollee['form_137_file_url']))
+                                            <a href="{{ $enrollee['form_137_file_url'] }}" target="_blank">View uploaded file</a>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
+
 
 
                     <!-- Submit Button -->
@@ -439,8 +478,9 @@
                         <select name="parent_role" disabled>
                             <option value="" disabled {{ old('parent_role', '') == '' ? 'selected' : '' }}>Select role</option>
                             <option value="father" {{ old('parent_role', $form['parent_role'] ?? '') == 'father' ? 'selected' : '' }}>Father</option>
-                            <option value="mother" {{ old('parent_role', $data['enrollment_form']['parent_role'] ?? '') == 'mother' ? 'selected' : '' }}>Mother</option>
-                            <option value="guardian" {{ old('parent_role', $data['enrollment_form']['parent_role'] ?? '') == 'guardian' ? 'selected' : '' }}>Guardian</option>
+                            <option value="mother" {{ old('parent_role', $form['parent_role'] ?? '') == 'mother' ? 'selected' : '' }}>Mother</option>
+                            <option value="guardian" {{ old('parent_role', $form['parent_role'] ?? '') == 'guardian' ? 'selected' : '' }}>Guardian</option>
+
                         </select>
                     </div>
                 </div>
@@ -462,17 +502,18 @@
 
                 <hr>
 
-                <div class="form-group">
-                    <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
-                    <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()" disabled>
-                        <option value="" disabled {{ empty($form['enrollment_grade']) ? 'selected' : '' }}>Select one</option>
-                        <option value="kinder" {{ $form['enrollment_grade'] === 'kinder' ? 'selected' : '' }}>Kinder</option>
-                        <option value="elementary" {{ $form['enrollment_grade'] === 'elementary' ? 'selected' : '' }}>Elementary</option>
-                        <option value="junior-highschool" {{ $form['enrollment_grade'] === 'junior-highschool' ? 'selected' : '' }}>Junior High School</option>
-                        <option value="senior-highschool" {{ $form['enrollment_grade'] === 'senior-highschool' ? 'selected' : '' }}>Senior High School</option>
-                        <option value="one-on-one-therapy" {{ $form['enrollment_grade'] === 'one-on-one-therapy' ? 'selected' : '' }}>One-on-One Therapy</option>
-                    </select>
-                </div>
+               <div class="form-group">
+                <label>What are you enrolling in PID? <span style="color: red; font-weight:700">*</span></label>
+                <select name="enrollment_grade" id="enrollment_grade" required onchange="handleGradeChange()" disabled>
+                    <option value="" disabled {{ empty($form['enrollment_grade'] ?? null) ? 'selected' : '' }}>Select one</option>
+                    <option value="kinder" {{ ($form['enrollment_grade'] ?? '') === 'kinder' ? 'selected' : '' }}>Kinder</option>
+                    <option value="elementary" {{ ($form['enrollment_grade'] ?? '') === 'elementary' ? 'selected' : '' }}>Elementary</option>
+                    <option value="junior-highschool" {{ ($form['enrollment_grade'] ?? '') === 'junior-highschool' ? 'selected' : '' }}>Junior High School</option>
+                    <option value="senior-highschool" {{ ($form['enrollment_grade'] ?? '') === 'senior-highschool' ? 'selected' : '' }}>Senior High School</option>
+                    <option value="one-on-one-therapy" {{ ($form['enrollment_grade'] ?? '') === 'one-on-one-therapy' ? 'selected' : '' }}>One-on-One Therapy</option>
+                </select>
+            </div>
+
 
                 <!-- Grade Level Selector (Visible if enrollment_grade is appropriate) -->
                 <div class="form-group" id="grade_level_group" style="display: block;">
@@ -481,20 +522,20 @@
                 </div>
 
                 <!-- Senior High School Strand Selector -->
-                <div class="form-group" id="strand_group" style="display: {{ $form['enrollment_grade'] === 'senior-highschool' ? 'block' : 'none' }};">
+                <div class="form-group" id="strand_group" style="display: {{ ($form['enrollment_grade'] ?? '') === 'senior-highschool' ? 'block' : 'none' }};">
                     <label>Select Strand <span style="color: red; font-weight:700">*</span></label>
                     <select name="strand" disabled>
-                        <option value="" disabled {{ empty($form['strand']) ? 'selected' : '' }}>Select strand</option>
-                        <option value="agri-fishery" {{ $form['strand'] === 'agri-fishery' ? 'selected' : '' }}>Agri-Fishery Arts</option>
-                        <option value="home-economics" {{ $form['strand'] === 'home-economics' ? 'selected' : '' }}>Home Economics</option>
-                        <option value="industrial-arts" {{ $form['strand'] === 'industrial-arts' ? 'selected' : '' }}>Industrial Arts</option>
-                        <option value="ict" {{ $form['strand'] === 'ict' ? 'selected' : '' }}>Information, Communications, & Technology</option>
-                        <option value="entrepreneurship" {{ $form['strand'] === 'entrepreneurship' ? 'selected' : '' }}>Entrepreneurship & Financial Management</option>
-                        <option value="culinary" {{ $form['strand'] === 'culinary' ? 'selected' : '' }}>Culinary Skills Development</option>
-                        <option value="fashion-beauty" {{ $form['strand'] === 'fashion-beauty' ? 'selected' : '' }}>Fashion Beauty Skills</option>
+                        <option value="" disabled {{ empty($form['strand'] ?? '') ? 'selected' : '' }}>Select strand</option>
+                        <option value="agri-fishery" {{ ($form['strand'] ?? '') === 'agri-fishery' ? 'selected' : '' }}>Agri-Fishery Arts</option>
+                        <option value="home-economics" {{ ($form['strand'] ?? '') === 'home-economics' ? 'selected' : '' }}>Home Economics</option>
+                        <option value="industrial-arts" {{ ($form['strand'] ?? '') === 'industrial-arts' ? 'selected' : '' }}>Industrial Arts</option>
+                        <option value="ict" {{ ($form['strand'] ?? '') === 'ict' ? 'selected' : '' }}>Information, Communications, & Technology</option>
+                        <option value="entrepreneurship" {{ ($form['strand'] ?? '') === 'entrepreneurship' ? 'selected' : '' }}>Entrepreneurship & Financial Management</option>
+                        <option value="culinary" {{ ($form['strand'] ?? '') === 'culinary' ? 'selected' : '' }}>Culinary Skills Development</option>
+                        <option value="fashion-beauty" {{ ($form['strand'] ?? '') === 'fashion-beauty' ? 'selected' : '' }}>Fashion Beauty Skills</option>
                     </select>
                 </div>
-            </div>
+
 
 
             <!-- Health Info -->
@@ -734,13 +775,18 @@
                         <div class="form-row">
                             <div class="form-group wide">
                                 <label>First Name <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="parent_firstname" value="{{ $form['emergency_nparent_firstname']}}" placeholder="First Name" required />
+                                <input type="text" name="parent_firstname" value="{{ $form['parent_firstname']}}" placeholder="First Name" required />
+                            </div>
 
+                            <div class="form-group wide">
                                 <label>Last Name <span style="color: red; font-weight:700">*</span></label>
                                 <input type="text" name="parent_lastname" value="{{ $form['parent_lastname']}}" placeholder="Last Name" required />
                             </div>
 
                         </div>
+
+                            <hr>
+
 
                             <div class="form-row">
                             <div class="form-group">
@@ -818,8 +864,8 @@
                     <div class="section-content">
                         <div class="form-row">
                             <div class="form-group">
-                                <label>Medical History <span style="color: red; font-weight:700">*</span></label>
-                                <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $form['medical_history'] ?? '' }}" required />
+                                <label>Medical History</label>
+                                <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $form['medical_history'] ?? '' }}" />
                             </div>
                             <div class="form-group">
                                 <label>Type of Hearing Loss (if applicable)</label>
@@ -862,6 +908,7 @@
                                 <div class="file-upload-box drop-area">
                                     <input type="file" name="payment" class="fileInput" hidden>
                                 </div>
+                                <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
                                 <div class="file-preview">
                                     @if (!empty($form['payment_proof_path']))
                                         <a href="{{ $form['payment_proof_path'] }}" target="_blank">View Uploaded File</a>
@@ -882,6 +929,7 @@
                                 <div class="file-upload-box drop-area">
                                     <input type="file" name="good_moral_file" class="fileInput" hidden>
                                 </div>
+                                <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
                                 <div class="file-preview">
                                     @if (!empty($form['good_moral_path']))
                                         <a href="{{ $form['good_moral_path'] }}" target="_blank">View Uploaded File</a>
@@ -897,6 +945,7 @@
                                 <div class="file-upload-box drop-area">
                                     <input type="file" name="health_certificate_file" class="fileInput" hidden>
                                 </div>
+                                <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
                                 <div class="file-preview">
                                     @if (!empty($form['health_certificate_path']))
                                         <a href="{{ $form['health_certificate_path'] }}" target="_blank">View Uploaded File</a>
@@ -912,6 +961,7 @@
                                 <div class="file-upload-box drop-area">
                                     <input type="file" name="psa_birth_certificate_file" class="fileInput" hidden>
                                 </div>
+                                <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
                                 <div class="file-preview">
                                     @if (!empty($form['psa_birth_certificate_path']))
                                         <a href="{{ $form['psa_birth_certificate_path'] }}" target="_blank">View Uploaded File</a>
@@ -927,6 +977,7 @@
                                 <div class="file-upload-box drop-area">
                                     <input type="file" name="form_137_file" class="fileInput" hidden>
                                 </div>
+                                <small class="file-note" style="color: darkgrey;">Accepted formats: PDF, JPG, JPEG, PNG. Max size: 5MB.</small>
                                 <div class="file-preview">
                                     @if (!empty($form['form_137_path']))
                                         <a href="{{ $form['form_137_path'] }}" target="_blank">View Uploaded File</a>
@@ -1218,15 +1269,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
         function handleFiles(files) {
             if (files.length > 0) {
-                // Ensure the first file is assigned to the actual file input
+                const acceptedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+
+                const file = files[0];
+
+                if (!acceptedTypes.includes(file.type)) {
+                    alert("Invalid file type. Only PDF, JPG, JPEG, and PNG are allowed.");
+                    return;
+                }
+
+                // Assign the valid file to the input
                 const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(files[0]);  // Only allow 1 file
+                dataTransfer.items.add(file);
                 fileInput.files = dataTransfer.files;
 
-                uploadedFiles = [files[0]]; // Only keep the one assigned
+                uploadedFiles = [file]; // Only keep the one assigned
                 updatePreview();
             }
         }
+
 
 
         function updatePreview() {
@@ -1306,47 +1367,7 @@ document.querySelector('form').addEventListener('submit', function (e) {
 
 <!-- FOR TESTING -->
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        document.querySelector('[name="first_name"]').value = 'Alexa';
-        document.querySelector('[name="last_name"]').value = 'Morales';
-        document.querySelector('[name="gender"]').value = 'Female';
-        document.querySelector('[name="age"]').value = '12';
-        document.querySelector('[name="birthday"]').value = '2013-09-15';
-        document.querySelector('[name="contact_number"]').value = '09171234567';
 
-        document.querySelector('[name="region"]').innerHTML += '<option value="Region IV-A" selected>Region IV-A</option>';
-        document.querySelector('[name="province"]').innerHTML += '<option value="Batangas" selected>Batangas</option>';
-        document.querySelector('[name="province"]').disabled = false;
-        document.querySelector('[name="city"]').innerHTML += '<option value="Lipa City" selected>Lipa City</option>';
-        document.querySelector('[name="city"]').disabled = false;
-        document.querySelector('[name="barangay"]').innerHTML += '<option value="Barangay 7" selected>Barangay 7</option>';
-        document.querySelector('[name="barangay"]').disabled = false;
-
-        document.querySelector('[name="address"]').value = '123 Mabini Street';
-        document.querySelector('[name="zip_code"]').value = '4217';
-
-        document.querySelector('[name="parent_firstname"]').value = 'Carlos';
-        document.querySelector('[name="parent_lastname"]').value = 'Morales';
-        document.querySelector('[name="emergency_contact"]').value = '09181112222';
-        document.querySelector('[name="parent_role"]').value = 'father';
-
-        document.querySelector('[name="previous_school"]').value = 'San Pedro Elementary School';
-        document.querySelector('[name="previous_grade_level"]').value = '5';
-        document.querySelector('[name="enrollment_grade"]').value = 'elementary';
-        handleGradeChange(); // Show grade level dropdown after setting enrollment
-        setTimeout(() => {
-            document.querySelector('[name="grade_level"]').innerHTML += '<option value="grade-6" selected>Grade 6</option>';
-            document.querySelector('[name="grade_level"]').value = 'grade-6';
-        }, 100); // Allow time for dropdown to render
-
-        document.querySelector('[name="medical_history"]').value = 'Allergic Rhinitis';
-        document.querySelector('[name="hearing_loss"]').value = 'None';
-        document.querySelector('[name="hearing_identity"]').value = 'none';
-        document.querySelector('[name="assistive_devices"]').value = 'None';
-        document.querySelector('[name="health_notes"]').value = 'N/A';
-    });
-</script>
 
 
 

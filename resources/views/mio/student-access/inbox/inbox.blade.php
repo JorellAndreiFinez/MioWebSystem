@@ -18,10 +18,25 @@
                         </div>
                     @else
                         @foreach($contacts as $contact)
-                            <div class="contact" data-contact-id="{{ $contact['id'] }}" data-contact-name="{{ $contact['name'] }}" data-contact-role="{{ $contact['role'] }}" data-contact-image="{{ $contact['profile_pic'] }}">
-                                <img src="{{ $contact['profile_pic'] ?? 'default.jpg' }}" class="profile-pic" />
+                            <div class="contact {{ $contact['has_unread'] ? 'has-unread' : '' }}" 
+                                data-contact-id="{{ $contact['id'] }}" 
+                                data-contact-name="{{ $contact['name'] }}" 
+                                data-contact-role="{{ $contact['role'] }}" 
+                                data-contact-image="{{ $contact['profile_pic'] }}">
+
+                                @php
+                                    $profileUrl = $contact['profile_pic'] ?? null;
+                                    $fallbackPic = 'https://ui-avatars.com/api/?name=' . urlencode($contact['name']);
+                                @endphp
+                                <img src="{{ $profileUrl ?: $fallbackPic }}" class="profile-pic" />
                                 <div class="contact-info">
-                                    <p class="name">{{ $contact['name'] }}</p>
+                                   <p class="name" style="{{ $contact['has_unread'] ? 'font-weight: bold;' : '' }}">
+                                    {{ $contact['name'] }}
+                                    @if($contact['has_unread'])
+                                        <span class="red-dot"></span>
+                                    @endif
+                                </p>
+
                                     <p class="role">{{ $contact['role'] }}</p>
                                 </div>
                             </div>
@@ -47,8 +62,8 @@
 
                     <div class="chat-content hidden">
                         <div class="header">
-                                <h2>Leo Kenter</h2>
-                                <p class="subtitle">Speech Development</p>
+                                <h2> </h2>
+                                <p class="subtitle"> </p>
                             </div>
 
 
@@ -90,10 +105,6 @@
                                 <option value="">Select Person</option>
                             </select>
 
-
-                            <label for="subject">Subject:</label>
-                            <input type="text" id="subject" placeholder="Enter subject (optional)" name="subject">
-
                             <label for="message">Message:</label>
                             <textarea id="message" rows="6" placeholder="Type your message..." name="message"></textarea>
 
@@ -117,17 +128,33 @@
     </div>
 </section>
 
+
 <!-- ADD NEW MESSAGE -->
 <script>
     const newMessageBtn = document.querySelector('.new-message-btn');
     const chatContent = document.querySelector('.chat-content');
     const newMessageContent = document.querySelector('.new-message-content');
+    const noContactSelected = document.querySelector('.no-contact-selected');
+
+    let isComposingNewMessage = false;
 
     newMessageBtn.addEventListener('click', () => {
-        chatContent.style.display = 'none';
-        newMessageContent.style.display = 'block';
+        isComposingNewMessage = !isComposingNewMessage;
+
+        if (isComposingNewMessage) {
+            chatContent.style.display = 'none';
+            newMessageContent.style.display = 'block';
+            noContactSelected.style.display = 'none';
+            newMessageBtn.textContent = 'x Close Message';
+        } else {
+            newMessageContent.style.display = 'none';
+            chatContent.style.display = 'none';
+            noContactSelected.style.display = 'flex';
+            newMessageBtn.textContent = '+ New Message';
+        }
     });
 </script>
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -246,9 +273,12 @@ document.addEventListener('DOMContentLoaded', function () {
     document.querySelector('.send-message-btn').addEventListener('click', async (e) => {
         e.preventDefault();
 
+        // Hide form, show loader (optional)
+        document.querySelector('.new-message-content').style.display = 'none';
+        document.getElementById('messageLoader')?.style.display = 'block'; // Add loader div if needed
+
         const formData = new FormData();
         formData.append('receiver_id', document.getElementById('people-select').value);
-        formData.append('subject', document.getElementById('subject').value);
         formData.append('message', document.getElementById('message').value);
         formData.append('_token', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
 
@@ -257,20 +287,22 @@ document.addEventListener('DOMContentLoaded', function () {
             formData.append('attachments[]', files[i]);
         }
 
-        const response = await fetch('/mio/send-message', {
-            method: 'POST',
-            body: formData
-        });
+        try {
+            const response = await fetch('/mio/student/send-message', {
+                method: 'POST',
+                body: formData
+            });
 
-        const result = await response.json();
-        if (result.success) {
-            alert('Message sent with attachment!');
-            document.querySelector('form').reset();
-            document.getElementById('file-list').innerHTML = '';
-        } else {
-            alert('Failed to send message.');
+            const result = await response.json();
+            setTimeout(() => {
+                window.location.reload(); // Refresh after short delay
+            }, 1000);
+        } catch (err) {
+            console.error(err);
+            window.location.reload(); // Fallback refresh
         }
     });
+
 </script>
 
 <!-- Get MESSAGES -->
@@ -281,36 +313,23 @@ document.querySelectorAll(".contact").forEach(contact => {
     contact.addEventListener("click", function () {
         const clickedContactId = this.dataset.contactId;
 
-        // If clicked again, deselect the contact
         if (currentlySelectedContactId === clickedContactId) {
             currentlySelectedContactId = null;
-
-            // Remove the selected class from the contact
             this.classList.remove('selected');
-
-            // Show the 'no contact selected' message and hide the chat content
             document.querySelector('.no-contact-selected').style.display = 'flex';
             document.querySelector('.chat-content').style.display = 'none';
-            return; // Exit here to prevent the rest of the code from running
+            return;
         }
 
-        // Deselect the previously selected contact
         if (currentlySelectedContactId) {
             document.querySelector(`[data-contact-id="${currentlySelectedContactId}"]`).classList.remove('selected');
         }
 
-        // Update the selected contact ID
         currentlySelectedContactId = clickedContactId;
-
-        // Add the selected class to the clicked contact
         this.classList.add('selected');
 
-        // Hide the 'no contact selected' message
         document.querySelector('.no-contact-selected').style.display = 'none';
-
-        // Show the chat content for the selected contact
         document.querySelector('.chat-content').style.display = 'block';
-        // Hide the new message content if it is currently displayed
         document.querySelector('.new-message-content').style.display = 'none';
 
         const userId = "{{ Session::get('firebase_user')['uid'] }}";
@@ -319,7 +338,6 @@ document.querySelectorAll(".contact").forEach(contact => {
         const receiverRole = this.dataset.contactRole;
         const receiverImageRaw = this.dataset.contactImage;
 
-        // Fallback logic inline using a conditional expression
         const receiverImage = (!receiverImageRaw || receiverImageRaw === "null" || receiverImageRaw === "undefined")
             ? `https://ui-avatars.com/api/?name=${encodeURIComponent(receiverName)}`
             : receiverImageRaw;
@@ -340,6 +358,31 @@ document.querySelectorAll(".contact").forEach(contact => {
             .then(res => res.json())
             .then(data => {
                 chatSection.innerHTML = '';
+
+                // Remove bold & red dot
+                const contactEl = document.querySelector(`[data-contact-id="${receiverId}"]`);
+                const nameEl = contactEl.querySelector(".name");
+                nameEl.style.fontWeight = 'normal';
+                const redDot = nameEl.querySelector(".red-dot");
+                if (redDot) redDot.remove();
+                contactEl.classList.remove('has-unread');
+
+                // Mark messages as read in Firebase
+                const threadId = [userId, receiverId].sort().join('_');
+                const messagesRef = firebase.database().ref(`messages/${threadId}`);
+
+                messagesRef.once('value').then(snapshot => {
+                    snapshot.forEach(childSnapshot => {
+                        const msgKey = childSnapshot.key;
+                        const msgData = childSnapshot.val();
+
+                        if (msgData.receiver_id === userId && !msgData.read) {
+                            messagesRef.child(msgKey).update({ read: true });
+                        }
+                    });
+                });
+
+                data.messages.sort((a, b) => a.timestamp - b.timestamp);
                 data.messages.forEach(msg => {
                     const sender = msg.sender_id === userId ? 'sender' : 'response';
                     const messageHTML = `
@@ -349,7 +392,6 @@ document.querySelectorAll(".contact").forEach(contact => {
                                 <p class="time">${new Date(msg.timestamp * 1000).toLocaleString()}</p>
                             </div>
                             <p class="message-content">${msg.message}</p>
-
                         </div>`;
                     chatSection.innerHTML += messageHTML;
                 });
@@ -360,6 +402,24 @@ document.querySelectorAll(".contact").forEach(contact => {
             });
     });
 });
+</script>
+
+<!-- Firebase v8 (Compatible with your code) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBfzT0dZZAcgsc0CGKugR2H3jEB_G6jG50",
+    authDomain: "miolms.firebaseapp.com",
+    databaseURL: "https://miolms-default-rtdb.firebaseio.com",
+    projectId: "miolms",
+    storageBucket: "miolms.firebasestorage.app",
+    messagingSenderId: "720846720525",
+    appId: "1:720846720525:web:65747f3c00aef3fbeb4f44",
+    measurementId: "G-2RXBR538B6"
+  };
+
+  firebase.initializeApp(firebaseConfig);
 </script>
 
 

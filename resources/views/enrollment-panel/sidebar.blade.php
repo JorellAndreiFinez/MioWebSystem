@@ -46,10 +46,20 @@
         <!-- Profile + Logout -->
         <li class="profile">
             <div class="profile-details">
+                @php
+                    $user = session('user_account');
+                    $enrollee = session('enrollment_user');
+                @endphp
+
                 <div class="name_job">
-                    <div class="name">{{ Auth::user()->name ?? 'John Doe' }}</div>
-                    <div class="job">{{ Auth::user()->role ?? 'Role' }}</div>
+                    <div class="name">
+                        {{ $user['name'] ?? $enrollee['fname'] . ' ' . $enrollee['lname'] ?? '' }}
+                    </div>
+                    <div class="job">
+                        {{ $user['role'] ?? 'User' }}
+                    </div>
                 </div>
+
             </div>
             <form method="POST" action="{{ route('enroll.logout') }}" style="margin: 0;">
                 @csrf

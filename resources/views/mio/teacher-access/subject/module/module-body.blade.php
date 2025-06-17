@@ -12,7 +12,7 @@
                 Modules
             </a>
         </div>
-        <div class="breadcrumb-item active">{{ $moduleIndex }}</div>
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">{{ $moduleIndex }}</div>
 
     </div>
 

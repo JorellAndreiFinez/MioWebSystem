@@ -17,6 +17,10 @@
 <!----- FOOTER ----->
 @extends('layouts.footer')
 
+@include('layouts.program.program-styles')
+@include('mio-styles')
+
+@include('main-app-styles')
 
 </body>
 </html>

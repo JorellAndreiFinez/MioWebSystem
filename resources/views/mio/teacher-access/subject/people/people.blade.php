@@ -7,7 +7,7 @@
             </a>
         </div>
 
-        <div class="breadcrumb-item active">People</div>
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">People</div>
     </div>
 
     <div class="teacher-container">

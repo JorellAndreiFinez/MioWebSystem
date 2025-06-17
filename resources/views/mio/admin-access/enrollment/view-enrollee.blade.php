@@ -197,29 +197,29 @@
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Medical History <span style="color: red; font-weight:700">*</span></label>
-                                            <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $enrollee['enrollment_form']['medical_history'] }}" readonly />
+                                            <input type="text" name="medical_history" placeholder="E.g. Asthma, Allergies, etc." value="{{ $enrollee['enrollment_form']['medical_history'] ?? '' }}" readonly />
                                         </div>
                                         <div class="form-group">
                                             <label>Type of Hearing Loss (if applicable)</label>
-                                            <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" value="{{ $enrollee['enrollment_form']['hearing_loss'] }}"  readonly/>
+                                            <input type="text" name="hearing_loss" placeholder="E.g. Sensorineural, Conductive, Mixed" value="{{ $enrollee['enrollment_form']['hearing_loss'] ?? ''  }}"  readonly/>
                                         </div>
                                     </div>
 
                                     <div class="form-row">
                                         <div class="form-group">
                                             <label>Do you identify as? <span style="color: red; font-weight:700">*</span></label>
-                                        <input type="text" value="{{ $enrollee['enrollment_form']['hearing_identity'] }}"  readonly>
+                                        <input type="text" value="{{ $enrollee['enrollment_form']['hearing_identity'] ?? ''  }}"  readonly>
                                         </div>
                                         <div class="form-group">
                                             <label>Assistive Devices Used</label>
-                                            <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None" value="{{ $enrollee['enrollment_form']['assistive_devices'] }}" readonly/>
+                                            <input type="text" name="assistive_devices" placeholder="E.g. Hearing Aid, Cochlear Implant, None" value="{{ $enrollee['enrollment_form']['assistive_devices'] ?? ''  }}" readonly/>
                                         </div>
                                     </div>
 
                                     <div class="form-row">
                                         <div class="form-group wide">
                                             <label>Other Notes or Health Concerns</label>
-                                            <input type="text" name="health_notes" placeholder="Specify any other relevant information" value="{{ $enrollee['enrollment_form']['health_notes'] }}" />
+                                            <input type="text" name="health_notes" placeholder="Specify any other relevant information" value="{{ $enrollee['enrollment_form']['health_notes'] ?? ''  }}" />
                                         </div>
                                     </div>
                                 </div>

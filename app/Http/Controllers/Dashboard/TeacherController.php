@@ -56,6 +56,25 @@ class TeacherController extends Controller
         $schoolYears = $schoolYearsRef->getValue() ?? [];
         $activeSchoolYear = null;
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         foreach ($schoolYears as $schoolYear) {
             if ($schoolYear['status'] === 'active') {
                 $activeSchoolYear = $schoolYear['schoolyearid'];
@@ -94,7 +113,7 @@ class TeacherController extends Controller
 
         // 4. Define activity types
         $activityTypes = [
-            'pronunciation', 'picture', 'question', 'phrase',
+            'phrase', 'picture', 'question',
             'bingo', 'matching', 'fill', 'talk2me', 'homonyms'
         ];
 
@@ -165,14 +184,99 @@ class TeacherController extends Controller
                             $totalScore = 0;
                             $wordCount = 0;
 
-                            foreach ($words as $word) {
-                                if (isset($word['quality_score'])) {
-                                    $totalScore += $word['quality_score'];
-                                    $wordCount++;
+                            // WORD SPECIFIC DETAILS
+
+                            $lowPhonemes = [];
+
+                            foreach ($words as &$word) {
+                                $wordLowPhones = [];
+
+                                $phones = $word['phones'] ?? [];
+                                $syllables = $word['syllables'] ?? []; // may be missing
+
+                                // Always initialize syllables to empty array if none
+                                if (!isset($word['syllables']) || !is_array($word['syllables'])) {
+                                    $syllables = [];
                                 }
+
+                                foreach ($phones as $phone) {
+                                    $score = $phone['quality_score'] ?? 100;
+                                    if ($score <= 50) {
+                                        $level = floor($score / 10) * 10;
+                                        $wordLowPhones[] = [
+                                            'phone' => $phone['phone'] ?? 'N/A',
+                                            'score' => round($score, 1),
+                                            'like'  => $phone['sound_most_like'] ?? 'N/A',
+                                            'range' => $level
+                                        ];
+                                    }
+                                }
+
+                                // Inject phones into each syllable
+                                foreach ($syllables as &$syl) {
+                                    $sylStart = $syl['extent'][0];
+                                    $sylEnd   = $syl['extent'][1];
+                                    $syl['phones'] = [];
+
+                                    foreach ($phones as $phone) {
+                                        $pStart = $phone['extent'][0];
+                                        $pEnd   = $phone['extent'][1];
+
+                                        // FIX: allow overlapping ranges
+                                        if ($pEnd > $sylStart && $pStart < $sylEnd) {
+                                            $syl['phones'][] = [
+                                                'phone' => $phone['phone'] ?? 'N/A',
+                                                'quality_score' => $phone['quality_score'] ?? 0,
+                                                'sound_most_like' => $phone['sound_most_like'] ?? '—'
+                                            ];
+                                        }
+                                    }
+
+                                }
+
+                                // Always assign syllables back (even if empty)
+                                $word['syllables'] = $syllables;
+                                $word['low_phones'] = $wordLowPhones;
                             }
 
-                            $attempt['mio_score'] = $wordCount > 0 ? round($totalScore / $wordCount, 2) : null;
+
+
+
+                            $feedbackLevels = [
+                                40 => "⚠️ Several phonemes were unclear. Focus on articulation and slow down slightly.",
+                                30 => "❗ Multiple critical mispronunciations. Try mimicking a native speaker's pace and tone.",
+                                20 => "🔴 Severe issues detected in pronunciation. Repetition and syllable-level practice are advised.",
+                                10 => "🛑 Critical breakdown in speech clarity. Consider one-on-one pronunciation coaching.",
+                                0  => "❌ Unable to detect proper phonemes. Try again in a quieter environment with clearer enunciation."
+                            ];
+
+                            $phonemeFeedback = '';
+
+                            if (!empty($lowPhonemes)) {
+                                    $phonemeFeedback .= "\n\n🔍 Low-Scoring Phonemes:";
+
+                                    krsort($lowPhonemes); // Highest tier (e.g., 40s) first
+
+                                    foreach ($lowPhonemes as $range => $phones) {
+                                        $feedback = $feedbackLevels[$range] ?? '';
+                                        $list = implode(', ', array_map(function ($p) {
+                                            return "/{$p['phone']}/ (score: {$p['score']})";
+                                        }, $phones));
+
+                                        $phonemeFeedback .= "\n🔹 [{$range}–" . ($range + 9) . "%] $feedback\n   → Affected phonemes: $list";
+                                    }
+
+                                    // 🟢 Save to attempt array so Blade can access it
+                                    $attempt['phoneme_feedback'] = nl2br(trim($phonemeFeedback));
+                                }
+
+
+                            // Save back the updated word data
+                            $attempt['pronunciation_details']['words'] = $words;
+                            $attempt['phoneme_feedback'] = $phonemeFeedback;
+
+                            // Optionally add to the teacher feedback if
+
                         }
 
                         $groupedAttempts[$activityType][] = $attempt;
@@ -230,13 +334,15 @@ class TeacherController extends Controller
                 'groupedAttempts' => $groupedAttempts,
                 'subjectType' => $subjectType,
                 'specializedType' => $specializedType,
-                'auditoryAttempts' => $auditoryAttempts
+                'auditoryAttempts' => $auditoryAttempts,
+                'hasUnreadMessages' => $hasUnreadMessages,
             ]);
         } else {
             return view('mio.head.teacher-panel', [
                 'page' => 'scores-academics',
                 'subject' => $subject,
                 'groupedAttempts' => $groupedAttempts,
+                'hasUnreadMessages' => $hasUnreadMessages,
             ]);
         }
     }
@@ -322,6 +428,28 @@ class TeacherController extends Controller
         return $feedback[$cefr] ?? 'No feedback available.';
     }
 
+    private function checkIfUserHasUnreadMessages(string $userId): bool
+    {
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                    isset($message['receiver_id'], $message['read']) &&
+                    $message['receiver_id'] === $userId &&
+                    $message['read'] === false
+
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+
    public function showDashboard()
     {
         // Fetch the current logged-in user's section_id
@@ -378,6 +506,27 @@ class TeacherController extends Controller
        $filteredSections = array_filter($activeSections, function($section) use ($loggedInTeacherId) {
         return isset($section['teacher_id']) && $section['teacher_id'] === $loggedInTeacherId;
     });
+
+        // Inside showDashboard()
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
 
 
         // Fetch users (students and teachers) for the active sections
@@ -497,7 +646,8 @@ class TeacherController extends Controller
             'allSubjects' => $allSubjects,
             'activeSchoolYear' => $activeSchoolYear,
             'activeSections' => $filteredSections, // Display only the filtered sections for the logged-in user
-            'announcements' => $allAnnouncements
+            'announcements' => $allAnnouncements,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -546,11 +696,31 @@ class TeacherController extends Controller
             }
         }
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         // Pass subject and module data to the view
         return view('mio.head.teacher-panel', [
             'page' => 'teacher-subject',
             'subject' => $subject,
-            'modules' => $subjectModules
+            'modules' => $subjectModules,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -610,10 +780,23 @@ class TeacherController extends Controller
             }
 
 
+            $hasUnreadMessages = false;
+            $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
 
+            $messagesRef = $this->database->getReference('messages');
+            $messages = $messagesRef->getValue() ?? [];
 
-            foreach ($subjectData['people'] as $personId => $person) {
-                Log::info("Person role: " . ($person['role'] ?? 'no role'));
+            foreach ($messages as $threadKey => $thread) {
+                foreach ($thread as $messageId => $message) {
+                    if (
+                        isset($message['receiver_id'], $message['read']) &&
+                                        $message['receiver_id'] === $loggedInTeacherId &&
+                                        $message['read'] === false
+                    ) {
+                        $hasUnreadMessages = true;
+                        break 2; // Stop checking once found
+                    }
+                }
             }
 
 
@@ -626,6 +809,7 @@ class TeacherController extends Controller
                 'people' => $students,
                 'attendanceDate' => $attendanceDate,
                 'gradeLevelKey' => $gradeLevelKey,
+                'hasUnreadMessages' => $hasUnreadMessages
             ]);
         }
 
@@ -788,7 +972,24 @@ class TeacherController extends Controller
                 }
             }
 
+            $hasUnreadMessages = false;
+            $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
 
+            $messagesRef = $this->database->getReference('messages');
+            $messages = $messagesRef->getValue() ?? [];
+
+            foreach ($messages as $threadKey => $thread) {
+                foreach ($thread as $messageId => $message) {
+                    if (
+                        isset($message['receiver_id'], $message['read']) &&
+                                        $message['receiver_id'] === $loggedInTeacherId &&
+                                        $message['read'] === false
+                    ) {
+                        $hasUnreadMessages = true;
+                        break 2; // Stop checking once found
+                    }
+                }
+            }
 
 
             return view('mio.head.teacher-panel', [
@@ -796,7 +997,8 @@ class TeacherController extends Controller
                 'quizzes' => $quizzes,
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'speech' => $speech, // ⬅️ Add this
+                'speech' => $speech,
+                'hasUnreadMessages' => $hasUnreadMessages
             ]);
         }
 
@@ -860,7 +1062,24 @@ class TeacherController extends Controller
                 }
             }
 
+            $hasUnreadMessages = false;
+            $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
 
+            $messagesRef = $this->database->getReference('messages');
+            $messages = $messagesRef->getValue() ?? [];
+
+            foreach ($messages as $threadKey => $thread) {
+                foreach ($thread as $messageId => $message) {
+                    if (
+                        isset($message['receiver_id'], $message['read']) &&
+                                        $message['receiver_id'] === $loggedInTeacherId &&
+                                        $message['read'] === false
+                    ) {
+                        $hasUnreadMessages = true;
+                        break 2; // Stop checking once found
+                    }
+                }
+            }
 
 
             return view('mio.head.teacher-panel', [
@@ -868,7 +1087,8 @@ class TeacherController extends Controller
                 'quizzes' => $quizzes,
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'speech' => $speech, // ⬅️ Add this
+                'speech' => $speech,
+                'hasUnreadMessages' => $hasUnreadMessages
             ]);
         }
 
@@ -1002,12 +1222,32 @@ class TeacherController extends Controller
                 }
             }
 
+            $hasUnreadMessages = false;
+            $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+            $messagesRef = $this->database->getReference('messages');
+            $messages = $messagesRef->getValue() ?? [];
+
+            foreach ($messages as $threadKey => $thread) {
+                foreach ($thread as $messageId => $message) {
+                    if (
+                        isset($message['receiver_id'], $message['read']) &&
+                                        $message['receiver_id'] === $loggedInTeacherId &&
+                                        $message['read'] === false
+                    ) {
+                        $hasUnreadMessages = true;
+                        break 2; // Stop checking once found
+                    }
+                }
+            }
+
             return view('mio.head.teacher-panel', [
                 'page' => 'speech-picture',
                 'quizzes' => $quizzes,
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'speech' => $speech, // ⬅️ Add this
+                'speech' => $speech,
+                'hasUnreadMessages' => $hasUnreadMessages
             ]);
         }
 
@@ -1070,12 +1310,32 @@ class TeacherController extends Controller
                 }
             }
 
+            $hasUnreadMessages = false;
+            $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+            $messagesRef = $this->database->getReference('messages');
+            $messages = $messagesRef->getValue() ?? [];
+
+            foreach ($messages as $threadKey => $thread) {
+                foreach ($thread as $messageId => $message) {
+                    if (
+                        isset($message['receiver_id'], $message['read']) &&
+                                        $message['receiver_id'] === $loggedInTeacherId &&
+                                        $message['read'] === false
+                    ) {
+                        $hasUnreadMessages = true;
+                        break 2; // Stop checking once found
+                    }
+                }
+            }
+
 
             return view('mio.head.teacher-panel', [
                 'page' => 'speech-question',
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'speech' => $speech, // ⬅️ Add this
+                'speech' => $speech, 
+                'hasUnreadMessages' => $hasUnreadMessages
             ]);
         }
 
@@ -2768,94 +3028,7 @@ class TeacherController extends Controller
 
         // ----------- LANGUAGE
 
-        public function languageHomonym($subjectId)
-        {
-            // Step 1: Find grade level key and subject
-            $subjectsRef = $this->database->getReference('subjects');
-            $allSubjects = $subjectsRef->getValue() ?? [];
-            $gradeLevelKey = null;
-            $matchedSubject = null;
-
-            foreach ($allSubjects as $key => $subjects) {
-                foreach ($subjects as $subject) {
-                    if ($subject['subject_id'] === $subjectId) {
-                        $gradeLevelKey = $key;
-                        $matchedSubject = $subject;
-                        break 2;
-                    }
-                }
-            }
-
-            if (!$gradeLevelKey || !$matchedSubject) {
-                return abort(404, 'Subject not found.');
-            }
-
-            // Step 2: Fetch HOMONYM Activities
-            $homonymRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/homonyms");
-            $homonymData = $homonymRef->getValue() ?? [];
-
-            $speech = [];
-
-            foreach (['easy', 'medium', 'hard'] as $difficulty) {
-                if (isset($homonymData[$difficulty])) {
-                    foreach ($homonymData[$difficulty] as $activityId => $activity) {
-                        $speech[$difficulty][$activityId] = [
-                            'activity_title' => $activity['activity_title'] ?? 'Untitled',
-                            'created_at' => $activity['created_at'] ?? '',
-                            'created_by' => $activity['created_by'] ?? '',
-                            'items' => [],
-                        ];
-
-                        if (isset($activity['items']) && is_array($activity['items'])) {
-                            foreach ($activity['items'] as $itemId => $itemData) {
-                                $answers = [];
-                                $audios = [];
-                                $corrects = [];
-                                $sentences = [];
-
-                                foreach ($itemData as $key => $value) {
-                                    if (Str::startsWith($key, 'answer_')) {
-                                        $index = Str::after($key, 'answer_');
-                                        $answers[$index] = $value;
-                                    }
-                                    if (Str::startsWith($key, 'audio_path_')) {
-                                        $index = Str::after($key, 'audio_path_');
-                                        $audios[$index] = $value;
-                                    }
-                                    if (Str::startsWith($key, 'correct_')) {
-                                        $index = Str::after($key, 'correct_');
-                                        $corrects[$index] = $value;
-                                    }
-                                    if (Str::startsWith($key, 'sentence_')) {
-                                        $index = Str::after($key, 'sentence_');
-                                        $sentences[$index] = $value;
-                                    }
-                                }
-
-                                $speech[$difficulty][$activityId]['items'][$itemId] = [
-                                    'answers' => $answers,
-                                    'audio_paths' => $audios,
-                                    'correct_answers' => $corrects,
-                                    'sentences' => $sentences,
-                                    'choices' => $itemData['choices'] ?? [],
-                                    'distractors' => $itemData['distractors'] ?? [],
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-
-            return view('mio.head.teacher-panel', [
-                'page' => 'language-homonym',
-                'subjectId' => $subjectId,
-                'subject' => $matchedSubject,
-                'speech' => $speech,
-            ]);
-        }
-
-
-        public function languageFill($subjectId)
+       public function languageHomonym($subjectId)
         {
             // 1. Get grade level and subject
             $subjectsRef = $this->database->getReference('subjects');
@@ -2877,39 +3050,130 @@ class TeacherController extends Controller
                 return abort(404, 'Subject not found.');
             }
 
-            // 2. Fetch fill-in-the-blank data
+            // 2. Fetch homonym activities
+            $homonymRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/homonyms");
+            $rawHomonymData = $homonymRef->getValue() ?? [];
+
+            $speech = [];
+
+            foreach ($rawHomonymData as $difficulty => $activities) {
+                foreach ($activities as $activityId => $activity) {
+                    $items = [];
+
+                    if (!empty($activity['items']) && is_array($activity['items'])) {
+                        foreach ($activity['items'] as $itemId => $item) {
+                            $sentences = [];
+
+                            if (!empty($item['sentences']) && is_array($item['sentences'])) {
+                                foreach ($item['sentences'] as $sentenceId => $sData) {
+                                    $sentences[] = [
+                                        'sentence_id' => $sentenceId,
+                                        'sentence' => $sData['sentence'] ?? '',
+                                        'answer' => $sData['answer'] ?? '',
+                                        'filename' => $sData['filename'] ?? '',
+                                        'image_filename' => $sData['image_filename'] ?? '',
+                                        'audio_path' => $sData['audio_path'] ?? '',
+                                        'image_path' => $sData['image_path'] ?? '',
+                                        'audio_url' => $sData['audio_url'] ?? (!empty($sData['audio_path'])
+                                            ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($sData['audio_path']) . '?alt=media'
+                                            : null),
+                                        'image_url' => $sData['image_url'] ?? (!empty($sData['image_path'])
+                                            ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($sData['image_path']) . '?alt=media'
+                                            : null),
+
+                                    ];
+                                }
+                            }
+
+                            $items[] = [
+                                'item_id' => $itemId,
+                                'choices' => $item['choices'] ?? [],
+                                'distractors' => $item['distractors'] ?? [],
+                                'sentences' => $sentences,
+                            ];
+                        }
+                    }
+
+                    $speech[$difficulty][$activityId] = [
+                        'activity_title' => $activity['activity_title'] ?? 'Untitled',
+                        'created_at' => $activity['created_at'] ?? '',
+                        'updated_at' => $activity['updated_at'] ?? '',
+                        'updated_by' => $activity['updated_by'] ?? '',
+                        'total' => $activity['total'] ?? count($items),
+                        'items' => $items,
+                    ];
+                }
+            }
+
+            return view('mio.head.teacher-panel', [
+                'page' => 'language-homonym',
+                'subjectId' => $subjectId,
+                'subject' => $matchedSubject,
+                'speech' => $speech,
+            ]);
+        }
+
+
+
+
+       public function languageFill($subjectId)
+        {
+            // 1. Get grade level and subject
+            $subjectsRef = $this->database->getReference('subjects');
+            $allSubjects = $subjectsRef->getValue() ?? [];
+            $gradeLevelKey = null;
+            $matchedSubject = null;
+
+            foreach ($allSubjects as $key => $subjects) {
+                foreach ($subjects as $subject) {
+                    if ($subject['subject_id'] === $subjectId) {
+                        $gradeLevelKey = $key;
+                        $matchedSubject = $subject;
+                        break 2;
+                    }
+                }
+            }
+
+            if (!$gradeLevelKey || !$matchedSubject) {
+                return abort(404, 'Subject not found.');
+            }
+
+            // 2. Fetch fill activities
             $fillRef = $this->database->getReference("subjects/{$gradeLevelKey}/{$subjectId}/specialized/fill");
             $rawFillData = $fillRef->getValue() ?? [];
 
-            $fill = [];
+            $speech = [];
 
             foreach ($rawFillData as $difficulty => $activities) {
                 foreach ($activities as $activityId => $activity) {
                     $items = [];
 
-                if (isset($activity['items']) && is_array($activity['items'])) {
-                    foreach ($activity['items'] as $itemId => $item) {
-                        $audioPath = $item['audio_path'] ?? '';
-                        $audioUrl = !empty($audioPath)
-                            ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
-                            : null;
+                    if (!empty($activity['items']) && is_array($activity['items'])) {
+                        foreach ($activity['items'] as $itemId => $item) {
+                            $audioPath = $item['audio_path'] ?? '';
+                            $imagePath = $item['image_path'] ?? '';
 
-                        $items[$itemId] = [
-                            'item_id' => $itemId,
-                            'audio_path' => $audioPath,
-                            'audio_url' => $audioUrl,
-                            'audio_filename' => $item['filename'] ?? '',
-                            'sentence' => $item['sentence'] ?? '',
-                            'distractors' => $item['distractors'] ?? [],
-                            'image_url' => $item['image_url'] ?? '', // optional if supported
-                            'image_path' => $item['image_path'] ?? '',
-                            'image_filename' => $item['image_filename'] ?? '',
-                        ];
+                            $items[] = [
+                                'item_id' => $itemId,
+                                'sentence' => $item['sentence'] ?? '',
+                                'distractors' => $item['distractors'] ?? [],
+                                'audio_filename' => $item['audio_filename'] ?? $item['filename'] ?? '',
+                                'audio_id' => $item['audio_id'] ?? '',
+                                'audio_path' => $audioPath,
+                                'audio_url' => !empty($audioPath)
+                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media'
+                                    : null,
+                                'image_filename' => $item['image_filename'] ?? '',
+                                'image_id' => $item['image_id'] ?? '',
+                                'image_path' => $imagePath,
+                                'image_url' => !empty($imagePath)
+                                    ? 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media'
+                                    : null,
+                            ];
+                        }
                     }
-                }
 
-
-                    $fill[$difficulty][$activityId] = [
+                    $speech[$difficulty][$activityId] = [
                         'activity_title' => $activity['activity_title'] ?? 'Untitled',
                         'created_at' => $activity['created_at'] ?? '',
                         'updated_at' => $activity['updated_at'] ?? '',
@@ -2924,9 +3188,10 @@ class TeacherController extends Controller
                 'page' => 'language-fill',
                 'subjectId' => $subjectId,
                 'subject' => $matchedSubject,
-                'fill' => $fill,
+                'speech' => $speech,
             ]);
         }
+
 
 
         // HOMONYM
@@ -2940,9 +3205,10 @@ class TeacherController extends Controller
                 ]);
 
                 $uid = session('firebase_user.uid');
-                $dateCode = now()->format('Ymd');
-                $activityId = 'SPE' . now()->format('YmdHis') . rand(100, 999); // Unique
                 $difficulty = $request->difficulty;
+
+                // Generate 12-character activity ID: [SP][YYYYMMDD][2-digit]
+                $activityId = 'SP' . now()->format('Ymd') . rand(10, 99);
 
                 $activityData = [
                     'activity_title' => $request->activity_title,
@@ -2954,77 +3220,101 @@ class TeacherController extends Controller
                 $items = [];
 
                 foreach ($request->items as $index => $item) {
-                    $uuid = Str::uuid()->toString();
+                    // Generate 12-char item ID (e.g. PH2025060886)
+                    $itemId = 'PH' . now()->format('Ymd') . rand(10, 99);
                     $itemData = [];
-                    $x = 1;
 
-                    // Handle multiple answer_x / sentence_x / audio_x
-                    while (
-                        isset($item["sentence_{$x}"]) ||
-                        isset($item["answer_{$x}"]) ||
-                        $request->hasFile("items.$index.audio_{$x}")
-                    ) {
-                        $itemData["sentence_{$x}"] = $item["sentence_{$x}"] ?? null;
-                        $itemData["answer_{$x}"] = $item["answer_{$x}"] ?? null;
+                    // Step 1: Handle Choices
+                    $choices = isset($item['choices']) ? array_values(array_filter($item['choices'])) : [];
 
-                        if ($request->hasFile("items.$index.audio_{$x}")) {
-                            $file = $request->file("items.$index.audio_{$x}");
-                            $filename = $uuid . $itemData["answer_{$x}"] . '.' . $file->getClientOriginalExtension();
-                            $storagePath = "audio/language/{$filename}";
+                    // Step 2: Handle Sentences
+                    $sentences = [];
+                    if (isset($item['sentences']) && is_array($item['sentences'])) {
+                        foreach ($item['sentences'] as $sIndex => $sentence) {
+                            // Generate 12-char sentence ID (e.g. SC2025061702)
+                            $sentenceId = 'SC' . now()->format('Ymd') . rand(10, 99);
+                            $sentenceData = [];
 
-                            $bucket = $this->storageClient->bucket($this->bucketName);
-                            $bucket->upload(fopen($file->getRealPath(), 'r'), ['name' => $storagePath]);
+                            $sentenceText = $sentence['sentence'] ?? '';
+                            $answer = $sentence['answer'] ?? '';
+                            $sentenceData['sentence'] = $sentenceText;
+                            $sentenceData['answer'] = $answer;
 
-                            $itemData["audio_path_{$x}"] = $storagePath;
-                            $itemData["filename_{$x}"] = $file->getClientOriginalName();
-                        }
-
-                        $x++;
-                    }
-
-                    // Handle distractors
-                    $choices = [];
-                    if (!empty($itemData)) {
-                        foreach ($itemData as $key => $value) {
-                            if (Str::startsWith($key, 'answer_') && $value) {
-                                $choices[] = $value;
+                            // Add answer to choices if not already in
+                            if ($answer && !in_array($answer, $choices)) {
+                                $choices[] = $answer;
                             }
+
+                            // Upload audio
+                            if (isset($sentence['audio']) && $request->hasFile("items.$index.sentences.$sIndex.audio")) {
+                                $audioFile = $request->file("items.$index.sentences.$sIndex.audio");
+                                $audioFilename = $itemId . $answer . '.' . $audioFile->getClientOriginalExtension();
+                                $audioPath = "audio/language/homonyms/" . $audioFilename;
+
+                                $this->storageClient->bucket($this->bucketName)
+                                    ->upload(fopen($audioFile->getRealPath(), 'r'), ['name' => $audioPath]);
+
+                                $sentenceData['audio_path'] = $audioPath;
+                                $sentenceData['filename'] = $audioFile->getClientOriginalName();
+                                $sentenceData['audio_url'] = "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($audioPath) . "?alt=media";
+                            }
+
+                            // Upload image
+                            if (isset($sentence['image']) && $request->hasFile("items.$index.sentences.$sIndex.image")) {
+                                $imageFile = $request->file("items.$index.sentences.$sIndex.image");
+                                $imageFilename = $itemId . '_img_' . rand(10, 99) . '.' . $imageFile->getClientOriginalExtension();
+                                $imagePath = "images/language/homonyms/" . $imageFilename;
+
+                                $this->storageClient->bucket($this->bucketName)
+                                    ->upload(fopen($imageFile->getRealPath(), 'r'), ['name' => $imagePath]);
+
+                                $sentenceData['image_path'] = $imagePath;
+                                $sentenceData['image_filename'] = $imageFile->getClientOriginalName();
+                                $sentenceData['image_url'] = "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($imagePath) . "?alt=media";
+                            }
+
+
+
+                            $sentences[$sentenceId] = $sentenceData;
                         }
                     }
 
-                    $distractors = isset($item['distractors']) ? array_values(array_filter($item['distractors'])) : [];
-                    $choices = array_merge($choices, $distractors);
-
-                    $itemData['distractors'] = $distractors;
+                    // Finalize item data
                     $itemData['choices'] = $choices;
+                    $itemData['sentences'] = $sentences;
 
-                    $items[$uuid] = $itemData;
+                    // Compute distractors (choices not listed as answers)
+                    $answers = array_column($sentences, 'answer');
+                    $distractors = array_values(array_diff($choices, $answers));
+                    $itemData['distractors'] = $distractors;
+
+                    $items[$itemId] = $itemData;
                 }
 
                 $activityData['items'] = $items;
 
-                // Find grade level
+                // Get Grade Level
                 $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
                 $gradeLevel = null;
                 foreach ($subjectGradeLevels as $level => $subjects) {
                     if (isset($subjects[$subjectId])) {
                         $gradeLevel = $level;
                         break;
+                    }
+                }
+
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
+
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set($activityData);
+
+                return back()->with('message', '✅ Homonym activity added successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to add homonym activity: ' . $e->getMessage());
             }
         }
-
-        if (!$gradeLevel) {
-            return back()->with('error', 'Grade level not found for this subject.');
-        }
-
-        $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}";
-        $this->database->getReference($path)->set($activityData);
-
-        return back()->with('message', '✅ Homonym activity added successfully!');
-    } catch (\Throwable $e) {
-        return back()->with('error', '❌ Failed to add homonym activity: ' . $e->getMessage());
-    }
-}
 
 
         public function editLanguageHomonymActivity(Request $request, $subjectId)
@@ -3035,9 +3325,6 @@ class TeacherController extends Controller
                     'activity_title' => 'required|string|max:255',
                     'difficulty' => 'required|in:easy,medium,hard',
                     'items' => 'required|array|min:1',
-                    'items.*.text' => 'required|string',
-                    'items.*.image' => 'nullable|file|image|max:2048',
-                    'items.*.speechID' => 'nullable|string',
                 ]);
 
                 $uid = session('firebase_user.uid');
@@ -3059,50 +3346,93 @@ class TeacherController extends Controller
                     return back()->with('error', 'Grade level not found for this subject.');
                 }
 
-                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/phrase/{$difficulty}/{$activityId}";
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/homonyms/{$difficulty}/{$activityId}";
 
                 $items = [];
 
                 foreach ($request->items as $index => $item) {
-                    $phraseId = $item['speechID'] ?? ('PH' . now()->format('Ymd') . rand(10, 99));
+                    $itemId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                    $itemData = [];
 
-                    // 🟡 Fix: use old_image_path (from hidden input)
-                    $imagePath = $item['old_image_path'] ?? null;
+                    // Choices
+                    $choices = isset($item['choices']) ? array_values(array_filter($item['choices'])) : [];
 
-                    if ($request->hasFile("items.$index.image")) {
-                        $file = $request->file("items.$index.image");
-                        $imageName = 'images/speech/phrase/' . $phraseId . '.' . $file->getClientOriginalExtension();
-                        $uploadedFile = fopen($file->getRealPath(), 'r');
+                    // Sentences
+                    $sentences = [];
+                    if (isset($item['sentences']) && is_array($item['sentences'])) {
+                        foreach ($item['sentences'] as $sIndex => $sentence) {
+                            $sentenceId = 'SC' . now()->format('Ymd') . rand(10, 99);
+                            $sentenceData = [];
 
-                        $bucket = $this->storageClient->bucket($this->bucketName);
-                        $bucket->upload($uploadedFile, ['name' => $imageName]);
+                            $sentenceText = $sentence['sentence'] ?? '';
+                            $answer = $sentence['answer'] ?? '';
+                            $sentenceData['sentence'] = $sentenceText;
+                            $sentenceData['answer'] = $answer;
 
-                        $imagePath = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imageName) . '?alt=media';
+                            // Ensure answer is in choices
+                            if ($answer && !in_array($answer, $choices)) {
+                                $choices[] = $answer;
+                            }
+
+                            // Audio upload
+                            if (isset($sentence['audio']) && $request->hasFile("items.$index.sentences.$sIndex.audio")) {
+                                $audioFile = $request->file("items.$index.sentences.$sIndex.audio");
+                                $audioFilename = $itemId . $answer . '.' . $audioFile->getClientOriginalExtension();
+                                $audioPath = "audio/language/homonyms/" . $audioFilename;
+
+                                $this->storageClient->bucket($this->bucketName)
+                                    ->upload(fopen($audioFile->getRealPath(), 'r'), ['name' => $audioPath]);
+
+                                $sentenceData['audio_path'] = $audioPath;
+                                $sentenceData['filename'] = $audioFile->getClientOriginalName();
+                                $sentenceData['audio_url'] = "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($audioPath) . "?alt=media";
+                            }
+
+                            // Optional image upload
+                            if (isset($sentence['image']) && $request->hasFile("items.$index.sentences.$sIndex.image")) {
+                                $imageFile = $request->file("items.$index.sentences.$sIndex.image");
+                                $imageFilename = $itemId . '_img_' . rand(10, 99) . '.' . $imageFile->getClientOriginalExtension();
+                                $imagePath = "images/language/homonyms/" . $imageFilename;
+
+                                $this->storageClient->bucket($this->bucketName)
+                                    ->upload(fopen($imageFile->getRealPath(), 'r'), ['name' => $imagePath]);
+
+                                $sentenceData['image_path'] = $imagePath;
+                                $sentenceData['image_filename'] = $imageFile->getClientOriginalName();
+                                $sentenceData['image_url'] = "https://firebasestorage.googleapis.com/v0/b/{$this->bucketName}/o/" . urlencode($imagePath) . "?alt=media";
+                            }
+
+                            $sentences[$sentenceId] = $sentenceData;
+                        }
                     }
 
+                    $itemData['choices'] = $choices;
+                    $itemData['sentences'] = $sentences;
 
-                    $items[$phraseId] = [
-                        'speechID' => $phraseId,
-                        'text' => $item['text'],
-                        'image_path' => $imagePath,
-                    ];
+                    // Compute distractors
+                    $answers = array_column($sentences, 'answer');
+                    $distractors = array_values(array_diff($choices, $answers));
+                    $itemData['distractors'] = $distractors;
+
+                    $items[$itemId] = $itemData;
                 }
 
-                $updatedData = [
+                $activityData = [
                     'activity_title' => $request->activity_title,
                     'updated_at' => now()->toDateTimeString(),
-                    'activity_difficulty' => $difficulty,
+                    'created_by' => $uid,
                     'total' => count($items),
                     'items' => $items,
                 ];
 
-                $this->database->getReference($path)->update($updatedData);
+                $this->database->getReference($path)->update($activityData);
 
-                return back()->with('message', '✅ Phrase activity added successfully!');
+                return back()->with('message', '✅ Homonym activity updated successfully!');
             } catch (\Throwable $e) {
-                 return back()->with('error', 'Failed to add phrase activity: ' . $e->getMessage());
+                return back()->with('error', '❌ Failed to update activity: ' . $e->getMessage());
             }
         }
+
 
         public function deleteLanguageHomonymActivity($subjectId, $difficulty, $activityId)
         {
@@ -3166,264 +3496,228 @@ class TeacherController extends Controller
 
         // Fill
 
-        public function addLanguageFillActivity(Request $request, $subjectId)
+         public function addLanguageFillActivity(Request $request, $subjectId)
         {
             try {
                 $request->validate([
                     'activity_title' => 'required|string|max:255',
                     'difficulty' => 'required|in:easy,medium,hard',
-                    'questions' => 'required|array|min:1',
-                    'questions.*.question_text' => 'required|string',
-                    'questions.*.question_image' => 'nullable|file|image|max:2048',
-                    'questions.*.question_audio' => 'required|file|mimes:mp3,wav,m4a|max:10240',
-                    'questions.*.items' => 'required|array|min:1',
-                    'questions.*.items.*.text' => 'required|string',
+                    'items' => 'required|array|min:1',
+                    'items.*.text' => 'required|string',
+                    'items.*.audio' => 'required|file|mimes:mp3,wav,ogg|max:20480',
+                    'items.*.image' => 'sometimes|nullable|file|image|max:10048',
+                    'items.*.distractors' => 'array|min:0',
+                    'items.*.distractors.*' => 'string|nullable',
                 ]);
 
                 $uid = session('firebase_user.uid');
                 $dateCode = now()->format('Ymd');
-                $activityId = 'SP' . $dateCode . rand(100, 99); // Activity ID
+                $activityId = 'SP' . $dateCode . rand(10, 99);
                 $difficulty = $request->difficulty;
-
-                $activityData = [
-                    'activity_title' => $request->activity_title,
-                    'updated_at' => now()->toDateTimeString(),
-                    'updated_by' => $uid,
-                    'total' => count($request->questions),
-                ];
 
                 $items = [];
 
-                foreach ($request->questions as $qIndex => $question) {
-                    $itemId = 'PH' . now()->format('Ymd') . rand(10, 99);
+                foreach ($request->items as $index => $item) {
+                    $itemId = 'PH' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT);
+                    $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['text']));
 
-                    // ========== Image Upload (optional) ==========
-                    $imagePath = null;
-                    $imageUrl = null;
+                    // ==== AUDIO ====
+                    $audioFile = $request->file("items.$index.audio");
+                    $audioExt = $audioFile->getClientOriginalExtension();
+                    $audioFilename = $itemId . '_letter.' . $audioExt;
+                    $audioUUID = (string) Str::uuid();
+                    $audioPath = "audio/language/fill/{$audioFilename}";
+                    $this->storageClient->bucket($this->bucketName)->upload(
+                        fopen($audioFile->getRealPath(), 'r'),
+                        ['name' => $audioPath]
+                    );
+                    $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
 
-                    if ($request->hasFile("questions.$qIndex.question_image")) {
-                        $image = $request->file("questions.$qIndex.question_image");
-                        $imgFilename = $itemId . '_img.' . $image->getClientOriginalExtension();
-                        $imgStoragePath = 'images/language/' . $imgFilename;
-
-                        $uploadedImage = fopen($image->getRealPath(), 'r');
-                        $this->storageClient->bucket($this->bucketName)->upload($uploadedImage, ['name' => $imgStoragePath]);
-
-                        $imagePath = $imgStoragePath;
-                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imgStoragePath) . '?alt=media';
+                    // ==== IMAGE (optional) ====
+                    if (isset($item['image']) && $request->hasFile("items.$index.image")) {
+                        $imageFile = $request->file("items.$index.image");
+                        $imageExt = $imageFile->getClientOriginalExtension();
+                        $imageFilename = $itemId . '_image.' . $imageExt;
+                        $imageUUID = (string) Str::uuid();
+                        $imagePath = "images/language/fill/{$imageFilename}";
+                        $this->storageClient->bucket($this->bucketName)->upload(
+                            fopen($imageFile->getRealPath(), 'r'),
+                            ['name' => $imagePath]
+                        );
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
                     }
 
-                    // ========== Audio Upload (required) ==========
-                    $audio = $request->file("questions.$qIndex.question_audio");
-                    $audioFilename = $itemId . '_' . preg_replace('/[^a-zA-Z0-9]/', '', strtolower(pathinfo($audio->getClientOriginalName(), PATHINFO_FILENAME))) . '.' . $audio->getClientOriginalExtension();
-                    $audioStoragePath = 'audio/language/' . $audioFilename;
-
-                    $uploadedAudio = fopen($audio->getRealPath(), 'r');
-                    $this->storageClient->bucket($this->bucketName)->upload($uploadedAudio, ['name' => $audioStoragePath]);
-
-                    $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioStoragePath) . '?alt=media';
-
-                    // ========== Distractors ==========
-                    $distractors = array_map(function ($item) {
-                        return $item['text'];
-                    }, $question['items']);
-
-                    // ========== Final Structure ==========
+                    // ==== Prepare item ====
                     $items[$itemId] = [
-                        'sentence' => $question['question_text'],
-                        'audio_path' => $audioStoragePath,
+                        'sentence' => $item['text'],
+                        'distractors' => array_filter($item['distractors'] ?? []),
+                        'audio_path' => $audioPath,
                         'audio_url' => $audioUrl,
                         'filename' => $audioFilename,
-                        'distractors' => $distractors,
                     ];
 
-                    if ($imagePath) {
+                    // Optional image data
+                    if (isset($imagePath)) {
                         $items[$itemId]['image_path'] = $imagePath;
-                        $items[$itemId]['image_url'] = $imageUrl;
+                        $items[$itemId]['image_url'] = $imageUrl ?? '';
+                        $items[$itemId]['image_filename'] = $imageFilename ?? '';
                     }
                 }
 
-                    $activityData['items'] = $items;
-
-                    // 🔍 Find correct grade level
-                    $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
-                    $gradeLevel = null;
-                    foreach ($subjectGradeLevels as $level => $subjects) {
-                        if (isset($subjects[$subjectId])) {
-                            $gradeLevel = $level;
-                            break;
-                        }
+                // Get grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
                     }
+                }
 
-                    if (!$gradeLevel) {
-                        return back()->with('error', 'Grade level not found for this subject.');
-                    }
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
 
-                    // ⛳ Save to Firebase
-                    $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
-                    $this->database->getReference($path)->set($activityData);
+                // ==== Save the fill activity ====
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
+                $this->database->getReference($path)->set([
+                    'activity_title' => $request->activity_title,
+                    'items' => $items,
+                    'total' => count($items),
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                ]);
 
-                return back()->with('message', '✅ Fill-in-the-Blanks activity added successfully!');
+                return back()->with('message', '✅ Fill activity saved successfully!');
             } catch (\Throwable $e) {
-                return back()->with('error', '❌ Failed to add fill activity: ' . $e->getMessage());
+                return back()->with('error', '❌ Failed to save Fill activity: ' . $e->getMessage());
             }
         }
 
 
 
         public function editLanguageFillActivity(Request $request, $subjectId)
-{
-    try {
-        $request->validate([
-            'activity_id' => 'required|string',
-            'activity_title' => 'required|string|max:255',
-            'difficulty' => 'required|in:easy,medium,hard',
+        {
+            try {
+                $request->validate([
+                    'activity_id' => 'required|string',
+                    'activity_title' => 'required|string|max:255',
+                    'difficulty' => 'required|in:easy,medium,hard',
+                    'items' => 'required|array|min:1',
+                    'items.*.sentence' => 'required|string',
+                    'items.*.image' => 'nullable|file|image|max:10048',
+                    'items.*.audio' => 'nullable|file|mimes:mp3,wav,ogg|max:20480',
+                ]);
 
-            'questions' => 'required|array|min:1',
-            'questions.*.question_text' => 'required|string',
+                $uid = session('firebase_user.uid');
+                $activityId = $request->activity_id;
+                $difficulty = $request->difficulty;
+                $dateCode = now()->format('Ymd');
 
-            'questions.*.items' => 'required|array|min:1',
-            'questions.*.items.*.text' => 'required|string',
+                // Find grade level
+                $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
+                $gradeLevel = null;
+                foreach ($subjectGradeLevels as $level => $subjects) {
+                    if (isset($subjects[$subjectId])) {
+                        $gradeLevel = $level;
+                        break;
+                    }
+                }
 
-            'questions.*.question_image' => 'nullable|image|max:10048',
-            'questions.*.question_audio' => 'nullable|file|mimes:mp3,wav,ogg|max:20480',
+                if (!$gradeLevel) {
+                    return back()->with('error', 'Grade level not found for this subject.');
+                }
 
-            'questions.*.old_audio_path' => 'nullable|string',
-            'questions.*.old_image_path' => 'nullable|string',
-            'questions.*.old_audio_id' => 'nullable|string',
-            'questions.*.old_image_id' => 'nullable|string',
-            'questions.*.old_audio_filename' => 'nullable|string',
-            'questions.*.old_image_filename' => 'nullable|string',
-            'questions.*.old_audio_url' => 'nullable|string',
-            'questions.*.old_image_url' => 'nullable|string',
-        ]);
+                $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
 
-        $uid = session('firebase_user.uid');
-        $activityId = $request->activity_id;
-        $difficulty = $request->difficulty;
-        $dateCode = now()->format('Ymd');
+                // Get existing data
+                $existingData = $this->database->getReference($path)->getSnapshot()->getValue();
+                $existingItems = $existingData['items'] ?? [];
 
-        // Get grade level
-        $subjectGradeLevels = $this->database->getReference("subjects")->getSnapshot()->getValue();
-        $gradeLevel = null;
+                $updatedItems = [];
 
-        foreach ($subjectGradeLevels as $level => $subjects) {
-            if (isset($subjects[$subjectId])) {
-                $gradeLevel = $level;
-                break;
+                foreach ($request->items as $index => $item) {
+                    $itemId = array_keys($existingItems)[$index] ?? ('PH' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT));
+                    $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['sentence']));
+
+                    // === AUDIO ===
+                    if ($request->hasFile("items.$index.audio")) {
+                        $audioFile = $request->file("items.$index.audio");
+                        $audioExt = $audioFile->getClientOriginalExtension();
+                        $audioFilename = $itemId . '_letter.' . $audioExt;
+                        $audioUUID = (string) Str::uuid();
+                        $audioPath = "audio/language/fill/{$audioFilename}";
+                        $this->storageClient->bucket($this->bucketName)->upload(
+                            fopen($audioFile->getRealPath(), 'r'),
+                            ['name' => $audioPath]
+                        );
+                        $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
+                    } else {
+                        $audioPath = $existingItems[$itemId]['audio_path'] ?? '';
+                        $audioUrl = $existingItems[$itemId]['audio_url'] ?? '';
+                        $audioFilename = $existingItems[$itemId]['filename'] ?? '';
+                    }
+
+                    // === IMAGE ===
+                    if ($request->hasFile("items.$index.image")) {
+                        $imageFile = $request->file("items.$index.image");
+                        $imageExt = $imageFile->getClientOriginalExtension();
+                        $imageFilename = $itemId . '_image.' . $imageExt;
+                        $imageUUID = (string) Str::uuid();
+                        $imagePath = "images/language/fill/{$imageFilename}";
+                        $this->storageClient->bucket($this->bucketName)->upload(
+                            fopen($imageFile->getRealPath(), 'r'),
+                            ['name' => $imagePath]
+                        );
+                        $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
+                    } else {
+                        $imagePath = $existingItems[$itemId]['image_path'] ?? '';
+                        $imageUrl = $existingItems[$itemId]['image_url'] ?? '';
+                        $imageFilename = $existingItems[$itemId]['image_filename'] ?? '';
+                    }
+
+                    // === Assemble item ===
+                    $updatedItems[$itemId] = [
+                        'sentence' => $item['sentence'],
+                        'distractors' => array_filter($item['distractors'] ?? []),
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'filename' => $audioFilename,
+                    ];
+
+                    if ($imagePath) {
+                        $updatedItems[$itemId]['image_path'] = $imagePath;
+                        $updatedItems[$itemId]['image_url'] = $imageUrl;
+                        $updatedItems[$itemId]['image_filename'] = $imageFilename;
+                    }
+
+                    // Optional: also update item node under `items/{itemId}`
+                    $this->database->getReference("items/{$itemId}")->set([
+                        'audio_path' => $audioPath,
+                        'audio_url' => $audioUrl,
+                        'filename' => $audioFilename,
+                        'image_path' => $imagePath,
+                        'image_url' => $imageUrl,
+                        'image_filename' => $imageFilename,
+                    ]);
+                }
+
+                // === Update activity ===
+                $activityData = [
+                    'activity_title' => $request->activity_title,
+                    'items' => $updatedItems,
+                    'total' => count($updatedItems),
+                    'updated_at' => now()->toDateTimeString(),
+                    'updated_by' => $uid,
+                ];
+
+                $this->database->getReference($path)->update($activityData);
+
+                return back()->with('message', '✅ Fill-in-the-Blanks activity updated successfully!');
+            } catch (\Throwable $e) {
+                return back()->with('error', '❌ Failed to update activity: ' . $e->getMessage());
             }
         }
-
-        if (!$gradeLevel) {
-            return back()->with('error', 'Grade level not found.');
-        }
-
-        $path = "subjects/{$gradeLevel}/{$subjectId}/specialized/fill/{$difficulty}/{$activityId}";
-        $fillItems = [];
-
-        foreach ($request->questions as $index => $item) {
-            $itemId = $item['item_id'] ?? ('FB' . $dateCode . str_pad($index + 1, 2, '0', STR_PAD_LEFT));
-            $safeText = strtolower(preg_replace('/[^a-z0-9]/i', '', $item['question_text']));
-
-            // === IMAGE ===
-            if ($request->hasFile("questions.$index.question_image")) {
-                $imageUUID = (string) Str::uuid();
-                $imageFile = $request->file("questions.$index.question_image");
-                $imageExt = $imageFile->getClientOriginalExtension();
-                $imageFilename = $safeText . '.' . $imageExt;
-                $imagePath = "images/fill/{$imageUUID}{$imageFilename}";
-                $this->storageClient->bucket($this->bucketName)->upload(
-                    fopen($imageFile->getRealPath(), 'r'),
-                    ['name' => $imagePath]
-                );
-                $imageUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($imagePath) . '?alt=media';
-            } elseif (!empty($item['old_image_path'])) {
-                $imageFilename = $item['old_image_filename'] ?? '';
-                $imagePath = $item['old_image_path'];
-                $imageUUID = $item['old_image_id'] ?? '';
-                $imageUrl = $item['old_image_url'] ?? '';
-            } else {
-                $imageFilename = '';
-                $imagePath = '';
-                $imageUUID = '';
-                $imageUrl = '';
-            }
-
-            // === AUDIO ===
-            if ($request->hasFile("questions.$index.question_audio")) {
-                $audioUUID = (string) Str::uuid();
-                $audioFile = $request->file("questions.$index.question_audio");
-                $audioExt = $audioFile->getClientOriginalExtension();
-                $audioFilename = $safeText . '.' . $audioExt;
-                $audioPath = "audio/fill/{$audioUUID}{$audioFilename}";
-                $this->storageClient->bucket($this->bucketName)->upload(
-                    fopen($audioFile->getRealPath(), 'r'),
-                    ['name' => $audioPath]
-                );
-                $audioUrl = 'https://firebasestorage.googleapis.com/v0/b/' . $this->bucketName . '/o/' . urlencode($audioPath) . '?alt=media';
-            } elseif (!empty($item['old_audio_path'])) {
-                $audioFilename = $item['old_audio_filename'] ?? '';
-                $audioPath = $item['old_audio_path'];
-                $audioUUID = $item['old_audio_id'] ?? '';
-                $audioUrl = $item['old_audio_url'] ?? '';
-            } else {
-                $audioFilename = '';
-                $audioPath = '';
-                $audioUUID = '';
-                $audioUrl = '';
-            }
-
-            $distractorTexts = array_map(function ($distractor) {
-                return $distractor['text'] ?? '';
-            }, $item['items']);
-
-            // Save media in common item DB
-            $this->database->getReference("items/{$itemId}")->set([
-                'audio_filename' => $audioFilename,
-                'audio_id' => $audioUUID,
-                'audio_path' => $audioPath,
-                'audio_url' => $audioUrl,
-                'image_filename' => $imageFilename,
-                'image_id' => $imageUUID,
-                'image_path' => $imagePath,
-                'image_url' => $imageUrl,
-            ]);
-
-            // Add item to fill activity
-            $fillItems[$itemId] = [
-                'sentence' => $item['question_text'],
-                'distractors' => $distractorTexts,
-                'audio_filename' => $audioFilename,
-                'audio_id' => $audioUUID,
-                'audio_path' => $audioPath,
-                'audio_url' => $audioUrl,
-                'image_filename' => $imageFilename,
-                'image_id' => $imageUUID,
-                'image_path' => $imagePath,
-                'image_url' => $imageUrl,
-            ];
-        }
-
-        $activityData = [
-            'activity_title' => $request->activity_title,
-            'updated_by' => $uid,
-            'updated_at' => now()->toDateTimeString(),
-            'items' => $fillItems,
-            'total' => count($fillItems),
-        ];
-
-        $this->database->getReference($path)->update($activityData);
-
-        return back()->with('message', '✅ Fill activity updated successfully!');
-    } catch (\Throwable $e) {
-        return back()->with('error', '❌ Failed to update Fill activity: ' . $e->getMessage());
-    }
-}
-
-
-
-
-
 
 
         public function deleteLanguageFillActivity($subjectId, $difficulty, $activityId)
@@ -4029,11 +4323,31 @@ class TeacherController extends Controller
             }
         }
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
 
         return view('mio.head.teacher-panel', [
             'page' => 'assignment',
             'assignments' => $assignments,
             'subjectId' => $subjectId,
+            'hasUnreadMessages' => $hasUnreadMessages,
 
         ]);
     }
@@ -4049,10 +4363,15 @@ class TeacherController extends Controller
             'points_total' => 'required|integer',
             'attempts' => 'required|integer',
             'publish_date' => 'required|date',
+            'submission_type' => 'required|in:file,text',
+            'allowed_file_types' => 'nullable|array',
+            'allowed_file_types.*' => 'string',
+            'max_file_size' => 'nullable|integer|min:1|max:100',
             'attachments' => 'nullable|array',
             'attachments.*.link' => 'nullable|url',
             'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
         ]);
+
 
         // Find grade level key that contains the subject ID
         $subjectsRef = $this->database->getReference('subjects');
@@ -4109,9 +4428,9 @@ class TeacherController extends Controller
         }
 
         // Generate a unique ID for the assignment based on a custom format
-        $dateKey = now()->format('Ymd'); // Year-Month-Day format
-        $timeKey = now()->format('His'); // Hour-Minute-Second format
-        $assignmentKey = "ASS{$dateKey}{$timeKey}"; // Example: 20230514193000
+        $dateKey = now()->format('Ymd'); // "YYYYMMDD" = 8 chars
+        $randomDigit = rand(0, 9);       // 1 digit
+        $assignmentKey = "ASS{$dateKey}{$randomDigit}"; // 3 + 8 + 1 = 12 characters
 
         $deadline = $validated['deadline'] ?? '';
         $endtime = $validated['availability_end'] ?? '';
@@ -4130,6 +4449,10 @@ class TeacherController extends Controller
             'people' => $people, // Add the student information to the people field
             'created_at' => now()->toDateTimeString(),
             'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+            'submission_type' => $validated['submission_type'],
+            'allowed_file_types' => $validated['allowed_file_types'] ?? [],
+            'max_file_size' => $validated['max_file_size'] ?? null,
+
 
         ];
 
@@ -4215,6 +4538,25 @@ class TeacherController extends Controller
             $submission = $submissionRef->getValue();
         }
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         return view('mio.head.teacher-panel', [
             'page' => 'assignment-body',
             'assignment' => $assignment,
@@ -4223,6 +4565,7 @@ class TeacherController extends Controller
             'gradeLevelKey' => $gradeLevelKey,
             'submission' => $submission,
             'selectedStudentId' => $selectedStudentId,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -4308,19 +4651,24 @@ class TeacherController extends Controller
 
     public function editAssignment(Request $request, $subjectId, $assignmentId)
     {
-        $validated = $request->validate([
-            'title' => 'required|string',
-            'description' => 'nullable|string',
-            'deadline' => 'nullable|date',
-            'availability_start' => 'required',
-            'availability_end' => 'nullable',
-            'points_total' => 'required|integer',
-            'attempts' => 'required|integer',
-            'publish_date' => 'required|date',
-            'attachments' => 'nullable|array',
-            'attachments.*.link' => 'nullable|url',
-            'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max
-        ]);
+       $validated = $request->validate([
+        'title' => 'required|string',
+        'description' => 'nullable|string',
+        'deadline' => 'nullable|date',
+        'availability_start' => 'required',
+        'availability_end' => 'nullable',
+        'points_total' => 'required|integer',
+        'attempts' => 'required|integer',
+        'publish_date' => 'required|date',
+        'submission_type' => 'required|in:file,text',
+        'allowed_file_types' => 'nullable|array',
+        'allowed_file_types.*' => 'string',
+        'max_file_size' => 'nullable|integer|min:1|max:100',
+        'attachments' => 'nullable|array',
+        'attachments.*.link' => 'nullable|url',
+        'attachments.*.file' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:5120',
+    ]);
+
 
         $subjectsRef = $this->database->getReference('subjects');
         $allSubjects = $subjectsRef->getValue() ?? [];
@@ -4385,6 +4733,9 @@ class TeacherController extends Controller
             'attempts' => $validated['attempts'],
             'attachments' => $attachments,
             'published_at' => $validated['publish_date'] . ' ' . $validated['availability_start'],
+            'submission_type' => $validated['submission_type'], // ✅ new
+            'allowed_file_types' => $validated['allowed_file_types'] ?? [], // ✅ new
+            'max_file_size' => $validated['max_file_size'] ?? null, // ✅ new
             // We retain 'people' and other fields as-is
         ];
 
@@ -4438,12 +4789,33 @@ class TeacherController extends Controller
             $announcements[] = $announcement;
         }
 
+         $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
+
 
         return view('mio.head.teacher-panel', [
             'page' => 'announcement',
             'subject' => $subject,
             'announcements' => $announcements,
-            'subjectId' => $subjectId
+            'subjectId' => $subjectId,
+            'hasUnreadMessages' => $hasUnreadMessages
         ]);
     }
 
@@ -4524,6 +4896,26 @@ class TeacherController extends Controller
             }
         }
 
+         $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
+
         return view('mio.head.teacher-panel', [
             'page' => 'announcement-body',
             'subject' => $subject,
@@ -4531,103 +4923,109 @@ class TeacherController extends Controller
             'announcementId' => $announcementId,
             'subjectId' => $subjectId,
             'imageUrls' => $imageUrls,
+            'hasUnreadMessages' => $hasUnreadMessages
         ]);
     }
 
     public function editAnnouncement(Request $request, $subjectId, $announcementId)
     {
-        // Validate request
-        $validated = $request->validate([
-            'announcements.0.title' => 'required|string|max:255',
-            'announcements.0.date' => 'required|date',
-            'announcements.0.description' => 'required|string',
-            'announcements.0.link' => 'nullable|url',
-            'announcements.0.files.*' => 'nullable|file|max:10240',
-            'announcements.0.existing_files' => 'nullable|array',
-            'announcements.0.existing_files.*' => 'nullable|string', // store file names here, not URLs!
-        ]);
+        try {
+            // Validate request
+            $validated = $request->validate([
+                'announcements.0.title' => 'required|string|max:255',
+                'announcements.0.date' => 'required|date',
+                'announcements.0.description' => 'required|string',
+                'announcements.0.link' => 'nullable|url',
+                'announcements.0.files.*' => 'nullable|file|max:5120|mimes:pdf,doc,docx,ppt,pptx,mp4,zip,jpg,jpeg,png,gif,bmp,webp,svg,heic,heif',
+                'announcements.0.existing_files' => 'nullable|array',
+                'announcements.0.existing_files.*' => 'nullable|string',
+            ]);
 
-        $announcementData = $validated['announcements'][0];
+            $announcementData = $validated['announcements'][0];
 
-        // Step 1: Locate subject
-        $subjects = $this->database->getReference('subjects')->getValue() ?? [];
-        $gradeLevelKey = null;
+            // Locate subject
+            $subjects = $this->database->getReference('subjects')->getValue() ?? [];
+            $gradeLevelKey = null;
 
-        foreach ($subjects as $gradeLevel => $subjectList) {
-            if (isset($subjectList[$subjectId])) {
-                $gradeLevelKey = $gradeLevel;
-                break;
+            foreach ($subjects as $gradeLevel => $subjectList) {
+                if (isset($subjectList[$subjectId])) {
+                    $gradeLevelKey = $gradeLevel;
+                    break;
+                }
             }
-        }
 
-        if (!$gradeLevelKey) {
-            return redirect()->back()->with('error', 'Subject not found.');
-        }
+            if (!$gradeLevelKey) {
+                return redirect()->back()->with('error', 'Subject not found.');
+            }
 
-        $announcementPath = "subjects/{$gradeLevelKey}/{$subjectId}/announcements/{$announcementId}";
-        $announcementRef = $this->database->getReference($announcementPath);
+            $announcementPath = "subjects/{$gradeLevelKey}/{$subjectId}/announcements/{$announcementId}";
+            $announcementRef = $this->database->getReference($announcementPath);
 
-        // Step 2: Fetch current announcement data
-        $existingData = $announcementRef->getValue() ?? [];
-        $existingFiles = $existingData['files'] ?? [];
+            $existingData = $announcementRef->getValue() ?? [];
+            $existingFiles = $existingData['files'] ?? [];
 
-        // Step 3: Update basic fields
-        $updateData = [
-            'title' => $announcementData['title'],
-            'date_posted' => $announcementData['date'],
-            'description' => $announcementData['description'],
-            'link' => $announcementData['link'] ?? '',
-            'subject_id' => $subjectId,
-        ];
+            // Basic fields
+            $updateData = [
+                'title' => $announcementData['title'],
+                'date_posted' => $announcementData['date'],
+                'description' => $announcementData['description'],
+                'link' => $announcementData['link'] ?? '',
+                'subject_id' => $subjectId,
+            ];
 
-        $bucket = $this->storageClient->bucket($this->bucketName);
-        $finalFiles = [];
+            $bucket = $this->storageClient->bucket($this->bucketName);
+            $finalFiles = [];
 
-        // Step 4: Retain selected files based on name
-        $retainedNames = $announcementData['existing_files'] ?? [];
-
-        foreach ($existingFiles as $file) {
-            if (in_array($file['name'], $retainedNames)) {
-                $finalFiles[] = $file;
-            } else {
-                // Delete from Firebase Storage
-                if (isset($file['path'])) {
-                    $object = $bucket->object($file['path']);
-                    if ($object->exists()) {
-                        $object->delete();
+            // Retain selected files
+            $retainedNames = $announcementData['existing_files'] ?? [];
+            foreach ($existingFiles as $file) {
+                if (in_array($file['name'], $retainedNames)) {
+                    $finalFiles[] = $file;
+                } else {
+                    // Delete from Firebase Storage
+                    if (isset($file['path'])) {
+                        $object = $bucket->object($file['path']);
+                        if ($object->exists()) {
+                            $object->delete();
+                        }
                     }
                 }
             }
-        }
 
-        // Step 5: Upload new files
-        if ($request->hasFile('announcements.0.files')) {
-            foreach ($request->file('announcements.0.files') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
-                $filePath = "subjects/{$subjectId}/announcements/{$announcementId}/" . $filename;
+            // Upload new files
+            if ($request->hasFile('announcements.0.files')) {
+                foreach ($request->file('announcements.0.files') as $file) {
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $filePath = "subjects/{$subjectId}/announcements/{$announcementId}/" . $filename;
 
-                $bucket->upload(
-                    file_get_contents($file->getRealPath()),
-                    ['name' => $filePath]
-                );
+                    $bucket->upload(
+                        file_get_contents($file->getRealPath()),
+                        ['name' => $filePath]
+                    );
 
-                $object = $bucket->object($filePath);
-                $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
+                    $object = $bucket->object($filePath);
+                    $object->update(['acl' => []], ['predefinedAcl' => 'PUBLICREAD']);
 
-                $finalFiles[] = [
-                    'name' => $filename,
-                    'path' => $filePath,
-                    'url' => $object->signedUrl(new \DateTime('+1 year')),
-                ];
+                    $finalFiles[] = [
+                        'name' => $filename,
+                        'path' => $filePath,
+                        'url' => $object->signedUrl(new \DateTime('+1 year')),
+                    ];
+                }
             }
+
+            // Save final data
+            $updateData['files'] = $finalFiles;
+            $announcementRef->update($updateData);
+
+            return redirect()->back()->with('success', 'Announcement updated successfully.');
+
+        } catch (\Throwable $e) {
+            \Log::error('Error updating announcement: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update announcement. Please try again.');
         }
-
-        // Step 6: Save new files list
-        $updateData['files'] = $finalFiles;
-        $announcementRef->update($updateData);
-
-        return back()->with('success', 'Announcement updated successfully.');
     }
+
 
 
 
@@ -4709,7 +5107,7 @@ class TeacherController extends Controller
         try {
             $this->database->getReference($replyRefPath)->remove();
 
-            return redirect()->route('mio.subject.announcement-body', [
+            return redirect()->route('mio.subject-teacher.announcement-body', [
                 'subjectId' => $subjectId,
                 'announcementId' => $announcementId
             ])->with('success', 'Reply deleted successfully.');
@@ -4764,11 +5162,31 @@ class TeacherController extends Controller
             }
         }
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         return view('mio.head.teacher-panel', [
             'page' => 'module',
             'modules' => $modulesList,
             'subject_id' => $subjectId,
-            'subject' => $subjectDetails, // Pass the correct subject data to the view
+            'subject' => $subjectDetails,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -4810,11 +5228,31 @@ class TeacherController extends Controller
         return redirect()->route('mio.teacher-panel')->with('error', 'Module not found.');
     }
 
+    $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
     return view('mio.head.teacher-panel', [
         'page' => 'module-body',
         'subject' => $subject,
         'module' => $module,
         'moduleIndex' => $moduleIndex,
+        'hasUnreadMessages' => $hasUnreadMessages
 
     ]);
 }
@@ -4842,13 +5280,32 @@ class TeacherController extends Controller
                 'department_name' => $dept['department_name'] ?? 'Unnamed'
             ];
         }
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
 
         return view('mio.head.teacher-panel', [
             'page' => 'profile',
             'teacher' => $teacher,
             'name' => $teacherName,
             'uid' => $userId,
-            'departments' => $departments, // 👈 include this
+            'departments' => $departments, 
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -4948,13 +5405,33 @@ class TeacherController extends Controller
             return strcmp(strtoupper($a['last_name']), strtoupper($b['last_name']));
         });
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         // Return view with subject info included
         return view('mio.head.student-panel', [
             'page' => 'people',
             'subject' => $subject,              // ✅ include full subject info
             'subject_id' => $subjectId,
             'grade_level' => $gradeLevel,
-            'people' => $people
+            'people' => $people,
+            'hasUnreadMessages' => $hasUnreadMessages
         ]);
     }
 

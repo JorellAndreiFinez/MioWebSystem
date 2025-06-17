@@ -323,18 +323,6 @@
 
             </div>
 
-
-            <!-- Schedule Section -->
-            <div class="section-header">Schedule Information (For One-on-One Therapy)</div>
-            <div class="section-content" id="schedule-section">
-            <div class="form-row" id="schedule-container">
-                <div class="form-group">
-                <label>Schedule ID</label>
-                <input type="text" name="schedule[]" placeholder="Schedule ID" readonly/>
-                </div>
-            </div>
-            </div>
-
         </div>
         </main>
         <!-- End Main -->

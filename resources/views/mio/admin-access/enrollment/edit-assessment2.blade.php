@@ -105,6 +105,10 @@
                                             onclick="handleEditQuestion(this)">
                                             Edit
                                         </button>
+                                        <button class="btn btn-danger btn-sm"
+                                            onclick="openModal('{{ route('mio.delete-question-wr', ['type' => $type, 'id' => $itemID]) }}', '{{ $itemID }}', 'question')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
                                     </td>
                                 </tr>
                             @endforeach

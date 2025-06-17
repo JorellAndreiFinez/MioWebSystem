@@ -30,6 +30,28 @@ class SettingsController extends Controller
             ->createDatabase();
     }
 
+
+    private function checkIfUserHasUnreadMessages(string $userId): bool
+    {
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                    isset($message['receiver_id'], $message['read']) &&
+                    $message['receiver_id'] === $userId &&
+                    $message['read'] === false
+
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function showSettings(Request $request)
     {
         // Retrieve Firebase user from session
@@ -40,9 +62,30 @@ class SettingsController extends Controller
             return redirect()->route('login')->with('error', 'You must be logged in to access settings.');
         }
 
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
+
         return view('mio.head.teacher-panel',[
             'page' => 'teacher-settings',
             'firebaseUser' => $firebaseUser,
+            'hasUnreadMessages' => $hasUnreadMessages,
+
         ]);
     }
 

@@ -7,7 +7,7 @@
             </a>
         </div>
 
-        <div class="breadcrumb-item active">Modules</div>
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">Modules</div>
     </div>
 
 

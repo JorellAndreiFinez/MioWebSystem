@@ -35,13 +35,17 @@
                     $href = isset($item['route']) ? route($item['route']) : $item['url'];
                 @endphp
 
-                <li>
-                    <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
-                        <i class="{{ $item['icon'] }}"></i>
-                        <span class="links_name">{{ $item['label'] }}</span>
-                    </a>
-                    <!-- <span class="tooltip">{{ $item['label'] }}</span> -->
-                </li>
+                 <li>
+            <a href="{{ $href }}" class="{{ $isActive ? 'active' : '' }}">
+                <div class="icon-wrapper">
+                    <i class="{{ $item['icon'] }}"></i>
+                    @if($item['label'] === 'Inbox' && $hasUnreadMessages ?? false)
+                        <span class="nav-red-dot"></span>
+                    @endif
+                </div>
+                <span class="links_name">{{ $item['label'] }}</span>
+            </a>
+        </li>
             @endforeach
             <br>
         @endforeach
@@ -121,3 +125,56 @@
     });
 </script>
 
+<style>
+    @media (max-width: 768px) {
+    .sidebar {
+        left: -230px; /* Start hidden */
+        width: 230px;
+        transition: left 0.3s ease;
+    }
+
+    .nav-red-dot {
+        position: absolute;
+        top: 8px;
+        right: 12px;
+        width: 8px;
+        height: 8px;
+        background-color: red;
+        border-radius: 50%;
+    }
+
+
+    .sidebar.open {
+        left: 0; /* Slide in when open */
+    }
+
+    .home-section {
+        left: 0;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .sidebar.open ~ .home-section {
+        position: fixed;
+        top: 0;
+        left: 230px;
+        width: calc(100% - 230px);
+        height: 100vh;
+        /* Optional: overlay background */
+    }
+}
+.mobile-toggle {
+    display: none;
+    font-size: 28px;
+    padding: 10px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .mobile-toggle {
+        display: block;
+    }
+}
+
+
+</style>

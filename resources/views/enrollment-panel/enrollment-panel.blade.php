@@ -36,7 +36,13 @@
 
     @include('mio.external-links')
 </head>
-
+@php
+    $user = session('user_account');
+    $enrollee = session('enrollment_user');
+    $displayName = $user['name'] ?? (($enrollee['fname'] ?? '') . ' ' . ($enrollee['lname'] ?? '')) ?: 'John Doe';
+    $displayRole = $user['role'] ?? 'User';
+    $displayEmail = $user['email'] ?? $enrollee['email'] ?? 'no-email@example.com';
+@endphp
 <body>
 
     @if ($page === 'enroll-login')
@@ -61,7 +67,7 @@
      @elseif ($page === 'main-assessment3')
         @include('enrollment-panel.sidebar')
         @include('enrollment-panel.main-assessment3')
-        
+
     @elseif ($page === 'main-assessment4')
         @include('enrollment-panel.sidebar')
         @include('enrollment-panel.main-assessment4')

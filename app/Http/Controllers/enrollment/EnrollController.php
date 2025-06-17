@@ -87,14 +87,15 @@ class EnrollController extends Controller
         $enrollmentId = $enrollmentUser['ID'] ?? null;
 
         $adminFeedback = null;
+        $enrollStatus = 'NotStarted'; // default
+
         if ($enrollmentId) {
             $enrolleeData = $this->database->getReference("enrollment/enrollees/{$enrollmentId}")->getValue();
             if ($enrolleeData) {
                 $adminFeedback = $enrolleeData['feedback_admin'] ?? null;
+                $enrollStatus = $enrolleeData['enroll_status'] ?? 'NotStarted'; // ← GET FROM ENROLLEE DATA
             }
         }
-
-        $enrollStatus = $enrollmentUser['enroll_status'] ?? 'NotStarted';
 
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'enroll-dashboard',
@@ -103,6 +104,7 @@ class EnrollController extends Controller
             'adminFeedback' => $adminFeedback,
         ]);
     }
+
 
 
     public function login(Request $request)
@@ -416,17 +418,19 @@ class EnrollController extends Controller
                         switch ($type) {
                             case 'multiple_single':
                                 $questions[$index++] = [
-                                    'type' => 'multiple_choice',
-                                    'sentence' => $questionData['question'] ?? '',
-                                    'choices' => array_values($questionData['options'] ?? []),
+                                    'type' => 'multiple_single',
+                                    'question' => $questionData['question'] ?? '',
+                                    'options' => array_values($questionData['options'] ?? []),
+                                    'image_url' => $questionData['image_url'] ?? null,
                                 ];
                                 break;
 
                             case 'multiple_multiple':
                                 $questions[$index++] = [
-                                    'type' => 'multiple_choice',
-                                    'sentence' => $questionData['question'] ?? '',
-                                    'choices' => array_values($questionData['options'] ?? []),
+                                    'type' => 'multiple_multiple',
+                                    'question' => $questionData['question'] ?? '',
+                                    'options' => array_values($questionData['options'] ?? []),
+                                    'image_url' => $questionData['image_url'] ?? null,
                                 ];
                                 break;
 
@@ -435,6 +439,7 @@ class EnrollController extends Controller
                                     'type' => 'fill_in_blank',
                                     'sentence' => $questionData['question'] ?? '',
                                     'answer_placeholder' => 'Type your answer here',
+                                    'image_url' => $questionData['image_url'] ?? null,
                                 ];
                                 break;
 
@@ -476,6 +481,7 @@ class EnrollController extends Controller
             ]);
         }
 
+
     public function mainAssessment2()
     {
         // Retrieve flash data from session (results passed from submit)
@@ -483,6 +489,16 @@ class EnrollController extends Controller
         $auditoryResults = session('auditory_results', []);
 
         $uid = Session::get('firebase_uid');
+        // ✅ Fetch fill-in-the-blanks data (same as mainAssessment3)
+        $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
+        $fillblanksData = $fillblanksRef->getValue();
+
+        $fillblanks = [];
+        if ($fillblanksData && is_array($fillblanksData)) {
+            foreach ($fillblanksData as $item) {
+                $fillblanks[] = $item;
+            }
+        }
 
         if ($uid) {
             $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Reading/status");
@@ -495,6 +511,7 @@ class EnrollController extends Controller
                     'speech_results' => $speechResults,
                     'auditory_results' => $auditoryResults,
                     'sentences' => $sentences ?? [],
+                    'fillblanks' => $fillblanks
                 ]);
             }
         }
@@ -525,27 +542,9 @@ class EnrollController extends Controller
     {
         $speechResults = session('speech_results', []);
         $auditoryResults = session('auditory_results', []);
-
         $uid = Session::get('firebase_uid');
 
-
-        if ($uid) {
-            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/fillblanks/status");
-            $status = $statusRef->getValue();
-
-            if ($status === 'done') {
-                return view('enrollment-panel.enrollment-panel', [
-                    'page' => 'main-assessment4',
-                    'speech_results' => $speechResults,
-                    'auditory_results' => $auditoryResults,
-                ]);
-            }
-        }
-
-            Log::info($status);
-
-
-        // ✅ Fix this block
+        // Fetch fill-in-the-blanks data
         $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
         $fillblanksData = $fillblanksRef->getValue();
 
@@ -556,6 +555,21 @@ class EnrollController extends Controller
             }
         }
 
+        // Check completion status
+        if ($uid) {
+            $statusRef = $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/fillblanks/status");
+            $status = $statusRef->getValue();
+
+            if ($status === 'done') {
+                return view('enrollment-panel.enrollment-panel', [
+                    'page' => 'main-assessment4',
+                    'speech_results' => $speechResults,
+                    'auditory_results' => $auditoryResults,
+                    'fillblanks' => $fillblanks, // ✅ Add this line even if 'done'
+                ]);
+            }
+        }
+
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'main-assessment3',
             'speech_results' => $speechResults,
@@ -563,6 +577,7 @@ class EnrollController extends Controller
             'fillblanks' => $fillblanks,
         ]);
     }
+
 
     public function mainAssessment4()
     {
@@ -758,10 +773,9 @@ class EnrollController extends Controller
                 'parent_lastname' => 'required|string',
                 'parent_role' => 'required|string|in:father,mother,guardian',
 
-
                 'previous_school' => 'required|string',
                 'previous_grade_level' => 'required|integer',
-                'medical_history' => 'required|string',
+                'medical_history' => 'nullable|string',
                 'hearing_loss' => 'nullable|string',
                 'hearing_identity' => 'required|string',
                 'assistive_devices' => 'nullable|string',
@@ -1497,6 +1511,13 @@ class EnrollController extends Controller
         return redirect()->back()->with('success', 'Question deleted successfully!');
     }
 
+    public function deleteQuestionWR(Request $request, $type, $id)
+{
+    $refPath = "enrollment/assessment_settings/{$type}/questions/{$id}";
+    $this->database->getReference($refPath)->remove();
+
+    return redirect()->back()->with('success', 'Question deleted successfully.');
+}
 
     public function updateQuestion(Request $request, $type, $id)
     {

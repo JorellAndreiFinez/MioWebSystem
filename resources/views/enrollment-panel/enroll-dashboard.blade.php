@@ -29,6 +29,7 @@
     <!-- Registration -->
     <div class="card revision">
         <div class="status-indicator
+            {{ $enrollStatus === 'NotStarted' ? '' : '' }}
             {{ $enrollStatus === 'Assessment' ? 'green' : '' }}
             {{ $enrollStatus === 'Qualified' ? 'green' : '' }}
             {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
@@ -42,9 +43,11 @@
         </div>
     </div>
 
+
     <!-- Evaluation -->
     <div class="card">
         <div class="status-indicator
+            {{ $enrollStatus === 'NotStarted' ? '' : '' }}
             {{ $enrollStatus === 'Assessment' ? 'yellow' : '' }}
             {{ $enrollStatus === 'Enrolled' ? 'green' : '' }}
             {{ $enrollStatus === 'Qualified' ? 'green' : '' }}

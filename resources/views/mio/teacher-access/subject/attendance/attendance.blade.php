@@ -1,13 +1,14 @@
 <section class="home-section">
-  <main class="main-banner">
-    <div class="welcome-banner">
-      <div class="banner">
-        <div class="content">
-          <h5>Attendance</h5>
+     <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.show-subject', ['subjectId' => $subject['subject_id']]) }}">
+                {{ $subject['title'] }}
+            </a>
         </div>
-      </div>
+
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">Attendance</div>
     </div>
-  </main>
+
 
   <main class="main-assignment-content">
     <div class="container">

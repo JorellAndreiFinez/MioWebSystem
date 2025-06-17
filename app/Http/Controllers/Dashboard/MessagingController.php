@@ -32,9 +32,31 @@ class MessagingController extends Controller
             ->createDatabase();
     }
 
+    private function checkIfUserHasUnreadMessages(string $userId): bool
+    {
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                    isset($message['receiver_id'], $message['read']) &&
+                    $message['receiver_id'] === $userId &&
+                    $message['read'] === false
+
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 public function showInbox()
 {
     $studentId = Session::get('firebase_user')['uid'];
+       $hasUnreadMessages = $this->checkIfUserHasUnreadMessages($studentId);
 
     $usersRef = $this->database->getReference('users');
     $studentData = $usersRef->getChild($studentId)->getValue();
@@ -61,12 +83,25 @@ public function showInbox()
                     $user = $usersRef->getChild($otherUserId)->getValue();
 
                     if ($user) {
-                        $contacts[$otherUserId] = [
-                            'id' => $otherUserId,
-                            'name' => ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? ''),
-                            'role' => $user['role'] ?? '',
-                            'profile_pic' => $user['profile_pic'] ?? null
-                        ];
+                        $hasUnread = false;
+                            foreach ($threadMessages as $msg) {
+                                if (
+                                    isset($msg['receiver_id'], $msg['read']) &&
+                                    $msg['receiver_id'] === $studentId &&
+                                    $msg['read'] === false
+                                ) {
+                                    $hasUnread = true;
+                                    break;
+                                }
+                            }
+
+                            $contacts[$otherUserId] = [
+                                'id' => $otherUserId,
+                                'name' => ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? ''),
+                                'role' => $user['role'] ?? '',
+                                'profile_pic' => $user['photo_url'] ?? null,
+                                'has_unread' => $hasUnread
+                            ];
                     }
                 }
             }
@@ -95,6 +130,7 @@ public function showInbox()
                                     [
                                         'id' => $teacherId,
                                         'role' => 'Teacher',
+                                         'profile_pic' => $teacherData['photo_url'] ?? null,
                                         'name' => ($teacherData['fname'] ?? '') . ' ' . ($teacherData['lname'] ?? '')
                                     ]
                                 ]
@@ -109,12 +145,13 @@ public function showInbox()
     return view('mio.head.student-panel', [
         'page' => 'inbox',
         'subjects' => $filteredSubjects,
-        'contacts' => array_values($contacts)
+        'contacts' => array_values($contacts),
+        'hasUnreadMessages' => $hasUnreadMessages,
     ]);
 }
 
 
-    public function sendMessage(Request $request)
+   public function sendMessage(Request $request)
     {
         $senderId = Session::get('firebase_user')['uid'];
         $receiverId = $request->input('receiver_id');
@@ -125,10 +162,20 @@ public function showInbox()
             return response()->json(['success' => false, 'message' => 'Receiver and message are required.']);
         }
 
-        // Save attachments logic (optional, based on your actual implementation)
-        $attachments = [];
+        // Build consistent conversation ID (sorted alphabetically)
+        $conversationId = $senderId < $receiverId ? "{$senderId}_{$receiverId}" : "{$receiverId}_{$senderId}";
 
-        // Prepare the message
+        // Handle attachments if needed
+        $attachments = [];
+        if ($request->hasFile('attachments')) {
+            foreach ($request->file('attachments') as $file) {
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $path = $file->storeAs('messages/attachments', $filename, 'public');
+                $attachments[] = Storage::url($path);
+            }
+        }
+
+        // Build message data
         $messageData = [
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
@@ -136,71 +183,16 @@ public function showInbox()
             'message' => $message,
             'attachments' => $attachments,
             'timestamp' => now()->timestamp,
+            'read' => false,
         ];
 
-        $messageRef = $this->database->getReference('messages/' . $senderId . '_' . $receiverId);
-        $messageRef->push($messageData);
+        // Push to Firebase
+        $this->database->getReference("messages/{$conversationId}")->push($messageData);
 
-        // ↓↓↓ RE-FETCH SECTIONS & SUBJECTS ↓↓↓
-        $usersRef = $this->database->getReference('users');
-        $studentData = $usersRef->getChild($senderId)->getValue();
-        $sectionId = $studentData['section_id'];
-        $sections = [];
-        $subjectTeachers = [];
-
-        $sectionsRef = $this->database->getReference('sections');
-        $sectionData = $sectionsRef->getChild($sectionId)->getValue();
-        if ($sectionData && isset($sectionData['teacherid'])) {
-            $teacherId = $sectionData['teacherid'];
-            $teacherData = $usersRef->getChild($teacherId)->getValue();
-            if ($teacherData) {
-                $sections[] = [
-                    'section_name' => $sectionData['section_name'],
-                    'people' => [
-                        [
-                            'id' => $teacherId,
-                            'role' => 'teacher',
-                            'name' => ($teacherData['fname'] ?? '') . ' ' . ($teacherData['lname'] ?? '')
-                        ]
-                    ]
-                ];
-            }
-        }
-
-        $subjectsRef = $this->database->getReference('subjects');
-        $subjectsSnapshot = $subjectsRef->getValue();
-        if ($subjectsSnapshot) {
-            foreach ($subjectsSnapshot as $grade => $subjectList) {
-                foreach ($subjectList as $subjectId => $subject) {
-                    if (isset($subject['section_id']) && $subject['section_id'] === $sectionId) {
-                        if (isset($subject['teacher_id'])) {
-                            $teacherId = $subject['teacher_id'];
-                            $teacherData = $usersRef->getChild($teacherId)->getValue();
-
-                            if ($teacherData) {
-                                $subjectTeachers[$subjectId] = [
-                                    'subject_name' => $subject['title'],
-                                    'people' => [
-                                        [
-                                            'id' => $teacherId,
-                                            'role' => 'Teacher',
-                                            'name' => ($teacherData['fname'] ?? '') . ' ' . ($teacherData['lname'] ?? '')
-                                        ]
-                                    ]
-                                ];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return view('mio.head.student-panel', [
-            'page' => 'inbox',
-            'sections' => $sections,
-            'subjects' => array_values($subjectTeachers),
-        ]);
+        // Redirect or refresh view
+        return redirect()->route('mio.inbox')->with('success', 'Message sent!');
     }
+
 
     public function getMessages($studentId, $teacherId)
     {
@@ -211,44 +203,53 @@ public function showInbox()
         $threadKey1 = $studentId . '_' . $teacherId;
         $threadKey2 = $teacherId . '_' . $studentId;
 
-        // Get messages from either of the thread keys
-        $messages = $messagesRef->getChild($threadKey1)->getValue();
+        $threadRef = $messagesRef->getChild($threadKey1);
+        $messages = $threadRef->getValue();
         if (!$messages) {
-            $messages = $messagesRef->getChild($threadKey2)->getValue();
+            $threadRef = $messagesRef->getChild($threadKey2);
+            $messages = $threadRef->getValue();
         }
 
         $formatted = [];
         $usersRef = $db->getReference('users');
-
-        // Get teacher data (as the receiver)
         $receiverData = $usersRef->getChild($teacherId)->getValue();
-
         $contacts = [];
+
+        $hasUnread = false;
+        foreach ($messages as $msgId => $msg) {
+            if ($msg['receiver_id'] == $studentId && !($msg['read'] ?? false)) {
+                $hasUnread = true;
+            }
+        }
+
 
         if ($receiverData) {
             $contacts[] = [
                 'id' => $teacherId,
                 'name' => ($receiverData['fname'] ?? '') . ' ' . ($receiverData['lname'] ?? ''),
                 'role' => $receiverData['role'],
-                'profile_pic' => $receiverData['profile_pic'] ?? null
+                'profile_pic' => $receiverData['photo_url'] ?? null,
+                'has_unread' => $hasUnread
             ];
         }
 
-        // Format messages
-        if ($messages) {
-            foreach ($messages as $msgId => $msg) {
-                $senderData = $usersRef->getChild($msg['sender_id'])->getValue();
-                $formatted[] = [
-                    'message' => $msg['message'],
-                    'sender_id' => $msg['sender_id'],
-                    'receiver_id' => $msg['receiver_id'],
-                    'timestamp' => $msg['timestamp'],
-                    'name' => ($senderData['fname'] ?? '') . ' ' . ($senderData['lname'] ?? '')
-                ];
+        // Mark unread messages as read
+        foreach ($messages as $msgId => $msg) {
+            if ($msg['receiver_id'] == $studentId && !isset($msg['read'])) {
+                $threadRef->getChild($msgId)->update(['read' => true]);
             }
+
+            $senderData = $usersRef->getChild($msg['sender_id'])->getValue();
+            $formatted[] = [
+                'message' => $msg['message'],
+                'sender_id' => $msg['sender_id'],
+                'receiver_id' => $msg['receiver_id'],
+                'timestamp' => $msg['timestamp'],
+                'name' => ($senderData['fname'] ?? '') . ' ' . ($senderData['lname'] ?? '')
+            ];
         }
 
-        Log::info($formatted);
+        
 
         return response()->json([
             'messages' => $formatted,
@@ -261,6 +262,7 @@ public function showInbox()
     public function showTeacherInbox()
     {
         $teacherId = Session::get('firebase_user')['uid'];
+         $hasUnreadMessages = $this->checkIfUserHasUnreadMessages($teacherId);
 
         $usersRef = $this->database->getReference('users');
         $teacherData = $usersRef->getChild($teacherId)->getValue();
@@ -285,11 +287,25 @@ public function showInbox()
                         $user = $usersRef->getChild($otherUserId)->getValue();
 
                         if ($user) {
+                            // Check for unread messages
+                            $hasUnread = false;
+                            foreach ($threadMessages as $message) {
+                                if (
+                                    isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $teacherId &&
+                                    $message['read'] === false
+                                ) {
+                                    $hasUnread = true;
+                                    break;
+                                }
+                            }
+
                             $contacts[$otherUserId] = [
                                 'id' => $otherUserId,
                                 'name' => ($user['fname'] ?? '') . ' ' . ($user['lname'] ?? ''),
                                 'role' => $user['role'] ?? '',
-                                'profile_pic' => $user['profile_pic'] ?? null
+                                'profile_pic' => $user['photo_url'] ?? null,
+                                'has_unread' => $hasUnread
                             ];
                         }
                     }
@@ -325,6 +341,7 @@ public function showInbox()
                                 if ($studentData) {
                                     $people[] = [
                                         'id' => $studentId,
+                                         'profile_pic' => $teacherData['photo_url'] ?? null,
                                         'name' => ($studentData['fname'] ?? $studentInfo['first_name'] ?? '') . ' ' . ($studentData['lname'] ?? $studentInfo['last_name'] ?? '')
                                     ];
                                 }
@@ -342,12 +359,14 @@ public function showInbox()
                 }
             }
 
-            Log::info($filteredSubjects);
 
         return view('mio.head.teacher-panel', [
             'page' => 'teacher-inbox',
             'subjects' => $filteredSubjects,
-            'contacts' => array_values($contacts)
+            'contacts' => array_values($contacts),
+        'hasUnreadMessages' => $hasUnreadMessages,
+
+
         ]);
     }
 
@@ -407,7 +426,6 @@ public function showInbox()
     {
         $senderId = Session::get('firebase_user')['uid'];
         $receiverId = $request->input('receiver_id');
-        $subject = $request->input('subject') ?? '';
         $message = $request->input('message');
 
         if (empty($receiverId) || empty($message)) {
@@ -431,7 +449,6 @@ public function showInbox()
         $messageData = [
             'sender_id' => $senderId,
             'receiver_id' => $receiverId,
-            'subject' => $subject,
             'message' => $message,
             'attachments' => $attachments,
             'timestamp' => now()->timestamp,

@@ -44,6 +44,27 @@ class StudentController extends Controller
         $this->bucketName = 'miolms.firebasestorage.app';
     }
 
+     private function checkIfUserHasUnreadMessages(string $userId): bool
+    {
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                    isset($message['receiver_id'], $message['read']) &&
+                    $message['receiver_id'] === $userId &&
+                    $message['read'] === false
+
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
 
 
    public function showDashboard()
@@ -53,6 +74,9 @@ class StudentController extends Controller
         // Fetch the current logged-in user's section_id and teacher_id
         $userSectionId = session('firebase_user')['section_id'] ?? null; // Default to null if section_id is not found
         $userTeacherId = session('firebase_user')['teacher_id'] ?? null; // Fetch the student ID from the session
+
+        $loggedInStudentId = session('firebase_user')['uid'] ?? null;
+       $hasUnreadMessages = $this->checkIfUserHasUnreadMessages($loggedInStudentId);
 
         // Fetch the active school year from Firebase
         $activeSchoolYearRef = $this->database->getReference('schoolyears');
@@ -210,7 +234,8 @@ class StudentController extends Controller
             'activeSchoolYear' => $activeSchoolYear,
             'activeSections' => $filteredSections,
             'sectionUsers' => $sectionUsers,
-            'announcements' => $allAnnouncements
+            'announcements' => $allAnnouncements,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 

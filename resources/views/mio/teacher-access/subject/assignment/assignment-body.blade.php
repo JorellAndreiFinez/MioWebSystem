@@ -1,10 +1,21 @@
 <section class="home-section">
+    <div class="text">
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.assignment', ['subjectId' => $subjectId]) }}">
+                Assignments
+            </a>
+        </div>
+
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">{{ $assignmentId }}</div>
+
+    </div>
+
     <!-- 🟦 Header Banner -->
-    <main class="main-banner">
-        <div class="welcome-banner">
+    <main class="main-banner" >
+        <div class="welcome-banner"style="background: black;">
             <div class="banner">
                 <div class="content">
-                    <h5>Assignments</h5>
+                    <h5>Assignment Details</h5>
                 </div>
             </div>
         </div>
@@ -116,6 +127,7 @@
     </main>
 
     <!-- /Edit Assignment Modal -->
+    <!-- /Edit Assignment Modal -->
     <div id="assignmentModal" class="modal assignment-modal" style="display: none;">
         <div class="modal-content">
             <span class="close" id="closeAssignmentModal">&times;</span>
@@ -131,43 +143,84 @@
                 <label for="description">Description</label>
                 <textarea name="description" id="assignmentDescription" rows="3" placeholder="Write a brief description...">{{ $assignment['description'] ?? '' }}</textarea>
 
+                <label for="submission_type">Submission Type</label>
+                <select name="submission_type" id="submission_type" required>
+                    <option value="file" {{ ($assignment['submission_type'] ?? '') == 'file' ? 'selected' : '' }}>File Upload</option>
+                    <option value="text" {{ ($assignment['submission_type'] ?? '') == 'text' ? 'selected' : '' }}>Text Entry</option>
+                </select>
+
+                <div id="file-type-requirements" style="margin: 10px 0; padding: 12px; border: 2px dashed #ccc; border-radius: 6px; display: none;">
+                    <label style="font-weight: bold; margin-bottom: 8px; display: inline-block;">Allowed File Types:</label>
+                    <div style="margin-bottom: 8px;">
+                        <span id="select-all-filetypes" class="file-icon" title="Select All">✅</span> <small>Select All</small>
+                    </div>
+                    <div id="file-type-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px;">
+                        @foreach (['pdf','docx','pptx','mp3','mp4','jpg','png','xlsx','txt','zip'] as $type)
+                            <div class="file-icon-wrapper {{ in_array($type, $assignment['allowed_file_types'] ?? []) ? 'selected' : '' }}" data-type="{{ $type }}">
+                                <span>
+                                    @switch($type)
+                                        @case('pdf') 📄 @break
+                                        @case('docx') 📝 @break
+                                        @case('pptx') 📊 @break
+                                        @case('mp3') 🎵 @break
+                                        @case('mp4') 🎞️ @break
+                                        @case('jpg') 🖼️ @break
+                                        @case('png') 🧊 @break
+                                        @case('xlsx') 📈 @break
+                                        @case('txt') 📘 @break
+                                        @case('zip') 🗜️ @break
+                                    @endswitch
+                                </span>
+                                <div class="file-label">{{ strtoupper($type) }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div id="file-type-hidden-inputs">
+                        @foreach (($assignment['allowed_file_types'] ?? []) as $type)
+                            <input type="hidden" name="allowed_file_types[]" value="{{ $type }}">
+                        @endforeach
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="font-weight: bold;" for="max_file_size">Maximum File Size (MB):</label>
+                        <input type="number" name="max_file_size" id="max_file_size" min="1" max="100" step="1" style="width: 100px; margin-left: 10px;" value="{{ $assignment['max_file_size'] ?? '' }}">
+                    </div>
+                </div>
+
                 <label>Attachments</label>
                 <div id="attachment-container">
-                @php $attachmentIndex = 0; @endphp
-                @if (!empty($assignment['attachments']))
-                    @foreach ($assignment['attachments'] as $attachment)
-                        <div class="attachment-wrapper" style="margin-bottom: 15px;">
-                            @if (!empty($attachment['file']))
-                                <div>
-                                    <p>Existing File: <a href="{{ $attachment['file'] }}" target="_blank">{{ basename($attachment['file']) }}</a></p>
-                                </div>
-                            @endif
-                            <input type="file" name="attachments[{{ $attachmentIndex }}][file]" style="display:block; margin-bottom:5px;" />
-                            <input type="url" name="attachments[{{ $attachmentIndex }}][link]" placeholder="Or paste a media URL (optional)" style="width:100%;" value="{{ $attachment['link'] ?? '' }}" />
-                        </div>
-                        @php $attachmentIndex++; @endphp
-                    @endforeach
-                @endif
-            </div>
+                    @php $attachmentIndex = 0; @endphp
+                    @if (!empty($assignment['attachments']))
+                        @foreach ($assignment['attachments'] as $attachment)
+                            <div class="attachment-wrapper" style="margin-bottom: 15px;">
+                                @if (!empty($attachment['file']))
+                                    <div>
+                                        <p>Existing File: <a href="{{ $attachment['file'] }}" target="_blank">{{ basename($attachment['file']) }}</a></p>
+                                    </div>
+                                @endif
+                                <input type="file" name="attachments[{{ $attachmentIndex }}][file]" style="display:block; margin-bottom:5px;" />
+                                <input type="url" name="attachments[{{ $attachmentIndex }}][link]" placeholder="Or paste a media URL (optional)" style="width:100%;" value="{{ $attachment['link'] ?? '' }}" />
+                            </div>
+                            @php $attachmentIndex++; @endphp
+                        @endforeach
+                    @endif
+                </div>
                 <button type="button" id="add-attachment-btn" style="margin-top: 10px;">+ Add File or Link</button>
 
                 <label for="publish_date">Publish Date</label>
-                <input type="date" name="publish_date" id="publish_date" value="{{\Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') }}" required>
-
+                <input type="date" name="publish_date" id="publish_date" value="{{ \Carbon\Carbon::parse($assignment['published_at'])->format('Y-m-d') }}" required>
 
                 <label for="availability_start">Availability - Start Time</label>
-                <input type="time" name="availability_start" id="assignmentAvailabilityStart" value="{{ $assignment['availability']['start'] ?? '' }}"  required>
+                <input type="time" name="availability_start" id="assignmentAvailabilityStart" value="{{ $assignment['availability']['start'] ?? '' }}" required>
 
                 <label for="deadline">Deadline (Blank - No Due Date)</label>
                 <input type="date" name="deadline" id="assignmentDeadline"
-                    value="{{ isset($assignment['deadline']) && $assignment['deadline'] ? \Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') : '' }}">
-
+                    value="{{ isset($assignment['deadline']) ? \Carbon\Carbon::parse($assignment['deadline'])->format('Y-m-d') : '' }}">
 
                 <label for="availability_end">Availability - End Time</label>
-                <input type="time" name="availability_end" id="assignmentAvailabilityEnd" value="{{ $assignment['availability']['end'] ?? '' }}" >
+                <input type="time" name="availability_end" id="assignmentAvailabilityEnd" value="{{ $assignment['availability']['end'] ?? '' }}">
 
                 <label for="points_total">Total Points</label>
-                <input type="number" name="points_total" id="points_total" min="1" required class="no-spinner" value="{{ $assignment['total'] ?? 0 }}" placeholder="Total Points" required>
+                <input type="number" name="points_total" id="points_total" min="1" required class="no-spinner" value="{{ $assignment['total'] ?? 0 }}" placeholder="Total Points">
 
                 <label for="attempts">Attempts</label>
                 <input type="number" name="attempts" id="assignmentAttempts" value="{{ $assignment['attempts'] }}" min="1" required>
@@ -176,6 +229,7 @@
             </form>
         </div>
     </div>
+
 
 
     <!-- 🔍 Review Modal -->
@@ -502,3 +556,88 @@ document.getElementById('add-attachment-btn').addEventListener('click', function
 
 </script>
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const submissionType = document.getElementById('submission_type');
+    const attachmentContainer = document.getElementById('attachment-container');
+    const addAttachmentBtn = document.getElementById('add-attachment-btn');
+    const fileTypeRequirements = document.getElementById('file-type-requirements');
+
+    function toggleFileUploadUI() {
+        const isFile = submissionType.value === 'file';
+        attachmentContainer.style.display = isFile ? 'block' : 'none';
+        addAttachmentBtn.style.display = isFile ? 'inline-block' : 'none';
+        fileTypeRequirements.style.display = isFile ? 'block' : 'none';
+    }
+
+    if (submissionType) {
+        submissionType.addEventListener('change', toggleFileUploadUI);
+        toggleFileUploadUI(); // Initial
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const wrappers = document.querySelectorAll('.file-icon-wrapper');
+    const hiddenInputsContainer = document.getElementById('file-type-hidden-inputs');
+
+    function updateHiddenInputs() {
+        hiddenInputsContainer.innerHTML = '';
+        wrappers.forEach(wrap => {
+            if (wrap.classList.contains('selected')) {
+                const type = wrap.getAttribute('data-type');
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'allowed_file_types[]';
+                input.value = type;
+                hiddenInputsContainer.appendChild(input);
+            }
+        });
+    }
+
+    wrappers.forEach(wrap => {
+        wrap.addEventListener('click', () => {
+            wrap.classList.toggle('selected');
+            updateHiddenInputs();
+        });
+    });
+
+    updateHiddenInputs(); // Load selected initially
+});
+</script>
+
+
+<style>
+    .file-icon-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 6px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        transition: border 0.2s;
+        color: white;
+    }
+
+    .file-icon-wrapper.selected {
+        border-color: gold;
+        background-color: #fffbe0;
+    }
+
+    .file-icon-wrapper:hover {
+        background-color: #f7f7f7;
+    }
+
+    .file-icon-wrapper span {
+        font-size: 28px;
+    }
+
+    .file-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #333;
+    }
+</style>

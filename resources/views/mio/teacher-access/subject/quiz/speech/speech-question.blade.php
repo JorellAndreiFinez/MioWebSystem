@@ -1,6 +1,13 @@
 <section class="home-section">
     <div class="text">
-        Quiz
+        <div class="breadcrumb-item">
+            <a href="{{ route('mio.subject-teacher.quiz', ['subjectId' => $subjectId]) }}">
+                Quizzes
+            </a>
+        </div>
+
+        <div class="breadcrumb-item active" style="font-size: 1.3rem;">Question Activity</div>
+
     </div>
 
     @if(session('message'))

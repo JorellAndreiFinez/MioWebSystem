@@ -414,9 +414,22 @@ class SpeechaceController extends Controller
             }
         }
 
+        // ✅ Fetch fill-in-the-blanks data (same as mainAssessment3)
+        $fillblanksRef = $this->database->getReference("enrollment/assessment_settings/physical/fillblanks");
+        $fillblanksData = $fillblanksRef->getValue();
+
+        $fillblanks = [];
+        if ($fillblanksData && is_array($fillblanksData)) {
+            foreach ($fillblanksData as $item) {
+                $fillblanks[] = $item;
+            }
+        }
+
+
         return view('enrollment-panel.enrollment-panel', [
             'page' => 'main-assessment3',
             'speech_results' => $results,
+            'fillblanks' => $fillblanks,
         ]);
     }
 
@@ -530,186 +543,122 @@ class SpeechaceController extends Controller
    public function submit4(Request $request)
     {
         try {
-
             $uid = Session::get('firebase_uid');
             if (!$uid) {
                 Log::error('No Firebase UID in session.');
                 return back()->withErrors(['user' => 'User not logged in or session expired.']);
             }
 
-             $levelMap = [
-                'kinder' => 'kinder',
-                'elementary' => 'elementary',
-                'junior-highschool' => 'highschool',
-                'senior-highschool' => 'highschool',
-            ];
-
-
             $user = Session::get('enrollment_user');
-
-            $enrollmentForm = $user['enrollment_form'] ?? [];
-
-            Log::info('Enrollment form full data:', $enrollmentForm);
-
-            $possibleGradeKeys = ['enrollment_grade', 'grade_level', 'grade', 'level'];
-            $enrollmentGrade = null;
-
-            foreach ($possibleGradeKeys as $key) {
-                if (isset($enrollmentForm[$key]) && !empty($enrollmentForm[$key])) {
-                    $enrollmentGrade = $enrollmentForm[$key];
-                    break;
-                }
-            }
-
-            Log::info('Detected Enrollment Grade: ' . ($enrollmentGrade ?? 'NULL'));
-
-
-            $questionsRef = $this->database->getReference('enrollment/assessment_settings/written/questions');
-            $allQuestions = $questionsRef->getValue();
-            $enrollmentLevel = $levelMap[$enrollmentGrade] ?? null;
-            Log::info('Enrollment Grade: ' . $enrollmentGrade);
-
-
-            if (!$enrollmentLevel) {
-                return back()->withErrors(['level' => 'Cannot determine enrollment level.']);
-            }
-
-            $questionsRef = $this->database->getReference('enrollment/assessment_settings/written/questions');
-            $allQuestions = $questionsRef->getValue();
-
-            $questionTypes = array_unique(array_column(array_filter($allQuestions, function ($q) use ($enrollmentLevel) {
-                return isset($q['level']) && $q['level'] === $enrollmentLevel;
-            }), 'type'));
-
-            $rules = [
-                'start_time' => 'required|string',
-            ];
-
-            if (in_array('multiple_choice', $questionTypes) || in_array('multiple_single', $questionTypes) || in_array('multiple_multiple', $questionTypes)) {
-                $rules['selected_choices'] = 'array';
-                $rules['selected_choices.*'] = 'string';
-            }
-
-            $rules['fill_in_blanks'] = in_array('fill_blank', $questionTypes) ? 'array' : 'nullable';
-            $rules['fill_in_blanks.*'] = 'string';
-
-            $rules['sentence_order'] = in_array('syntax', $questionTypes) ? 'array' : 'nullable';
-            $rules['sentence_order.*'] = 'array';
-
-            $validated = $request->validate($rules);
-
-            $correctAnswers = [];
-            foreach ($allQuestions as $qid => $qdata) {
-                if (($qdata['level'] ?? '') === $enrollmentLevel) {
-                    $type = $qdata['type'] ?? '';
-                    switch ($type) {
-                        case 'multiple_single':
-                        case 'multiple_multiple':
-                        case 'fill_blank':
-                            $correctAnswers[$qid] = $qdata['correct_answer'] ?? null;
-                            break;
-                        case 'syntax':
-                            $cleaned = preg_replace('/[^\w\s]/u', '', $qdata['correct'] ?? '');
-                            $correctAnswers[$qid] = preg_split('/\s+/', strtolower($cleaned), -1, PREG_SPLIT_NO_EMPTY);
-                            break;
-                    }
-                }
-            }
-
+            $questions = config('written_questions'); // Load the correct answers and questions from config or database
             $selectedChoices = $request->input('selected_choices', []);
-            $fillInBlanks = $request->input('fill_in_blanks', []);
-            $sentenceOrder = $request->input('sentence_order', []);
-            $startTimeRaw = $request->input('start_time');
+            $fillAnswers = $request->input('fill_in_blanks', []);
+            $sentenceOrders = $request->input('sentence_order', []);
 
-            $startTimeInput = is_array($startTimeRaw) ? $startTimeRaw[0] : $startTimeRaw;
-            $startTimeCleaned = str_replace('Z', '', $startTimeInput);
-            $startTime = new \DateTime($startTimeRaw);
-            $submitTime = new \DateTime(now());
+            $score = 0;
+            $total = 0;
+            $incorrect = [];
 
-            Log::info('selected_choices:', is_array($selectedChoices) ? $selectedChoices : []);
-            Log::info('fill_in_blanks:', is_array($fillInBlanks) ? $fillInBlanks : []);
-            Log::info('sentence_order:', is_array($sentenceOrder) ? $sentenceOrder : []);
+            $dataToSave = [];
 
-
-            $totalPoints = count($correctAnswers);
-            $correctPoints = 0;
-            $incorrectItems = [];
-
-            foreach ($correctAnswers as $qid => $correctAnswer) {
+            foreach ($questions as $qnum => $qdata) {
+                $type = $qdata['type'] ?? 'multiple_single';
                 $userAnswer = null;
-                $answered = true;
-
-                if (isset($selectedChoices[$qid])) {
-                    $userAnswer = $selectedChoices[$qid];
-                } elseif (isset($fillInBlanks[$qid])) {
-                    $userAnswer = strtolower(trim($fillInBlanks[$qid]));
-                    $correctAnswer = strtolower(trim($correctAnswer));
-                } elseif (isset($sentenceOrder[$qid])) {
-                    $userAnswer = array_map('strtolower', $sentenceOrder[$qid]);
-                } else {
-                    $answered = false;
-                }
-
-                if (!$answered) {
-                    $incorrectItems[] = $qid; // Treat unanswered as incorrect
-                    continue;
-                }
-
                 $isCorrect = false;
-                if (is_array($correctAnswer) && is_array($userAnswer)) {
-                    $isCorrect = ($correctAnswer === $userAnswer);
-                } else {
-                    $isCorrect = ($correctAnswer === $userAnswer);
+
+                if ($type === 'multiple_single') {
+                    $userAnswer = $selectedChoices[$qnum] ?? '';
+                    $correctAnswer = $qdata['correct'] ?? '';
+                    $isCorrect = ($userAnswer === $correctAnswer);
+                    $dataToSave[$qnum] = [
+                        'answer' => $userAnswer,
+                        'correct_answer' => $correctAnswer,
+                        'is_correct' => $isCorrect
+                    ];
                 }
 
+                elseif ($type === 'multiple_multiple') {
+                    $userAnswer = isset($selectedChoices[$qnum]) ? explode(',', $selectedChoices[$qnum]) : [];
+                    sort($userAnswer);
+                    $correctAnswers = isset($qdata['correct']) ? (array) $qdata['correct'] : [];
+                    sort($correctAnswers);
+                    $isCorrect = ($userAnswer === $correctAnswers);
+                    $dataToSave[$qnum] = [
+                        'answer' => $userAnswer,
+                        'correct_answer' => $correctAnswers,
+                        'is_correct' => $isCorrect
+                    ];
+                }
+
+                elseif ($type === 'fill_in_blank') {
+                    $userAnswer = trim($fillAnswers[$qnum] ?? '');
+                    $correctAnswer = strtolower(trim($qdata['answer'] ?? ''));
+                    $isCorrect = (strtolower($userAnswer) === $correctAnswer);
+                    $dataToSave[$qnum] = [
+                        'answer' => $userAnswer,
+                        'correct_answer' => $correctAnswer,
+                        'is_correct' => $isCorrect
+                    ];
+                }
+
+                elseif ($type === 'sentence_order') {
+                    $userAnswer = $sentenceOrders[$qnum] ?? [];
+                    $correctAnswer = $qdata['words'] ?? [];
+
+                    $isCorrect = true;
+                    foreach ($correctAnswer as $index => $word) {
+                        if (!isset($userAnswer[$index]) || strtolower(trim($userAnswer[$index])) !== strtolower(trim($word))) {
+                            $isCorrect = false;
+                            break;
+                        }
+                    }
+
+                    $dataToSave[$qnum] = [
+                        'answer' => $userAnswer,
+                        'correct_answer' => $correctAnswer,
+                        'is_correct' => $isCorrect
+                    ];
+                }
+
+                // Score tracking
+                $total++;
                 if ($isCorrect) {
-                    $correctPoints++;
+                    $score++;
                 } else {
-                    $incorrectItems[] = $qid;
+                    $incorrect[$qnum] = $qdata['question'] ?? 'Unknown Question';
                 }
             }
 
-
-            $durationSeconds = $submitTime->getTimestamp() - $startTime->getTimestamp();
-
-            $dataToSave = [
-                'selected_choices' => $selectedChoices,
-                'fill_in_blanks' => $fillInBlanks,
-                'sentence_order' => $sentenceOrder,
-                'start_time' => $startTime->format('c'),
-                'submitted_at' => $submitTime->format('c'),
-                'total_score' => $totalPoints,
-                'correct_points' => $correctPoints,
-                'incorrect_items' => $incorrectItems,
-                'duration_seconds' => $durationSeconds,
+            // Save result to Firebase
+            $result = [
+                'submitted_at' => now()->toDateTimeString(),
+                'score' => $score,
+                'total' => $total,
+                'answers' => $dataToSave,
+                'incorrect_questions' => $incorrect
             ];
 
-            try {
-                $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Written")->set($dataToSave);
-                Log::info('Answers saved successfully.');
-            } catch (\Exception $e) {
-                Log::error('Failed to save answers to Firebase: ' . $e->getMessage());
-                return redirect()->back()->with('error', 'Failed to save your answers. Please try again.');
-            }
+            $this->database->getReference("enrollment/enrollees/{$uid}/Assessment/Written")->set($result);
+
+            Log::info("Written assessment submitted. UID: $uid, Score: $score/$total");
 
             $enrollStatus = $this->getEnrollStatus();
 
-            Log::info($enrollStatus);
-
-             // If both are done, go to sentence test
             return view('enrollment-panel.enrollment-panel', [
                 'page' => 'enroll-dashboard',
                 'enrollStatus' => $enrollStatus,
                 'user' => $user,
-            ]);
+            ])->with('success', "Assessment completed. Score: $score out of $total.");
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation failed: ', $e->errors());
             return back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
-                Log::error('Failed to save answers to Firebase: ' . $e->getMessage());
-                return redirect()->back()->with('error', 'Failed to save your answers. Please try again.');
-            }
+            Log::error('Failed to save answers to Firebase: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to save your answers. Please try again.');
+        }
     }
+
 
 
     public function getEnrollStatus()

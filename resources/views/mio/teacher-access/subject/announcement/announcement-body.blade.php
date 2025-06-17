@@ -25,6 +25,13 @@
             </div>
         @endif
     </div>
+    @if (session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger">{{ session('error') }}</div>
+        @endif
 
     <main class="main-announcement">
         <div class="announcement-banner">
@@ -109,6 +116,10 @@
                                             accept=".pdf,.doc,.docx,.ppt,.pptx,.mp4,.zip,.jpg,.jpeg,.png,.gif,.bmp,.webp,.svg,.heic,.heif"
                                         />
                                         <span class="file-name" id="announcement-file-name-0">No file chosen</span>
+                                        <small class="file-note" style="color: darkgrey;">
+                                            Accepted formats: PDF, DOC, DOCX, PPT, PPTX, MP4, ZIP, JPG, JPEG, PNG, GIF, BMP, WEBP, SVG, HEIC, HEIF. Max size: 10MB per file.
+                                        </small>
+
                                     </div>
                                 </div>
 
@@ -600,5 +611,25 @@ document.getElementById('editAnnouncementForm').addEventListener('submit', funct
         const replySection = document.getElementById('replySection');
         replySection.style.display = replySection.style.display === 'none' ? 'block' : 'none';
     }
+</script>
+
+<script>
+    document.querySelector('#announcement-file-upload-0').addEventListener('change', function (e) {
+        const files = e.target.files;
+        const maxSizeMB = 10;
+
+        for (const file of files) {
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                alert(`"${file.name}" exceeds the ${maxSizeMB}MB limit.`);
+                e.target.value = ''; // Clear selection
+                document.getElementById('announcement-file-name-0').textContent = 'No file chosen';
+                return;
+            }
+        }
+
+        // Display selected file names
+        const names = Array.from(files).map(f => f.name).join(', ');
+        document.getElementById('announcement-file-name-0').textContent = names;
+    });
 </script>
 

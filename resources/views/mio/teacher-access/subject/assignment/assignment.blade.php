@@ -1,9 +1,14 @@
 <section class="home-section">
+    <div class="text">
+    
+        <div class="breadcrumb-item active">Assignments</div>
+
+    </div>
 <main class="main-banner">
             <div class="welcome-banner">
             <div class="banner">
             <div class="content">
-            <h5>Available assignments</h5>
+            <h5>Assignments</h5>
 
             </div>
 
@@ -86,6 +91,49 @@
 
             <label for="description">Description</label>
             <textarea name="description"  placeholder="Write a brief description..." rows="3"  style="width: 100%; height: 120px; resize: none;" >Lorem ipsum dolor sit amet, consectetur adipisicing elit. Nesciunt voluptatum necessitatibus maiores sit sint corrupti quod accusantium tempora iure excepturi, facilis et veniam temporibus adipisci unde laboriosam neque commodi incidunt.</textarea>
+
+            <label for="submission_type">Submission Type</label>
+            <select name="submission_type" id="submission_type" required>
+                <option value="file">File Upload</option>
+                <option value="text">Text Entry</option>
+            </select>
+            
+            <div id="file-type-requirements" style="margin: 10px 0; padding: 12px; border: 2px dashed #ccc; border-radius: 6px; display: none;">
+                <label style="font-weight: bold; margin-bottom: 8px; display: inline-block;">Allowed File Types:</label>
+
+                <!-- Select All Emoji Button -->
+                <div style="margin-bottom: 8px;">
+                    <span id="select-all-filetypes" class="file-icon" title="Select All">✅</span> <small>Select All</small>
+                </div>
+
+                <!-- Emoji File Icons -->
+                <div id="file-type-checkboxes" style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 5px;">
+                    <div class="file-icon-wrapper" data-type="pdf"><span>📄</span><div class="file-label">PDF</div></div>
+                    <div class="file-icon-wrapper" data-type="docx"><span>📝</span><div class="file-label">DOCX</div></div>
+                    <div class="file-icon-wrapper" data-type="pptx"><span>📊</span><div class="file-label">PPTX</div></div>
+                    <div class="file-icon-wrapper" data-type="mp3"><span>🎵</span><div class="file-label">MP3</div></div>
+                    <div class="file-icon-wrapper" data-type="mp4"><span>🎞️</span><div class="file-label">MP4</div></div>
+                    <div class="file-icon-wrapper" data-type="jpg"><span>🖼️</span><div class="file-label">JPG</div></div>
+                    <div class="file-icon-wrapper" data-type="png"><span>🧊</span><div class="file-label">PNG</div></div>
+                    <div class="file-icon-wrapper" data-type="xlsx"><span>📈</span><div class="file-label">XLSX</div></div>
+                    <div class="file-icon-wrapper" data-type="txt"><span>📘</span><div class="file-label">TXT</div></div>
+                    <div class="file-icon-wrapper" data-type="zip"><span>🗜️</span><div class="file-label">ZIP</div></div>
+                </div>
+
+                <!-- Hidden inputs container -->
+                <div id="file-type-hidden-inputs"></div>
+
+                <div style="margin-top: 15px;">
+                    <label style="font-weight: bold;" for="max_file_size">Maximum File Size (MB):</label>
+                    <input type="number" name="max_file_size" id="max_file_size" min="1" max="100" step="1" style="width: 100px; margin-left: 10px;">
+                </div>
+            </div>
+
+
+
+
+
+
 
             <label>Attachments</label>
             <div id="attachment-container">
@@ -300,3 +348,99 @@ document.getElementById('add-attachment-btn').addEventListener('click', function
 </script>
 
 
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const submissionType = document.getElementById('submission_type');
+    const attachmentContainer = document.getElementById('attachment-container');
+    const addAttachmentBtn = document.getElementById('add-attachment-btn');
+    const fileTypeRequirements = document.getElementById('file-type-requirements');
+
+    function toggleFileUploadUI() {
+        const isFile = submissionType.value === 'file';
+        attachmentContainer.style.display = isFile ? 'block' : 'none';
+        addAttachmentBtn.style.display = isFile ? 'inline-block' : 'none';
+        fileTypeRequirements.style.display = isFile ? 'block' : 'none';
+    }
+
+    submissionType.addEventListener('change', toggleFileUploadUI);
+
+    // Initialize on page load
+    toggleFileUploadUI();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAllCheckbox = document.getElementById('select-all-filetypes');
+    const fileTypeCheckboxes = document.querySelectorAll('#file-type-checkboxes input[type="checkbox"]');
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            const isChecked = this.checked;
+            fileTypeCheckboxes.forEach(cb => cb.checked = isChecked);
+        });
+    }
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const wrappers = document.querySelectorAll('.file-icon-wrapper');
+    const hiddenInputsContainer = document.getElementById('file-type-hidden-inputs');
+
+    function updateHiddenInputs() {
+        hiddenInputsContainer.innerHTML = ''; // Clear
+        wrappers.forEach(wrap => {
+            if (wrap.classList.contains('selected')) {
+                const type = wrap.getAttribute('data-type');
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'allowed_file_types[]';
+                input.value = type;
+                hiddenInputsContainer.appendChild(input);
+            }
+        });
+    }
+
+    wrappers.forEach(wrap => {
+        wrap.addEventListener('click', () => {
+            wrap.classList.toggle('selected');
+            updateHiddenInputs();
+        });
+    });
+});
+</script>
+
+
+
+<style>
+    .file-icon-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        cursor: pointer;
+        padding: 6px;
+        border: 2px solid transparent;
+        border-radius: 8px;
+        transition: border 0.2s;
+        color: white;
+    }
+
+    .file-icon-wrapper.selected {
+        border-color: gold;
+        background-color: #fffbe0;
+    }
+
+    .file-icon-wrapper:hover {
+        background-color: #f7f7f7;
+    }
+
+    .file-icon-wrapper span {
+        font-size: 28px;
+    }
+
+    .file-label {
+        font-size: 12px;
+        font-weight: 500;
+        color: #333;
+    }
+</style>

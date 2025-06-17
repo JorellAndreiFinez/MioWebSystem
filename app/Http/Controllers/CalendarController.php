@@ -47,6 +47,27 @@ class CalendarController extends Controller
         $this->bucketName = 'miolms.firebasestorage.app';
     }
 
+    private function checkIfUserHasUnreadMessages(string $userId): bool
+    {
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                    isset($message['receiver_id'], $message['read']) &&
+                    $message['receiver_id'] === $userId &&
+                    $message['read'] === false
+
+                ) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
    public function showCalendarStudent()
     {
         $user = session('firebase_user');
@@ -218,13 +239,29 @@ class CalendarController extends Controller
         }
 
 
-        // Logs
-        Log::info('Student UID: ' . $studentId);
-        Log::info('Subject count: ' . count($studentSubjects));
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
+
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
 
         return view('mio.head.student-panel', [
             'page' => 'calendar',
-            'events' => $events
+            'events' => $events,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 
@@ -377,14 +414,33 @@ class CalendarController extends Controller
             }
         }
 
+        // Inside showDashboard()
+        $hasUnreadMessages = false;
+        $loggedInTeacherId = session('firebase_user')['uid'] ?? null;
 
+        $messagesRef = $this->database->getReference('messages');
+        $messages = $messagesRef->getValue() ?? [];
+
+        foreach ($messages as $threadKey => $thread) {
+            foreach ($thread as $messageId => $message) {
+                if (
+                     isset($message['receiver_id'], $message['read']) &&
+                                    $message['receiver_id'] === $loggedInTeacherId &&
+                                    $message['read'] === false
+                ) {
+                    $hasUnreadMessages = true;
+                    break 2; // Stop checking once found
+                }
+            }
+        }
 
 
 
         return view('mio.head.teacher-panel', [
             'page' => 'calendar',
             'globalEvents' => $globalEvents,
-            'subjectEvents' => $subjectEvents
+            'subjectEvents' => $subjectEvents,
+            'hasUnreadMessages' => $hasUnreadMessages,
         ]);
     }
 

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard</title>
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('storage/assets/images/1.2.2 home-pid.png/') }}">
+    <link rel="icon" type="image/x-icon" href="https://firebasestorage.googleapis.com/v0/b/miolms.firebasestorage.app/o/assets%2F1.2.2%20home-pid.png?alt=media&token=4d6ea2de-b604-4c3e-b1d8-5378488a9918">
 
     {{-- Conditional CSS based on the page --}}
     @if ($page === 'teacher-inbox')

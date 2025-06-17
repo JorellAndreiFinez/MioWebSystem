@@ -25,6 +25,9 @@
 <!----- FOOTER ----->
 @extends('layouts.footer')
 
+@include('mio-styles')
+
+@include('main-app-styles')
 
 </body>
 </html>

@@ -33,7 +33,7 @@
             @foreach ($speech as $speechID => $phrase)
             <tr data-key="{{ $speechID }}">
                 <td>{{ $speechID }}</td>
-                
+
                 <td class="phrase-text">
                     <span>{{ htmlspecialchars($phrase['text'] ?? '') }}</span>
                     <input type="text" name="speech[{{ $speechID }}][text]" class="form-control d-none" value="{{ $phrase['text'] ?? '' }}">
@@ -181,7 +181,7 @@
         <thead>
         <tr>
             <th>ID</th>
-            <th>Text</th>
+            <th style="width: 50%;">Text</th>
             <th>Level</th>
             <th>Action</th>
         </tr>
@@ -191,7 +191,7 @@
             @foreach ($sentence as $sentenceID => $phrase)
             <tr data-key="{{ $sentenceID }}">
             <td>{{ $sentenceID }}</td>
-            <td class="phrase-text3">{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
+            <td class="phrase-text3" >{{ htmlspecialchars($phrase['text'] ?? '') }}</td>
             <td class="phrase-level3">{{ $phrase['level'] ?? '' }}</td>
             <td class="phrase-actions3">
                 <input type="hidden" name="sentence[{{ $sentenceID }}][_delete]" class="delete-flag3" value="0">
@@ -212,7 +212,7 @@
             <input type="text" id="new-sentence-id" name="new_sentence[id]" readonly class="form-control-plaintext">
         </td>
         <td>
-            <input type="text" name="new_sentence[text]" class="form-control" placeholder="Enter new sentence">
+            <input type="text" name="new_sentence[text]" class="form-control" style="max-width: 400px; white-space: normal; word-break: break-word;" placeholder="Enter new sentence">
         </td>
         <td>
             <select name="new_sentence[level]" class="form-control">

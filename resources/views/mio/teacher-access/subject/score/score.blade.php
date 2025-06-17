@@ -41,7 +41,8 @@
             <div class="table-container">
                 @forelse($groupedAttempts as $activityType => $attempts)
                     <div class="score-table" style="max-width: 900px; margin-bottom: 5rem;">
-                        <h3>{{ ucfirst($activityType) }}</h3>
+                        <h3>{{ $activityType === 'phrase' ? 'Reading' : ucfirst($activityType) }}</h3>
+
                         <table>
                             <thead>
                                 <tr>
@@ -121,15 +122,19 @@
                                                                         @if(isset($attempt['pronunciation_details']['words']))
                                                                             <p style="margin:0;">
                                                                                 @foreach ($attempt['pronunciation_details']['words'] as $wordInfo)
-                                                                                    <span
-                                                                                        class="word-info"
-                                                                                        data-word="{{ $wordInfo['word'] }}"
-                                                                                        data-quality-score="{{ $wordInfo['quality_score'] }}"
-                                                                                        data-syllables='@json($wordInfo['syllables'])'
-                                                                                        style="border-bottom: 1px dotted #666; cursor: help;"
+                                                                                   <span
+                                                                                    class="word-info"
+                                                                                    data-word="{{ $wordInfo['word'] }}"
+                                                                                    data-quality-score="{{ $wordInfo['quality_score'] }}"
+                                                                                    data-syllables='@json($wordInfo['syllables'])'
+                                                                                    data-lowest-score="{{ $wordInfo['lowest_phoneme_score'] ?? $wordInfo['quality_score'] }}"
+                                                                                    data-low-phones='@json($wordInfo['low_phones'] ?? [])'
+                                                                                    style="border-bottom: 1px dotted #666; cursor: help;"
                                                                                     >
-                                                                                        {{ $wordInfo['word'] }}
+                                                                                    {{ $wordInfo['word'] }}
                                                                                     </span>
+
+
                                                                                 @endforeach
                                                                             </p>
 
@@ -314,86 +319,138 @@
 </script>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const getColorByScore = (score) => {
+     const getColorByScore = (score) => {
     if (score >= 90) return '#3cb371'; // Green (Excellent)
     if (score >= 80) return '#32cd32'; // Green (Very good)
     if (score >= 70) return '#ffa500'; // Orange (Good)
     if (score >= 60) return '#ff4500'; // Red-Orange (Fair)
     return '#ff0000';                   // Red (Poor)
   };
+document.addEventListener('DOMContentLoaded', () => {
+ 
 
   document.body.addEventListener('click', (event) => {
-    const span = event.target.closest('.word-info');
-    if (!span) return;
+  const span = event.target.closest('.word-info');
+  if (!span) return;
 
-    const word = span.dataset.word || 'N/A';
-    const qualityScore = span.dataset.qualityScore || 'N/A';
+  // Remove previous summary if one exists
+  document.querySelectorAll('.word-summary-popup').forEach(el => el.remove());
 
-    let syllables = [];
-    try {
-      syllables = JSON.parse(span.dataset.syllables || '[]');
-    } catch (e) {
-      console.error('Invalid syllables JSON:', e);
-    }
+  const word = span.dataset.word || 'N/A';
+  const qualityScore = span.dataset.qualityScore || 'N/A';
 
-    const detailsRow = span.closest('.student-details-row');
-    if (!detailsRow) return;
+  let syllables = [];
+  try {
+    syllables = JSON.parse(span.dataset.syllables || '[]');
+  } catch (e) {
+    console.error('Invalid syllables JSON:', e);
+  }
 
-    const studentId = detailsRow.dataset.student;
-    const activityType = detailsRow.dataset.activityType;
-
-    const summaryCell = document.querySelector(`.word-summary-cell[data-student="${studentId}"][data-activity-type="${activityType}"]`)
-      || document.querySelector('.word-summary-cell'); // fallback
-
-    if (!summaryCell) return;
-
-    // Build syllables HTML with color and score
-    const syllablesHtml = syllables.map(syl => {
-      const color = getColorByScore(syl.quality_score ?? 0);
-      return `
-        <div style="
+  // Build syllables HTML
+  const syllablesHtml = syllables.map((syl, index) => {
+    const color = getColorByScore(syl.quality_score ?? 0);
+    const phones = syl.phones?.map(p => `/${p.phone}/ (${Math.round(p.quality_score)}%)`).join(', ') || '—';
+    return `
+      <div class="syllable-box"
+        data-syllable-index="${index}"
+        data-phones='${JSON.stringify(syl.phones || [])}'
+        style="
           display: inline-block;
           margin: 0 4px;
           padding: 8px 12px;
           border-radius: 8px;
-          background-color: ${color}33; /* translucent */
+          background-color: ${color}33;
           text-align: center;
-          min-width: 40px;
+          min-width: 50px;
           font-family: monospace;
-          cursor: default;
-          ">
-          <div style="font-weight: 700; font-size: 1.2rem; color: ${color};">${syl.letters}</div>
-          <div style="font-size: 0.75rem; color: ${color}; margin-top: 2px;">${Math.round(syl.quality_score)}</div>
-        </div>`;
-    }).join('');
+          cursor: pointer;
+        ">
+        <div style="font-weight: 700; font-size: 1.2rem; color: ${color};">${syl.letters}</div>
+        <div style="font-size: 0.75rem; color: ${color};">${Math.round(syl.quality_score)}%</div>
+      </div>`;
+  }).join('') || `<div style="color: #999; font-style: italic;">No syllable data available</div>`;
 
-    summaryCell.innerHTML = `
-      <div style="padding: 1rem; font-family: Arial, sans-serif; max-width: 100%; user-select:none;">
-        <div style="font-size: 1.25rem; font-weight: bold; margin-bottom: 0.5rem; color: #222;">
-          Word: <span style="color:#007acc;">${word}</span>
-        </div>
-        <div style="margin-bottom: 1rem; color: #555;">
-          Overall Quality Score: <strong>${qualityScore}</strong>
-        </div>
-        <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 6px;">
-          ${syllablesHtml}
-        </div>
-        <div style="text-align: right; margin-top: 1rem;">
-          <button id="close-summary-btn" style="
-            cursor: pointer;
-            background: #007acc;
-            border: none;
-            color: white;
-            padding: 6px 14px;
-            border-radius: 4px;
-            font-weight: 600;
-            transition: background-color 0.3s;
-          ">Close</button>
-        </div>
-      </div>
-    `;
+  // Feedback logic
+  let lowPhones = [];
+  try {
+    lowPhones = JSON.parse(span.dataset.lowPhones || '[]');
+  } catch (e) {
+    console.error('Invalid low_phones JSON:', e);
+  }
+
+  let lowestScore = 100;
+  syllables.forEach(syl => {
+    if (typeof syl.quality_score === 'number') {
+      lowestScore = Math.min(lowestScore, syl.quality_score);
+    }
   });
+
+  let feedbackMsg = '';
+  if (lowPhones.length > 0) {
+    feedbackMsg += '❗ Low-scoring phonemes detected:<br>';
+    lowPhones.forEach(p => {
+      feedbackMsg += `&nbsp;&nbsp;&bull; <code>/${p.phone}/</code> &mdash; score: <strong>${p.score}</strong>, sounds like: <em>${p.like}</em><br>`;
+    });
+  } else if (lowestScore < 60) {
+    feedbackMsg += '❗ Some sounds were unclear. Try focusing on your pronunciation.';
+  } else if (lowestScore < 80) {
+    feedbackMsg += '🔍 Good effort! A few sounds could be clearer.';
+  } else {
+    feedbackMsg += '✅ Excellent clarity throughout the word!';
+  }
+
+  // Build and insert the summary popup
+  const summaryDiv = document.createElement('div');
+  summaryDiv.className = 'word-summary-popup';
+  summaryDiv.style = `
+    background: #f8f8f8;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 6px;
+    max-width: 100%;
+    font-family: Arial, sans-serif;
+  `;
+  summaryDiv.innerHTML = `
+    <div style="font-size: 1.2rem; font-weight: bold; color: #007acc;">Word: ${word}</div>
+    <div style="margin: 6px 0;">Quality Score: <strong>${qualityScore}</strong></div>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px;">${syllablesHtml}</div>
+    <div style="margin-top: 10px; font-style: italic;">Feedback: ${feedbackMsg}</div>
+    <div style="text-align: right; margin-top: 0.5rem;">
+      <button onclick="this.closest('.word-summary-popup').remove()" style="
+        cursor: pointer;
+        background: #007acc;
+        border: none;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-weight: 600;">Close</button>
+    </div>
+  `;
+
+  // Insert directly after the clicked span
+    // Find the parent row of the clicked word
+    const attemptRow = span.closest('tr');
+    if (!attemptRow) return;
+
+    // Remove any existing summary row within this student’s detail row
+    const existingSummary = attemptRow.querySelector('.word-summary-popup');
+    if (existingSummary) existingSummary.remove();
+
+    // Create a full-width new row for the popup
+    const summaryRow = document.createElement('tr');
+    summaryRow.className = 'word-summary-popup';
+    summaryRow.innerHTML = `
+    <td colspan="${attemptRow.children.length}" style="padding: 1rem;">
+        ${summaryDiv.outerHTML}
+    </td>
+    `;
+
+    // Insert directly after the clicked word's row
+    attemptRow.parentNode.insertBefore(summaryRow, attemptRow.nextSibling);
+
+});
+
 
   // Close button handler
   document.body.addEventListener('click', (event) => {
@@ -405,6 +462,59 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+document.body.addEventListener('click', (event) => {
+  const syllableBox = event.target.closest('.syllable-box');
+  if (!syllableBox) return;
+
+  const phonesRaw = syllableBox.dataset.phones || '[]';
+  let phones = [];
+  try {
+    phones = JSON.parse(phonesRaw);
+  } catch (e) {
+    return;
+  }
+
+  const list = phones.map(p => {
+    const score = Math.round(p.quality_score || 0);
+    const color = getColorByScore(score);
+    return `
+      <li style="margin-bottom: 4px;">
+        <code style="color: ${color}">/${p.phone}/</code> – 
+        <strong>${score}%</strong>, sounds like <em>${p.sound_most_like || '—'}</em>
+      </li>`;
+  }).join('');
+
+  const dialog = document.createElement('div');
+  dialog.innerHTML = `
+    <div style="
+      position: fixed;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      max-width: 400px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+      z-index: 9999;
+      font-family: Arial, sans-serif;
+    ">
+      <h3 style="margin-top:0;">Syllable Phonemes</h3>
+      <ul style="padding-left: 1rem; margin: 0 0 1rem 0;">${list}</ul>
+      <button onclick="this.parentElement.remove()" style="
+        background: #007acc;
+        color: white;
+        padding: 6px 14px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      ">Close</button>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+});
+
 </script>
 
 
@@ -659,7 +769,14 @@ document.addEventListener('DOMContentLoaded', function () {
         el.addEventListener('mouseenter', (event) => {
             const word = el.dataset.word;
             const qualityScore = el.dataset.qualityScore;
-            const syllables = JSON.parse(el.dataset.syllables);
+            let syllables = [];
+            try {
+            syllables = JSON.parse(span.dataset.syllables || '[]');
+            if (!Array.isArray(syllables)) syllables = [];
+            } catch (e) {
+            console.error('Invalid syllables JSON:', e);
+            syllables = [];
+            }
 
             syllables.forEach(syl => {
                 syllablesHtml += `<li><strong>${syl.letters}</strong> (Quality: ${syl.quality_score}, Stress: ${syl.stress_level})</li>`;
@@ -689,3 +806,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
+<style>
+    .word-info:hover {
+  text-decoration: underline;
+}
+
+.word-summary-popup {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+</style>

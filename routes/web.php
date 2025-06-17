@@ -171,6 +171,8 @@ Route::prefix('mio/admin/')->middleware(
 
     Route::delete('/enrollment/assessment/{type}/delete/{id}', [EnrollController::class, 'deleteQuestion'])->name('delete-question');
 
+    Route::delete('/enrollment/assessment/{type}/delete/{id}', [EnrollController::class, 'deleteQuestionWR'])->name('delete-question-wr');
+
 
 
 
