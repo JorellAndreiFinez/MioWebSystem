@@ -9,6 +9,7 @@ use App\Http\Controllers\api\TeacherApiController;
 use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
 use App\Http\Controllers\api\SpecializedLanguageApi;
+use App\Http\Controllers\api\NotificationController;
 use App\Http\Controllers\api\MessagingApi;
 use App\Http\Controllers\api\EmergencyApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -49,6 +50,10 @@ Route::middleware([
     Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
     Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']); // it should be create new
     Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
+
+    // notification
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::post('/notification/{notificationId}', [NotificationController::class, 'dismissNotification']);
 });
 
 

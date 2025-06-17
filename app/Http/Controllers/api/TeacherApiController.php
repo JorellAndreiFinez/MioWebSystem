@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
+use Kreait\Firebase\Messaging\CloudMessage;
 
 class TeacherApiController extends Controller
 {
@@ -31,6 +32,10 @@ class TeacherApiController extends Controller
             ->withServiceAccount($path)
             ->withDefaultStorageBucket('miolms.firebasestorage.app')
             ->createStorage();
+
+        $this->messaging = (new Factory())
+            ->withServiceAccount($path)
+            ->createMessaging();
     }
 
     protected function uploadToFirebaseStorage($file, $storagePath)
@@ -66,7 +71,65 @@ class TeacherApiController extends Controller
         return $announcementId;
     }
 
-    public function editSubjectAnnouncementApi(Request $request, string $subjectId, string $announcementId){
+    private function createNotification(string $gradeLevel, string $subjectId, string $body, string $title, string $announcement_id, string $type){
+        $students = $this->database
+            ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+            ->getSnapshot()
+            ->getValue();
+
+        $users = $this->database->getReference("users")->getSnapshot()->getValue();
+
+        $tokens = [];
+
+        if (is_array($students)) {
+            foreach ($students as $student_id => $student) {
+                if (!empty($users[$student_id]['fcm_token'])) {
+                    $tokens[$student_id] = $users[$student_id]['fcm_token'];
+                }
+            }
+        }
+
+        $notified_students = [];
+        foreach ($tokens as $student_id => $token) {
+            try {
+                $message = CloudMessage::withTarget('token', $token)
+                    ->withNotification([
+                        'title' => $title,
+                        'body' => $body,
+                    ])
+                    ->withData([
+                        'type' => 'notification',
+                        'subjectId' => $subjectId,
+                        'announcement_id' => $announcement_id
+                    ]);
+
+                $this->messaging->send($message);
+
+            } catch (\Exception $e) {
+                \Log::error("FCM send failed for {$student_id}: " . $e->getMessage());
+            }
+
+            $notified_students[$student_id] = true;
+        }
+
+        $notification_id = $this->generateUniqueId("NOTI");
+        $date = now()->toDateTimeString();
+
+        $notification_logs = [];
+        $notification_logs[$notification_id] = [
+            'title' => $title,
+            'body' => $body,
+            'date' => $date,
+            'subject_id' => $subjectId,
+            'announcement_id' => $announcement_id,
+            'student_ids' => $notified_students,
+            'type' => $type
+        ];
+
+        $this->database->getReference('notifications')->update($notification_logs);
+    }
+
+    public function editSubjectAnnouncementApi(Request $request, string $subjectId, string $announcement_id){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
@@ -84,7 +147,7 @@ class TeacherApiController extends Controller
 
         try {
             $existing = $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcement_id}")
                 ->getSnapshot()
                 ->getValue() ?? [];
 
@@ -128,19 +191,28 @@ class TeacherApiController extends Controller
                 ->all();
 
             $date = now()->toDateTimeString();
+            $date_posted = Carbon::createFromFormat('m/d/Y H:i:s', str_replace(',', '', $validated['date_posted']));
+            $formatted = $date_posted->format('Y-m-d');
 
             $announcementData = [
                 'title'       => $validated['title'],
                 'description' => $validated['description'],
                 'links'       => $urls,
-                'date_posted' => $validated['date_posted'],
+                'date_posted' => $formatted,
                 'files'       => $files,
                 'updated_at'  => now()->toDateTimeString(),
                 'updated_by'  => $userId
             ];
 
+            $postedDate = Carbon::parse($validated['date_posted'])->startOfDay();
+            $today = now()->startOfDay();
+
+            if ($postedDate->lte($today)) {
+                $this->createNotification($gradeLevel, $subjectId, $validated['description'], $validated['title'] , $announcement_id, "announcement");
+            }
+
             $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcement_id}")
                 ->update($announcementData);
 
             return response()->json([
@@ -193,45 +265,37 @@ class TeacherApiController extends Controller
                 ->all();
 
             $date = now()->toDateTimeString();
+            $date_posted = Carbon::createFromFormat('m/d/Y H:i:s', str_replace(',', '', $validated['date_posted']));
+            $formatted = $date_posted->format('Y-m-d');
 
             $announcementData = [
                 'title'       => $validated['title'],
                 'description' => $validated['description'],
                 'links'       => $urls,
-                'date_posted' => $validated['date_posted'],
+                'date_posted' => $formatted,
                 'files'       => $files,
                 'create_at'   => $date,
                 'created_by'  => $userId
             ];
 
-            $announcementId = $this->generateUniqueId('SUB-ANN');
+            $announcement_id = $this->generateUniqueId('SUB-ANN');
 
-            $tokens = [];
-            $students = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/peoples")->getSnapshot()->getValue();
+            $students = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->getSnapshot()
+                ->getValue();
+
             $users = $this->database->getReference("users")->getSnapshot()->getValue();
 
-            foreach($students as $student_id => $student){
-                $tokens[] = $users[$student_id]['fcm_token'] ?? "";
-            }
+            $postedDate = Carbon::parse($validated['date_posted'])->startOfDay();
+            $today = now()->startOfDay();
 
-            foreach($tokens as $token){
-                if($token){
-                    $message = CloudMessage::withTarget('token', $token)
-                    ->withNotification([
-                        'title' => "📢 New Announcement",
-                        'body' => $validated['title'],
-                    ])
-                    ->withData([
-                        'type' => 'message',
-                        'screen' => 'EmergencyScreen',
-                    ]);
-                        
-                $this->messaging->send($message);
-                }
+            if ($postedDate->lte($today)) {
+                $this->createNotification($gradeLevel, $subjectId, $validated['description'], $validated['title'] , $announcement_id, "announcement");
             }
 
             $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcementId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/announcements/{$announcement_id}")
                 ->set($announcementData);
 
             return response()->json([
@@ -240,6 +304,7 @@ class TeacherApiController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
+            \Log::error("asd " . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'error'   => 'Failed to create announcement: ' . $e->getMessage(),
