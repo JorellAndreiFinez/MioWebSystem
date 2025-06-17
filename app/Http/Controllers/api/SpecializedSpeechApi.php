@@ -702,7 +702,7 @@ class SpecializedSpeechApi extends Controller
         $validated = $request->validate([
             'flashcards' => 'required|array|min:1',
             'flashcards.*.text' => 'required|string|min:1|max:250',
-            'flashcards.*.flashcard_id' => 'nullable|uuid',
+            'flashcards.*.flashcard_id' => 'nullable|string|min:1',
             'flashcards.*.image' => 'nullable|file|mimes:jpg,png|max:5120',
         ]);
 
@@ -770,6 +770,9 @@ class SpecializedSpeechApi extends Controller
                     'updated_by' => $userId,
                     'created_by' => $existing_activity['created_by'] ?? "",
                     'created_at' => $existing_activity['created_at'] ?? "",
+                    'activity_difficulty' => $existing_activity['activity_difficulty'] ?? null,
+                    'activity_title' => $existing_activity['activity_title'] ?? null,
+                    'assessment_id' => $existing_activity['assessment_id'] ?? null,
                 ]);
 
             return response()->json([

@@ -365,7 +365,7 @@ class SpecializedLanguageApi extends Controller
 
         $validated = $request->validate([
             'homonyms' => 'required|array|min:1',
-            'homonyms.*.item_id' => 'nullable|string|uuid',
+            'homonyms.*.item_id' => 'nullable|string|min:1',
             'homonyms.*.sentences' => 'required|array|size:2',
             'homonyms.*.sentences.*' => 'required|string|min:1',
             'homonyms.*.answers' => 'required|array|size:2',
@@ -744,12 +744,12 @@ class SpecializedLanguageApi extends Controller
 
         $validated = $request->validate([
             'answers' => 'required|array|min:1',
-            'answers.*.item_id' => 'required|string|uuid',
+            'answers.*.item_id' => 'required|string|min:1',
             'answers.*.answer' => 'required|array|size:2',
             'answers.*.answer.*' => 'required|string|min:1',
 
             'answer_logs' => 'required|array|min:1',
-            'answer_logs.*.item_id' => 'required|string|uuid',
+            'answer_logs.*.item_id' => 'required|string|min:1',
             'answer_logs.*.answers_1' => 'required|array|min:1',
             'answer_logs.*.answers_1.*' => 'required|string|min:1',
             'answer_logs.*.answers_2' => 'required|array|min:1',
@@ -760,7 +760,7 @@ class SpecializedLanguageApi extends Controller
             'answer_logs.*.answered_at_2.*' => 'required|string|min:1',
 
             'audio_logs' => 'required|array|min:1',
-            'audio_logs.*.item_id' => 'required|string|uuid',
+            'audio_logs.*.item_id' => 'required|string|min:1',
             'audio_logs.*.played_at_1' => 'required|array|min:1',
             'audio_logs.*.played_at_1.*' => 'required|string|min:1',
             'audio_logs.*.played_at_2' => 'required|array|min:1',
