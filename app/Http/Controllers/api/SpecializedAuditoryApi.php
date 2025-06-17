@@ -213,8 +213,7 @@ class SpecializedAuditoryApi extends Controller
             }
 
             $audio_paths = [];
-
-            foreach ($validated['audio'] as $audio) {
+            foreach ($validated['audio'] as $index => $audio) {
                 $audio_file = $audio['audio_file'];
                 $uuid = (string) Str::uuid();
                 $filename = $uuid . $audio_file->getClientOriginalName();
@@ -231,6 +230,10 @@ class SpecializedAuditoryApi extends Controller
                     'audio_path' => $remoteAudioPath,
                     'filename' => $audio_file->getClientOriginalName()
                 ];
+
+                if (isset($correct_answers[$index])) {
+                    $correct_answers[$index]['audio_path'] = $remoteAudioPath;
+                }
             }
 
             $date = now()->toDateTimeString();
@@ -758,8 +761,6 @@ class SpecializedAuditoryApi extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
-
-        
         $validated = $request->validate([
             'answers' => 'required|array',
             'answers.*.image_id' => 'required|string|min:1',
@@ -770,9 +771,6 @@ class SpecializedAuditoryApi extends Controller
             'audio_played.*.played_at' => 'required|array',
             'audio_played.*.played_at.*' => 'required|string',
         ]);
-
-        
-        
 
         try {
             $now = now()->toDateTimeString();
@@ -793,7 +791,7 @@ class SpecializedAuditoryApi extends Controller
 
             $correctMap = [];
             foreach ($activity['correct_answers'] as $correct) {
-                if (is_array($correct) && isset($correct['image_id'])) {
+                if (isset($correct['image_id'])) {
                     $correctMap[$correct['image_id']] = true;
                 }
             }
@@ -843,7 +841,8 @@ class SpecializedAuditoryApi extends Controller
                 'success' => true,
                 'message' => "Submitted Successfully",
                 'score' => $score,
-                'intex' => $intex
+                'intex' => $intex,
+                'totalItems' => $totalCorrect,
             ], 200);
 
         } catch (\Exception $e) {
@@ -959,9 +958,9 @@ class SpecializedAuditoryApi extends Controller
     public function continueBingoActivity(
         Request $request,
         string $subjectId,
+        string $activityType,
         string $activityId,
         string $attemptId,
-        string $activityType,
     ) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
@@ -979,12 +978,18 @@ class SpecializedAuditoryApi extends Controller
                 ], 404);
             }
 
+            $items = $attempt['items'] ?? [];
+            $audios = $attempt['audios'] ?? [];
+
+            shuffle($items);
+            shuffle($audios);
+
             return response()->json([
                 'success' => true,
                 'attemptId' => $attemptId,
-                'items' => shuffle($attempt['items']) ?? [],
-                'audio_paths' => shuffle($attempt['audios']) ?? [],
-                'total' => isset($attempt['items']) ? count($attempt['items']) : 0,
+                'items' => $items,
+                'audio_paths' => $audios,
+                'total' => count($items),
             ]);
 
         } catch (\Exception $e) {
