@@ -438,66 +438,6 @@ class TeacherApiController extends Controller
         }
     }
 
-    public function createSubjectQuizzesApi(Request $request, string $subjectId)
-    {
-        $gradeLevel = $request->get('firebase_user_gradeLevel');
-
-        try {
-            $validated = $request->validate([
-                'deadline'                 => 'required|string',
-                'attempts'                 => 'required|integer|min:1',
-                'description'              => 'required|string|max:1000',
-                'title'                    => 'required|string|max:255',
-                'total'                    => 'required|integer|min:1',
-                'time_limit'               => 'required|integer|min:1',
-                'publish_date'             => 'required|string',
-                'questions'                => 'required|array|min:1',
-                'questions.*.question'     => 'required|string',
-                'questions.*.answer'       => 'required|string',
-                'questions.*.type'         => 'required|string',
-                'questions.*.options'      => 'required|array|min:1',
-                'questions.*.options.*'    => 'required|string',
-            ]);
-
-            $questionsWithIds = [];
-            foreach ($validated['questions'] as $q) {
-                $uuid = (string) Str::uuid();
-                $questionsWithIds[$uuid] = [
-                    'question' => $q['question'],
-                    'answer'   => $q['answer'],
-                    'type'     => $q['type'],
-                    'options'  => $q['options'],
-                ];
-            }
-
-            $quizId = $this->generateUniqueId('QU');
-            $date   = now()->toDateTimeString();
-
-            $quizData = array_merge($validated, [
-                'questions'  => $questionsWithIds,
-                'created_at' => $date,
-                'updated_at' => $date,
-            ]);
-
-            $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
-                ->set($quizData);
-
-            return response()->json([
-                'success' => true,
-                'message' => "Quiz created successfully.",
-            ], 201);
-
-        } catch (\Exception $e) {
-            Log::error('Quiz creation failed', ['error' => $e->getMessage()]);
-
-            return response()->json([
-                'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
-            ], 500);
-        }
-    }
-
     public function updateSubjectQuizzesApi(Request $request, string $subjectId, string $quizId){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 

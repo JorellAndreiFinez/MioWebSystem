@@ -10,6 +10,7 @@ use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
 use App\Http\Controllers\api\SpecializedLanguageApi;
 use App\Http\Controllers\api\NotificationController;
+use App\Http\Controllers\api\QuizzesController;
 use App\Http\Controllers\api\MessagingApi;
 use App\Http\Controllers\api\EmergencyApi;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -34,9 +35,12 @@ Route::middleware([
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
     Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
 
+    // FCM Notification
     Route::post('/updateFCMToken/{student_id}', [EmergencyApi::class, 'updateFCMToken']); 
     Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
     Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::post('/notification/{notificationId}', [NotificationController::class, 'dismissNotification']);
 
     //profile
     Route::get('/profile', [StudentApiController::class, 'getProfile']);
@@ -48,12 +52,9 @@ Route::middleware([
     Route::get('/messages/sent', [MessagingApi::class, 'getSentMessages']);
     Route::get('/message/reply/{conversation_id}', [MessagingApi::class, 'getConversation']);
     Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
-    Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']); // it should be create new
+    Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']);
     Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
-
-    // notification
-    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
-    Route::post('/notification/{notificationId}', [NotificationController::class, 'dismissNotification']);
+    
 });
 
 
@@ -62,6 +63,17 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
+
+    //quizzes 
+    
+    Route::get('/subject/{subjectId}/quiz/', [QuizzesController::class, 'getQuizzes']);
+    Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getAttempts']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'startQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/', [QuizzesController::class, 'finalizeQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/continue', [QuizzesController::class, 'continueQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/{itemId}', [QuizzesController::class, 'submitAnswer']);
+
+    // specialized
     Route::get('/subject/{subjectId}/attempts/{activityType}/{activityId}', [SpecializedSpeechApi::class, 'checkActiveActivity']);
 
     // speech 
@@ -99,7 +111,9 @@ Route::middleware([
     Route::put('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'editSubjectAssignmentApi']);
     Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
 
-    Route::post('/subject/{subjectId}/quiz', [TeacherApiController::class, 'createSubjectQuizzesApi']);
+    // quizzes
+    Route::get('/subject/{subjectId}/quiz', [QuizzesController::class, 'getQuizzes']);
+    Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);
 
     //people
     Route::get('/subject/{subjectId}/peoples', [TeacherApiController::class, 'getStudents']);
