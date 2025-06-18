@@ -376,7 +376,7 @@ class StudentApiController extends Controller
             return response()->json([
                 'success' => true,
                 'name' => $name,
-                'photo_url' => $user_data['photo_url']['url'] ?? null,
+                'photo_url' => $user_data['photo_url'] ?? null,
                 'biography' => $user_data['biography'] ?? null
             ]);
 
@@ -403,20 +403,31 @@ class StudentApiController extends Controller
             ];
 
             $bucket = $this->storage->getBucket();
+            $token = null;
 
             if (!empty($validated['photo'])) {
-                $prevPhotoPath = $this->database->getReference("users/{$userId}/photo_path")->getSnapshot()->getValue() ?? null;
-                if ($prevPhotoPath) {
-                    $bucket->object($prevPhotoPath)->delete();
+                $user = $this->database->getReference("users/{$userId}")->getSnapshot()->getValue() ?? null;
+                if ($user['photo_remotePath']) {
+                    $bucket->object($user['photo_remotePath'])->delete();
                 }
+
+                $token = $user['fcm_token'];
 
                 $file = $validated['photo'];
                 $file_id = (string) Str::uuid();
                 $remotePath = "users/{$userId}/profile_pictures/{$file_id}";
 
                 $uploadResult = $this->uploadToFirebaseStorage($file, $remotePath);
-                $updateData['photo_url'] = $uploadResult;
+                $updateData['photo_url'] = $uploadResult['url'];
+                $updateData['photo_remotePath'] = $uploadResult['path'];
             }
+
+            $message = CloudMessage::withTarget('token', $user['fcm_token'])
+                ->withNotification(['title' => "profile_update", 'body' => "profile_update"])
+                ->withData([
+                    'type' => 'profile_update',
+                ]);
+            $this->messaging->send($message);
 
             $this->database->getReference("users/{$userId}")
                 ->update($updateData);
