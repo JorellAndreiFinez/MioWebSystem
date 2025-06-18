@@ -121,7 +121,8 @@ class QuizzesController extends Controller
                     'question' => $question['question'],
                     'answer' => $question['answer'],
                     'points' => (float) $question['points'],
-                    'type' => $question['questionType']
+                    'type' => $question['questionType'],
+                    'multiple_type' => $question['multiple_type'] ?? null
                 ];
 
                 if (isset($question['options'])) {
@@ -181,20 +182,37 @@ class QuizzesController extends Controller
         }
     }
 
-    public function getQuizzes(Request $request, string $subjectId){
+    public function getQuizzes(Request $request, string $subjectId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        try{
+        try {
             $quizzes = $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes")
                 ->getSnapshot()
-                ->getValue();
+                ->getValue() ?? [];
+
+            $filteredQuizzes = [];
+
+            foreach ($quizzes as $quizId => $quizData) {
+                $filteredQuizzes[] = [
+                    'quiz_id' => $quizId,
+                    'title' => $quizData['title'] ?? '',
+                    'total_points' => $quizData['total_points'] ?? 0,
+                    'deadline_date' => $quizData['deadline_date'] ?? null,
+                ];
+            }
+
+            usort($filteredQuizzes, function ($a, $b) {
+                $aDate = strtotime($a['deadline_date'] ?? '9999-12-31');
+                $bDate = strtotime($b['deadline_date'] ?? '9999-12-31');
+                return $aDate <=> $bDate;
+            });
 
             return response()->json([
                 'success' => true,
-                'quizzes' => $quizzes,
+                'quizzes' => $filteredQuizzes,
             ]);
-
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -213,21 +231,35 @@ class QuizzesController extends Controller
                 ->getSnapshot()
                 ->getValue() ?? [];
 
+            $quiz = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
             $scores = [];
+            $quizInfo = [
+                'title' => $quiz['title'],
+                'description' => $quiz['description'],
+                'deadline' => $quiz['deadline_date'],
+                'time_limit' => $quiz['time_limit'],
+                'total_points' => $quiz['total_points'],
+                'end_time' => $quiz['end_time'],
+                'start_time' => $quiz['start_time'],
+                'attempts' => $quiz['attempts'],
+            ];
 
             foreach ($attempts as $attemptId => $attempt) {
                 $scores[] = [
                     'attempt_id' => $attemptId,
                     'submitted_at' => $attempt['submitted_at'] ?? null,
                     'score' => $attempt['score'] ?? null,
-                    'total_possible_score' => $attempt['total_possible_score'] ?? null,
                     'status' => $attempt['status'] ?? null,
-                    'finalized_at' => $attempt['finalized_at'] ?? null
                 ];
             }
 
             return response()->json([
                 'success' => true,
+                'quiz_info' => $quizInfo,
                 'scores' => $scores
             ]);
 
@@ -263,15 +295,15 @@ class QuizzesController extends Controller
                 ], 403);
             }
 
-            if (
-                isset($quiz_data['people'][$userId]['total_student_attempts']) &&
-                $quiz_data['people'][$userId]['total_student_attempts'] >= $quiz_data['attempts']
-            ) {
-                return response()->json([
-                    'success' => false,
-                    'message' => "You have reached the maximum number of attempts.",
-                ], 403);
-            }
+            // if (
+            //     isset($quiz_data['people'][$userId]['total_student_attempts']) &&
+            //     $quiz_data['people'][$userId]['total_student_attempts'] >= $quiz_data['attempts']
+            // ) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => "You have reached the maximum number of attempts.",
+            //     ], 403);
+            // }
 
             $attemptId = $this->generateUniqueId("ATTM");
             $date = now()->toDateTimeString();
@@ -281,6 +313,11 @@ class QuizzesController extends Controller
                 $items[$questionId] = [
                     'answer' => '',
                     'answered_at' => '',
+                    'type' => $questionData['type'],
+                    'question' => $questionData['question'],
+                    'choices' => $questionData['options'] ?? [],
+                    'points' => $questionData['points'],
+                    'multiple_type' => $questionData['multiple_type'] ?? null,
                 ];
             }
 
@@ -303,7 +340,8 @@ class QuizzesController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Quiz data loaded successfully.",
-                'items' => $items
+                'items' => $items,
+                'attemptId' => $attemptId
             ]);
         }catch (\Exception $e) {
             return response()->json([
@@ -343,38 +381,65 @@ class QuizzesController extends Controller
         }
     }
 
-    public function submitAnswer(Request $request, string $subjectId, string $quizId, string $attemptId, string $itemId){
+    public function submitAnswer(Request $request, string $subjectId, string $quizId, string $attemptId, string $itemId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
 
         $validated = $request->validate([
-            'answer' => 'required|string'
+            'answer_text' => 'nullable|string',
+            'answer_file' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:5120',
         ]);
 
-        try{
-            $date = now()->toDateTimeString();
+        if (empty($validated['answer_text']) && !$request->hasFile('answer_file')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Either answer_text or answer_file must be provided.',
+            ], 422);
+        }
 
-            $answer = [
-                'answer' => $validated['answer'],
-                'answered_at' => $date
-            ];
+        try {
+            $date = now()->toDateTimeString();
+            $answerValue = null;
+
+            if ($request->hasFile('answer_file') && $request->file('answer_file')->isValid()) {
+                $file = $request->file('answer_file');
+                $file_id = (string) Str::uuid();
+
+                $firebasePath = "quiz_answers/{$userId}/{$file_id}";
+
+                $uploadedFileInfo = $this->uploadToFirebaseStorage($file, $firebasePath);
+
+                $answerValue = [
+                    'name' => $uploadedFileInfo['name'],
+                    'path' => $uploadedFileInfo['path'],
+                    'url'  => $uploadedFileInfo['url'],
+                ];
+            }
+
+            if (!empty($validated['answer_text'])) {
+                $answerValue = $validated['answer_text'];
+            }
 
             $this->database
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}/people/{$userId}/attempts/{$attemptId}/items/{$itemId}")
-                ->set($answer);
+                ->update([
+                    'answer' => $answerValue,
+                    'answered_at' => $date,
+                ]);
 
             return response()->json([
                 'success' => true,
-                'message' => "Answer submitted successfully.",
+                'message' => 'Answer submitted successfully.',
             ]);
-
-        }catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'error' => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
     }
+
 
     public function finalizeQuiz(Request $request, string $subjectId, string $quizId, string $attemptId){
         $gradeLevel = $request->get('firebase_user_gradeLevel');
@@ -428,7 +493,7 @@ class QuizzesController extends Controller
             }
 
             $this->database
-                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}/people/{$userId}")
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}/people/{$userId}/attempts/$attemptId")
                 ->update([
                     'status' => 'finished',
                     'finalized_at' => now()->toDateTimeString(),

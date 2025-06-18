@@ -35,6 +35,9 @@ Route::middleware([
     Route::get('/subject/{subjectId}/quiz/{quizId}', [StudentApiController::class, 'getSubjectQuizByIdApi']);
     Route::get('/subject/{subjectId}/specialized/{activityType}/{difficulty}', [SpecializedSpeechApi::class, 'getSpeechActivities']);
 
+    //quizzes
+    Route::get('/subject/{subjectId}/quiz', [QuizzesController::class, 'getQuizzes']);
+
     // FCM Notification
     Route::post('/updateFCMToken/{student_id}', [EmergencyApi::class, 'updateFCMToken']); 
     Route::put('/removeFCMToken/{student_id}', [EmergencyApi::class, 'removeFCMToken']);
@@ -54,7 +57,6 @@ Route::middleware([
     Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
     Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']);
     Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
-    
 });
 
 
@@ -65,11 +67,10 @@ Route::middleware([
 ])->group(function() {
 
     //quizzes 
-    
     Route::get('/subject/{subjectId}/quiz/', [QuizzesController::class, 'getQuizzes']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getAttempts']);
     Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'startQuiz']);
-    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/', [QuizzesController::class, 'finalizeQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}', [QuizzesController::class, 'finalizeQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/continue', [QuizzesController::class, 'continueQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/{itemId}', [QuizzesController::class, 'submitAnswer']);
 
@@ -112,7 +113,6 @@ Route::middleware([
     Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
 
     // quizzes
-    Route::get('/subject/{subjectId}/quiz', [QuizzesController::class, 'getQuizzes']);
     Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);
 
     //people
