@@ -54,7 +54,6 @@ Route::middleware([
     Route::get('/messages/inbox', [MessagingApi::class, 'getInboxMessages']);
     Route::get('/messages/sent', [MessagingApi::class, 'getSentMessages']);
     Route::get('/message/reply/{conversation_id}', [MessagingApi::class, 'getConversation']);
-    Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
     Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']);
     Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
 });
@@ -65,6 +64,8 @@ Route::middleware([
     'firebase.auth',
     'firebase.role:student'
 ])->group(function() {
+    //messaging
+    Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
 
     //quizzes 
     Route::get('/subject/{subjectId}/quiz/', [QuizzesController::class, 'getQuizzes']);
@@ -111,6 +112,10 @@ Route::middleware([
     Route::post('/subject/{subjectId}/assignment', [TeacherApiController::class, 'createAssignmentApi']);
     Route::put('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'editSubjectAssignmentApi']);
     Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
+
+    // messaging
+    Route::get('/message/subjects', [MessagingApi::class, 'getSubjects']);
+    Route::get('/message/{subjectId}', [MessagingApi::class, 'getSubjectStudents']);
 
     // quizzes
     Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);

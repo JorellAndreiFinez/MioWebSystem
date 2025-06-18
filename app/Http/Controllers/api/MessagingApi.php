@@ -37,7 +37,6 @@ class MessagingApi extends Controller
         $sender_id = $request->get('firebase_user_id');
 
         $validated = $request->validate([
-            'subject' => 'required|string|min:1|max:250',
             'body' => 'required|string|min:1|max:250',
         ]);
 
@@ -57,13 +56,11 @@ class MessagingApi extends Controller
                 'message' => $validated['body'],
                 'receiver_id' => $receiver_id,
                 'sender_id' => $sender_id,
-                'subject' => $validated['subject'],
                 'timestamp' => now()->timestamp
             ]);
 
+            $name = $user['fname'] . " " . $user['lname'];
             if(!empty($user['fcm_token'])){
-                $name = $user['fname'] . " " . $user['lname'];
-
                 $message = CloudMessage::withTarget('token', $user['fcm_token'])
                     ->withNotification(['title' => $name, 'body' => $validated['body']])
                     ->withData([
@@ -78,6 +75,8 @@ class MessagingApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Message sent successfully',
+                'thread' => $message_info,
+                'name' => $name
             ]);
 
         } catch (\Throwable $e) {
@@ -92,7 +91,6 @@ class MessagingApi extends Controller
         $sender_id = $request->get('firebase_user_id');
 
         $validated = $request->validate([
-            'subject' => 'required|string|min:1|max:100',
             'body' => 'required|string|min:1|max:250',
         ]);
 
@@ -112,7 +110,6 @@ class MessagingApi extends Controller
                 'message' => $validated['body'],
                 'receiver_id' => $receiver_id,
                 'sender_id' => $sender_id,
-                'subject' => $validated['subject'],
                 'timestamp' => now()->timestamp
             ]);
 
@@ -325,7 +322,7 @@ class MessagingApi extends Controller
                             $name = $people['first_name'] . " " . $people['last_name'] . " ( " . $subject['title'] . " )";
 
                             $subject_teachers[] = [
-                                'teacher_id' => $people_id,
+                                'user_id' => $people_id,
                                 'subject_id' => $subject_id,
                                 'name' => $name,
                             ];
@@ -336,7 +333,7 @@ class MessagingApi extends Controller
 
             return response()->json([
                 'success' => true,
-                'teachers' => $subject_teachers,
+                'users' => $subject_teachers,
             ]);
         } catch (\Throwable $e) {
             return response()->json([
@@ -346,4 +343,72 @@ class MessagingApi extends Controller
         }
     }
 
+    public function getSubjectStudents(Request $request, string $subjectId)
+    {
+        $userId = $request->get('firebase_user_id');
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $peoples = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $students = [];
+            foreach($peoples as $user_id => $people){
+                if($people['role'] !== "teacher"){
+                    $name = $people['first_name'] . " " . $people['last_name'];
+                    $students[] = [
+                        'name' => $name,
+                        'user_id' => $user_id
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'users' => $students,
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getSubjects(Request $request)
+    {
+        $userId = $request->get('firebase_user_id');
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $subjects = $this->database
+                ->getReference("subjects/GR{$gradeLevel}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            $teacher_subjets = [];
+            foreach($subjects as $subject_id => $subject){
+                if(isset($subject['people'][$userId])){
+                    $teacher_subjets[] = [
+                        'subject_id' => $subject_id,
+                        'title' => $subject['title']
+                    ];
+                }
+
+            }
+
+            return response()->json([
+                'success' => true,
+                'teachers' => $teacher_subjets,
+                'userId' => $userId
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }
