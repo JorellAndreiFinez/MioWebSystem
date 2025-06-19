@@ -182,6 +182,158 @@ class QuizzesController extends Controller
         }
     }
 
+    public function updateQuiz(Request $request, string $subjectId, string $quizId)
+    {
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        $validated = $request->validate([
+            'title' => 'required|string|min:1|max:80',
+            'description' => 'required|string|min:1|max:300',
+            'attempts' => 'required|numeric|min:1',
+            'deadline_date' => 'nullable|string|min:1',
+            'end_time' => 'nullable|string|min:1',
+            'start_time' => 'required|string|min:1',
+            'time_limit' => 'required|string|min:1',
+            'access_code' => 'nullable|string|min:1',
+            'questions' => 'required|array|min:1',
+
+            'questions.*.item_id' => 'nullable|string|min:1',
+            'questions.*.question' => 'required|string|min:1',
+            'questions.*.answer' => 'required|string|min:1',
+            'questions.*.options' => 'nullable|array',
+            'questions.*.options.*' => 'required|string|min:1',
+            'questions.*.points' => 'required|numeric|min:1',
+            'questions.*.questionType' => 'required|string|in:multiple_choice,essay,file_upload,fill,dropdown',
+            'questions.*.multiple_type' => 'nullable|string|in:radio,checkbox',
+        ]);
+
+        try {
+            $questions = [];
+            $totalPoints = 0;
+
+            foreach ($validated['questions'] ?? [] as $question) {
+                $questionId = !empty($question['item_id']) ? $question['item_id'] : (string) Str::uuid();
+                $questionData = [
+                    'question' => $question['question'],
+                    'answer' => $question['answer'],
+                    'points' => (float) $question['points'],
+                    'type' => $question['questionType'],
+                    'multiple_type' => $question['multiple_type'] ?? null
+                ];
+
+                if (isset($question['options'])) {
+                    $optionData = [];
+                    foreach ($question['options'] as $option) {
+                        $optionId = substr(md5(uniqid()), 0, 7);
+                        $optionData[$optionId] = $option;
+                    }
+                    $questionData['options'] = $optionData;
+                }
+
+                $questions[$questionId] = $questionData;
+                $totalPoints += $questionData['points'];
+            }
+
+            $date = now()->toDateTimeString();
+            $quizData = [
+                'quiz_id' => $quizId,
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'attempts' => (int) $validated['attempts'],
+                'deadline_date' => $validated['deadline_date'] ?? '',
+                'end_time' => $validated['end_time'] ?? '',
+                'start_time' => $validated['start_time'],
+                'time_limit' => (int) $validated['time_limit'],
+                'access_code' => $validated['access_code'] ?? '',
+                'updated_at' => $date,
+                'no_time_limit' => false,
+                'show_correct_answers' => false,
+                'questions' => $questions,
+                'total_points' => $totalPoints,
+            ];
+
+            $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+                ->update($quizData);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Quiz successfully updated.',
+                'quiz_id' => $quizId,
+                'quiz_data' => $quizData,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function getQuiz(Request $request, string $subjectId, string $quizId)
+    {
+        $userId = $request->get('firebase_user_id');
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
+
+        try {
+            $quiz = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
+
+            if (empty($quiz)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Quiz not found!",
+                ], 404);
+            }
+
+            $quiz_info = [
+                'title' => $quiz['title'] ?? '',
+                'description' => $quiz['description'] ?? '',
+                'deadline' => $quiz['deadline_date'] ?? '',
+                'availableFrom' => $quiz['start_time'] ?? '',
+                'availableTo' => $quiz['end_time'] ?? '',
+                'attempts' => $quiz['attempts'] ?? 1,
+                'access_code' => $quiz['access_code'] ?? '',
+                'time_limit' => (string) ($quiz['time_limit'] ?? '0'),
+            ];
+
+            $quiz_items = [];
+
+            foreach ($quiz['questions'] ?? [] as $item_id => $item) {
+                $options = [];
+
+                if (isset($item['options']) && is_array($item['options'])) {
+                    $options = array_values($item['options']); // flatten into array of option strings
+                }
+
+                $quiz_items[] = [
+                    'id' => $item_id,
+                    'question' => $item['question'] ?? '',
+                    'answer' => $item['answer'] ?? '',
+                    'options' => $options,
+                    'points' => (float) ($item['points'] ?? 1),
+                    'questionType' => $item['type'] ?? 'multiple_choice',
+                    'multiple_type' => $item['multiple_type'] ?? null,
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'quiz_info' => $quiz_info,
+                'items' => $quiz_items,
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+
     public function getQuizzes(Request $request, string $subjectId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');

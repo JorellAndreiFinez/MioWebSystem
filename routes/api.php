@@ -120,7 +120,10 @@ Route::middleware([
     Route::get('/message/{subjectId}', [MessagingApi::class, 'getSubjectStudents']);
 
     // quizzes
+    Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getQuiz']);
     Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'updateQuiz']);
+    
 
     //people
     Route::get('/subject/{subjectId}/peoples', [TeacherApiController::class, 'getStudents']);
