@@ -1041,6 +1041,7 @@ class SpecializedLanguageApi extends Controller
 
             return response()->json([
                 'success' => true,
+                'attempt' => $attempt['items']
             ]);
 
         } catch (\Exception $e) {

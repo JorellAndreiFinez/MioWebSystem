@@ -39,9 +39,24 @@ class DataAnalytics extends Controller
             ->createMessaging();
     }
 
-    // public function getDashboard(){
-    //     // get active users
+    public function getDashboard(Reqeuest $request){
+        $userId = $request->get('firebase_user_id');
+        $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-    //     foreach
-    // }
+        try{
+            $active_user = [];
+            $subjects = $this->database->getReference("subjects/GR{$gradeLevel}")->getSnapshot()->getValue();
+
+            foreach($subjects as $subject_id => $subject){
+                
+            }
+
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error'   => 'Internal server error: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

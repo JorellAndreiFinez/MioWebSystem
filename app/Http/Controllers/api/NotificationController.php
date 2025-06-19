@@ -58,6 +58,10 @@ class NotificationController extends Controller
                 }
             }
 
+            usort($notification_list, function ($a, $b) {
+                return strtotime($b['date']) <=> strtotime($a['date']);
+            });
+
             return response()->json([
                 'success' => true,
                 'notifications' => $notification_list,
