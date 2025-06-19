@@ -238,17 +238,22 @@ class QuizzesController extends Controller
 
             $scores = [];
             $quizInfo = [
-                'title' => $quiz['title'],
-                'description' => $quiz['description'],
-                'deadline' => $quiz['deadline_date'],
-                'time_limit' => $quiz['time_limit'],
-                'total_points' => $quiz['total_points'],
-                'end_time' => $quiz['end_time'],
-                'start_time' => $quiz['start_time'],
-                'attempts' => $quiz['attempts'],
+                'title' => $quiz['title'] ?? null,
+                'description' => $quiz['description'] ?? null,
+                'deadline' => $quiz['deadline_date'] ?? null,
+                'time_limit' => $quiz['time_limit'] ?? null,
+                'total_points' => $quiz['total_points'] ?? null,
+                'end_time' => $quiz['end_time'] ?? null,
+                'start_time' => $quiz['start_time'] ?? null,
+                'attempts' => $quiz['attempts'] ?? null,
             ];
 
+            $active_attempt = null; 
             foreach ($attempts as $attemptId => $attempt) {
+                if (isset($attempt['status']) && $attempt['status'] === "in_progress" && empty($attempt['submitted_at'])) {
+                    $active_attempt = $attemptId;
+                }
+
                 $scores[] = [
                     'attempt_id' => $attemptId,
                     'submitted_at' => $attempt['submitted_at'] ?? null,
@@ -257,10 +262,15 @@ class QuizzesController extends Controller
                 ];
             }
 
+            usort($scores, function ($a, $b) {
+                return strtotime($b['submitted_at'] ?? '1970-01-01') <=> strtotime($a['submitted_at'] ?? '1970-01-01');
+            });
+
             return response()->json([
                 'success' => true,
                 'quiz_info' => $quizInfo,
-                'scores' => $scores
+                'scores' => $scores,
+                'active_attempt' => $active_attempt
             ]);
 
         } catch (\Exception $e) {
@@ -326,10 +336,10 @@ class QuizzesController extends Controller
             $previousAttempts[$attemptId] = [
                 'started_at' => $date,
                 'items' => $items,
+                'status' => 'in_progress',
             ];
 
             $quizLog = [
-                'status' => 'in_progress',
                 'total_student_attempts' => ($quiz_data['people'][$userId]['total_student_attempts'] ?? 0) + 1,
                 'attempts' => $previousAttempts,
             ];
@@ -368,9 +378,21 @@ class QuizzesController extends Controller
                 ]);
             }
 
+            $answers = [];
+            foreach($attempt['items'] as $item_id => $item){
+                if(isset($item['answer']) && !empty($item['answer'])){
+                    $answers[] = [
+                        'itemId' => $item_id,
+                        'answer' => $item['answer']
+                    ];
+                }
+            }
+
             return response()->json([
                 'success' => true,
-                'items' => $attempt['items']
+                'items' => $attempt['items'],
+                'attemptId' => $attemptId,
+                'answers' => $answers
             ]);
 
         } catch (\Exception $e) {
@@ -388,13 +410,15 @@ class QuizzesController extends Controller
 
         $validated = $request->validate([
             'answer_text' => 'nullable|string',
+            'answer_array' => 'nullable|array',
+            'answer_array.*' => 'required|string',
             'answer_file' => 'nullable|file|mimes:pdf,png,jpg,jpeg|max:5120',
         ]);
 
-        if (empty($validated['answer_text']) && !$request->hasFile('answer_file')) {
+        if (empty($validated['answer_text']) && !$request->hasFile('answer_file') && empty($validated['answer_array'])) {
             return response()->json([
                 'success' => false,
-                'message' => 'Either answer_text or answer_file must be provided.',
+                'message' => 'Either answer_text, answer_array, or answer_file must be provided.',
             ], 422);
         }
 
@@ -402,12 +426,14 @@ class QuizzesController extends Controller
             $date = now()->toDateTimeString();
             $answerValue = null;
 
-            if ($request->hasFile('answer_file') && $request->file('answer_file')->isValid()) {
-                $file = $request->file('answer_file');
+            if (!empty($validated['answer_array'])) {
+                $answerValue = $validated['answer_array'];
+            } elseif (!empty($validated['answer_text'])) {
+                $answerValue = $validated['answer_text'];
+            } elseif (isset($validated['answer_file']) && $validated['answer_file']->isValid()) {
+                $file = $validated['answer_file'];
                 $file_id = (string) Str::uuid();
-
                 $firebasePath = "quiz_answers/{$userId}/{$file_id}";
-
                 $uploadedFileInfo = $this->uploadToFirebaseStorage($file, $firebasePath);
 
                 $answerValue = [
@@ -415,10 +441,6 @@ class QuizzesController extends Controller
                     'path' => $uploadedFileInfo['path'],
                     'url'  => $uploadedFileInfo['url'],
                 ];
-            }
-
-            if (!empty($validated['answer_text'])) {
-                $answerValue = $validated['answer_text'];
             }
 
             $this->database

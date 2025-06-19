@@ -56,6 +56,9 @@ Route::middleware([
     Route::get('/message/reply/{conversation_id}', [MessagingApi::class, 'getConversation']);
     Route::post('/message/sent/{receiver_id}', [MessagingApi::class, 'sendMessage']);
     Route::post('/message/reply/{conversationId}', [MessagingApi::class, 'replyMessage']);
+
+    // quizzes
+    Route::get('/subject/{subjectId}/quiz/', [QuizzesController::class, 'getQuizzes']);
 });
 
 
@@ -68,11 +71,10 @@ Route::middleware([
     Route::get('/message/subjectTeachers', [MessagingApi::class, 'getSubjectTeacher']);
 
     //quizzes 
-    Route::get('/subject/{subjectId}/quiz/', [QuizzesController::class, 'getQuizzes']);
     Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getAttempts']);
+    Route::get('/subject/{subjectId}/quiz/{quizId}/{attemptId}', [QuizzesController::class, 'continueQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'startQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}', [QuizzesController::class, 'finalizeQuiz']);
-    Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/continue', [QuizzesController::class, 'continueQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/{itemId}', [QuizzesController::class, 'submitAnswer']);
 
     // specialized
