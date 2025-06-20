@@ -5,8 +5,10 @@ namespace App\Http\Controllers\api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Kreait\Firebase\Factory;
+use Kreait\Firebase\ServiceAccount;
 use Kreait\Firebase\Messaging\CloudMessage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
 
 class MessagingApi extends Controller
 {
@@ -33,11 +35,34 @@ class MessagingApi extends Controller
             ->createMessaging();
     }
 
+    protected function uploadToFirebaseStorage($file, $storagePath)
+    {
+        $bucket = $this->storage->getBucket();
+        $fileName = $file->getClientOriginalName();
+        $firebasePath = "{$storagePath}" . '_' . $fileName;
+
+        $bucket->upload(
+            fopen($file->getRealPath(), 'r'),
+            ['name' => $firebasePath]
+        );
+
+        $object = $bucket->object($firebasePath);
+        $object->update([], ['predefinedAcl' => 'publicRead']);
+
+        return [
+            'name' => $fileName,
+            'path' => $firebasePath,
+            'url'  => "https://storage.googleapis.com/{$bucket->name()}/" . $firebasePath,
+        ];
+    }
+
     public function sendMessage(Request $request, string $receiver_id){
         $sender_id = $request->get('firebase_user_id');
 
         $validated = $request->validate([
-            'body' => 'required|string|min:1|max:250',
+            'body' => 'nullable|string|min:1|max:250',
+            'files' => 'nullable|array|min:1',
+            'files.*' => 'nullable|file|max:5125'
         ]);
 
         try{
@@ -50,22 +75,43 @@ class MessagingApi extends Controller
                 ]);
             }
 
-            $message_info = $sender_id . "_" . $receiver_id;
-            $message_id = (String) Str::uuid();
-            $this->database->getReference("messages/{$message_info}/{$message_id}")->set([
-                'message' => $validated['body'],
-                'receiver_id' => $receiver_id,
-                'sender_id' => $sender_id,
-                'timestamp' => now()->timestamp
-            ]);
+            if (empty($validated['body']) && empty($validated['files'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Message body or file is required."
+                ], 422);
+            }
 
             $name = $user['fname'] . " " . $user['lname'];
+            $notification =  $validated['body'] ?? "${name} sent you a file.";
+            $thread = $sender_id . "_" . $receiver_id;
+            $message_id = (String) Str::uuid();
+            $files = [];
+
+            if(!empty($validated['files'])){
+                foreach($validated['files'] as $file){
+                    $remote_path = 'messages/' . $thread;
+
+                    $firebase_upload = $this->uploadToFirebaseStorage($file, $remote_path);
+                    $files[] = $firebase_upload['url'];
+                }
+            }
+
+            $this->database->getReference("messages/{$thread}/{$message_id}")->set([
+                'message' => $validated['body'] ?? null,
+                'files' => $files,
+                'receiver_id' => $receiver_id,
+                'sender_id' => $sender_id,
+                'timestamp' => now()->timestamp,
+                'read' => false,
+            ]);
+            
             if(!empty($user['fcm_token'])){
                 $message = CloudMessage::withTarget('token', $user['fcm_token'])
-                    ->withNotification(['title' => $name, 'body' => $validated['body']])
+                    ->withNotification(['title' => $name, 'body' => $notification])
                     ->withData([
                         'type' => 'message',
-                        'thread_id' => $message_info,
+                        'thread_id' => $thread,
                     ]);
                     
                 $this->messaging->send($message);
@@ -74,7 +120,7 @@ class MessagingApi extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Message sent successfully',
-                'thread' => $message_info,
+                'thread' => $thread,
                 'name' => $name
             ]);
 
