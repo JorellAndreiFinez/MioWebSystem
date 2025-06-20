@@ -266,7 +266,6 @@ class SpecializedSpeechApi extends Controller
     public function checkActiveActivity(Request $request, string $subjectId, string $activityType, string $activityId)
     {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
-        $userId = $request->get('firebase_user_id');
 
         try {
             $attempts = $this->database
@@ -275,23 +274,30 @@ class SpecializedSpeechApi extends Controller
                 ->getValue() ?? [];
 
             $attempts_data = [];
-            foreach($attempts as $attemptId => $attempt){
+            foreach ($attempts as $attemptId => $attempt) {
                 $attempts_data[$attemptId] = [
-                    'score' => $attempt['overall_score'] ?? $attempt['score'] ?? null,
+                    'score'        => $attempt['overall_score'] ?? $attempt['score'] ?? null,
                     'submitted_at' => $attempt['submitted_at'] ?? null,
                 ];
             }
 
+            uasort($attempts_data, function ($a, $b) {
+                if ($a['submitted_at'] === $b['submitted_at']) {
+                    return 0;
+                }
+                return ($a['submitted_at'] < $b['submitted_at']) ? 1 : -1;
+            });
+
             return response()->json([
-                'success' => true,
-                'message' => 'Successfully get activity',
-                'attempts' => $attempts_data
+                'success'  => true,
+                'message'  => 'Successfully retrieved activity attempts',
+                'attempts' => $attempts,
             ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error' => 'Internal server error: ' . $e->getMessage(),
+                'error'   => 'Internal server error: ' . $e->getMessage(),
             ], 500);
         }
     }

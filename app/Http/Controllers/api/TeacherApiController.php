@@ -574,9 +574,18 @@ class TeacherApiController extends Controller
                 return isset($attempt['submitted_at']) && $attempt['submitted_at'] !== null && $attempt['submitted_at'] !== '';
             });
 
+            $attempts = [];
+
+            foreach($filtered as $attempt_id => $filter){
+                $attempts[$attempt_id] = [
+                    'score'        => $filter['overall_score'] ?? $attempt['score'] ?? null,
+                    'submitted_at' => $filter['submitted_at'] ?? null,
+                ];
+            }
+
             return response()->json([
                 'success' => true,
-                'attempts' => $filtered
+                'attempts' => $attempts
             ]);
 
         } catch (\Exception $e) {
