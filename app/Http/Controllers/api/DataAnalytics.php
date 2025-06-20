@@ -39,23 +39,83 @@ class DataAnalytics extends Controller
             ->createMessaging();
     }
 
-    public function getDashboard(Reqeuest $request){
-        $userId = $request->get('firebase_user_id');
+    public function generateScoreBook(Request $request, string $subjectId)
+    {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
-        try{
-            $active_user = [];
-            $subjects = $this->database->getReference("subjects/GR{$gradeLevel}")->getSnapshot()->getValue();
+        try {
+            $activities = $this->database
+                ->getReference("subjects/GR{$gradeLevel}/{$subjectId}")
+                ->getSnapshot()
+                ->getValue() ?? [];
 
-            foreach($subjects as $subject_id => $subject){
-                
+            if (empty($activities) || !is_array($activities)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Scorebook not found."
+                ], 404);
             }
 
+            $results = [];
+
+            $peoples = $activities['people'];
+
+            foreach ($activities['attempts'] as $activityType => $byActivityId) {
+                if (!is_array($byActivityId)) continue;
+
+                $studentScores = [];
+
+                foreach ($byActivityId as $activityId => $byStudent) {
+                    if (!is_array($byStudent)) continue;
+
+                    foreach ($byStudent as $studentId => $attempts) {
+                        if (!is_array($attempts)) continue;
+
+                        $latestAttempt = null;
+                        $latestTime = 0;
+
+                        foreach ($attempts as $attempt) {
+                            if (!isset($attempt['submitted_at'])) continue;
+
+                            $ts = strtotime($attempt['submitted_at']);
+                            if ($ts > $latestTime) {
+                                $latestTime = $ts;
+                                $latestAttempt = $attempt;
+                            }
+                        }
+
+                        if ($latestAttempt) {
+                            $score = $latestAttempt['overall_score'] ?? $latestAttempt['score'] ?? null;
+                            if (!is_numeric($score)) continue;
+
+                            $studentScores[$studentId][] = $score;
+                        }
+                    }
+                }
+
+                foreach ($studentScores as $studentId => $scores) {
+                    $average = count($scores) > 0 ? array_sum($scores) / count($scores) : null;
+
+                    $name = $peoples[$studentId]['first_name'] . " " . $peoples[$studentId]['last_name'];
+
+                    $results[] = [
+                        'activity_type' => $activityType,
+                        'student_id' => $studentId,
+                        'overall_score' => round($average, 2),
+                        'name' => $name,
+                    ];
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $results
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'error'   => 'Internal server error: ' . $e->getMessage(),
+                'error' => 'Failed to generate scorebook: ' . $e->getMessage(),
             ], 500);
         }
     }

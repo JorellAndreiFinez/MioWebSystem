@@ -10,6 +10,7 @@ use App\Http\Controllers\api\SpecializedSpeechApi;
 use App\Http\Controllers\api\SpecializedAuditoryApi;
 use App\Http\Controllers\api\SpecializedLanguageApi;
 use App\Http\Controllers\api\NotificationController;
+use App\Http\Controllers\api\DataAnalytics;
 use App\Http\Controllers\api\QuizzesController;
 use App\Http\Controllers\api\MessagingApi;
 use App\Http\Controllers\api\EmergencyApi;
@@ -77,9 +78,6 @@ Route::middleware([
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}', [QuizzesController::class, 'finalizeQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}/{attemptId}/{itemId}', [QuizzesController::class, 'submitAnswer']);
 
-    // specialized
-    Route::get('/subject/{subjectId}/attempts/{activityType}/{activityId}', [SpecializedSpeechApi::class, 'checkActiveActivity']);
-
     // speech 
     Route::get('/subject/{subjectId}/attempts/speech/{activityType}/{activityId}/{attemptId}', [SpecializedSpeechApi::class, 'continueActivity']);
     Route::post('/subject/{subjectId}/speech/{activityType}/{difficulty}/{activityId}', [SpecializedSpeechApi::class, 'startFlashcardActivity']);
@@ -99,6 +97,9 @@ Route::middleware([
     Route::patch('/subject/{subjectId}/language/homonyms/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeHomonymsAttempt']);
     Route::post('/subject/{subjectId}/language/fill/{difficulty}/{activityId}', [SpecializedLanguageApi::class, 'takeFillActivity']);
     Route::patch('/subject/{subjectId}/language/fill/{difficulty}/{activityId}/{attemptId}', [SpecializedLanguageApi::class, 'finalizeFillAttempt']);
+
+    // specialized
+    Route::get('/subject/{subjectId}/attempts/{activityType}/{activityId}', [SpecializedSpeechApi::class, 'checkActiveActivity']);
 });
 
 Route::middleware([
@@ -166,6 +167,8 @@ Route::middleware([
 
 
     // emergency
-
     Route::post('/send', [EmergencyApi::class, 'sendEmergencyEarthquake']);
+
+    // generate csv file
+    Route::get('/{subjectId}/scorebook', [DataAnalytics::class, 'generateScoreBook']);
 });
