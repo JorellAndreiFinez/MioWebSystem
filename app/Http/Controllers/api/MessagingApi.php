@@ -65,7 +65,6 @@ class MessagingApi extends Controller
                     ->withNotification(['title' => $name, 'body' => $validated['body']])
                     ->withData([
                         'type' => 'message',
-                        'screen' => 'EmergencyScreen',
                         'thread_id' => $message_info,
                     ]);
                     
