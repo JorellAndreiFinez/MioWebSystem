@@ -1093,7 +1093,7 @@ class SpecializedSpeechApi extends Controller
 
         $validated = $request->validate([
             'flashcards' => 'required|array|min:1',
-            'flashcards.*.flashcard_id' => 'nullable|uuid',
+            'flashcards.*.flashcard_id' => 'nullable|string',
             'flashcards.*.text' => 'required|string|min:1|max:250',
         ]);
 
