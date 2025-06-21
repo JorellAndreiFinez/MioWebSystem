@@ -136,9 +136,9 @@ Route::middleware([
     Route::post('/subject/{subjectId}/attendance/{attendanceId}', [TeacherApiController::class, 'AddAttendance']);
     Route::put('/subject/{subjectId}/attendance/{attendanceId}', [TeacherApiController::class, 'updateAttendance']);
 
-
     // scores
     Route::get('/subject/{subjectId}/scores', [TeacherApiController::class, 'getScores']);
+    Route::get('/subject/{subjectId}/scorebook', [DataAnalytics::class, 'generateScoreBook']);
     Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}', [TeacherApiController::class, 'getStudentAttempts']);
     Route::get('/subject/{subjectId}/scores/{activityType}/{activityId}/{userId}/{attemptId}', [TeacherApiController::class, 'getStudentActivity']);
 
@@ -168,7 +168,4 @@ Route::middleware([
 
     // emergency
     Route::post('/send', [EmergencyApi::class, 'sendEmergencyEarthquake']);
-
-    // generate csv file
-    Route::get('/{subjectId}/scorebook', [DataAnalytics::class, 'generateScoreBook']);
 });

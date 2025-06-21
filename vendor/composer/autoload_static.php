@@ -101,6 +101,8 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
             'Symfony\\Component\\Console\\' => 26,
             'Symfony\\Component\\Clock\\' => 24,
             'Symfony\\Component\\Cache\\' => 24,
+            'Spatie\\TemporaryDirectory\\' => 26,
+            'Spatie\\Browsershot\\' => 19,
         ),
         'R' => 
         array (
@@ -249,9 +251,9 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
         ),
         'phpDocumentor\\Reflection\\' => 
         array (
-            0 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
-            1 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
-            2 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+            0 => __DIR__ . '/..' . '/phpdocumentor/reflection-docblock/src',
+            1 => __DIR__ . '/..' . '/phpdocumentor/type-resolver/src',
+            2 => __DIR__ . '/..' . '/phpdocumentor/reflection-common/src',
         ),
         'Whoops\\' => 
         array (
@@ -396,6 +398,14 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
         'Symfony\\Component\\Cache\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/cache',
+        ),
+        'Spatie\\TemporaryDirectory\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/temporary-directory/src',
+        ),
+        'Spatie\\Browsershot\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/spatie/browsershot/src',
         ),
         'Rize\\' => 
         array (
@@ -803,11 +813,21 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
         'App\\Http\\Controllers\\FirebaseConnectionController' => __DIR__ . '/../..' . '/app/Http/Controllers/FirebaseConnectionController.php',
         'App\\Http\\Controllers\\SchoolYearController' => __DIR__ . '/../..' . '/app/Http/Controllers/SchoolYearController.php',
         'App\\Http\\Controllers\\SectionController' => __DIR__ . '/../..' . '/app/Http/Controllers/SectionController.php',
+        'App\\Http\\Controllers\\SpeechaceController' => __DIR__ . '/../..' . '/app/Http/Controllers/SpeechaceController.php',
         'App\\Http\\Controllers\\SubjectController' => __DIR__ . '/../..' . '/app/Http/Controllers/SubjectController.php',
         'App\\Http\\Controllers\\admin\\AdminController' => __DIR__ . '/../..' . '/app/Http/Controllers/admin/AdminController.php',
         'App\\Http\\Controllers\\admin\\CmsController' => __DIR__ . '/../..' . '/app/Http/Controllers/admin/CmsController.php',
+        'App\\Http\\Controllers\\api\\DataAnalytics' => __DIR__ . '/../..' . '/app/Http/Controllers/api/DataAnalytics.php',
+        'App\\Http\\Controllers\\api\\EmergencyApi' => __DIR__ . '/../..' . '/app/Http/Controllers/api/EmergencyApi.php',
+        'App\\Http\\Controllers\\api\\MessagingApi' => __DIR__ . '/../..' . '/app/Http/Controllers/api/MessagingApi.php',
+        'App\\Http\\Controllers\\api\\NotificationController' => __DIR__ . '/../..' . '/app/Http/Controllers/api/NotificationController.php',
+        'App\\Http\\Controllers\\api\\QuizzesController' => __DIR__ . '/../..' . '/app/Http/Controllers/api/QuizzesController.php',
+        'App\\Http\\Controllers\\api\\SpecializedAuditoryApi' => __DIR__ . '/../..' . '/app/Http/Controllers/api/SpecializedAuditoryApi.php',
+        'App\\Http\\Controllers\\api\\SpecializedLanguageApi' => __DIR__ . '/../..' . '/app/Http/Controllers/api/SpecializedLanguageApi.php',
+        'App\\Http\\Controllers\\api\\SpecializedSpeechApi' => __DIR__ . '/../..' . '/app/Http/Controllers/api/SpecializedSpeechApi.php',
         'App\\Http\\Middleware\\AuthMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/AuthMiddleware.php',
         'App\\Http\\Middleware\\EnrollAuthMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/EnrollAuthMiddleware.php',
+        'App\\Http\\Middleware\\EnrollGuestMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/EnrollGuestMiddleware.php',
         'App\\Http\\Middleware\\MobileAuthMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/MobileAuthMiddleware.php',
         'App\\Http\\Middleware\\MobileRoleBasedAccessMiddleware' => __DIR__ . '/../..' . '/app/Http/Middleware/MobileRoleBasedAccessMiddleware.php',
         'App\\Http\\Middleware\\RoleBasedAccess' => __DIR__ . '/../..' . '/app/Http/Middleware/RoleBasedAccess.php',
@@ -7605,6 +7625,19 @@ class ComposerStaticInit626b9e7ddd47fb7eff9aaa53cce0c9ad
         'Smalot\\PdfParser\\RawData\\RawDataParser' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/RawData/RawDataParser.php',
         'Smalot\\PdfParser\\XObject\\Form' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/XObject/Form.php',
         'Smalot\\PdfParser\\XObject\\Image' => __DIR__ . '/..' . '/smalot/pdfparser/src/Smalot/PdfParser/XObject/Image.php',
+        'Spatie\\Browsershot\\Browsershot' => __DIR__ . '/..' . '/spatie/browsershot/src/Browsershot.php',
+        'Spatie\\Browsershot\\ChromiumResult' => __DIR__ . '/..' . '/spatie/browsershot/src/ChromiumResult.php',
+        'Spatie\\Browsershot\\Enums\\Polling' => __DIR__ . '/..' . '/spatie/browsershot/src/Enums/Polling.php',
+        'Spatie\\Browsershot\\Exceptions\\CouldNotTakeBrowsershot' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/CouldNotTakeBrowsershot.php',
+        'Spatie\\Browsershot\\Exceptions\\ElementNotFound' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/ElementNotFound.php',
+        'Spatie\\Browsershot\\Exceptions\\FileDoesNotExistException' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/FileDoesNotExistException.php',
+        'Spatie\\Browsershot\\Exceptions\\FileUrlNotAllowed' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/FileUrlNotAllowed.php',
+        'Spatie\\Browsershot\\Exceptions\\HtmlIsNotAllowedToContainFile' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/HtmlIsNotAllowedToContainFile.php',
+        'Spatie\\Browsershot\\Exceptions\\UnsuccessfulResponse' => __DIR__ . '/..' . '/spatie/browsershot/src/Exceptions/UnsuccessfulResponse.php',
+        'Spatie\\Browsershot\\ImageManipulations' => __DIR__ . '/..' . '/spatie/browsershot/src/ImageManipulations.php',
+        'Spatie\\TemporaryDirectory\\Exceptions\\InvalidDirectoryName' => __DIR__ . '/..' . '/spatie/temporary-directory/src/Exceptions/InvalidDirectoryName.php',
+        'Spatie\\TemporaryDirectory\\Exceptions\\PathAlreadyExists' => __DIR__ . '/..' . '/spatie/temporary-directory/src/Exceptions/PathAlreadyExists.php',
+        'Spatie\\TemporaryDirectory\\TemporaryDirectory' => __DIR__ . '/..' . '/spatie/temporary-directory/src/TemporaryDirectory.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
         'Symfony\\Component\\Cache\\Adapter\\AbstractAdapter' => __DIR__ . '/..' . '/symfony/cache/Adapter/AbstractAdapter.php',
         'Symfony\\Component\\Cache\\Adapter\\AbstractTagAwareAdapter' => __DIR__ . '/..' . '/symfony/cache/Adapter/AbstractTagAwareAdapter.php',
