@@ -1026,9 +1026,9 @@ class SpecializedLanguageApi extends Controller
     public function continueLanguageActivity(
         Request $request,
         string $subjectId,
+        string $activityType,
         string $activityId,
         string $attemptId,
-        string $activityType,
     ) {
         $gradeLevel = $request->get('firebase_user_gradeLevel');
         $userId = $request->get('firebase_user_id');
