@@ -165,15 +165,23 @@ class DataAnalytics extends Controller
             
             $html = view('pdf::scorebook', ['results' => $results])->render();
 
-            $pdf = Browsershot::html($html)
-                ->format('A4')
-                ->margins(10, 10, 10, 10)
-                ->showBackground()
-                ->pdf();
+            try {
+                $pdf = Browsershot::html($html)
+                    ->format('A4')
+                    ->margins(10, 10, 10, 10)
+                    ->showBackground()
+                    ->pdf();
 
-            return response($pdf, 200)
-                ->header('Content-Type', 'application/pdf')
-                ->header('Content-Disposition', 'attachment; filename="scorebook.pdf"');
+                     return response($pdf, 200)
+                        ->header('Content-Type', 'application/pdf')
+                        ->header('Content-Disposition', 'attachment; filename="scorebook.pdf"');
+            } catch (\Exception $e) {
+                \Log::error('Browsershot error: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Failed to generate PDF: ' . $e->getMessage(),
+                ], 500);
+            }
 
         } catch (\Throwable $e) {
             return response()->json([
@@ -181,5 +189,93 @@ class DataAnalytics extends Controller
                 'error'   => 'Failed to generate scorebook: ' . $e->getMessage(),
             ], 500);
         }
+    }
+
+    public function analyticsDashboard(Request $request){
+        $userId = $request->get('firebase_user_id');
+
+        $subjects_ref = $this->database->getReference("subjects/");
+        $subjects_data = $subjects_ref->getSnapshot()->getValue() ?? [];
+
+        $subjects = [];
+
+        foreach ($subjects_data as $gradeLevel => $subjectList) {
+            foreach ($subjectList as $subject_id => $subject) {
+                if(isset($subject['people'][$userId])){
+                    $subjects[$subject_id] = $subject;
+                }
+            }
+        }
+
+        $lastest_attempts = [];
+        $sessions = 0;
+        $completion_rate = [];
+
+        foreach($subjects as $subjectId => $subject){
+            $subject_type = $subject['specialized_type'];
+
+            if(!empty($subject['attendance'])){
+                $sessions += count($subject['attendance']);
+            }
+
+            if (!empty($subject['attempts'])) {
+                foreach($subject['attempts'] as $activityType){
+                    $activities = [];
+
+                    foreach($activityType as $activity_id => $activity){
+                        $latest_attempt = [];
+                        $passed_student = [];
+
+                        foreach($activity as $student_id => $student){
+                            foreach($student as $attempt_id => $attempt){
+                                if(empty($attempt['submitted_at'])){
+                                    continue;
+                                }
+
+                                if (!isset($latest_attempt[$student_id]) || $attempt['submitted_at'] > $latest_attempt[$student_id]) {
+                                    $latest_attempt[$student_id] = $attempt['submitted_at'];
+
+                                    $score = $attempt['overall_score'] ?? $attempt['overall_score'] ?? 0;
+                                    if($score > 75){
+                                        $passed_student[$student_id] = $score;
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!empty($latest_attempt)) {
+                            $lastest_attempts[$activity_id] = $latest_attempt;
+                        }
+
+                        if (!empty($passed_student)) {
+                            $activities[$activity_id] = $passed_student;
+                        }
+                    }
+                    $completion_rate[$activityType] = $activities;
+
+                }
+            }
+        }
+
+        $active_users = [];
+        $today = date('Y-m-d');
+
+        foreach ($lastest_attempts as $activity_id => $activity) {
+            foreach ($activity as $student_id => $submitted_at) {
+                $submitted_date = substr($submitted_at, 0, 10);
+
+                if ($submitted_date === $today) {
+                    $active_users[$student_id] = true;
+                }
+            }
+        }
+
+
+        return response()->json([
+            'success' => true,
+            'active_today' => count($active_users),
+            'sessions' => $sessions,
+            'completion_rate' => $completion_rate,
+        ]);
     }
 }

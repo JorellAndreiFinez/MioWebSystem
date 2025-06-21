@@ -62,8 +62,8 @@ class MobileRoleBasedAccessMiddleware
             ], 403);
         }
 
-        $gradeLevel = $userData['grade_level'] ?? null;
-        if (! $gradeLevel) {
+        $gradeLevel = $userData['section_grade'] ?? $userData['grade_level'] ?? null;
+        if (!$gradeLevel && !$role) {
             return response()->json([
                 'success' => false,
                 'error'   => 'User grade level is missing.',

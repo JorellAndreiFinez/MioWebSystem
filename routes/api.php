@@ -168,4 +168,7 @@ Route::middleware([
 
     // emergency
     Route::post('/send', [EmergencyApi::class, 'sendEmergencyEarthquake']);
+
+    // Analytics
+    Route::get('/analytics/dashboard', [DataAnalytics::class, 'analyticsDashboard']);
 });
