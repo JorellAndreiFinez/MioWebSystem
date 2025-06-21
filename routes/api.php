@@ -111,10 +111,6 @@ Route::middleware([
     Route::post('/subject/{subjectId}/announcement', [TeacherApiController::class, 'createSubjectAnnouncementApi']);
     Route::post('/subject/{subjectId}/announcement/{announcementId}', [TeacherApiController::class, 'editSubjectAnnouncementApi']);
     Route::delete('/subject/{subjectId}/announcement/{announcementId}', [TeacherApiController::class, 'deleteSubjectAnnouncementApi']);
-    
-    Route::post('/subject/{subjectId}/assignment', [TeacherApiController::class, 'createAssignmentApi']);
-    Route::put('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'editSubjectAssignmentApi']);
-    Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
 
     // messaging
     Route::get('/message/subjects', [MessagingApi::class, 'getSubjects']);
@@ -124,6 +120,11 @@ Route::middleware([
     Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getQuiz']);
     Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);
     Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'updateQuiz']);
+
+    // assignments
+    Route::post('/subject/{subjectId}/assignment', [TeacherApiController::class, 'createAssignmentApi']);
+    Route::put('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'editSubjectAssignmentApi']);
+    Route::delete('/subject/{subjectId}/assignment/{assignmentId}', [TeacherApiController::class, 'deleteSubjectAssignmentApi']);
     
 
     //people
@@ -167,7 +168,7 @@ Route::middleware([
 
 
     // emergency
-    Route::post('/send', [EmergencyApi::class, 'sendEmergencyEarthquake']);
+    Route::post('/send/{type}', [EmergencyApi::class, 'sendEmergency']);
 
     // Analytics
     Route::get('/analytics/dashboard', [DataAnalytics::class, 'analyticsDashboard']);

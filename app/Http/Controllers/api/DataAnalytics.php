@@ -209,7 +209,10 @@ class DataAnalytics extends Controller
 
         $lastest_attempts = [];
         $sessions = 0;
-        $completion_rate = [];
+        $passed_activities = [];
+        $activity_lists = [];
+        $total_student = 0;
+
 
         foreach($subjects as $subjectId => $subject){
             $subject_type = $subject['specialized_type'];
@@ -218,11 +221,11 @@ class DataAnalytics extends Controller
                 $sessions += count($subject['attendance']);
             }
 
-            if (!empty($subject['attempts'])) {
-                foreach($subject['attempts'] as $activityType){
-                    $activities = [];
+            if(!empty($subject['attempts'])){
+                foreach($subject['attempts'] as $activityType => $activities){
+                    $passed_students = [];
 
-                    foreach($activityType as $activity_id => $activity){
+                    foreach($activities as $activity_id => $activity){
                         $latest_attempt = [];
                         $passed_student = [];
 
@@ -248,12 +251,24 @@ class DataAnalytics extends Controller
                         }
 
                         if (!empty($passed_student)) {
-                            $activities[$activity_id] = $passed_student;
+                            $passed_students[$activity_id] = $passed_student;
                         }
                     }
-                    $completion_rate[$activityType] = $activities;
-
+                    $completion_rate[$activityType] = $passed_students;
                 }
+            }
+
+            foreach($subject['specialized'] ?? [] as $activity_type => $difficulty){
+                
+                foreach($difficulty as $difficulty_type => $activities){
+                    foreach($activities as $activity_id => $activity){
+                        $activity_lists[$activity_type][$activity_id] = true;
+                    }
+                }
+            }
+
+            if(!empty($subject['people'])){
+                $total_student += count($subject['people']);
             }
         }
 
@@ -270,12 +285,85 @@ class DataAnalytics extends Controller
             }
         }
 
+        $completion_rate_per_activity = [];
+        foreach ($activity_lists as $activityType => $activities) {
+            foreach ($activities as $activity_id => $activity) {
+                $students = $completion_rate[$activityType][$activity_id] ?? [];
+                $passing_count = count($students);
+
+                if (!isset($completion_rate[$activityType][$activity_id])) {
+                    $completion_rate_per_activity[$activityType][$activity_id] = 0;
+                } else {
+                    $activity_total_students = count($activity_lists[$activityType]);
+
+                    $completion_rate_per_activity[$activityType][$activity_id] = $activity_total_students > 0
+                        ? ($passing_count / $activity_total_students) * 100
+                        : 0;
+                }
+            }
+        }
+
+        $completion_rate_activity_per_activityType = [];
+        foreach ($completion_rate_per_activity as $activityType => $activity_rates) {
+            $total_rate = array_sum($activity_rates);
+            $activity_count = count($activity_rates);
+            $completion_rate_activity_per_activityType[$activityType] = $activity_count > 0
+                ? $total_rate / $activity_count
+                : 0;
+        }
+
+        $overall_completion_rate = 0;
+        foreach($completion_rate_activity_per_activityType as $activity){
+            $overall_completion_rate += $activity;
+        }
+
+        $overall_completion_rate = $overall_completion_rate / count($completion_rate_activity_per_activityType);
 
         return response()->json([
             'success' => true,
             'active_today' => count($active_users),
+            'overall_completion_rate' => $overall_completion_rate,
+            'total_activities' => count($activity_lists), 
+            'total_student' => $total_student,
             'sessions' => $sessions,
-            'completion_rate' => $completion_rate,
         ]);
     }
 }
+
+// if (!empty($subject['attempts'])) {
+            //     foreach($subject['attempts'] as $activityType){
+            //         $activities = [];
+
+            //         foreach($activityType as $activity_id => $activity){
+            //             $latest_attempt = [];
+            //             $passed_student = [];
+
+            //             foreach($activity as $student_id => $student){
+            //                 foreach($student as $attempt_id => $attempt){
+            //                     if(empty($attempt['submitted_at'])){
+            //                         continue;
+            //                     }
+
+            //                     if (!isset($latest_attempt[$student_id]) || $attempt['submitted_at'] > $latest_attempt[$student_id]) {
+            //                         $latest_attempt[$student_id] = $attempt['submitted_at'];
+
+            //                         $score = $attempt['overall_score'] ?? $attempt['overall_score'] ?? 0;
+            //                         if($score > 75){
+            //                             $passed_student[$student_id] = $score;
+            //                         }
+            //                     }
+            //                 }
+            //             }
+
+            //             if (!empty($latest_attempt)) {
+            //                 $lastest_attempts[$activity_id] = $latest_attempt;
+            //             }
+
+            //             if (!empty($passed_student)) {
+            //                 $activities[$activity_id] = $passed_student;
+            //             }
+            //         }
+            //         $completion_rate[$activityType] = $activities;
+
+            //     }
+            // }

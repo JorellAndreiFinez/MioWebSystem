@@ -33,7 +33,7 @@ class EmergencyApi extends Controller
             ->createMessaging();
     }
 
-    public function sendEmergencyEarthquake(Request $request)
+    public function sendEmergency(Request $request, string $type)
     {
         try {
             $users = $this->database->getReference("users")->getSnapshot()->getValue();
@@ -46,13 +46,20 @@ class EmergencyApi extends Controller
             }
 
             $title = 'Emergency Alert!';
-            $body = 'Drop, cover, and hold! Stay safe and follow emergency instructions promptly.';
+            $body = 'Emergency Alert!';
+            if ($type === 'earthquake') {
+                $body = 'Drop, cover, and hold! Stay safe and follow emergency instructions promptly.';
+            } else if ($type === 'flood') {
+                $body = 'Flood warning! Move to higher ground immediately. Avoid driving or walking through flooded areas.';
+            } else if ($type === 'fire') {
+                $body = 'Fire alert! Evacuate the area immediately and follow emergency evacuation routes.';
+            }
 
             foreach($tokens as $token){
                 $message = CloudMessage::withTarget('token', $token)
                     ->withNotification(['title' => $title, 'body' => $body])
                     ->withData([
-                        'type' => 'earthquake',
+                        'type' => $type,
                         'screen' => 'EmergencyScreen',
                     ]);
                 

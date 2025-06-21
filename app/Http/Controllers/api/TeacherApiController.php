@@ -346,27 +346,48 @@ class TeacherApiController extends Controller
         $gradeLevel = $request->get('firebase_user_gradeLevel');
 
         $validated = $request->validate([
-            'availability'          => 'required|array|size:2',
-            'availability.start'    => 'required|string',
-            'availability.end'      => 'required|string|',
-            'attempts'              => 'required|integer|min:1|max:100',
-            'title'                 => 'required|string|max:250',
-            'description'           => 'required|string|max:1000',
-            'total'                 => 'required|integer|min:1',
-            'submission_type'       => 'required|string',
-            'published_at'          => 'nullable|string',
-            'deadline'              => 'nullable|string',
+            'published_at' => 'required|date',
+            'deadline' => 'required|date',
+            'availabilityFrom' => 'required|string|min:1',
+            'availabilityTo' => 'required|string|min:1',
+            'attempts' => 'required|integer|min:1|max:100',
+            'title' => 'required|string|max:250',
+            'description' => 'required|string|max:1000',
+            'total' => 'required|integer|min:1',
+            'submission_type' => 'required|string|in:text,file',
+            'max_file_size' => 'nullable|integer',
+            'visibility' => 'required|boolean',
+            'file_types_types' => 'nullable|array',
+            'file_types_types.*' => 'nullable|string|in:pdf,docx,pptx,mp3,mp4,jpg,png,txt,zip,xlsx',
         ]);
 
         $assignmentId = $this->generateUniqueId('ASS');
         $date = now()->toDateTimeString();
 
-        $assignmentData = array_merge($validated, [
-            'created_at' => $date,
-            'updated_at' => $date,
-        ]);
-
         try{
+            $peoples = $this->database->getReference("subjects/GR{$gradeLevel}/{$subjectId}/people")->getSnapshot()->getValue();
+
+            $availability = [
+                'end' => $validated['availabilityTo'],
+                'start' => $validated['availabilityFrom']
+            ];
+
+            $assignmentData = [
+                'created_at' => $date,
+                'people' => $peoples,
+                'availability' => $availability,
+                'title' => $validated['title'],
+                'description' => $validated['description'],
+                'attempts' => $validated['attempts'],
+                'submission_type' => $validated['submission_type'],
+                'max_file_size' => $validated['max_file_size'] ?? null,
+                'visibility' => $validated['visibility'],
+                'file_types_types' => $validated['file_types_types'] ?? [],
+                'published_at' => $validated['published_at'],
+                'deadline' => $validated['deadline'],
+                'total' => $validated['total'],
+            ];
+
             $assignment = $this->database
             ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/assignments/{$assignmentId}")
             ->set($assignmentData);
