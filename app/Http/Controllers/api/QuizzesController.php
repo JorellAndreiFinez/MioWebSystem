@@ -670,7 +670,7 @@ class QuizzesController extends Controller
                 ->getReference("subjects/GR{$gradeLevel}/{$subjectId}/quizzes/{$quizId}/people/{$userId}/attempts/$attemptId")
                 ->update([
                     'status' => 'finished',
-                    'finalized_at' => now()->toDateTimeString(),
+                    'submitted_at' => now()->toDateTimeString(),
                     'score' => $score,
                     'total_quiz_points' => $totalPoints,
                     'total_questions' => count($questions),

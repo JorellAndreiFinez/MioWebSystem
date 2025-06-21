@@ -117,9 +117,9 @@ Route::middleware([
     Route::get('/message/{subjectId}', [MessagingApi::class, 'getSubjectStudents']);
 
     // quizzes
-    Route::get('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'getQuiz']);
-    Route::post('/subject/{subjectId}/quiz', [QuizzesController::class, 'createQuiz']);
-    Route::post('/subject/{subjectId}/quiz/{quizId}', [QuizzesController::class, 'updateQuiz']);
+    Route::get('/subject/{subjectId}/quiz/{quizId}/get', [QuizzesController::class, 'getQuiz']);
+    Route::post('/subject/{subjectId}/quiz/create', [QuizzesController::class, 'createQuiz']);
+    Route::post('/subject/{subjectId}/quiz/{quizId}/update', [QuizzesController::class, 'updateQuiz']);
 
     // assignments
     Route::post('/subject/{subjectId}/assignment', [TeacherApiController::class, 'createAssignmentApi']);
